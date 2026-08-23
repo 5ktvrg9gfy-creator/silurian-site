@@ -6,9 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Silurian Consulting Limited</title>
 <meta name="description" content="Silurian Consulting Limited — project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,400..800&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22110%2080%20200%20290%22%20role%3D%22img%22%20aria-label%3D%22Silurian%20Consulting%22%3E%0A%20%20%3Cdefs%3E%3CclipPath%20id%3D%22s%22%3E%3Cpolygon%20points%3D%22130%2C180%20285%2C90%20300%2C360%20120%2C360%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%0A%20%20%3Cg%20clip-path%3D%22url(%23s)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22100%22%20y%3D%220%22%20width%3D%22240%22%20height%3D%22225%22%20fill%3D%22%23201e1d%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22100%22%20y%3D%22225%22%20width%3D%22240%22%20height%3D%22200%22%20fill%3D%22%23ee7623%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%22130%2C180%20285%2C90%20300%2C330%22%20fill%3D%22%23f3f2f2%22%20opacity%3D%220.18%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E" />
-<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./assets/ds-styles.css" />
 <style>
 /* Template scaffolding — page layout and web-scale sizing only; every color,
    font, radius and shadow comes from ../../styles.css. The voice is the
@@ -35,9 +35,9 @@
 
    Optical left alignment: the deck's measured Archivo 800 value carries
    verbatim (-0.058em where caps lead a display line; em-scaled). */
-/* display type runs on Archivo's wide width axis */
+/* display type: the design system's Archivo at standard width */
 .display, .close h3, .split-title, .f-title, .quote blockquote, .refs blockquote,
-.nav-brand, .stat-num { font-variation-settings: "wdth" 125; letter-spacing: -0.03em; }
+.nav-brand, .stat-num { letter-spacing: -0.025em; }
 
 :root {
   /* sleeve orange, carried across the accent role and its ramp steps */
@@ -86,7 +86,7 @@ body { margin: 0; text-wrap: pretty; }
 .mast-top { display: flex; align-items: center; gap: clamp(12px, 1.4vw, 22px);
   padding-top: calc(1.5 * var(--leading)); padding-bottom: var(--half); }
 .mast-mark { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-variation-settings: "wdth" 125; letter-spacing: -0.03em;
+  letter-spacing: -0.025em;
   font-size: clamp(42px, 6.2vw, 84px); line-height: 1; margin: 0;
   text-box: trim-both cap alphabetic; }
 .mast-logo { display: block; flex: none;
@@ -212,7 +212,7 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
 @media (max-width: 980px) { .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .work-grid { grid-template-columns: 1fr; } }
 .work-out { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-variation-settings: "wdth" 125; letter-spacing: -0.02em;
+  letter-spacing: -0.02em;
   font-size: 20px; line-height: var(--leading); margin: 0; }
 .work-detail { font-size: 15.5px; line-height: var(--leading);
   margin: var(--half) 0 0; color: color-mix(in srgb, var(--color-bg) 82%, transparent); }
