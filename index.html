@@ -391,7 +391,10 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
   text-box: trim-both cap alphabetic;
 }
 .display .line { display: block; } /* law #1: one sentence per line */
-.hero .sub { font-size: 17px; line-height: var(--leading); max-width: var(--measure);
+#about { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+#about .rock { background: none; }
+#about .display { font-size: clamp(36px, 4vw, 58px); line-height: 1.06; }
+.hero .sub, #about .sub { font-size: 17px; line-height: var(--leading); max-width: var(--measure);
   margin: calc(1.5 * var(--leading) - 1cap) 0 0;
   text-box: trim-both cap alphabetic; } /* 1.5 units: clears the display's descenders with cluster-tight air (law #3) */
 .hero .row { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--leading); }
@@ -567,60 +570,30 @@ body[data-baselines]::after {
 </head>
 <body>
 <header class="mast">
-  <div class="mast-top">
-    <img class="mast-logo" src="logo-stone.svg" alt="Silurian Consulting" />
-    <p class="mast-mark">Silurian</p>
-  </div>
-  <div class="mast-bar">
-    <a href="#services" aria-current="location">Services</a>
-    <a href="#about">About</a>
-    <a href="#contact">Contact</a>
-    <a class="btn btn-ghost" href="#contact">Get in touch</a>
+  <div class="mast-bar" style="background:#fff;gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
+    <img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" />
+    <p style="margin:0;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:clamp(15px, 1.8vw, 18px);line-height:1.2;letter-spacing:-0.02em;white-space:nowrap;color:var(--color-text)">Silurian Consulting Limited</p>
   </div>
 </header>
 <div class="wrap">
 
-  <section class="hero">
-    <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
-    <p class="sub">For pharmaceutical and other regulated industries. UK based.</p>
-    <div class="row">
-      <a class="btn btn-primary" href="#contact">Start a conversation</a>
-      <a class="btn btn-ghost" href="#services">What we do</a>
-    </div>
-  </section>
 
-  <section class="features" id="services">
-    <span class="kicker">Services</span>
-    <div class="feature">
-      <p class="f-num">#1</p>
-      <h2 class="f-title">Programme and project delivery</h2>
-      <p class="f-copy">New product introduction and site change programmes, run end to end. Clear milestones, named owners, and a status that means the same thing every week.</p>
-    </div>
-    <div class="feature">
-      <p class="f-num">#2</p>
-      <h2 class="f-title">Supply chain and operations</h2>
-      <p class="f-copy">Planning, procurement and technical service interfaces reviewed against what the site actually does. Bottlenecks identified with the data behind them, and a recommendation rather than a list of options.</p>
-    </div>
-    <div class="feature">
-      <p class="f-num">#3</p>
-      <h2 class="f-title">Capability building</h2>
-      <p class="f-copy">Project management and account management teams coached in place, with the governance and reporting standards left behind in working order. The measure of the engagement is that it ends.</p>
-    </div>
-    <div class="feature">
-      <p class="f-num">#4</p>
-      <h2 class="f-title">Regulatory and quality partners</h2>
-      <p class="f-copy">Working with Independent regulatory and quality specialists through established partnerships. Advice available while decisions are being made, without carrying the headcount when it is not needed.</p>
-    </div>
-  </section>
 
-  <section class="split" id="about">
+
+
+  <section class="split" id="about" style="padding-top:calc(3.25 * var(--leading));padding-bottom:calc(3.25 * var(--leading))">
     <div class="split-copy">
-      <span class="kicker">About</span>
-      <h2 class="split-title">Named after the rock underneath</h2>
-      <p class="note">The Silurian is the period that laid down much of the ground under South Wales. The name was chosen for what it describes: the layer everything else is built on.</p>
-      <p class="note">Behind it are twenty years of experience in regulated manufacturing and pharmaceutical supply chain. Work is taken on directly, not brokered.</p>
+      <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
+      <p class="sub">For pharmaceutical and other regulated industries. UK based.</p>
+      <p class="note">Behind Silurian are twenty years of experience in regulated manufacturing and pharmaceutical supply chain. Work is taken on directly, not brokered.</p>
+      <ul style="list-style:none;margin:var(--leading) 0 0;padding:0;display:grid;gap:var(--half);border-top:2px solid var(--color-divider);padding-top:var(--leading)">
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#1</span><span style="flex:1">Programme and project delivery</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#2</span><span style="flex:1">Supply chain and operations</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">Capability building</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">Regulatory and quality partners</span></li>
+      </ul>
     </div>
-    <figure class="split-figure">
+    <figure class="split-figure" style="transform:translateY(-18px)">
       <div class="rock">
         <svg class="rock-art" viewBox="100 70 220 310" role="img" aria-label="Abstract faceted stone">
           <defs>
@@ -647,68 +620,11 @@ body[data-baselines]::after {
     </figure>
   </section>
 
-  <section class="refs" aria-label="References">
-    <span class="kicker">References</span>
-    <div class="grid">
-      <figure style="margin:0">
-        <p class="ref-mark">#1</p>
-        <blockquote>“One of the best project leaders I’ve worked with throughout my career.”</blockquote>
-        <p class="ref-src">Director of Quality Operations, pharmaceutical manufacturer, 2025</p>
-      </figure>
-      <figure style="margin:0">
-        <p class="ref-mark">#2</p>
-        <blockquote>“A proven ability to lead complex initiatives across multiple geographies.”</blockquote>
-        <p class="ref-src">Global Regulatory Affairs Lead, pharmaceutical manufacturer, 2025</p>
-      </figure>
-      <figure style="margin:0">
-        <p class="ref-mark">#3</p>
-        <blockquote>“Experience. Gravitas. Knowledge. Flexibility.”</blockquote>
-        <p class="ref-src">Senior Program Manager, biopharma R&amp;D, 2023</p>
-      </figure>
-    </div>
-  </section>
+
 
 </div>
 
-<section class="work" aria-label="Expertise">
-  <div class="wrap">
-    <div class="inner">
-      <span class="kicker">Expertise</span>
-      <div class="work-grid">
-        <div>
-          <p class="work-num">#1</p>
-          <p class="work-out">Operating model and governance design</p>
-          <p class="work-detail">How decisions get made, who owns what, and the reporting that holds it together.</p>
-        </div>
-        <div>
-          <p class="work-num">#2</p>
-          <p class="work-out">Portfolio prioritisation and recovery</p>
-          <p class="work-detail">Cutting an overloaded portfolio back to what can actually be delivered, then getting it moving.</p>
-        </div>
-        <div>
-          <p class="work-num">#3</p>
-          <p class="work-out">Product launch and operational readiness</p>
-          <p class="work-detail">Commercial, supply, quality, regulatory and manufacturing planned against one date.</p>
-        </div>
-        <div>
-          <p class="work-num">#4</p>
-          <p class="work-out">Artwork, labelling and serialisation</p>
-          <p class="work-detail">Process and data harmonised across sites and external partners.</p>
-        </div>
-        <div>
-          <p class="work-num">#5</p>
-          <p class="work-out">Regulated business change</p>
-          <p class="work-detail">Change delivered without putting compliance or supply at risk.</p>
-        </div>
-        <div>
-          <p class="work-num">#6</p>
-          <p class="work-out">Supply continuity and risk mitigation</p>
-          <p class="work-detail">Exposure identified early, with the mitigation named alongside it.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+
 
 <section class="close" id="contact">
   <div class="wrap">
