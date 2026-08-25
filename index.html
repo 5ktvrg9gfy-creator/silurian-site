@@ -553,7 +553,7 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(
   #about { grid-template-columns: 1fr; }
   #about .split-figure { display: none; }
   #about .display { font-size: clamp(30px, 8.5vw, 40px); }
-  #about ul { grid-template-columns: 1fr !important; grid-auto-flow: row !important; grid-template-rows: none !important; }
+  #about .capability-grid { grid-template-columns: 1fr !important; }
   #about .split-figure { transform: none !important; width: 100%; max-width: 320px; margin-inline: auto; }
 }
 
@@ -591,16 +591,20 @@ body[data-baselines]::after {
       <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
       <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
       <p class="note">Behind Silurian are twenty years of experience in regulated manufacturing and pharmaceutical supply chain. Work is taken on directly, not brokered.</p>
-      <ul style="list-style:none;margin:var(--leading) 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4, auto);grid-auto-flow:column;column-gap:var(--space-4);row-gap:var(--half);border-top:2px solid var(--color-divider);padding-top:var(--leading)">
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#1</span><span style="flex:1">Programme and project delivery</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#2</span><span style="flex:1">Supply chain and operations</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">Demand forecasting and inventory diagnostics</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">Supply-chain risk and exception management</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#5</span><span style="flex:1">Transformation</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#6</span><span style="flex:1">NPI global expansion</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#7</span><span style="flex:1">Capability building</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#8</span><span style="flex:1">Partnered with Regulatory and Quality professionals</span></li>
-      </ul>
+      <div class="capability-grid" style="display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-4);border-top:2px solid var(--color-divider);margin-top:var(--leading);padding-top:var(--leading)">
+        <ul style="list-style:none;margin:0;padding:0;display:grid;align-content:start;row-gap:var(--half)">
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#1</span><span style="flex:1">Programme and project delivery</span></li>
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#2</span><span style="flex:1">Supply chain and operations</span></li>
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">Demand forecasting and inventory diagnostics</span></li>
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">Supply-chain risk and exception management</span></li>
+        </ul>
+        <ul style="list-style:none;margin:0;padding:0;display:grid;align-content:start;row-gap:var(--half)">
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#5</span><span style="flex:1">Transformation</span></li>
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#6</span><span style="flex:1">NPI global expansion</span></li>
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#7</span><span style="flex:1">Capability building</span></li>
+          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#8</span><span style="flex:1">Partnered with Regulatory and Quality professionals</span></li>
+        </ul>
+      </div>
     </div>
     <figure class="split-figure" style="transform:translateY(-18px) scale(1.15);transform-origin:center">
       <div class="rock">
