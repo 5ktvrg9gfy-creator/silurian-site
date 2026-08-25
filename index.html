@@ -1,15 +1,15 @@
-<!-- @template name="Landing" description="A one-page product landing in the system's own voice — an invented product (Takt: Swiss-clockwork timetables), a ruled hero, stat row, feature rows, a grayscale photograph and a red poster close" -->
+<!-- @template name="Landing" description="A one-page product landing in the system's own voice â€” an invented product (Takt: Swiss-clockwork timetables), a ruled hero, stat row, feature rows, a grayscale photograph and a red poster close" -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Silurian Consulting LTD</title>
-<meta name="description" content="Silurian Consulting LTD — project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
+<meta name="description" content="Silurian Consulting LTD â€” project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22110%2080%20200%20290%22%20role%3D%22img%22%20aria-label%3D%22Silurian%20Consulting%22%3E%0A%20%20%3Cdefs%3E%3CclipPath%20id%3D%22s%22%3E%3Cpolygon%20points%3D%22130%2C180%20285%2C90%20300%2C360%20120%2C360%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%0A%20%20%3Cg%20clip-path%3D%22url(%23s)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22100%22%20y%3D%220%22%20width%3D%22240%22%20height%3D%22225%22%20fill%3D%22%23201e1d%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22100%22%20y%3D%22225%22%20width%3D%22240%22%20height%3D%22200%22%20fill%3D%22%23ee7623%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%22130%2C180%20285%2C90%20300%2C330%22%20fill%3D%22%23f3f2f2%22%20opacity%3D%220.18%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E" />
 <style>
-/* Modernist — design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
+/* Modernist â€” design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');
 
 :root {
@@ -20,7 +20,7 @@
   --color-accent-2: #e15b47;
   --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
 
-  /* Tonal ramps — generated in OKLCH on one shared lightness scale, so the
+  /* Tonal ramps â€” generated in OKLCH on one shared lightness scale, so the
      same step of any role matches the others in visual value. */
   --color-neutral-100: #f8f4f4;
   --color-neutral-200: #eae7e7;
@@ -67,7 +67,7 @@
   --radius-md: 0px;
   --radius-lg: 0px;
 
-  /* Elevation — derived from the ground: soft ink-tinted shadows on a
+  /* Elevation â€” derived from the ground: soft ink-tinted shadows on a
      light theme, a hairline edge + ambient darkness on a dark one. */
   --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
   --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
@@ -83,11 +83,11 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-headi
 
 .grayscale{filter:grayscale(1) contrast(1.08)}
 
-/* ══════════════════════════════════════════════════════════════════════════
-   Components — built with the tokens above. Plain CSS
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Components â€” built with the tokens above. Plain CSS
    on plain HTML: no JavaScript, no build step. Each class is documented in
    readme.md and demonstrated in foundations/ and components/.
-   ══════════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
@@ -115,18 +115,18 @@ figcaption {
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 ::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
 
-/* — rules — */
+/* â€” rules â€” */
 .hr {
   height: 2px; border: 0; margin: var(--space-4) 0;
   background: var(--color-divider);
 }
 
-/* — buttons — */
+/* â€” buttons â€” */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   cursor: pointer; text-decoration: none;
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px —
+  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px â€”
      the pair sits side by side in sign-up rows */
   background: transparent; border: 1px solid transparent;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
@@ -146,7 +146,7 @@ figcaption {
 .btn-icon { width: 36px; height: 36px; padding: 0; }
 .btn-block { width: 100%; margin-top: var(--space-2); justify-content: flex-start; text-align: left; }
 
-/* — forms — */
+/* â€” forms â€” */
 .field > label {
   display: block; font-size: 12px; margin-bottom: 5px;
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
@@ -187,7 +187,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 .seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
 .seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 
-/* — cards — */
+/* â€” cards â€” */
 .card {
   display: flex; flex-direction: column; gap: var(--space-2);
   padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface);
@@ -206,7 +206,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 .elev-md { box-shadow: var(--shadow-md); }
 .elev-lg { box-shadow: var(--shadow-lg); }
 
-/* — tags — */
+/* â€” tags â€” */
 .tag {
   display: inline-flex; align-items: center; font-size: 11px;
   letter-spacing: 0.02em; padding: 3px 10px;
@@ -217,7 +217,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 .tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
 .tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
 
-/* — navigation — */
+/* â€” navigation â€” */
 .nav {
   display: flex; align-items: center; gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -230,7 +230,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 .nav a { color: inherit; text-decoration: none; font-size: 14px; }
 .nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
 
-/* — tables — */
+/* â€” tables â€” */
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table th {
   text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
@@ -243,7 +243,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
 
-/* — dialog — */
+/* â€” dialog â€” */
 .dialog-backdrop {
   position: fixed; inset: 0; display: grid; place-items: center;
   padding: var(--space-4);
@@ -264,10 +264,10 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 </style>
 <style>
-/* Template scaffolding — page layout and web-scale sizing only; every color,
+/* Template scaffolding â€” page layout and web-scale sizing only; every color,
    font, radius and shadow comes from ../../styles.css. The voice is the
-   deck's, re-derived for a scrolling page: the grid SHOWS — 2px
-   rules draw the structure — red is spent as a mark, and its one field
+   deck's, re-derived for a scrolling page: the grid SHOWS â€” 2px
+   rules draw the structure â€” red is spent as a mark, and its one field
    moment is the poster close (the deck's divider logic: the red page sets
    nothing small).
 
@@ -275,16 +275,16 @@ textarea.input { min-height: 90px; resize: vertical; }
    half-step; line-heights and block margins in unit multiples, heads
    cap-trimmed, ?baselines/B to review. The deck's seat-pinning relaxes to
    per-block discipline on a fluid page. The system's own interface
-   components (nav, buttons, inputs) keep their styles.css leading — the
+   components (nav, buttons, inputs) keep their styles.css leading â€” the
    rhythm governs the page's text, not the controls.
 
    THE LANDING LAWS (shared by all six systems' landing templates):
    #1 display headers break per sentence (.line spans); #2 the landing
-   advertises an invented product played straight — modernist's is Takt,
+   advertises an invented product played straight â€” modernist's is Takt,
    timetables that run like Switzerland; #3 spacing is cluster-scoped
-   (display leading ratio-governed ≈1.06 for Archivo's tight caps — the
-   display-block lattice exemption — tight single-unit gaps inside a text
-   cluster, the air between sections); #4 no hero eyebrow — the nav brand
+   (display leading ratio-governed â‰ˆ1.06 for Archivo's tight caps â€” the
+   display-block lattice exemption â€” tight single-unit gaps inside a text
+   cluster, the air between sections); #4 no hero eyebrow â€” the nav brand
    names the product.
 
    Optical left alignment: the deck's measured Archivo 800 value carries
@@ -315,26 +315,26 @@ body { margin: 0; text-wrap: pretty; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 /* the component demo pads the masthead with its own spacing; on the page the
    masthead's contents take the page gutter and sit on the wrap's text axis
-   (padding-only — full-width paint such as a masthead rule is untouched) */
+   (padding-only â€” full-width paint such as a masthead rule is untouched) */
 .nav { padding-inline: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge))); }
 .nav a { white-space: nowrap; }
 .nav a[aria-current='location'] { color: var(--color-accent); } /* in-page anchor, not
-   a page link — 'location' is the truthful value; carry the component's active ink */
+   a page link â€” 'location' is the truthful value; carry the component's active ink */
 @media (max-width: 480px) { .nav a { display: none; } } /* phone width: the nav
-   keeps brand + the one action (layout-only — the component's look is
+   keeps brand + the one action (layout-only â€” the component's look is
    untouched); the full link row's min-content crosses narrow-phone widths */
 
-/* — drawn structure: the 2px rule is the section seam (the deck's header
-   band as page grammar; rules span the content column, solid — this system
-   does not fade its rules) — */
+/* â€” drawn structure: the 2px rule is the section seam (the deck's header
+   band as page grammar; rules span the content column, solid â€” this system
+   does not fade its rules) â€” */
 /* the credentials strip carries words, not figures: let the box grow so a
    wrapped value cannot paint over its label */
 .stats .stat-num { font-size: clamp(26px, 2.6vw, 34px); line-height: calc(1.5 * var(--leading));
   text-box: normal; }
 
-/* — masthead: the sleeve's split, but drawn as two bands so the edge falls
+/* â€” masthead: the sleeve's split, but drawn as two bands so the edge falls
    BETWEEN elements rather than through the wordmark. Paper above with the
-   logotype, orange below carrying the links. — */
+   logotype, orange below carrying the links. â€” */
 .mast { --gutter: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge))); }
 .mast-top, .mast-bar { padding-inline: var(--gutter); }
 .mast-top { display: flex; align-items: center; gap: clamp(12px, 1.4vw, 22px);
@@ -366,28 +366,28 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
 
 .rule2 { height: 2px; border: 0; margin: 0; background: var(--color-divider); }
 
-/* — kicker (deck grammar: uppercase, tabular, accent; no hanging dash —
-   modernist marks are squares, and they belong to lists, not labels) — */
+/* â€” kicker (deck grammar: uppercase, tabular, accent; no hanging dash â€”
+   modernist marks are squares, and they belong to lists, not labels) â€” */
 .kicker {
   display: block; font-size: 13px; line-height: var(--half);
   letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--color-accent); /* the banner orange, matched to the page's other marks —
+  color: var(--color-accent); /* the banner orange, matched to the page's other marks â€”
      6.4:1, where the base accent measures 3.8:1 (a large-text value; the
      deck's kickers are 24px, this one is 13px) */
   font-feature-settings: "tnum" 1;
   margin: 0 0 calc(var(--leading) - var(--half));
 }
 
-/* — hero — */
+/* â€” hero â€” */
 .hero { padding: calc(4 * var(--leading)) 0 calc(3 * var(--leading)); }
 .display {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: clamp(42px, 6.2vw, 84px);
-  line-height: clamp(44.5px, 6.57vw, 89px); /* law #3: ratio-governed ≈1.06 —
+  line-height: clamp(44.5px, 6.57vw, 89px); /* law #3: ratio-governed â‰ˆ1.06 â€”
      Archivo's 800 sits tight and all-cap-height; the display-block lattice
      exemption (no 14px step is both tighter than the old look and clear) */
   letter-spacing: -0.02em; margin: 0;
-  margin-left: -0.058em; /* optical left alignment — the deck's measured Archivo 800 value */
+  margin-left: -0.058em; /* optical left alignment â€” the deck's measured Archivo 800 value */
   text-box: trim-both cap alphabetic;
 }
 .display .line { display: block; } /* law #1: one sentence per line */
@@ -399,30 +399,30 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
   text-box: trim-both cap alphabetic; } /* 1.5 units: clears the display's descenders with cluster-tight air (law #3) */
 .hero .row { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--leading); }
 
-/* — stat row (in-grammar: red stays a MARK on the light ground — the stat
-   numerals take the accent at display size, ≥3:1 as large text per the
-   system's own accent rule; the red FIELD is reserved for the close) — */
+/* â€” stat row (in-grammar: red stays a MARK on the light ground â€” the stat
+   numerals take the accent at display size, â‰¥3:1 as large text per the
+   system's own accent rule; the red FIELD is reserved for the close) â€” */
 .stats { padding: calc(2.5 * var(--leading)) 0; }
 .stats .grid { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: calc(1.5 * var(--leading)) var(--leading); }
 .stat-num { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: clamp(34px, 3.4vw, 48px); line-height: calc(2 * var(--leading));
-  color: var(--color-accent); /* display figures stay proportional — the deck's figure policy */
-  margin: 0; margin-left: -0.045em; /* digits lead — the deck's "0"-population value */
+  color: var(--color-accent); /* display figures stay proportional â€” the deck's figure policy */
+  margin: 0; margin-left: -0.045em; /* digits lead â€” the deck's "0"-population value */
   text-box: trim-both cap alphabetic; }
 .stat-label { font-size: 13px; line-height: var(--half); letter-spacing: 0.08em; text-transform: uppercase;
   color: color-mix(in srgb, var(--color-text) 70%, transparent); /* small-text ink on the
      light ground: 70% measures 5.8:1 (the deck's 55% furniture mix is a
-     24px large-text convention — at 13px the 4.5:1 bar applies, and 55%
+     24px large-text convention â€” at 13px the 4.5:1 bar applies, and 55%
      measures only 3.7:1 here) */
   margin: var(--half) 0 0; }
 
-/* — feature rows (the deck's ruled-toc grammar: 2px rules ON the seams,
-   red square marks hanging at the numbers — drawn structure, no cards) — */
+/* â€” feature rows (the deck's ruled-toc grammar: 2px rules ON the seams,
+   red square marks hanging at the numbers â€” drawn structure, no cards) â€” */
 .features { padding: calc(3 * var(--leading)) 0 calc(2.5 * var(--leading)); }
 .feature { display: grid; grid-template-columns: minmax(48px, 72px) minmax(0, 300px) minmax(0, 1fr);
   gap: var(--leading) clamp(24px, 4vw, 72px); align-items: baseline;
   padding: calc(1.5 * var(--leading)) 0; }
-.feature + .feature { border-top: 2px solid var(--color-divider); } /* the ruled seam — solid, the system's weight */
+.feature + .feature { border-top: 2px solid var(--color-divider); } /* the ruled seam â€” solid, the system's weight */
 .f-num { position: relative; font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: 15px; line-height: var(--leading); color: var(--color-text);
   font-feature-settings: "tnum" 1; margin: 0; text-box: trim-both cap alphabetic; }
@@ -435,9 +435,9 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
   max-width: 52ch; text-box: trim-both cap alphabetic; }
 
-/* — imagery split (grayscale photograph — the system prints in black and
-   white; the box pins the bundled asset's 951×665 ratio so swaps
-   cover-crop into the same frame) — */
+/* â€” imagery split (grayscale photograph â€” the system prints in black and
+   white; the box pins the bundled asset's 951Ã—665 ratio so swaps
+   cover-crop into the same frame) â€” */
 .split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: var(--leading) clamp(24px, 5vw, 96px); align-items: center;
   padding: calc(2 * var(--leading)) 0 calc(3 * var(--leading)); }
@@ -455,8 +455,8 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
   background: linear-gradient(to bottom, var(--color-bg) 0 50%, var(--color-accent) 50% 100%); }
 .rock-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-/* — selected work: an ink field, so the middle of the page changes pace;
-   engagement rows with the outcome carrying the weight — */
+/* â€” selected work: an ink field, so the middle of the page changes pace;
+   engagement rows with the outcome carrying the weight â€” */
 .work { background: var(--color-text); color: var(--color-bg); }
 .work .inner { padding: calc(2.5 * var(--leading)) 0 calc(3 * var(--leading)); }
 .work .kicker { color: var(--color-accent); }
@@ -475,7 +475,7 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
   margin: var(--half) 0 0; color: color-mix(in srgb, var(--color-bg) 82%, transparent); }
 @media (max-width: 720px) { .work-row { grid-template-columns: 1fr; } }
 
-/* — references: the feature-row grammar turned to columns — */
+/* â€” references: the feature-row grammar turned to columns â€” */
 .refs { padding: calc(2.5 * var(--leading)) 0 calc(3 * var(--leading)); border-top: 2px solid var(--color-divider); }
 .refs .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--leading) clamp(24px, 4vw, 72px); }
 .ref-mark { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
@@ -490,43 +490,43 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
   margin: auto 0 0; padding-top: var(--leading); }
 @media (max-width: 1040px) { .refs .grid { grid-template-columns: 1fr; } }
 
-/* — quote (hanging punctuation, the deck's measured Archivo advances) — */
+/* â€” quote (hanging punctuation, the deck's measured Archivo advances) â€” */
 .quote { padding: calc(2.5 * var(--leading)) 0 calc(3.5 * var(--leading)); }
 .quote blockquote {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: clamp(24px, 2.6vw, 34px); line-height: calc(1.5 * var(--leading));
   letter-spacing: -0.015em; max-width: 32ch; margin: 0;
-  text-indent: -0.496em; /* hang the opening “ (the deck's measured advance in the 800) */
+  text-indent: -0.496em; /* hang the opening â€œ (the deck's measured advance in the 800) */
   text-box: trim-both cap alphabetic;
 }
 .quote figcaption { font-size: 15.5px; line-height: var(--leading);
-  color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 — see .stat-label */
+  color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */
   margin: calc(2 * var(--leading) - 1cap) 0 0; /* two grid units below the quote's
-     last baseline — one reads as part of the quote block; the attribution needs air */
+     last baseline â€” one reads as part of the quote block; the attribution needs air */
   text-indent: -1.209em; /* hang the leading em-dash + space (measured in the Regular) */
   text-box: trim-both cap alphabetic; }
 
 @media (max-width: 720px) {
   /* the phone gutter (--edge bottoms out at 20px) is narrower than the hung
-     marks' measured advances, so a hung “ or em-dash would press into or past
-     the viewport edge — seat the quote flush below this width; the hang
+     marks' measured advances, so a hung â€œ or em-dash would press into or past
+     the viewport edge â€” seat the quote flush below this width; the hang
      returns with the wider gutter */
   .quote blockquote, .quote figcaption { text-indent: 0; }
 }
 
-/* — the red poster close (the deck's divider logic: the accent's one field
+/* â€” the red poster close (the deck's divider logic: the accent's one field
    moment, type reversed to the paper token). COPY on the red is
-   display-grade only — paper display type measures 3.8:1, the deck
+   display-grade only â€” paper display type measures 3.8:1, the deck
    dividers' own derivation. The one small element is the ghost button, a
    CONTROL: paper-on-red measures the same 3.8:1, which meets the system's
    documented interface-chrome bar (the readme tunes the accent pair to at
-   least 3:1 — "enough for icons, large text and interface chrome, not for
-   body copy") — the same bar the system's own accent-filled primary button
+   least 3:1 â€” "enough for icons, large text and interface chrome, not for
+   body copy") â€” the same bar the system's own accent-filled primary button
    label rides everywhere. */
 .close { background: var(--color-accent); color: var(--color-text); }
 .close .wrap { padding-top: calc(3 * var(--leading)); padding-bottom: calc(3 * var(--leading)); }
 .close h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: clamp(34px, 4.2vw, 56px); line-height: clamp(36px, 4.45vw, 59.4px); /* ≈1.06 —
+  font-size: clamp(34px, 4.2vw, 56px); line-height: clamp(36px, 4.45vw, 59.4px); /* â‰ˆ1.06 â€”
      display-grade, so it carries the display-block lattice exemption (the
      rhythm probe excludes .display and .close h3 alike) */
   letter-spacing: -0.015em; margin: 0; margin-left: -0.058em;
@@ -536,9 +536,9 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
 .close .btn-ghost { color: var(--color-text); border-color: var(--color-text); }
 .close .btn-ghost:hover { background: color-mix(in srgb, #201e1d 14%, transparent); } /* paper outline on the red field */
 footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(--leading);
-  color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 — see .stat-label */ }
+  color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */ }
 
-/* — responsive collapse — */
+/* â€” responsive collapse â€” */
 /* the feature grid's fixed-max columns (160 + 420 + gaps) crush the copy
    column in the tablet band, so it collapses earlier than the page */
 @media (max-width: 1040px) {
@@ -557,7 +557,7 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(
   #about .split-figure { transform: none !important; width: 100%; max-width: 320px; margin-inline: auto; }
 }
 
-/* Review aid: the 28px rhythm drawn as hairlines — debug chrome, toggled by
+/* Review aid: the 28px rhythm drawn as hairlines â€” debug chrome, toggled by
    ?baselines or the B key, never part of the look. */
 body[data-baselines] { position: relative; }
 body[data-baselines]::after {
@@ -591,13 +591,15 @@ body[data-baselines]::after {
       <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
       <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
       <p class="note">Behind Silurian are twenty years of experience in regulated manufacturing and pharmaceutical supply chain. Work is taken on directly, not brokered.</p>
-      <ul style="list-style:none;margin:var(--leading) 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3, auto);grid-auto-flow:column;column-gap:var(--space-4);row-gap:var(--half);border-top:2px solid var(--color-divider);padding-top:var(--leading)">
+      <ul style="list-style:none;margin:var(--leading) 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4, auto);grid-auto-flow:column;column-gap:var(--space-4);row-gap:var(--half);border-top:2px solid var(--color-divider);padding-top:var(--leading)">
         <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#1</span><span style="flex:1">Programme and project delivery</span></li>
         <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#2</span><span style="flex:1">Supply chain and operations</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">Transformation</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">NPI global expansion</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#5</span><span style="flex:1">Capability building</span></li>
-        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#6</span><span style="flex:1">Partnered with Regulatory and Quality professionals</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">AI demand forecasting</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">Inventory risk and exception management</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#5</span><span style="flex:1">Transformation</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#6</span><span style="flex:1">NPI global expansion</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#7</span><span style="flex:1">Capability building</span></li>
+        <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#8</span><span style="flex:1">Partnered with Regulatory and Quality professionals</span></li>
       </ul>
     </div>
     <figure class="split-figure" style="transform:translateY(-18px) scale(1.15);transform-origin:center">
@@ -648,3 +650,4 @@ body[data-baselines]::after {
 </div>
 </body>
 </html>
+
