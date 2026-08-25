@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="110 80 200 290" role="img" aria-label="Silurian Consulting">
   <defs><clipPath id="s"><polygon points="130,180 285,90 300,360 120,360"></polygon></clipPath></defs>
   <g clip-path="url(#s)">
-    <rect x="100" y="0" width="240" height="225" fill="#201e1d"></rect>
+    <rect x="100" y="0" width="240" height="225" fill="#77736f"></rect>
     <rect x="100" y="225" width="240" height="200" fill="#ee7623"></rect>
     <polygon points="130,180 285,90 300,330" fill="#f3f2f2" opacity="0.18"></polygon>
   </g>
