@@ -60,6 +60,8 @@ canvas{width:100%;height:100%;display:block}
 .legend span{display:inline-flex;align-items:center;gap:7px}
 .legend i{width:16px;height:3px;background:var(--text);display:inline-block}
 .legend .forecast i{background:var(--accent)}
+.legend .range i{height:8px;background:rgba(238,118,35,.2);border:1px solid var(--accent)}
+.legend .inventory i{background:#77716e}
 .legend .safety i{background:var(--bad)}
 .risk-card{background:var(--text);color:var(--bg);padding:24px;margin-bottom:24px}
 .risk-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
@@ -140,7 +142,7 @@ footer{padding:28px 0;font-size:12px;color:var(--muted)}
         <h2>Demand and inventory projection</h2>
         <p class="panel-sub">Historical demand is shown alongside a 13-week forward demand forecast and projected closing inventory.</p>
         <div class="chart-wrap"><canvas id="forecastChart" role="img" aria-label="Demand and inventory forecast chart"></canvas></div>
-        <div class="legend"><span><i></i>Historical demand</span><span class="forecast"><i></i>Forecast demand</span><span class="safety"><i></i>Safety stock threshold</span></div>
+        <div class="legend"><span><i></i>Historical demand</span><span class="forecast"><i></i>Forecast baseline</span><span class="range"><i></i>Illustrative range</span><span class="inventory"><i></i>Projected inventory</span><span class="safety"><i></i>Safety stock</span></div>
       </div>
 
       <aside>
@@ -203,28 +205,54 @@ footer{padding:28px 0;font-size:12px;color:var(--muted)}
 <div class="wrap"><footer>Silurian Consulting LTD. Registered in England and Wales, company number 17415387.</footer></div>
 
 <script>
-const DATA={
- stable:{name:'SLR-101',history:[1010,1080,1120,1090,1180,1130,1160,1110,1200,1170,1210,1190,1230,1200,1240,1220,1260,1210,1250,1270],forecast:[1250,1270,1240,1290,1300,1280,1310,1330,1300,1340,1360,1330,1380],inventory:8900,inbound:7700,safety:1500,trend:'+3.2%',risk:'GREEN',action:'Monitor',actionNote:'No immediate intervention',intervention:'Routine review',copy:'Projected inventory remains above the safety-stock threshold throughout the 13-week horizon. Continue routine monitoring and validate any known commercial or supply events.'},
- growth:{name:'SLR-204',history:[760,790,810,820,850,860,900,910,930,960,980,1010,1030,1060,1090,1110,1140,1160,1190,1220],forecast:[1240,1260,1290,1320,1350,1370,1410,1440,1470,1510,1540,1580,1610],inventory:8200,inbound:8300,safety:1800,trend:'+9.1%',risk:'AMBER',action:'Review',actionNote:'Buffer narrowing',intervention:'Week 9 review',copy:'Demand growth is eroding the planned inventory buffer. The product remains supplied in the base case, but the forecast should be challenged against commercial assumptions and replenishment timing.'},
- risk:{name:'SLR-317',history:[900,940,930,970,1010,990,1040,1080,1100,1140,1180,1230,1290,1330,1380,1420,1490,1550,1610,1680],forecast:[1730,1780,1840,1900,1960,2010,2080,2140,2200,2270,2340,2410,2480],inventory:7200,inbound:9800,safety:2200,trend:'+18.4%',risk:'RED',action:'Intervene',actionNote:'Projected supply risk',intervention:'Week 7 action',copy:'Forecast demand accelerates beyond the replenishment plan and projected inventory falls below safety stock in the forward horizon. Confirm demand drivers, supply flexibility and timing of the next replenishment now.'},
+const SYNTHETIC_SCENARIOS={
+ stable:{name:'SLR-101',history:[1010,1080,1120,1090,1180,1130,1160,1110,1200,1170,1210,1190,1230,1200,1240,1220,1260,1210,1250,1270],forecast:[1250,1270,1240,1290,1300,1280,1310,1330,1300,1340,1360,1330,1380],inventory:8900,inbound:10000,safety:1500,trend:'+3.2%',risk:'GREEN',action:'Monitor',actionNote:'No immediate intervention',intervention:'Routine review',copy:'Projected inventory remains above the safety-stock threshold throughout the 13-week horizon. Continue routine monitoring and validate any known commercial or supply events.'},
+ growth:{name:'SLR-204',history:[760,790,810,820,850,860,900,910,930,960,980,1010,1030,1060,1090,1110,1140,1160,1190,1220],forecast:[1240,1260,1290,1320,1350,1370,1410,1440,1470,1510,1540,1580,1610],inventory:8200,inbound:12200,safety:1800,trend:'+9.1%',risk:'AMBER',action:'Review',actionNote:'Buffer narrowing',intervention:'Week 9 review',copy:'Demand growth is eroding the planned inventory buffer. The product remains supplied in the base case, but the forecast should be challenged against commercial assumptions and replenishment timing.'},
+ risk:{name:'SLR-317',history:[900,940,930,970,1010,990,1040,1080,1100,1140,1180,1230,1290,1330,1380,1420,1490,1550,1610,1680],forecast:[1730,1780,1840,1900,1960,2010,2080,2140,2200,2270,2340,2410,2480],inventory:9500,inbound:9800,safety:2200,trend:'+18.4%',risk:'RED',action:'Intervene',actionNote:'Projected supply risk',intervention:'Week 7 action',copy:'Forecast demand accelerates beyond the replenishment plan and projected inventory falls below safety stock in the forward horizon. Confirm demand drivers, supply flexibility and timing of the next replenishment now.'},
  excess:{name:'SLR-422',history:[1510,1480,1460,1430,1410,1390,1360,1340,1310,1290,1260,1230,1210,1180,1160,1130,1110,1080,1050,1030],forecast:[1000,980,950,930,900,880,860,830,810,790,770,750,730],inventory:12600,inbound:6400,safety:1700,trend:'-11.7%',risk:'EXCESS',action:'Reduce',actionNote:'Working-capital exposure',intervention:'Replan receipts',copy:'Demand is declining while planned supply remains high. The main risk is excess inventory rather than service. Review future receipts, shelf-life exposure and opportunities to rebalance stock.'}
 };
-const fmt=n=>Math.round(n).toLocaleString('en-GB');
-function project(d){let inv=d.inventory;const totalForecast=d.forecast.reduce((a,b)=>a+b,0);const receiptWeeks={3:d.inbound*.45,8:d.inbound*.55};const invSeries=[];for(let i=0;i<d.forecast.length;i++){inv+=(receiptWeeks[i]||0)-d.forecast[i];invSeries.push(inv)}return{totalForecast,invSeries,min:Math.min(...invSeries),avg:totalForecast/d.forecast.length}}
-function renderChart(d,p){
- const c=document.getElementById('forecastChart'),ctx=c.getContext('2d'),ratio=window.devicePixelRatio||1;const rect=c.getBoundingClientRect();c.width=rect.width*ratio;c.height=rect.height*ratio;ctx.scale(ratio,ratio);const W=rect.width,H=rect.height,pad={l:48,r:18,t:20,b:36};ctx.clearRect(0,0,W,H);
- const allDemand=[...d.history,...d.forecast],maxY=Math.max(...allDemand,d.safety,...p.invSeries)*1.12,minY=0;const n=allDemand.length;const x=i=>pad.l+i*(W-pad.l-pad.r)/(n-1),y=v=>pad.t+(maxY-v)*(H-pad.t-pad.b)/(maxY-minY);
- ctx.font='11px Archivo';ctx.fillStyle='#66615f';ctx.strokeStyle='#d1cdca';ctx.lineWidth=1;for(let j=0;j<=4;j++){const val=maxY*j/4;const yy=y(val);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.fillText(fmt(val),4,yy+4)}
- const safetyY=y(d.safety);ctx.strokeStyle='#a52a1f';ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(pad.l,safetyY);ctx.lineTo(W-pad.r,safetyY);ctx.stroke();ctx.setLineDash([]);
- ctx.strokeStyle='#201e1d';ctx.lineWidth=2;ctx.beginPath();d.history.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();
- ctx.strokeStyle='#ee7623';ctx.lineWidth=3;ctx.beginPath();const start=d.history.length-1;ctx.moveTo(x(start),y(d.history[d.history.length-1]));d.forecast.forEach((v,i)=>ctx.lineTo(x(start+i+1),y(v)));ctx.stroke();
- ctx.strokeStyle='#77716e';ctx.lineWidth=1.5;ctx.beginPath();p.invSeries.forEach((v,i)=>{const xi=x(start+i+1);i?ctx.lineTo(xi,y(v)):ctx.moveTo(xi,y(v))});ctx.stroke();
- ctx.fillStyle='#66615f';ctx.fillText('History',pad.l,H-10);ctx.fillText('Forecast →',x(start+1),H-10);
+
+class SyntheticForecastProvider {
+  async analyse(scenarioId) {
+    const scenario=SYNTHETIC_SCENARIOS[scenarioId];
+    if(!scenario) throw new Error('Unknown sample scenario');
+    const quantiles=scenario.forecast.map((value,index)=>{
+      const spread=.08+(index/scenario.forecast.length)*.08;
+      return{lower:value*(1-spread),median:value,upper:value*(1+spread)};
+    });
+    let inventory=scenario.inventory;
+    const receiptWeeks={3:scenario.inbound*.45,8:scenario.inbound*.55};
+    const inventoryProjection=scenario.forecast.map((demand,index)=>{
+      inventory+=(receiptWeeks[index]||0)-demand;
+      return inventory;
+    });
+    const totalForecast=scenario.forecast.reduce((sum,value)=>sum+value,0);
+    const safetyStockBreachIndex=inventoryProjection.findIndex(value=>value<scenario.safety);
+    const stockoutIndex=inventoryProjection.findIndex(value=>value<0);
+    return{...scenario,source:'synthetic',quantiles,inventoryProjection,totalForecast,minimumInventory:Math.min(...inventoryProjection),averageDemand:totalForecast/scenario.forecast.length,safetyStockBreachWeek:safetyStockBreachIndex<0?null:safetyStockBreachIndex+1,stockoutWeek:stockoutIndex<0?null:stockoutIndex+1};
+  }
 }
-function run(){
- const d=DATA[document.getElementById('skuSelect').value],p=project(d);document.getElementById('demandStat').textContent=fmt(p.totalForecast);document.getElementById('stockStat').textContent=fmt(p.min);document.getElementById('safetyStat').textContent=fmt(d.safety);document.getElementById('actionStat').textContent=d.action;document.getElementById('actionNote').textContent=d.actionNote;document.getElementById('currentInv').textContent=fmt(d.inventory);document.getElementById('inbound').textContent=fmt(d.inbound);document.getElementById('avgDemand').textContent=fmt(p.avg);document.getElementById('trend').textContent=d.trend;document.getElementById('intervention').textContent=d.intervention;document.getElementById('riskStatus').textContent=d.risk;document.getElementById('riskCopy').textContent=d.copy;renderChart(d,p)
+
+const forecastService=new SyntheticForecastProvider();
+const fmt=n=>Math.round(n).toLocaleString('en-GB');
+function renderChart(result){
+ const c=document.getElementById('forecastChart'),ctx=c.getContext('2d'),ratio=window.devicePixelRatio||1;const rect=c.getBoundingClientRect();c.width=rect.width*ratio;c.height=rect.height*ratio;ctx.scale(ratio,ratio);const W=rect.width,H=rect.height,pad={l:52,r:56,t:28,b:36};ctx.clearRect(0,0,W,H);
+ const demandValues=[...result.history,...result.quantiles.flatMap(q=>[q.lower,q.upper])],demandMax=Math.max(...demandValues)*1.12;const inventoryMin=Math.min(0,result.safety,...result.inventoryProjection),inventoryMax=Math.max(result.inventory,result.safety,...result.inventoryProjection)*1.1;const n=result.history.length+result.forecast.length;const x=i=>pad.l+i*(W-pad.l-pad.r)/(n-1),yd=v=>pad.t+(demandMax-v)*(H-pad.t-pad.b)/demandMax,yi=v=>pad.t+(inventoryMax-v)*(H-pad.t-pad.b)/(inventoryMax-inventoryMin);const start=result.history.length-1;
+ ctx.font='11px Archivo';ctx.lineWidth=1;for(let j=0;j<=4;j++){const demand=demandMax*j/4,yy=yd(demand),inventory=inventoryMin+(inventoryMax-inventoryMin)*j/4;ctx.strokeStyle='#d1cdca';ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.fillStyle='#66615f';ctx.textAlign='left';ctx.fillText(fmt(demand),4,yy+4);ctx.textAlign='right';ctx.fillText(fmt(inventory),W-3,yi(inventory)+4)}
+ ctx.fillStyle='#66615f';ctx.textAlign='left';ctx.fillText('Demand',4,12);ctx.textAlign='right';ctx.fillText('Inventory',W-3,12);
+ ctx.fillStyle='rgba(238,118,35,.16)';ctx.beginPath();result.quantiles.forEach((q,i)=>{const xi=x(start+i+1);i?ctx.lineTo(xi,yd(q.upper)):ctx.moveTo(xi,yd(q.upper))});for(let i=result.quantiles.length-1;i>=0;i--){ctx.lineTo(x(start+i+1),yd(result.quantiles[i].lower))}ctx.closePath();ctx.fill();
+ const safetyY=yi(result.safety);ctx.strokeStyle='#a52a1f';ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(pad.l,safetyY);ctx.lineTo(W-pad.r,safetyY);ctx.stroke();ctx.setLineDash([]);
+ ctx.strokeStyle='#201e1d';ctx.lineWidth=2;ctx.beginPath();result.history.forEach((v,i)=>i?ctx.lineTo(x(i),yd(v)):ctx.moveTo(x(i),yd(v)));ctx.stroke();
+ ctx.strokeStyle='#ee7623';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x(start),yd(result.history[result.history.length-1]));result.quantiles.forEach((q,i)=>ctx.lineTo(x(start+i+1),yd(q.median)));ctx.stroke();
+ ctx.strokeStyle='#77716e';ctx.lineWidth=2;ctx.beginPath();result.inventoryProjection.forEach((v,i)=>{const xi=x(start+i+1);i?ctx.lineTo(xi,yi(v)):ctx.moveTo(xi,yi(v))});ctx.stroke();
+ ctx.fillStyle='#66615f';ctx.textAlign='left';ctx.fillText('History',pad.l,H-10);ctx.fillText('Forecast',x(start+1),H-10);
+}
+async function run(){
+ const button=document.getElementById('runBtn');button.disabled=true;button.textContent='Running analysis';
+ try{const result=await forecastService.analyse(document.getElementById('skuSelect').value);document.getElementById('demandStat').textContent=fmt(result.totalForecast);document.getElementById('stockStat').textContent=fmt(result.minimumInventory);document.getElementById('safetyStat').textContent=fmt(result.safety);document.getElementById('actionStat').textContent=result.action;document.getElementById('actionNote').textContent=result.actionNote;document.getElementById('currentInv').textContent=fmt(result.inventory);document.getElementById('inbound').textContent=fmt(result.inbound);document.getElementById('avgDemand').textContent=fmt(result.averageDemand);document.getElementById('trend').textContent=result.trend;document.getElementById('intervention').textContent=result.intervention;document.getElementById('riskStatus').textContent=result.risk;document.getElementById('riskCopy').textContent=result.copy;renderChart(result)}finally{button.disabled=false;button.textContent='Run sample analysis'}
 }
 document.getElementById('runBtn').addEventListener('click',run);document.getElementById('skuSelect').addEventListener('change',run);window.addEventListener('resize',run);run();
 </script>
 </body>
 </html>
+
