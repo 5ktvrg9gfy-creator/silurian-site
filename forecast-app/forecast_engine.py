@@ -31,7 +31,7 @@ class PortfolioItem:
 class ForecastProvider(Protocol):
     name: str
 
-    def forecast(self, history: Sequence[float], horizon: int) -> list[float]: ...
+    def forecast(self, history: Sequence[float], horizon: int, dates: Sequence[date] | None = None) -> list[float]: ...
 
 
 class BaselineProvider:
@@ -69,7 +69,7 @@ class BaselineProvider:
             })
         return sorted(rows, key=lambda row: (float(row["wape"]), float(row["mae"])))
 
-    def forecast(self, history: Sequence[float], horizon: int) -> list[float]:
+    def forecast(self, history: Sequence[float], horizon: int, dates: Sequence[date] | None = None) -> list[float]:
         winner = str(self.score(history)[0]["method"])
         return self._candidates(history, horizon)[winner]
 
@@ -102,7 +102,7 @@ class TimesFMProvider:
             )
         )
 
-    def forecast(self, history: Sequence[float], horizon: int) -> list[float]:
+    def forecast(self, history: Sequence[float], horizon: int, dates: Sequence[date] | None = None) -> list[float]:
         point, _ = self._model.forecast(
             horizon=horizon,
             inputs=[self._np.asarray(history, dtype=float)],
@@ -228,7 +228,7 @@ def analyse(
 
     baseline = BaselineProvider()
     baseline_scores = baseline.score(series.demand)
-    forecast = provider.forecast(series.demand, horizon)
+    forecast = provider.forecast(series.demand, horizon, series.dates)
     if len(forecast) != horizon:
         raise RuntimeError("The forecast provider returned the wrong horizon")
 
