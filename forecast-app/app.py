@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -83,6 +84,12 @@ async def run_analysis(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        logging.exception("TimesFM portfolio analysis failed")
+        raise HTTPException(status_code=503, detail="TimesFM portfolio analysis could not be completed") from exc
+    except Exception as exc:
+        logging.exception("TimesFM analysis failed")
+        raise HTTPException(status_code=503, detail="TimesFM analysis could not be completed") from exc
 
 
 @app.post("/api/analyse-portfolio")
