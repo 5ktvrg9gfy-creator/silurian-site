@@ -49,7 +49,7 @@ Required server-side environment variables:
 - `BIGQUERY_LOCATION`: defaults to `europe-west2`
 - `BIGQUERY_MAX_BYTES_BILLED`: defaults to `10000000` bytes per query
 
-The service account should receive only the permissions required to run BigQuery jobs and access approved forecasting data. Configure a Google Cloud budget and alerts before enabling the connector. The browser never receives Google credentials.
+The service account should receive only the permissions required to run BigQuery jobs and access approved forecasting data. Configure a Google Cloud budget and alerts before enabling the connector. The browser never receives Google credentials. Keep the statistical baseline active until the connector has passed an authenticated test.
 
 ## Deployment cost gate
 
