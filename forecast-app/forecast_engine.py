@@ -48,12 +48,18 @@ class BaselineProvider:
         rows = []
         for name, values in self._candidates(train, len(actual)).items():
             errors = [forecast - observed for forecast, observed in zip(values, actual)]
+            absolute_errors = [abs(value) for value in errors]
+            actual_total = sum(actual)
             rows.append({
                 "method": name,
-                "mae": mean(abs(value) for value in errors),
+                "mae": mean(absolute_errors),
+                "rmse": math.sqrt(mean(value**2 for value in errors)),
+                "wape": (sum(absolute_errors) / actual_total * 100) if actual_total else 0.0,
                 "bias": mean(errors),
+                "bias_percent": (sum(errors) / actual_total * 100) if actual_total else 0.0,
+                "holdout_periods": len(actual),
             })
-        return sorted(rows, key=lambda row: float(row["mae"]))
+        return sorted(rows, key=lambda row: (float(row["wape"]), float(row["mae"])))
 
     def forecast(self, history: Sequence[float], horizon: int) -> list[float]:
         winner = str(self.score(history)[0]["method"])
@@ -195,6 +201,8 @@ def analyse(
         "risk": risk,
         "action": action,
         "baseline_scores": baseline_scores,
+        "selected_baseline": baseline_scores[0]["method"],
+        "backtest_periods": baseline_scores[0]["holdout_periods"],
         "disclaimer": "Indicative planning output. Review operational context before acting.",
     }
 

@@ -41,6 +41,11 @@ def health():
     return {"status": "ok", "provider": os.getenv("FORECAST_PROVIDER", "baseline")}
 
 
+@app.get("/sample-data.csv")
+def sample_data():
+    return FileResponse(BASE_DIR / "sample-data.csv", media_type="text/csv", filename="silurian-sample-demand.csv")
+
+
 @app.post("/api/analyse")
 async def run_analysis(
     file: UploadFile = File(...),

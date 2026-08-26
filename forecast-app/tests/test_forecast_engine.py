@@ -27,6 +27,16 @@ class ForecastEngineTests(unittest.TestCase):
         self.assertEqual(len(result["forecast"]), 4)
         self.assertEqual(len(result["inventory_projection"]), 4)
         self.assertTrue(result["baseline_scores"])
+        self.assertEqual(result["selected_baseline"], result["baseline_scores"][0]["method"])
+        self.assertEqual(result["backtest_periods"], 3)
+        for score in result["baseline_scores"]:
+            self.assertIn("wape", score)
+            self.assertIn("rmse", score)
+            self.assertIn("bias_percent", score)
+
+    def test_backtest_selects_lowest_wape(self):
+        scores = BaselineProvider().score([10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12])
+        self.assertEqual(scores, sorted(scores, key=lambda row: (row["wape"], row["mae"])))
 
     def test_rejects_multiple_skus(self):
         with self.assertRaises(ForecastError):
