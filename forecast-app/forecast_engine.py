@@ -20,6 +20,14 @@ class DemandSeries:
     demand: list[float]
 
 
+@dataclass(frozen=True)
+class PortfolioItem:
+    series: DemandSeries
+    current_inventory: float
+    confirmed_inbound: float
+    safety_stock: float
+
+
 class ForecastProvider(Protocol):
     name: str
 
@@ -140,6 +148,71 @@ def parse_demand_csv(raw: bytes) -> DemandSeries:
     )
 
 
+def parse_portfolio_csv(raw: bytes) -> list[PortfolioItem]:
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ForecastError("The CSV must use UTF-8 encoding") from exc
+
+    reader = csv.DictReader(io.StringIO(text))
+    required = {"sku", "date", "demand", "inventory", "receipts", "safety_stock"}
+    if not reader.fieldnames or not required.issubset(set(reader.fieldnames)):
+        raise ForecastError("The portfolio CSV requires sku, date, demand, inventory, receipts and safety_stock columns")
+
+    grouped: dict[str, list[tuple[date, float, float, float, float]]] = {}
+    for line_number, row in enumerate(reader, start=2):
+        try:
+            sku = (row.get("sku") or "").strip()
+            values = (
+                date.fromisoformat((row.get("date") or "").strip()),
+                float((row.get("demand") or "").strip()),
+                float((row.get("inventory") or "").strip()),
+                float((row.get("receipts") or "").strip()),
+                float((row.get("safety_stock") or "").strip()),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ForecastError(f"Invalid value on CSV line {line_number}") from exc
+        if not sku or any(not math.isfinite(value) or value < 0 for value in values[1:]):
+            raise ForecastError(f"Invalid value on CSV line {line_number}")
+        grouped.setdefault(sku, []).append(values)
+
+    if not grouped:
+        raise ForecastError("The portfolio CSV contains no data")
+    if len(grouped) > 250:
+        raise ForecastError("The demo accepts up to 250 SKUs per upload")
+
+    items = []
+    for sku, rows in grouped.items():
+        rows.sort(key=lambda row: row[0])
+        if len(rows) < 12:
+            raise ForecastError(f"SKU {sku} requires at least 12 historical periods")
+        if len({row[0] for row in rows}) != len(rows):
+            raise ForecastError(f"SKU {sku} contains duplicate dates")
+        latest = rows[-1]
+        items.append(PortfolioItem(
+            series=DemandSeries(sku=sku, dates=[row[0] for row in rows], demand=[row[1] for row in rows]),
+            current_inventory=latest[2],
+            confirmed_inbound=latest[3],
+            safety_stock=latest[4],
+        ))
+    return items
+
+
+def analyse_portfolio(items: Sequence[PortfolioItem], provider: ForecastProvider, horizon: int) -> dict:
+    results = [analyse(item.series, provider, horizon, item.current_inventory, item.confirmed_inbound, item.safety_stock) for item in items]
+    priority = {"RED": 0, "AMBER": 1, "EXCESS": 2, "GREEN": 3}
+    results.sort(key=lambda row: (priority[row["risk"]], row["minimum_inventory"]))
+    return {
+        "total_skus": len(results),
+        "red_exceptions": sum(row["risk"] == "RED" for row in results),
+        "amber_exceptions": sum(row["risk"] == "AMBER" for row in results),
+        "stockout_risks": sum(row["stockout_period"] is not None for row in results),
+        "excess_inventory_risks": sum(row["excess_inventory"] for row in results),
+        "results": results,
+        "disclaimer": "Indicative planning output. Review operational context before acting.",
+    }
+
+
 def analyse(
     series: DemandSeries,
     provider: ForecastProvider,
@@ -170,10 +243,13 @@ def analyse(
     minimum = min(projection)
     breach = next((index + 1 for index, value in enumerate(projection) if value < safety_stock), None)
     stockout = next((index + 1 for index, value in enumerate(projection) if value < 0), None)
+    excess = minimum > safety_stock + mean(forecast) * 8
     if stockout:
         risk, action = "RED", "Intervene"
     elif breach:
         risk, action = "AMBER", "Review"
+    elif excess:
+        risk, action = "EXCESS", "Review capital"
     else:
         risk, action = "GREEN", "Monitor"
 
@@ -198,6 +274,7 @@ def analyse(
         "safety_stock": safety_stock,
         "safety_stock_breach_period": breach,
         "stockout_period": stockout,
+        "excess_inventory": excess,
         "risk": risk,
         "action": action,
         "baseline_scores": baseline_scores,
