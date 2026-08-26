@@ -27,7 +27,12 @@ def get_provider():
     global _provider
     if _provider is None:
         name = os.getenv("FORECAST_PROVIDER", "baseline").lower()
-        _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
+        if name == "bigquery_timesfm":
+            from bigquery_timesfm import BigQueryTimesFMProvider
+
+            _provider = BigQueryTimesFMProvider()
+        else:
+            _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
     return _provider
 
 
