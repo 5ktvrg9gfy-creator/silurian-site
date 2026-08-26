@@ -1,31 +1,51 @@
 from __future__ import annotations
 
-import json
 import os
 from datetime import date, timedelta
 from typing import Sequence
+
+from google.auth import identity_pool
+
+
+class _VercelTokenSupplier(identity_pool.SubjectTokenSupplier):
+    def __init__(self, token: str) -> None:
+        self._token = token
+
+    def get_subject_token(self, context, request) -> str:
+        return self._token
 
 
 class BigQueryTimesFMProvider:
     name = "TimesFM 2.5 through BigQuery"
 
-    def __init__(self) -> None:
+    def __init__(self, oidc_token: str) -> None:
         from google.cloud import bigquery
-        from google.oauth2 import service_account
 
         project = os.environ.get("GOOGLE_CLOUD_PROJECT", "").strip()
-        credentials_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
-        if not project or not credentials_json:
+        project_number = os.environ.get("GCP_PROJECT_NUMBER", "").strip()
+        pool_id = os.environ.get("GCP_WORKLOAD_IDENTITY_POOL_ID", "").strip()
+        provider_id = os.environ.get("GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID", "").strip()
+        service_account = os.environ.get("GCP_SERVICE_ACCOUNT_EMAIL", "").strip()
+        if not all((project, project_number, pool_id, provider_id, service_account, oidc_token)):
             raise RuntimeError("BigQuery TimesFM is not configured")
-        try:
-            info = json.loads(credentials_json)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError("The Google service account configuration is invalid") from exc
 
-        credentials = service_account.Credentials.from_service_account_info(info)
+        audience = (
+            f"//iam.googleapis.com/projects/{project_number}/locations/global/"
+            f"workloadIdentityPools/{pool_id}/providers/{provider_id}"
+        )
+        credentials = identity_pool.Credentials(
+            audience=audience,
+            subject_token_type="urn:ietf:params:oauth:token-type:jwt",
+            subject_token_supplier=_VercelTokenSupplier(oidc_token),
+            service_account_impersonation_url=(
+                "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+                f"{service_account}:generateAccessToken"
+            ),
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
         self._bigquery = bigquery
         self._client = bigquery.Client(project=project, credentials=credentials)
-        self._location = os.environ.get("BIGQUERY_LOCATION", "europe-west2")
+        self._location = os.environ.get("BIGQUERY_LOCATION", "US")
         self._maximum_bytes = int(os.environ.get("BIGQUERY_MAX_BYTES_BILLED", "10000000"))
 
     def forecast(self, history: Sequence[float], horizon: int, dates: Sequence[date] | None = None) -> list[float]:
@@ -63,4 +83,3 @@ class BigQueryTimesFMProvider:
         if rows[0].ai_forecast_status:
             raise RuntimeError(f"TimesFM forecast failed: {rows[0].ai_forecast_status}")
         return [max(0.0, float(row.forecast_value)) for row in rows]
-
