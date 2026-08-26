@@ -1,6 +1,6 @@
 import unittest
 
-from forecast_engine import BaselineProvider, ForecastError, analyse, parse_demand_csv
+from forecast_engine import BaselineProvider, ForecastError, analyse, analyse_portfolio, parse_demand_csv, parse_portfolio_csv
 
 
 CSV = b"""sku,date,demand
@@ -41,6 +41,17 @@ class ForecastEngineTests(unittest.TestCase):
     def test_rejects_multiple_skus(self):
         with self.assertRaises(ForecastError):
             parse_demand_csv(CSV.replace(b"TEST-1,2026-03-23", b"TEST-2,2026-03-23"))
+
+    def test_portfolio_is_ranked_by_risk(self):
+        header = b"sku,date,demand,inventory,receipts,safety_stock\n"
+        rows = []
+        for sku, inventory in (("SAFE", 500), ("RISK", 20)):
+            for index in range(12):
+                rows.append(f"{sku},2026-{index // 4 + 1:02d}-{index % 4 * 7 + 1:02d},10,{inventory},0,30\n".encode())
+        result = analyse_portfolio(parse_portfolio_csv(header + b"".join(rows)), BaselineProvider(), 4)
+        self.assertEqual(result["total_skus"], 2)
+        self.assertEqual(result["results"][0]["sku"], "RISK")
+        self.assertEqual(result["results"][0]["risk"], "RED")
 
 
 if __name__ == "__main__":
