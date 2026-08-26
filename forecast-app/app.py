@@ -85,9 +85,6 @@ async def run_analysis(
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        logging.exception("TimesFM portfolio analysis failed")
-        raise HTTPException(status_code=503, detail="TimesFM portfolio analysis could not be completed") from exc
-    except Exception as exc:
         logging.exception("TimesFM analysis failed")
         raise HTTPException(status_code=503, detail="TimesFM analysis could not be completed") from exc
 
