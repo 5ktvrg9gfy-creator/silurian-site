@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -23,16 +23,15 @@ app.add_middleware(
 _provider = None
 
 
-def get_provider():
+def get_provider(oidc_token: str | None = None):
     global _provider
-    if _provider is None:
-        name = os.getenv("FORECAST_PROVIDER", "baseline").lower()
-        if name == "bigquery_timesfm":
-            from bigquery_timesfm import BigQueryTimesFMProvider
+    name = os.getenv("FORECAST_PROVIDER", "baseline").lower()
+    if name == "bigquery_timesfm":
+        from bigquery_timesfm import BigQueryTimesFMProvider
 
-            _provider = BigQueryTimesFMProvider()
-        else:
-            _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
+        return BigQueryTimesFMProvider(oidc_token or "")
+    if _provider is None:
+        _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
     return _provider
 
 
@@ -58,6 +57,7 @@ def sample_portfolio():
 
 @app.post("/api/analyse")
 async def run_analysis(
+    request: Request,
     file: UploadFile = File(...),
     horizon: int = Form(13),
     current_inventory: float = Form(...),
@@ -71,7 +71,14 @@ async def run_analysis(
         raise HTTPException(status_code=413, detail="The CSV must be smaller than 2 MB")
     try:
         series = parse_demand_csv(raw)
-        return analyse(series, get_provider(), horizon, current_inventory, confirmed_inbound, safety_stock)
+        return analyse(
+            series,
+            get_provider(request.headers.get("x-vercel-oidc-token")),
+            horizon,
+            current_inventory,
+            confirmed_inbound,
+            safety_stock,
+        )
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
@@ -79,16 +86,19 @@ async def run_analysis(
 
 
 @app.post("/api/analyse-portfolio")
-async def run_portfolio_analysis(file: UploadFile = File(...), horizon: int = Form(13)):
+async def run_portfolio_analysis(request: Request, file: UploadFile = File(...), horizon: int = Form(13)):
     if file.content_type not in {"text/csv", "application/vnd.ms-excel", "application/octet-stream"}:
         raise HTTPException(status_code=415, detail="Upload a CSV file")
     raw = await file.read()
     if len(raw) > 2_000_000:
         raise HTTPException(status_code=413, detail="The CSV must be smaller than 2 MB")
     try:
-        return analyse_portfolio(parse_portfolio_csv(raw), get_provider(), horizon)
+        return analyse_portfolio(
+            parse_portfolio_csv(raw),
+            get_provider(request.headers.get("x-vercel-oidc-token")),
+            horizon,
+        )
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-
