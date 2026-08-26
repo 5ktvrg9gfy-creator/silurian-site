@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Silurian Forecast Diagnostic</title>
+<style>
+:root{--bg:#f3f2f2;--surface:#fff;--text:#201e1d;--accent:#ee7623;--muted:#68615e;--good:#356b46;--warn:#9a5a12;--bad:#a52a1f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Arial,sans-serif}.wrap{max-width:980px;margin:auto;padding:24px}.mast{background:#fff;border-bottom:2px solid var(--text);font-weight:700}.hero{padding:50px 0 30px}.kicker,label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.kicker{color:var(--accent)}h1{font-size:clamp(36px,6vw,64px);line-height:1.02;max-width:800px;margin:12px 0}.notice{border-top:2px solid;padding-top:12px;color:var(--muted)}form{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;background:#fff;padding:24px;border-top:4px solid var(--accent)}.wide{grid-column:1/-1}label{display:block;margin-bottom:6px}input,button{width:100%;min-height:44px;border:2px solid var(--text);background:#fff;padding:8px 10px;font:inherit}button{background:var(--accent);font-weight:700;cursor:pointer}.result{margin-top:30px;display:none}.stats{display:grid;grid-template-columns:repeat(4,1fr);border-block:2px solid}.stat{padding:16px}.stat+.stat{border-left:1px solid}.value{font-size:28px;font-weight:700;margin-top:6px}.risk{padding:22px;background:var(--text);color:#fff;margin-top:24px}.risk strong{color:var(--accent);font-size:36px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;background:#fff;margin-top:24px}th,td{text-align:left;padding:10px;border-bottom:1px solid #aaa}th{font-size:11px;text-transform:uppercase}.error{color:var(--bad);font-weight:700}.small{font-size:12px;color:var(--muted)}@media(max-width:680px){form,.stats{grid-template-columns:1fr}.wide{grid-column:auto}.stat+.stat{border-left:0;border-top:1px solid}}
+</style>
+</head>
+<body>
+<header class="mast"><div class="wrap">Silurian Consulting LTD</div></header>
+<main class="wrap">
+  <section class="hero">
+    <div class="kicker">Demonstration environment</div>
+    <h1>Forecast and inventory risk diagnostic.</h1>
+    <p>Upload one product's historical demand and test how a forecasting baseline translates into service and inventory risk.</p>
+    <p class="notice">Use synthetic or anonymised data only. Files are processed for the current request and are not deliberately retained by this application.</p>
+  </section>
+  <form id="form">
+    <div class="wide"><label for="file">Demand history CSV</label><input id="file" name="file" type="file" accept=".csv,text/csv" required><div class="small">Required columns: sku, date, demand. Minimum 12 periods.</div></div>
+    <div><label for="inventory">Current inventory</label><input id="inventory" name="current_inventory" type="number" min="0" value="8900" required></div>
+    <div><label for="inbound">Confirmed inbound</label><input id="inbound" name="confirmed_inbound" type="number" min="0" value="10000" required></div>
+    <div><label for="safety">Safety stock</label><input id="safety" name="safety_stock" type="number" min="0" value="1500" required></div>
+    <div><label for="horizon">Forecast periods</label><input id="horizon" name="horizon" type="number" min="1" max="52" value="13" required></div>
+    <div class="wide"><button id="run" type="submit">Run diagnostic</button></div>
+    <div id="error" class="wide error" role="alert"></div>
+  </form>
+  <section id="result" class="result" aria-live="polite">
+    <div class="stats">
+      <div class="stat"><div class="kicker">Forecast demand</div><div class="value" id="demand"></div></div>
+      <div class="stat"><div class="kicker">Minimum inventory</div><div class="value" id="minimum"></div></div>
+      <div class="stat"><div class="kicker">Safety stock</div><div class="value" id="safetyResult"></div></div>
+      <div class="stat"><div class="kicker">Action</div><div class="value" id="action"></div></div>
+    </div>
+    <div class="risk"><div class="kicker">Silurian assessment</div><strong id="risk"></strong><p id="riskCopy"></p></div>
+    <div class="table-wrap"><table><thead><tr><th>Method</th><th>Back-test MAE</th><th>Bias</th></tr></thead><tbody id="scores"></tbody></table></div>
+    <p class="small" id="provider"></p>
+  </section>
+</main>
+<script>
+const fmt=value=>Math.round(value).toLocaleString('en-GB');
+document.getElementById('form').addEventListener('submit',async event=>{
+  event.preventDefault();const button=document.getElementById('run'),error=document.getElementById('error');
+  button.disabled=true;button.textContent='Running diagnostic';error.textContent='';
+  try{
+    const response=await fetch('/api/analyse',{method:'POST',body:new FormData(event.currentTarget)});
+    const data=await response.json();if(!response.ok)throw new Error(data.detail||'Analysis failed');
+    document.getElementById('demand').textContent=fmt(data.total_forecast);
+    document.getElementById('minimum').textContent=fmt(data.minimum_inventory);
+    document.getElementById('safetyResult').textContent=fmt(data.safety_stock);
+    document.getElementById('action').textContent=data.action;
+    document.getElementById('risk').textContent=data.risk;
+    document.getElementById('riskCopy').textContent=data.safety_stock_breach_period?`Inventory falls below safety stock in period ${data.safety_stock_breach_period}. Review demand assumptions and supply timing.`:'Inventory remains above safety stock across the selected horizon.';
+    document.getElementById('scores').innerHTML=data.baseline_scores.map(row=>`<tr><td>${row.method}</td><td>${fmt(row.mae)}</td><td>${fmt(row.bias)}</td></tr>`).join('');
+    document.getElementById('provider').textContent=`Forecast provider: ${data.provider}. ${data.disclaimer}`;
+    document.getElementById('result').style.display='block';
+  }catch(err){error.textContent=err.message}finally{button.disabled=false;button.textContent='Run diagnostic'}
+});
+</script>
+</body>
+</html>
+
