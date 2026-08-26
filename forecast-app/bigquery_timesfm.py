@@ -7,6 +7,7 @@ from typing import Sequence
 from google.auth import identity_pool
 
 
+# Vercel supplies a short-lived token with each function request.
 class _VercelTokenSupplier(identity_pool.SubjectTokenSupplier):
     def __init__(self, token: str) -> None:
         self._token = token
