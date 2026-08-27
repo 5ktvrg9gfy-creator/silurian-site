@@ -32,7 +32,8 @@ def get_provider(oidc_token: str | None = None):
 
         return BigQueryTimesFMProvider(oidc_token or "")
     if _provider is None:
-        _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
+        if name != "bigquery_timesfm":
+            _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
     return _provider
 
 
@@ -64,6 +65,12 @@ async def run_analysis(
     current_inventory: float = Form(...),
     confirmed_inbound: float = Form(0),
     safety_stock: float = Form(...),
+    product_description: str = Form(""),
+    lifecycle_stage: str = Form("Established"),
+    adjustment_percent: float = Form(0),
+    adjustment_start: int = Form(1),
+    adjustment_end: int = Form(52),
+    adjustment_reason: str = Form(""),
 ):
     if file.content_type not in {"text/csv", "application/vnd.ms-excel", "application/octet-stream"}:
         raise HTTPException(status_code=415, detail="Upload a CSV file")
@@ -79,6 +86,12 @@ async def run_analysis(
             current_inventory,
             confirmed_inbound,
             safety_stock,
+            product_description=product_description,
+            lifecycle_stage=lifecycle_stage,
+            adjustment_percent=adjustment_percent,
+            adjustment_start=adjustment_start,
+            adjustment_end=adjustment_end,
+            adjustment_reason=adjustment_reason,
         )
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -106,3 +119,6 @@ async def run_portfolio_analysis(request: Request, file: UploadFile = File(...),
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        logging.exception("TimesFM portfolio analysis failed")
+        raise HTTPException(status_code=503, detail="TimesFM portfolio analysis could not be completed") from exc
