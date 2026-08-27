@@ -35,7 +35,7 @@
       <div class="stat"><div class="kicker">Action</div><div class="value" id="action"></div></div>
     </div>
     <div class="risk"><div class="kicker">Silurian assessment</div><strong id="risk"></strong><p id="riskCopy"></p></div>
-    <div class="ai-banner"><div><div class="kicker">AI forecasting engine</div><strong id="aiProvider">TimesFM forecast complete</strong><div class="small">Pre-trained time-series intelligence, tested against statistical baselines.</div></div><div class="ai-chip">AI analysis complete</div></div>
+    <div class="ai-banner"><div><div class="kicker" id="engineLabel">AI forecasting engine</div><strong id="aiProvider">Forecast complete</strong><div class="small" id="engineCopy">The forecast is tested against statistical baselines before inventory risk is assessed.</div></div><div class="ai-chip" id="analysisChip">Analysis complete</div></div>
     <div class="chart-grid">
       <article class="chart-card"><h3>Demand trend and AI forecast</h3><p>Historical demand in black. AI forecast in orange with a shaded planning range.</p><div id="demandChart"></div></article>
       <article class="chart-card"><h3>Projected inventory position</h3><p>Expected inventory after forecast demand and confirmed inbound supply.</p><div id="inventoryChart"></div></article>
@@ -96,7 +96,8 @@ function renderInterpretation(data){
   const timing=data.stockout_period?`The projection reaches a stock-out in period ${data.stockout_period}.`:data.safety_stock_breach_period?`Inventory falls below safety stock in period ${data.safety_stock_breach_period}.`:'Inventory remains above safety stock throughout the selected horizon.';
   const actions=data.risk==='RED'?['Confirm inbound supply timing and quantity.','Review demand assumptions behind the earliest exposure.','Agree a recovery action before the projected stock-out.']:data.risk==='AMBER'?['Review the timing of confirmed inbound supply.','Check whether the safety-stock assumption remains appropriate.','Monitor the earliest breach period as the management trigger.']:data.risk==='EXCESS'?['Review whether confirmed inbound supply can be deferred.','Test inventory assumptions against shelf life and working-capital priorities.','Monitor demand before committing further supply.']:['Continue routine monitoring against the forecast.','Re-run the diagnostic when demand or confirmed supply changes.'];
   document.getElementById('analysisHeadline').textContent=headline;
-  document.getElementById('analysisSummary').textContent=`TimesFM projects average demand of ${fmt(future)} per period, ${direction} than the latest four-period average (${Math.abs(change).toFixed(1)}% difference). ${timing} The lowest projected inventory is ${fmt(data.minimum_inventory)}.`;
+  const comparison=direction==='broadly stable'?`broadly stable compared with the latest four-period average (${Math.abs(change).toFixed(1)}% difference)`:`${direction} than the latest four-period average (${Math.abs(change).toFixed(1)}% difference)`;
+  document.getElementById('analysisSummary').textContent=`${data.provider} projects average demand of ${fmt(future)} per period, ${comparison}. ${timing} The lowest projected inventory is ${fmt(data.minimum_inventory)}.`;
   document.getElementById('analysisActions').innerHTML=actions.map(action=>`<li>${esc(action)}</li>`).join('');
 }
 function renderPortfolioInterpretation(data){
@@ -122,7 +123,11 @@ document.getElementById('form').addEventListener('submit',async event=>{
     document.getElementById('backtestCopy').textContent=`The last ${data.backtest_periods} periods were withheld. ${data.selected_baseline} produced the lowest WAPE and was selected as the statistical baseline.`;
     document.getElementById('scores').innerHTML=data.baseline_scores.map((row,index)=>`<tr class="${index===0?'winner':''}"><td>${row.method}${index===0?' (selected)':''}</td><td>${pct(row.wape)}</td><td>${fmt(row.mae)}</td><td>${fmt(row.rmse)}</td><td>${pct(row.bias_percent)}</td></tr>`).join('');
     document.getElementById('provider').textContent=`Forecast provider: ${data.provider}. ${data.disclaimer}`;
+    const isTimesFM=String(data.provider).toLowerCase().includes('timesfm');
+    document.getElementById('engineLabel').textContent=isTimesFM?'AI forecasting engine':'Forecasting engine';
     document.getElementById('aiProvider').textContent=`${data.provider} forecast complete`;
+    document.getElementById('engineCopy').textContent=isTimesFM?'Pre-trained time-series intelligence, tested against statistical baselines.':'Statistical fallback used. TimesFM was not available for this run.';
+    document.getElementById('analysisChip').textContent=isTimesFM?'AI analysis complete':'Analysis complete';
     renderDemandChart(data);renderInventoryChart(data,document.getElementById('inventory').value);renderInterpretation(data);
     document.getElementById('result').style.display='block';
   }catch(err){error.textContent=err.message}finally{button.disabled=false;button.textContent='Run diagnostic'}
