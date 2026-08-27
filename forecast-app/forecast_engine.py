@@ -220,30 +220,44 @@ def analyse(
     current_inventory: float,
     confirmed_inbound: float,
     safety_stock: float,
+    product_description: str = "",
+    lifecycle_stage: str = "Established",
+    adjustment_percent: float = 0,
+    adjustment_start: int = 1,
+    adjustment_end: int = 52,
+    adjustment_reason: str = "",
 ) -> dict:
     if horizon < 1 or horizon > 52:
         raise ForecastError("The forecast horizon must be between 1 and 52 periods")
     if min(current_inventory, confirmed_inbound, safety_stock) < 0:
         raise ForecastError("Inventory inputs cannot be negative")
+    if adjustment_percent < -100 or adjustment_percent > 500:
+        raise ForecastError("The planning adjustment must be between -100% and 500%")
+    if adjustment_start < 1 or adjustment_end < adjustment_start:
+        raise ForecastError("The planning adjustment period is invalid")
 
     baseline = BaselineProvider()
     baseline_scores = baseline.score(series.demand)
-    forecast = provider.forecast(series.demand, horizon, series.dates)
-    if len(forecast) != horizon:
+    model_forecast = provider.forecast(series.demand, horizon, series.dates)
+    if len(model_forecast) != horizon:
         raise RuntimeError("The forecast provider returned the wrong horizon")
+    planning_forecast = [
+        value * (1 + adjustment_percent / 100) if adjustment_start <= index + 1 <= min(adjustment_end, horizon) else value
+        for index, value in enumerate(model_forecast)
+    ]
 
     inventory = current_inventory
     receipt_weeks = {min(2, horizon - 1): confirmed_inbound * 0.45}
     receipt_weeks[min(7, horizon - 1)] = receipt_weeks.get(min(7, horizon - 1), 0) + confirmed_inbound * 0.55
     projection = []
-    for index, demand in enumerate(forecast):
+    for index, demand in enumerate(planning_forecast):
         inventory += receipt_weeks.get(index, 0) - demand
         projection.append(inventory)
 
     minimum = min(projection)
     breach = next((index + 1 for index, value in enumerate(projection) if value < safety_stock), None)
     stockout = next((index + 1 for index, value in enumerate(projection) if value < 0), None)
-    excess = minimum > safety_stock + mean(forecast) * 8
+    excess = minimum > safety_stock + mean(planning_forecast) * 8
     if stockout:
         risk, action = "RED", "Intervene"
     elif breach:
@@ -254,7 +268,7 @@ def analyse(
         risk, action = "GREEN", "Monitor"
 
     ranges = []
-    for index, value in enumerate(forecast):
+    for index, value in enumerate(model_forecast):
         spread = 0.08 + (index / max(1, horizon - 1)) * 0.08
         ranges.append({"lower": max(0, value * (1 - spread)), "median": value, "upper": value * (1 + spread)})
 
@@ -265,11 +279,13 @@ def analyse(
         "horizon": horizon,
         "history": series.demand,
         "history_dates": [value.isoformat() for value in series.dates],
-        "forecast": forecast,
+        "forecast": model_forecast,
+        "planning_forecast": planning_forecast,
         "ranges": ranges,
         "inventory_projection": projection,
-        "total_forecast": sum(forecast),
-        "average_demand": mean(forecast),
+        "total_forecast": sum(planning_forecast),
+        "model_total_forecast": sum(model_forecast),
+        "average_demand": mean(planning_forecast),
         "minimum_inventory": minimum,
         "safety_stock": safety_stock,
         "safety_stock_breach_period": breach,
@@ -277,9 +293,17 @@ def analyse(
         "excess_inventory": excess,
         "risk": risk,
         "action": action,
+        "forecast_context": {
+            "product_description": product_description.strip()[:200],
+            "lifecycle_stage": lifecycle_stage.strip()[:50] or "Established",
+            "adjustment_percent": adjustment_percent,
+            "adjustment_start": adjustment_start,
+            "adjustment_end": min(adjustment_end, horizon),
+            "adjustment_reason": adjustment_reason.strip()[:500],
+            "adjustment_applied": adjustment_percent != 0,
+        },
         "baseline_scores": baseline_scores,
         "selected_baseline": baseline_scores[0]["method"],
         "backtest_periods": baseline_scores[0]["holdout_periods"],
         "disclaimer": "Indicative planning output. Review operational context before acting.",
     }
-
