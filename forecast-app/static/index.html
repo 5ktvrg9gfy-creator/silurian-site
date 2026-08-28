@@ -225,7 +225,7 @@ document.getElementById('runQuality').addEventListener('click',async()=>{
   button.disabled=true;button.textContent='Assessing data quality';
   try{
     const payload=new FormData();payload.append('file',file.files[0]);if(analysisDate)payload.append('analysis_date',analysisDate);if(grain)payload.append('grain',grain);
-    const response=await fetch('/api/quality',{method:'POST',body:payload}),data=await response.json();renderValidation(data.validation,'portfolioValidationPanel');if(!response.ok)throw new Error(data.detail||'Quality assessment failed');renderQuality(data.quality);
+    const response=await fetch('/api/quality',{method:'POST',body:payload}),raw=await response.text();let data;try{data=JSON.parse(raw)}catch{throw new Error(response.ok?'Quality assessment returned an unreadable response':'Quality assessment could not be completed')};renderValidation(data.validation,'portfolioValidationPanel');if(!response.ok)throw new Error(data.detail||'Quality assessment failed');renderQuality(data.quality);
   }catch(err){error.textContent=err.message}
   finally{button.disabled=false;button.textContent='Assess data quality'}
 });
