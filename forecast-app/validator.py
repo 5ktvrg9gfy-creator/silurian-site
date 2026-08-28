@@ -357,7 +357,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     metadata["header_row"] = source_lines[header_index]
     data_pairs = [(row, source_lines[index]) for index, row in enumerate(parsed[header_index + 1:], start=header_index + 1)]
 
-    total_rows = [(row, line) for row, line in data_pairs if row and TOTAL_RE.search(row[0].strip())]
+    total_rows = [(row, line) for row, line in data_pairs if row and TOTAL_RE.search(row[0].strip())
+                  and not row[0].strip().lower().startswith("subtotal")]
     total_columns = [header for header in headers if re.search(r"(^|\s)(fy\s+)?(total|sum|ytd)($|\s)", header, re.I)]
     if header_index > 0 and not opts.header_row:
         preamble = parsed[:header_index]
@@ -535,7 +536,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     for code, examples in date_errors.items():
         severity = "warning" if code in {"EXCEL_SERIAL_DATE", "DATE_FUTURE"} else "blocking"
         action = "Review the affected source rows." if severity == "warning" else "Correct or remove the affected rows."
-        findings.append(_finding(code, severity, "rows", f"{len(examples)} date value or values require attention.", action,
+        value_label = "date value requires" if len(examples) == 1 else "date values require"
+        findings.append(_finding(code, severity, "rows", f"{len(examples)} {value_label} attention.", action,
                                  level="column", ref="date", count=len(examples), examples=examples,
                                  resolution=None if severity == "warning" else "correct the dates or supply the date order",
                                  transform="converted Excel serial date" if code == "EXCEL_SERIAL_DATE" else None,
@@ -616,9 +618,16 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                      examples=[_example(line, delimiter.join(row), "return order type") for row, line in returns[:5]]))
 
     negative_rows = [row for row in normalised if row["demand"] < 0]
+    reversal_source_rows: set[int] = set()
+    used_positive_rows: set[int] = set()
     for negative in negative_rows:
-        match = next((positive for positive in normalised if positive["sku"] == negative["sku"] and positive["demand"] == abs(negative["demand"])), None)
+        match = next((positive for positive in normalised
+                      if positive["sku"] == negative["sku"]
+                      and positive["demand"] == abs(negative["demand"])
+                      and positive["source_row"] not in used_positive_rows), None)
         if match:
+            reversal_source_rows.update({negative["source_row"], match["source_row"]})
+            used_positive_rows.add(match["source_row"])
             findings.append(_finding("VALUE_NEGATIVE_REVERSAL", "info", "rows", "A negative value exactly offsets a matching positive entry.",
                                      "No action is required.", level="row", ref=str(negative["source_row"]),
                                      examples=[_example(negative["source_row"], str(negative["demand"]), f"offsets row {match['source_row']}")],
@@ -627,6 +636,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
             findings.append(_finding("VALUE_NEGATIVE", "warning", "rows", "A negative value has no matching offset and appears to be a return.",
                                      "Confirm whether returns belong in the demand stream.", level="row", ref=str(negative["source_row"]),
                                      examples=[_example(negative["source_row"], str(negative["demand"]), "unmatched negative")]))
+    if reversal_source_rows:
+        normalised = [row for row in normalised if row["source_row"] not in reversal_source_rows]
 
     key_groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in normalised:
@@ -745,8 +756,14 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     zero_skus = {sku for sku, values in series.items() if any(row["demand"] == 0 for row in values)}
     sparse_skus = {sku for sku, values in series.items() if len(values) <= 4 and len(values) > 1}
     if zero_skus:
-        findings.append(_finding("ZERO_VS_MISSING_AMBIGUOUS", "warning", "series", "Some series record zero periods while comparable sparse series omit them.",
-                                 "Confirm whether missing periods mean zero demand.", count=len(zero_skus | sparse_skus)))
+        zero_names = ", ".join(sorted(zero_skus))
+        sparse_names = ", ".join(sorted(sparse_skus)) or "none"
+        zero_examples = [_example(row["source_row"], f"{row['sku']},{row['date']},0", "recorded zero")
+                         for sku in sorted(zero_skus) for row in series[sku] if row["demand"] == 0][:5]
+        findings.append(_finding("ZERO_VS_MISSING_AMBIGUOUS", "warning", "series",
+                                 f"Recorded zero demand appears for {zero_names}; sparse comparison series are {sparse_names}.",
+                                 "Confirm whether missing periods mean zero demand.", count=len(zero_skus | sparse_skus),
+                                 examples=zero_examples))
 
     for sku, values in series.items():
         if len(values) < 8:
