@@ -643,8 +643,11 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     for row in normalised:
         key_groups[(row["sku"], row["date"])].append(row)
     modal_count = Counter(len(group) for group in key_groups.values()).most_common(1)[0][0] if key_groups else 1
-    metadata["grain"] = "period" if modal_count == 1 else "transactional"
-    if modal_count == 1:
+    transactional_headers = {"Order Type", "Sales Org", "Deleted Flag", "Order Qty", "Confirmed Qty", "Shipped Qty"}
+    transactional_hint = len(transactional_headers.intersection(headers)) >= 2
+    transactional = modal_count > 1 or (transactional_hint and any(len(group) > 1 for group in key_groups.values()))
+    metadata["grain"] = "transactional" if transactional else "period"
+    if not transactional:
         if any(len(group) > 1 for group in key_groups.values()):
             findings.append(_finding("GRAIN_PERIOD_DETECTED", "info", "keys", "The modal row count per SKU and period is one.",
                                      "No action is required.", transform="classified period grain", reversible=True))
@@ -658,7 +661,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     seen_exact: set[tuple[Any, ...]] = set()
     for row in normalised:
         signature = tuple((key, json.dumps(value, sort_keys=True)) for key, value in sorted(row.items()) if key != "source_row")
-        if signature in seen_exact and modal_count == 1:
+        if signature in seen_exact and not transactional:
             exact_duplicate_examples.append(_example(row["source_row"], f"{row['sku']},{row['date']},{row['demand']}", "exact duplicate"))
             continue
         seen_exact.add(signature)
