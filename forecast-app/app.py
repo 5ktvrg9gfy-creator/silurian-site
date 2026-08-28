@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
+from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
 from validator import ValidationOptions, validate_csv
 
 
@@ -27,12 +28,12 @@ app.add_middleware(
 _provider = None
 
 
-def _validation_options(raw_options: str) -> ValidationOptions:
+def _validation_options(raw_options: str, analysis_date: str | None = None) -> ValidationOptions:
     try:
         supplied = json.loads(raw_options or "{}")
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Validation options must be valid JSON") from exc
-    supplied["as_of_date"] = date.today()
+    supplied["as_of_date"] = analysis_date or supplied.get("as_of_date") or date.today().isoformat()
     return ValidationOptions.from_value(supplied)
 
 
@@ -106,6 +107,33 @@ async def validate_upload(file: UploadFile = File(...), validation_options: str 
     validation = validate_csv(raw, _validation_options(validation_options))
     status_code = 422 if validation.verdict == "reject" else 200
     return JSONResponse(status_code=status_code, content={"validation": _validation_response(validation)})
+
+
+@app.post("/api/quality")
+async def quality_upload(
+    file: UploadFile = File(...),
+    analysis_date: str | None = Form(None),
+    grain: str | None = Form(None),
+    validation_options: str = Form("{}"),
+):
+    raw = await file.read()
+    _check_upload(raw)
+    try:
+        effective_date = date.fromisoformat(analysis_date) if analysis_date else date.today()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Analysis date must use YYYY-MM-DD format") from exc
+    if grain and grain not in {"day", "week", "month"}:
+        raise HTTPException(status_code=400, detail="Grain must be day, week or month")
+    validation = validate_csv(raw, _validation_options(validation_options, effective_date.isoformat()))
+    if validation.verdict == "reject":
+        return JSONResponse(status_code=422, content={"detail": "Resolve the validation findings before assessing data quality.", "validation": _validation_response(validation)})
+    quality = assess_quality(validation, QualityOptions(
+        as_of_date=effective_date,
+        as_of_date_source="user_supplied" if analysis_date else "server_default",
+        grain=grain,
+        thresholds=dict(DEFAULT_THRESHOLDS),
+    ))
+    return {"validation": _validation_response(validation), "quality": quality.to_dict()}
 
 
 @app.post("/api/analyse")
