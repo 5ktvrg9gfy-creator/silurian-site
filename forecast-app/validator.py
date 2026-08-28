@@ -645,7 +645,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     modal_count = Counter(len(group) for group in key_groups.values()).most_common(1)[0][0] if key_groups else 1
     transactional_headers = {"Order Type", "Sales Org", "Deleted Flag", "Order Qty", "Confirmed Qty", "Shipped Qty"}
     transactional_hint = len(transactional_headers.intersection(headers)) >= 2
-    transactional = modal_count > 1 or (transactional_hint and any(len(group) > 1 for group in key_groups.values()))
+    transactional = modal_count > 1 or transactional_hint
     metadata["grain"] = "transactional" if transactional else "period"
     if not transactional:
         if any(len(group) > 1 for group in key_groups.values()):
