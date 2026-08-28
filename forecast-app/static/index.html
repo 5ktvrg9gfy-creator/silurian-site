@@ -58,11 +58,12 @@
   <section class="portfolio">
     <div class="kicker">Portfolio diagnostic</div>
     <h2>Prioritise exceptions across multiple SKUs.</h2>
-    <p>Upload demand and inventory assumptions for each product. The diagnostic ranks service and working-capital exposure for management review.</p>
+    <p>Validate demand history first. If the file also contains inventory and supply inputs, the diagnostic can then rank service and working-capital exposure.</p>
     <form id="portfolioForm">
-      <div class="wide"><label for="portfolioFile">Portfolio CSV</label><input id="portfolioFile" name="file" type="file" accept=".csv,text/csv" required><div class="small">Required columns: sku, date, demand, inventory, receipts, safety_stock. The latest inventory values for each SKU are used.</div><a class="sample" href="/sample-portfolio.csv" download>Download sample portfolio CSV</a></div>
+      <div class="wide"><label for="portfolioFile">Demand history or portfolio CSV</label><input id="portfolioFile" name="file" type="file" accept=".csv,text/csv" required><div class="small">Validation requires: sku, date, demand. Inventory analysis also requires: inventory, receipts, safety_stock.</div><a class="sample" href="/sample-portfolio.csv" download>Download sample portfolio CSV</a></div>
       <div><label for="portfolioHorizon">Forecast periods</label><input id="portfolioHorizon" name="horizon" type="number" min="1" max="52" value="13" required></div>
-      <div><label>&nbsp;</label><button id="runPortfolio" type="submit">Analyse portfolio</button></div>
+      <div><label>&nbsp;</label><button id="validatePortfolio" type="button">Validate CSV</button></div>
+      <div class="wide"><button id="runPortfolio" type="submit">Analyse portfolio</button></div>
       <div id="portfolioError" class="wide error" role="alert"></div>
     </form>
     <section id="portfolioValidationPanel" class="validation-panel" aria-live="polite"></section>
@@ -156,6 +157,19 @@ document.getElementById('form').addEventListener('submit',async event=>{
     renderDemandChart(data);renderInventoryChart(data,document.getElementById('inventory').value);renderInterpretation(data);
     document.getElementById('result').style.display='block';
   }catch(err){error.textContent=err.message;document.getElementById('result').style.display='none'}finally{button.disabled=false;button.textContent='Run diagnostic'}
+});
+document.getElementById('validatePortfolio').addEventListener('click',async()=>{
+  const button=document.getElementById('validatePortfolio'),error=document.getElementById('portfolioError'),file=document.getElementById('portfolioFile');
+  error.textContent='';document.getElementById('portfolioResult').style.display='none';
+  if(!file.files.length){error.textContent='Choose a CSV file to validate.';return}
+  button.disabled=true;button.textContent='Validating file';
+  try{
+    const payload=new FormData();payload.append('file',file.files[0]);
+    const response=await fetch('/api/validate',{method:'POST',body:payload});
+    const data=await response.json();renderValidation(data.validation,'portfolioValidationPanel');
+    if(!response.ok&&data.validation?.verdict!=='reject')throw new Error(data.detail||'Validation failed');
+  }catch(err){error.textContent=err.message}
+  finally{button.disabled=false;button.textContent='Validate CSV'}
 });
 document.getElementById('portfolioForm').addEventListener('submit',async event=>{
   event.preventDefault();const button=document.getElementById('runPortfolio'),error=document.getElementById('portfolioError');
