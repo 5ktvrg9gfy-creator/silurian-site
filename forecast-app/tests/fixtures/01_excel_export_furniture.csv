@@ -1,0 +1,18 @@
+﻿Demand History Extract
+Report run: 14/08/2026 09:41:07
+Plant: TRE-01   Planner: A. Hughes   Currency: GBP
+CONFIDENTIAL - INTERNAL USE ONLY
+
+Material,Description,Month,Qty Shipped,
+PKG-10432,Blister carton 30ct,2025-01-01,812,
+PKG-10432,Blister carton 30ct,2025-02-01,777,
+PKG-10432,Blister carton 30ct,2025-03-01,940,
+
+PKG-10518,Bottle label 100ml,2025-01-01,251,
+PKG-10518,Bottle label 100ml,2025-02-01,238,
+PKG-10518,Bottle label 100ml,2025-03-01,,
+PKG-10518,Bottle label 100ml,2025-04-01,262,
+
+Grand Total,,,3280,
+
+Page 1 of 1
