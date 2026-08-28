@@ -48,7 +48,10 @@ def _series_from_validation(validation) -> DemandSeries:
     rows = [row for row in validation.normalised_rows if row.get("demand") is not None and float(row["demand"]) >= 0]
     skus = {str(row["sku"]) for row in rows}
     if len(skus) != 1:
-        raise ForecastError("The single-product diagnostic requires one SKU after validation")
+        raise ForecastError(
+            "This file contains multiple products. Use the Portfolio Diagnostic, "
+            "or upload a file containing only one SKU."
+        )
     if len(rows) < 12:
         # Superseded by forecastability routing in story 2.3.
         raise ForecastError("At least 12 historical periods are required before this forecast can run")

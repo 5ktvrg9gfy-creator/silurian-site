@@ -1,0 +1,300 @@
+{
+  "version": "1.1",
+  "story": "1.1 Strict input contract and validation",
+  "as_of_date": "2026-08-01",
+  "changelog": [
+    "1.1: every file now uses a passes array; fixture 05 verdict corrected to reject; DUPLICATE_ROW_EXACT standardised to info; resolution added to every blocking defect; as_of_date fixed for deterministic DATE_FUTURE tests"
+  ],
+  "contract": {
+    "required_fields": ["sku", "date", "demand"],
+    "optional_fields": ["uom", "customer", "site", "record_type"],
+    "date_granularity": ["day", "week", "month"],
+    "principle": "Never coerce silently. Every transformation is reported. Ambiguity is escalated to the user, not resolved by guessing.",
+    "resolution_rule": "Every blocking defect names the decision the user supplies to unblock it. A blocking defect with no resolution path is a design defect, except where the file genuinely cannot be used."
+  },
+  "verdicts": {
+    "accept": "No blocking and no warning findings. Information findings may be present.",
+    "accept_with_warnings": "Proceed, but every finding is shown before the run and carried into the report.",
+    "reject": "Do not run. Explain the problem, name the rows, and offer the resolution."
+  },
+  "passes_model": {
+    "description": "Validation is a guided conversation. A structural block stops the pipeline, the user supplies the missing decision, and a new pass runs with those options recorded.",
+    "test_rule": "Assert the verdict and the expected codes per pass, not across the file as a whole."
+  },
+  "files": [
+    {
+      "file": "00_clean_control.csv",
+      "simulates": "A well-formed extract",
+      "passes": [
+        { "pass": 1, "options": {}, "verdict": "accept", "defects": [] }
+      ]
+    },
+    {
+      "file": "01_excel_export_furniture.csv",
+      "simulates": "Planner saved a formatted report from Excel",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "BOM_PRESENT", "severity": "info", "stage": "bytes", "detail": "UTF-8 byte order mark precedes the first row", "auto": true},
+            {"code": "LINE_ENDINGS_CRLF", "severity": "info", "stage": "bytes", "detail": "Windows line endings", "auto": true},
+            {"code": "PREAMBLE_ROWS_BEFORE_HEADER", "severity": "blocking", "stage": "shape", "detail": "Four title rows before the real header on line 6", "resolution": "user confirms the header row"},
+            {"code": "TOTALS_ROW_PRESENT", "severity": "blocking", "stage": "shape", "detail": "Grand Total row would be read as a SKU", "resolution": "user confirms exclusion of the total row"}
+          ]
+        },
+        {
+          "pass": 2,
+          "options": {"header_row": 6, "exclude_rows": ["Grand Total", "Page 1 of 1"]},
+          "verdict": "accept_with_warnings",
+          "defects": [
+            {"code": "TRAILING_DELIMITER", "severity": "info", "stage": "shape", "detail": "Every row ends with an empty field", "auto": true},
+            {"code": "BLANK_ROWS_WITHIN_DATA", "severity": "warning", "stage": "shape", "detail": "Separator rows between SKU blocks"},
+            {"code": "TRAILING_NON_DATA_ROWS", "severity": "warning", "stage": "shape", "detail": "Page footer text after the last data row"},
+            {"code": "VALUE_MISSING", "severity": "warning", "stage": "rows", "detail": "PKG-10518 March quantity is blank"},
+            {"code": "HISTORY_TOO_SHORT", "severity": "warning", "stage": "series", "detail": "Three and four periods only. Reported as fact, routed in sprint 2"}
+          ]
+        }
+      ]
+    },
+    {
+      "file": "02_date_disorder.csv",
+      "simulates": "Dates concatenated from several source systems",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "DATE_FORMAT_MIXED", "severity": "blocking", "stage": "rows", "detail": "At least eight distinct formats in one column", "resolution": "user states the date order, or splits the file by source system"},
+            {"code": "DATE_FORMAT_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "DD/MM resolves for PKG-10432 and MM/DD for PKG-10518 within the same file", "resolution": "user states the order per source, since one answer cannot be right for both"},
+            {"code": "DATE_INVALID", "severity": "blocking", "stage": "rows", "detail": "31/04/2025 does not exist under either order", "resolution": "user corrects or removes the row"},
+            {"code": "DATE_MISSING", "severity": "blocking", "stage": "rows", "detail": "PKG-20077 row has an empty date", "resolution": "user supplies the date or removes the row"},
+            {"code": "EXCEL_SERIAL_DATE", "severity": "warning", "stage": "rows", "detail": "Value 45778 is an Excel serial on the 1899-12-30 epoch"},
+            {"code": "DATE_FUTURE", "severity": "warning", "stage": "rows", "detail": "2026-12-01 is beyond as_of_date"},
+            {"code": "DUPLICATE_ROW_EXACT", "severity": "info", "stage": "keys", "detail": "PKG-20077 2025-01-01 appears twice in a period-grain file", "auto": true}
+          ]
+        }
+      ],
+      "note": "No clean second pass. DATE_INVALID and DATE_MISSING remain blocking after the order is stated, so the user must fix the file."
+    },
+    {
+      "file": "03_numeric_disorder.csv",
+      "simulates": "Quantity column typed by hand and by three systems",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "NUMERIC_THOUSANDS_SEPARATOR", "severity": "info", "stage": "rows", "detail": "1,240 and 1 180", "auto": true},
+            {"code": "NUMERIC_ACCOUNTING_NEGATIVE", "severity": "info", "stage": "rows", "detail": "(85) means -85", "auto": true},
+            {"code": "NUMERIC_SCIENTIFIC_NOTATION", "severity": "info", "stage": "rows", "detail": "1.2E3", "auto": true},
+            {"code": "NUMERIC_DECIMAL_COMMA_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "1.240 could be 1240 or 1.24, a factor of a thousand", "resolution": "user states the decimal convention for the file"},
+            {"code": "NUMERIC_UNPARSEABLE", "severity": "blocking", "stage": "rows", "detail": "244 units carries a unit inside the value", "resolution": "user confirms the unit, or corrects the file"},
+            {"code": "CURRENCY_SYMBOL_IN_QUANTITY", "severity": "blocking", "stage": "rows", "detail": "A pound sign in a quantity column suggests value was exported instead of volume", "resolution": "user confirms the column, or supplies the correct one"},
+            {"code": "NUMERIC_SENTINEL_NULL", "severity": "warning", "stage": "rows", "detail": "n/a, -, #N/A and NULL all present"},
+            {"code": "VALUE_NEGATIVE", "severity": "warning", "stage": "rows", "detail": "-40 with no matching offset, treated as a return not a reversal"},
+            {"code": "UOM_INCONSISTENT", "severity": "warning", "stage": "rows", "detail": "EA, ea, Each and CS in one column"}
+          ]
+        }
+      ]
+    },
+    {
+      "file": "04_pivoted_wide.csv",
+      "simulates": "The format planners actually send",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "WIDE_FORMAT_DETECTED", "severity": "blocking", "stage": "shape", "detail": "Twelve month columns instead of a date column", "resolution": "user approves the unpivot and confirms which columns are periods"},
+            {"code": "TOTALS_COLUMN_PRESENT", "severity": "blocking", "stage": "shape", "detail": "FY Total must be excluded, not treated as a period", "resolution": "user confirms exclusion"},
+            {"code": "TOTALS_ROW_PRESENT", "severity": "blocking", "stage": "shape", "detail": "Total row must be excluded, not treated as a SKU", "resolution": "user confirms exclusion"},
+            {"code": "PERIOD_LABEL_YEAR_BASIS_UNKNOWN", "severity": "blocking", "stage": "shape", "detail": "Jan-25 could be calendar or fiscal. A fiscal basis shifts the whole history", "resolution": "user states calendar or fiscal, and the fiscal year start month"}
+          ]
+        },
+        {
+          "pass": 2,
+          "options": {"unpivot": true, "period_columns": "Jan-25..Dec-25", "exclude_columns": ["FY Total"], "exclude_rows": ["Total"], "year_basis": "calendar"},
+          "verdict": "accept_with_warnings",
+          "defects": [
+            {"code": "NUMERIC_THOUSANDS_SEPARATOR", "severity": "info", "stage": "rows", "detail": "Quoted values such as 1,240", "auto": true},
+            {"code": "ZERO_VS_MISSING_AMBIGUOUS", "severity": "warning", "stage": "series", "detail": "PKG-30219 zeros may be true zeros or unrecorded periods"}
+          ]
+        }
+      ]
+    },
+    {
+      "file": "05_duplicates_and_aliases.csv",
+      "simulates": "Master data drift across a three year extract",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "GRAIN_PERIOD_DETECTED", "severity": "info", "stage": "keys", "detail": "Modal rows per SKU and period is 1, so exact duplicates are export artefacts", "auto": true},
+            {"code": "DUPLICATE_ROW_EXACT", "severity": "info", "stage": "keys", "detail": "Identical row repeated, de-duplicated with the count reported", "auto": true},
+            {"code": "DUPLICATE_KEY_CONFLICT", "severity": "blocking", "stage": "keys", "detail": "PKG-10432 2025-02-01 has two different quantities, 777 and 791", "resolution": "user chooses to aggregate the lines or treat the later row as a correction"},
+            {"code": "SKU_WHITESPACE", "severity": "info", "stage": "rows", "detail": "Leading and trailing spaces on the SKU", "auto": true},
+            {"code": "SKU_CASE_VARIANT", "severity": "info", "stage": "rows", "detail": "pkg-10432 and PKG-10432", "auto": true},
+            {"code": "SKU_ALIAS_SUSPECTED", "severity": "warning", "stage": "keys", "detail": "PKG10432, PKG_10518 and PKG-10432-A may be the same items. Never merge without confirmation"},
+            {"code": "VALUE_NEGATIVE_REVERSAL", "severity": "info", "stage": "rows", "detail": "PKG-20077 minus 1502 exactly offsets the prior line, netted within the period", "auto": true}
+          ]
+        }
+      ],
+      "note": "Verdict corrected from accept_with_warnings in v1.0. A conflicting key cannot become one trusted observation without a user decision."
+    },
+    {
+      "file": "06_semicolon_latin1.csv",
+      "simulates": "A European site export",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "DELIMITER_NOT_COMMA", "severity": "info", "stage": "bytes", "detail": "Semicolon delimited", "auto": true},
+            {"code": "ENCODING_NOT_UTF8", "severity": "blocking", "stage": "bytes", "detail": "latin-1 detected. Offer the re-read, never surface the decode exception", "resolution": "user approves the re-read as latin-1"}
+          ],
+          "stop_rule": "No stage C or later findings on this pass"
+        },
+        {
+          "pass": 2,
+          "options": {"encoding": "latin-1", "delimiter": ";"},
+          "verdict": "reject",
+          "defects": [
+            {"code": "QUOTED_FIELD_MULTILINE", "severity": "info", "stage": "shape", "detail": "A description spans two physical lines", "auto": true},
+            {"code": "COLUMN_NAME_UNRECOGNISED", "severity": "blocking", "stage": "columns", "detail": "Artikel, Datum and Menge need mapping", "resolution": "user maps the columns to sku, date and demand"}
+          ]
+        },
+        {
+          "pass": 3,
+          "options": {"encoding": "latin-1", "delimiter": ";", "column_map": {"Artikel": "sku", "Datum": "date", "Menge": "demand"}},
+          "verdict": "reject",
+          "defects": [
+            {"code": "COLUMN_MAP_NON_CANONICAL", "severity": "info", "stage": "columns", "detail": "Mapping supplied by the user and recorded in the run record", "auto": true},
+            {"code": "DATE_FORMAT_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "01.01.2025 dotted format, no evidence resolving day and month order", "resolution": "user states the date order"},
+            {"code": "NUMERIC_DECIMAL_COMMA_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "1.240 under a European locale", "resolution": "user states the decimal convention"}
+          ]
+        }
+      ],
+      "note": "Three passes is the honest UX for the worst file in the set. Passes 2 and 3 may be collapsed if the confirmation screen asks for encoding, mapping and locale together."
+    },
+    {
+      "file": "07_zeros_versus_gaps.csv",
+      "simulates": "Five different history problems in one portfolio",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "accept_with_warnings",
+          "defects": [
+            {"code": "ZERO_VS_MISSING_AMBIGUOUS", "severity": "warning", "stage": "series", "detail": "PKG-30219 records zeros, PKG-30220 omits the same periods. Same demand, different files"},
+            {"code": "SERIES_DISCONTINUED", "severity": "warning", "stage": "series", "detail": "PKG-30221 stops in May with no end-of-life flag"},
+            {"code": "HISTORY_TOO_SHORT", "severity": "warning", "stage": "series", "detail": "PKG-30222 has four periods"},
+            {"code": "SINGLE_OBSERVATION_SERIES", "severity": "warning", "stage": "series", "detail": "PKG-30223 has one spike and nothing else"}
+          ]
+        }
+      ],
+      "note": "Facts only. Method suitability is story 2.3."
+    },
+    {
+      "file": "08_unit_change_midhistory.csv",
+      "simulates": "A pack size or UOM change that master data did not record",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "UNIT_SCALE_BREAK_SUSPECTED", "severity": "blocking", "stage": "series", "detail": "PKG-10432 drops by a factor near 12 at 2025-08-01 while UOM still reads EA", "resolution": "user confirms rescale by the factor, split the series at the break, or reject the reading"},
+            {"code": "UOM_CHANGE_MIDHISTORY", "severity": "blocking", "stage": "series", "detail": "PKG-20077 changes EA to CS at the same break, confirmed by the UOM column", "resolution": "user supplies the conversion factor, or approves splitting the series"}
+          ]
+        }
+      ],
+      "note": "Highest consequence failure in the set. Pass 2 expectations to be added when the confirmation UI exists."
+    },
+    {
+      "file": "09_mixed_granularity_subtotals.csv",
+      "simulates": "An extract taken at more than one level",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "GRANULARITY_MIXED", "severity": "blocking", "stage": "keys", "detail": "SKU, SKU by customer and SKU by customer by site rows in one file", "resolution": "user chooses the level to analyse at, from the levels found"},
+            {"code": "SUBTOTAL_ROW_SUSPECTED", "severity": "blocking", "stage": "keys", "detail": "Blank customer, ALL, and a Subtotal label all used as totals", "resolution": "user confirms which rows are totals"},
+            {"code": "DOUBLE_COUNT_RISK", "severity": "blocking", "stage": "keys", "detail": "Summing as-is inflates demand while still looking plausible", "resolution": "resolved by the level choice above"}
+          ]
+        }
+      ],
+      "note": "Pass 2 expectations to be added when the level-selection UI exists."
+    },
+    {
+      "file": "10_header_variants_order_book.csv",
+      "simulates": "A raw SAP order book sent instead of demand history",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "GRAIN_TRANSACTIONAL_DETECTED", "severity": "warning", "stage": "keys", "detail": "Multiple rows per SKU and period. Exact duplicates must NOT be auto-removed in this file", "auto": false},
+            {"code": "COLUMN_NAME_UNRECOGNISED", "severity": "blocking", "stage": "columns", "detail": "Material Number, Req. Dely Date and three quantity columns", "resolution": "user maps the columns"},
+            {"code": "QUANTITY_COLUMN_AMBIGUOUS", "severity": "blocking", "stage": "columns", "detail": "Order Qty, Confirmed Qty and Shipped Qty mean different things and only the client knows which was meant", "resolution": "user selects the demand column"},
+            {"code": "DELETED_LINES_PRESENT", "severity": "blocking", "stage": "rows", "detail": "Deleted Flag X rows must be excluded by default", "resolution": "user confirms exclusion of deleted lines"}
+          ]
+        },
+        {
+          "pass": 2,
+          "options": {"column_map": {"Material Number": "sku", "Req. Dely Date": "date", "Shipped Qty": "demand"}, "exclude_deleted": true, "aggregate_to": "month"},
+          "verdict": "accept_with_warnings",
+          "defects": [
+            {"code": "COLUMN_MAP_NON_CANONICAL", "severity": "info", "stage": "columns", "detail": "Mapping supplied by the user and recorded in the run record", "auto": true},
+            {"code": "RETURNS_ORDER_TYPE_PRESENT", "severity": "warning", "stage": "rows", "detail": "ZRE lines are returns, not demand"},
+            {"code": "GRANULARITY_TRANSACTIONAL", "severity": "warning", "stage": "keys", "detail": "Multiple order lines per period aggregated to month, count reported"},
+            {"code": "MULTIPLE_SALES_ORGS", "severity": "warning", "stage": "keys", "detail": "GB01 and IE02 may be separate demand streams"}
+          ]
+        }
+      ]
+    },
+    {
+      "file": "11_actuals_and_forecast_mixed.csv",
+      "simulates": "A planning extract containing forward-looking rows",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "RECORD_TYPE_CASE_VARIANT", "severity": "info", "stage": "rows", "detail": "Actual, ACTUAL and actual normalised", "auto": true},
+            {"code": "RECORD_TYPE_MIXED", "severity": "blocking", "stage": "rows", "detail": "Actual, Forecast, Budget, Plan and blank in one file", "resolution": "user confirms which record types are actuals"},
+            {"code": "FORECAST_ROWS_IN_ACTUALS", "severity": "blocking", "stage": "rows", "detail": "Fitting to the client's own forecast makes every downstream number circular", "resolution": "resolved by the record type mapping above"},
+            {"code": "DATE_FUTURE", "severity": "warning", "stage": "rows", "detail": "Rows dated beyond as_of_date"}
+          ]
+        }
+      ]
+    },
+    {
+      "file": "12_wrong_file_inventory_snapshot.csv",
+      "simulates": "The client sent the wrong extract",
+      "passes": [
+        {
+          "pass": 1,
+          "options": {},
+          "verdict": "reject",
+          "defects": [
+            {"code": "REQUIRED_COLUMN_MISSING", "severity": "blocking", "stage": "columns", "detail": "No demand column", "resolution": "none. The file cannot be used"},
+            {"code": "WRONG_FILE_TYPE", "severity": "blocking", "stage": "columns", "detail": "Shape matches an inventory position, one row per SKU at a single date. Say so rather than reporting a missing column alone", "resolution": "none. Ask the client for the demand history extract"}
+          ]
+        }
+      ],
+      "note": "One of only two cases with no resolution path. The honest answer is that this file cannot be used."
+    }
+  ]
+}

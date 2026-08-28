@@ -357,7 +357,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     metadata["header_row"] = source_lines[header_index]
     data_pairs = [(row, source_lines[index]) for index, row in enumerate(parsed[header_index + 1:], start=header_index + 1)]
 
-    total_rows = [(row, line) for row, line in data_pairs if row and TOTAL_RE.search(row[0].strip())]
+    total_rows = [(row, line) for row, line in data_pairs if row and TOTAL_RE.search(row[0].strip())
+                  and not row[0].strip().lower().startswith("subtotal")]
     total_columns = [header for header in headers if re.search(r"(^|\s)(fy\s+)?(total|sum|ytd)($|\s)", header, re.I)]
     if header_index > 0 and not opts.header_row:
         preamble = parsed[:header_index]
@@ -450,7 +451,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
         if "demand" in missing and {"on_hand", "safety_stock"}.issubset(lower_headers):
             findings.append(_finding("WRONG_FILE_TYPE", "blocking", "columns",
                                      "The file appears to be an inventory snapshot, not demand history.",
-                                     "Request the historical demand extract from the client.", resolution="none. supply the correct file"))
+                                     "Request the historical demand extract from the client.", resolution="supply the correct file"))
     if any(f.severity == "blocking" and f.stage == "columns" for f in findings) and not (
         "Material Number" in headers and "Req. Dely Date" in headers
     ):
@@ -535,7 +536,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     for code, examples in date_errors.items():
         severity = "warning" if code in {"EXCEL_SERIAL_DATE", "DATE_FUTURE"} else "blocking"
         action = "Review the affected source rows." if severity == "warning" else "Correct or remove the affected rows."
-        findings.append(_finding(code, severity, "rows", f"{len(examples)} date value or values require attention.", action,
+        value_label = "date value requires" if len(examples) == 1 else "date values require"
+        findings.append(_finding(code, severity, "rows", f"{len(examples)} {value_label} attention.", action,
                                  level="column", ref="date", count=len(examples), examples=examples,
                                  resolution=None if severity == "warning" else "correct the dates or supply the date order",
                                  transform="converted Excel serial date" if code == "EXCEL_SERIAL_DATE" else None,
@@ -581,16 +583,31 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     record_types = [row.get("record_type", "") for row in normalised if "record_type" in row]
     if record_types:
         canonical_types = {str(value).strip().lower() for value in record_types}
+        display_types = [value if value else "(blank)" for value in sorted(canonical_types)]
+        type_examples = [
+            _example(row["source_row"], f"record_type={str(row.get('record_type', '')).strip() or '(blank)'}", "record type")
+            for row in normalised if "record_type" in row
+        ][:5]
         actual_variants = {str(value).strip() for value in record_types if str(value).strip().lower() == "actual"}
         if len(actual_variants) > 1:
             findings.append(_finding("RECORD_TYPE_CASE_VARIANT", "info", "rows", "Record-type case variants were normalised.",
                                      "No action is required.", transform="normalised record-type case", reversible=True))
         if len(canonical_types) > 1:
-            findings.append(_finding("RECORD_TYPE_MIXED", "blocking", "rows", f"Record types found: {', '.join(sorted(canonical_types))}.",
-                                     "Confirm which record types represent actual demand.", resolution="supply actual record types"))
+            findings.append(_finding("RECORD_TYPE_MIXED", "blocking", "rows", f"Record types found: {', '.join(display_types)}.",
+                                     "Confirm which record types represent actual demand.", count=len(record_types),
+                                     examples=type_examples, resolution="supply actual record types"))
         if canonical_types & {"forecast", "budget", "plan"}:
+            plan_rows = [
+                row for row in normalised
+                if str(row.get("record_type", "")).strip().lower() in {"forecast", "budget", "plan"}
+            ]
+            plan_examples = [
+                _example(row["source_row"], f"record_type={str(row.get('record_type', '')).strip()}", "forward-looking row")
+                for row in plan_rows
+            ][:5]
             findings.append(_finding("FORECAST_ROWS_IN_ACTUALS", "blocking", "rows", "Forward-looking plan rows are mixed with actual demand.",
-                                     "Filter the run to confirmed actual record types.", resolution="supply actual record types"))
+                                     "Filter the run to confirmed actual record types.", count=len(plan_rows),
+                                     examples=plan_examples, resolution="supply actual record types"))
 
     if "Order Type" in headers:
         order_index = header_index_by_name["Order Type"]
@@ -601,9 +618,16 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                      examples=[_example(line, delimiter.join(row), "return order type") for row, line in returns[:5]]))
 
     negative_rows = [row for row in normalised if row["demand"] < 0]
+    reversal_source_rows: set[int] = set()
+    used_positive_rows: set[int] = set()
     for negative in negative_rows:
-        match = next((positive for positive in normalised if positive["sku"] == negative["sku"] and positive["demand"] == abs(negative["demand"])), None)
+        match = next((positive for positive in normalised
+                      if positive["sku"] == negative["sku"]
+                      and positive["demand"] == abs(negative["demand"])
+                      and positive["source_row"] not in used_positive_rows), None)
         if match:
+            reversal_source_rows.update({negative["source_row"], match["source_row"]})
+            used_positive_rows.add(match["source_row"])
             findings.append(_finding("VALUE_NEGATIVE_REVERSAL", "info", "rows", "A negative value exactly offsets a matching positive entry.",
                                      "No action is required.", level="row", ref=str(negative["source_row"]),
                                      examples=[_example(negative["source_row"], str(negative["demand"]), f"offsets row {match['source_row']}")],
@@ -612,13 +636,18 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
             findings.append(_finding("VALUE_NEGATIVE", "warning", "rows", "A negative value has no matching offset and appears to be a return.",
                                      "Confirm whether returns belong in the demand stream.", level="row", ref=str(negative["source_row"]),
                                      examples=[_example(negative["source_row"], str(negative["demand"]), "unmatched negative")]))
+    if reversal_source_rows:
+        normalised = [row for row in normalised if row["source_row"] not in reversal_source_rows]
 
     key_groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in normalised:
         key_groups[(row["sku"], row["date"])].append(row)
     modal_count = Counter(len(group) for group in key_groups.values()).most_common(1)[0][0] if key_groups else 1
-    metadata["grain"] = "period" if modal_count == 1 else "transactional"
-    if modal_count == 1:
+    transactional_headers = {"Order Type", "Sales Org", "Deleted Flag", "Order Qty", "Confirmed Qty", "Shipped Qty"}
+    transactional_hint = len(transactional_headers.intersection(headers)) >= 2
+    transactional = modal_count > 1 or transactional_hint
+    metadata["grain"] = "transactional" if transactional else "period"
+    if not transactional:
         if any(len(group) > 1 for group in key_groups.values()):
             findings.append(_finding("GRAIN_PERIOD_DETECTED", "info", "keys", "The modal row count per SKU and period is one.",
                                      "No action is required.", transform="classified period grain", reversible=True))
@@ -632,7 +661,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     seen_exact: set[tuple[Any, ...]] = set()
     for row in normalised:
         signature = tuple((key, json.dumps(value, sort_keys=True)) for key, value in sorted(row.items()) if key != "source_row")
-        if signature in seen_exact and modal_count == 1:
+        if signature in seen_exact and not transactional:
             exact_duplicate_examples.append(_example(row["source_row"], f"{row['sku']},{row['date']},{row['demand']}", "exact duplicate"))
             continue
         seen_exact.add(signature)
@@ -643,11 +672,13 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                  transform="removed exact duplicate rows", reversible=True))
     normalised = deduplicated
 
+    has_dimensions = any("customer" in row or "site" in row for row in normalised)
     conflicts = []
-    for key, group in key_groups.items():
-        values = {row["demand"] for row in group}
-        if len(values) > 1 and not ({value for value in values if value < 0} and sum(values) == 0):
-            conflicts.extend(_example(row["source_row"], str(row["demand"]), f"conflicting key {key[0]} {key[1]}") for row in group[:5])
+    if not has_dimensions:
+        for key, group in key_groups.items():
+            values = {row["demand"] for row in group}
+            if len(values) > 1 and not ({value for value in values if value < 0} and sum(values) == 0):
+                conflicts.extend(_example(row["source_row"], str(row["demand"]), f"conflicting key {key[0]} {key[1]}") for row in group[:5])
     if conflicts:
         findings.append(_finding("DUPLICATE_KEY_CONFLICT", "blocking", "keys", "A SKU and period contain different demand quantities.",
                                  "Choose whether to aggregate the lines or treat the later row as a correction.", count=len(conflicts),
@@ -667,7 +698,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
         findings.append(_finding("SKU_ALIAS_SUSPECTED", "warning", "keys", f"Related SKU forms were found: {', '.join(values)}.",
                                  "Confirm whether these are separate items or aliases.", level="sku", ref=values[0], count=len(values)))
 
-    if any("customer" in row or "site" in row for row in normalised):
+    if has_dimensions:
         depths = defaultdict(set)
         depth_counts = Counter()
         for row in normalised:
@@ -690,7 +721,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                     remaining = sum(item["demand"] for item in group if item is not candidate)
                     if remaining and abs(candidate["demand"] - remaining) / abs(remaining) <= 0.005:
                         arithmetic_subtotals.append(candidate)
-        suspects = subtotal_rows + arithmetic_subtotals
+        suspects_by_row = {row["source_row"]: row for row in subtotal_rows + arithmetic_subtotals}
+        suspects = [suspects_by_row[source_row] for source_row in sorted(suspects_by_row)]
         if suspects:
             findings.append(_finding("SUBTOTAL_ROW_SUSPECTED", "blocking", "keys", "Label or arithmetic checks found suspected subtotal rows.",
                                      "Confirm which rows are totals.", count=len(suspects),
@@ -698,6 +730,9 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                      resolution="confirm subtotal exclusions"))
             findings.append(_finding("DOUBLE_COUNT_RISK", "blocking", "keys", "Summing all rows would count detail and subtotal quantities together.",
                                      "Select one analysis level before aggregation.", resolution="select analysis level"))
+        if any(finding.severity == "blocking" and finding.stage == "keys" for finding in findings):
+            metadata["parsed_rows"] = len(raw_records)
+            return _finish(raw, opts, findings, normalised, metadata)
 
     if "Sales Org" in headers:
         index = header_index_by_name["Sales Org"]
@@ -730,8 +765,14 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     zero_skus = {sku for sku, values in series.items() if any(row["demand"] == 0 for row in values)}
     sparse_skus = {sku for sku, values in series.items() if len(values) <= 4 and len(values) > 1}
     if zero_skus:
-        findings.append(_finding("ZERO_VS_MISSING_AMBIGUOUS", "warning", "series", "Some series record zero periods while comparable sparse series omit them.",
-                                 "Confirm whether missing periods mean zero demand.", count=len(zero_skus | sparse_skus)))
+        zero_names = ", ".join(sorted(zero_skus))
+        sparse_names = ", ".join(sorted(sparse_skus)) or "none"
+        zero_examples = [_example(row["source_row"], f"{row['sku']},{row['date']},0", "recorded zero")
+                         for sku in sorted(zero_skus) for row in series[sku] if row["demand"] == 0][:5]
+        findings.append(_finding("ZERO_VS_MISSING_AMBIGUOUS", "warning", "series",
+                                 f"Recorded zero demand appears for {zero_names}; sparse comparison series are {sparse_names}.",
+                                 "Confirm whether missing periods mean zero demand.", count=len(zero_skus | sparse_skus),
+                                 examples=zero_examples))
 
     for sku, values in series.items():
         if len(values) < 8:
