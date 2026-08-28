@@ -1,0 +1,609 @@
+{
+  "version": "1.1",
+  "story": "1.2 Data quality report",
+  "as_of_date": "2026-08-01",
+  "grain": "month",
+  "tolerance": {
+    "coverage_pct": 0.1,
+    "zero_share_pct": 0.1,
+    "adi": 0.05,
+    "cv_squared_nonzero": 0.05,
+    "volume_share_pct": 0.1
+  },
+  "note": "Structural metrics are exact and generated from the fixture data. Outlier expectations are stated as must_flag and must_not_flag rather than counts, because the method may legitimately vary. Files may declare as_of_date_override; where absent the top-level as_of_date applies.",
+  "files": {
+    "00_clean_control.csv": {
+      "sku_count": 4,
+      "portfolio_volume": 94406,
+      "per_sku": {
+        "PKG-10432": {
+          "first_period": "2023-01-01",
+          "last_period": "2025-12-01",
+          "periods_present": 36,
+          "periods_expected_in_span": 36,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.013,
+          "trailing_gap_periods": 0,
+          "volume_total": 31413,
+          "volume_share_pct": 33.27
+        },
+        "PKG-10518": {
+          "first_period": "2023-01-01",
+          "last_period": "2025-12-01",
+          "periods_present": 36,
+          "periods_expected_in_span": 36,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.035,
+          "trailing_gap_periods": 0,
+          "volume_total": 9865,
+          "volume_share_pct": 10.45
+        },
+        "PKG-20077": {
+          "first_period": "2023-01-01",
+          "last_period": "2025-12-01",
+          "periods_present": 36,
+          "periods_expected_in_span": 36,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.022,
+          "trailing_gap_periods": 0,
+          "volume_total": 49527,
+          "volume_share_pct": 52.46
+        },
+        "PKG-30219": {
+          "first_period": "2023-01-01",
+          "last_period": "2025-12-01",
+          "periods_present": 36,
+          "periods_expected_in_span": 36,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.079,
+          "trailing_gap_periods": 0,
+          "volume_total": 3601,
+          "volume_share_pct": 3.81
+        }
+      },
+      "assertions": {
+        "portfolio_band": "clean",
+        "must_flag": [],
+        "must_not_flag": [
+          "PKG-10432",
+          "PKG-10518",
+          "PKG-20077",
+          "PKG-30219"
+        ],
+        "note": "Control. Any quality flag here is a false positive. Uses its own as_of_date of 2026-01-01, so the extract is current and staleness does not fire.",
+        "expected_bands": {
+          "PKG-10432": "clean",
+          "PKG-10518": "clean",
+          "PKG-20077": "clean",
+          "PKG-30219": "clean"
+        }
+      },
+      "as_of_date_override": "2026-01-01"
+    },
+    "20_portfolio_mixed.csv": {
+      "sku_count": 12,
+      "portfolio_volume": 1052619,
+      "per_sku": {
+        "PKG-10432": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.011,
+          "trailing_gap_periods": 0,
+          "volume_total": 303239,
+          "volume_share_pct": 28.81
+        },
+        "PKG-10518": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.01,
+          "trailing_gap_periods": 0,
+          "volume_total": 180948,
+          "volume_share_pct": 17.19
+        },
+        "PKG-20077": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.007,
+          "trailing_gap_periods": 0,
+          "volume_total": 393112,
+          "volume_share_pct": 37.35
+        },
+        "PKG-30219": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 24,
+          "zero_share_pct": 68.6,
+          "longest_zero_run": 8,
+          "adi": 3.18,
+          "cv_squared_nonzero": 0.015,
+          "trailing_gap_periods": 0,
+          "volume_total": 2350,
+          "volume_share_pct": 0.22
+        },
+        "PKG-30220": {
+          "first_period": "2023-11-01",
+          "last_period": "2026-07-01",
+          "periods_present": 8,
+          "periods_expected_in_span": 33,
+          "gap_count": 25,
+          "longest_gap": 9,
+          "coverage_pct": 24.2,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.021,
+          "trailing_gap_periods": 0,
+          "volume_total": 1983,
+          "volume_share_pct": 0.19
+        },
+        "PKG-40001": {
+          "first_period": "2026-03-01",
+          "last_period": "2026-07-01",
+          "periods_present": 5,
+          "periods_expected_in_span": 5,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.014,
+          "trailing_gap_periods": 0,
+          "volume_total": 3293,
+          "volume_share_pct": 0.31
+        },
+        "PKG-40002": {
+          "first_period": "2023-09-01",
+          "last_period": "2025-10-01",
+          "periods_present": 26,
+          "periods_expected_in_span": 26,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.01,
+          "trailing_gap_periods": 9,
+          "volume_total": 29838,
+          "volume_share_pct": 2.83
+        },
+        "PKG-40003": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 31,
+          "periods_expected_in_span": 35,
+          "gap_count": 4,
+          "longest_gap": 4,
+          "coverage_pct": 88.6,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.008,
+          "trailing_gap_periods": 0,
+          "volume_total": 72769,
+          "volume_share_pct": 6.91
+        },
+        "PKG-40004": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 1.212,
+          "trailing_gap_periods": 0,
+          "volume_total": 14269,
+          "volume_share_pct": 1.36
+        },
+        "PKG-40005": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-02-01",
+          "periods_present": 30,
+          "periods_expected_in_span": 30,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.009,
+          "trailing_gap_periods": 5,
+          "volume_total": 23656,
+          "volume_share_pct": 2.25
+        },
+        "PKG-40006": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 6,
+          "zero_share_pct": 17.1,
+          "longest_zero_run": 1,
+          "adi": 1.21,
+          "cv_squared_nonzero": 0.105,
+          "trailing_gap_periods": 0,
+          "volume_total": 96,
+          "volume_share_pct": 0.01
+        },
+        "PKG-40007": {
+          "first_period": "2025-06-01",
+          "last_period": "2026-07-01",
+          "periods_present": 14,
+          "periods_expected_in_span": 14,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.005,
+          "trailing_gap_periods": 0,
+          "volume_total": 27066,
+          "volume_share_pct": 2.57
+        }
+      },
+      "assertions": {
+        "portfolio_band": "caveated",
+        "must_flag": {
+          "PKG-30220": [
+            "ZERO_VS_MISSING_AMBIGUOUS"
+          ],
+          "PKG-40001": [
+            "HISTORY_TOO_SHORT"
+          ],
+          "PKG-40002": [
+            "SERIES_DISCONTINUED"
+          ],
+          "PKG-40003": [
+            "GAP_BLOCK"
+          ],
+          "PKG-40004": [
+            "OUTLIER_CANDIDATE"
+          ],
+          "PKG-40005": [
+            "SERIES_STALE"
+          ],
+          "PKG-40006": [
+            "VOLUME_IMMATERIAL"
+          ],
+          "PKG-40007": [
+            "HISTORY_TOO_SHORT"
+          ]
+        },
+        "must_not_flag": [
+          "PKG-10432",
+          "PKG-10518",
+          "PKG-20077",
+          "PKG-30219"
+        ],
+        "value_weighting": "The three clean SKUs must carry the large majority of portfolio volume. The report must state both the share of SKUs flagged and the share of volume flagged, and they must differ materially.",
+        "note": "Flagship demo file. Also the seed for the sprint 5.6 worked demo dataset.",
+        "must_not_flag_note": "PKG-30219 is genuinely intermittent, 68.6 percent recorded zeros and ADI 3.18. Intermittency is a demand characteristic, not a data quality defect, and classifying it belongs to story 2.1. Flagging it here is a false positive.",
+        "expected_bands": {
+          "PKG-10432": "clean",
+          "PKG-10518": "clean",
+          "PKG-20077": "clean",
+          "PKG-30219": "clean",
+          "PKG-40006": "clean",
+          "PKG-40002": "caveated",
+          "PKG-40003": "caveated",
+          "PKG-40004": "caveated",
+          "PKG-40005": "caveated",
+          "PKG-40007": "caveated",
+          "PKG-40001": "not_usable",
+          "PKG-30220": "not_usable"
+        },
+        "resolvable": {
+          "PKG-30220": true,
+          "PKG-40001": false
+        },
+        "headline_expectations": {
+          "clean_volume_share_pct": 83.58,
+          "flagged_sku_share_pct": 66.7,
+          "flagged_volume_share_pct": 16.43,
+          "long_tail_skus_beyond_99pct": [
+            "PKG-40001",
+            "PKG-30219",
+            "PKG-30220",
+            "PKG-40006"
+          ],
+          "long_tail_volume_share_pct": 0.73,
+          "tolerance_pct": 0.5
+        }
+      }
+    },
+    "21_stale_extract.csv": {
+      "sku_count": 4,
+      "portfolio_volume": 839253,
+      "per_sku": {
+        "PKG-10432": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-03-01",
+          "periods_present": 31,
+          "periods_expected_in_span": 31,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.004,
+          "trailing_gap_periods": 4,
+          "volume_total": 251782,
+          "volume_share_pct": 30.0
+        },
+        "PKG-10518": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-03-01",
+          "periods_present": 31,
+          "periods_expected_in_span": 31,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.007,
+          "trailing_gap_periods": 4,
+          "volume_total": 167785,
+          "volume_share_pct": 19.99
+        },
+        "PKG-20077": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-03-01",
+          "periods_present": 31,
+          "periods_expected_in_span": 31,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.007,
+          "trailing_gap_periods": 4,
+          "volume_total": 361565,
+          "volume_share_pct": 43.08
+        },
+        "PKG-40007": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-03-01",
+          "periods_present": 31,
+          "periods_expected_in_span": 31,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.007,
+          "trailing_gap_periods": 4,
+          "volume_total": 58121,
+          "volume_share_pct": 6.93
+        }
+      },
+      "assertions": {
+        "portfolio_band": "caveated",
+        "must_flag_portfolio": [
+          "EXTRACT_STALE"
+        ],
+        "must_not_flag": [
+          "PKG-10432",
+          "PKG-10518",
+          "PKG-20077",
+          "PKG-40007"
+        ],
+        "note": "Every series ends four periods before as_of_date. This is one finding about the extract, not four findings about SKUs. Reporting it per SKU is the failure mode to avoid.",
+        "expected_bands": {
+          "PKG-10432": "clean",
+          "PKG-10518": "clean",
+          "PKG-20077": "clean",
+          "PKG-40007": "clean"
+        },
+        "portfolio_band_rule": "Every SKU is clean, so the volume-weighted SKU rule alone would return clean. The portfolio band must be caveated because a portfolio-level finding is present. The portfolio band is the worse of the volume rule and any portfolio finding."
+      }
+    },
+    "22_outliers_and_shift.csv": {
+      "sku_count": 4,
+      "portfolio_volume": 83813,
+      "per_sku": {
+        "SKU-SEASONAL": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.263,
+          "trailing_gap_periods": 0,
+          "volume_total": 36845,
+          "volume_share_pct": 43.96
+        },
+        "SKU-SPIKE": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 1.014,
+          "trailing_gap_periods": 0,
+          "volume_total": 12393,
+          "volume_share_pct": 14.79
+        },
+        "SKU-LEVELSHIFT": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.062,
+          "trailing_gap_periods": 0,
+          "volume_total": 17174,
+          "volume_share_pct": 20.49
+        },
+        "SKU-SUSPECTZERO": {
+          "first_period": "2023-09-01",
+          "last_period": "2026-07-01",
+          "periods_present": 35,
+          "periods_expected_in_span": 35,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 1,
+          "zero_share_pct": 2.9,
+          "longest_zero_run": 1,
+          "adi": 1.03,
+          "cv_squared_nonzero": 0.004,
+          "trailing_gap_periods": 0,
+          "volume_total": 17401,
+          "volume_share_pct": 20.76
+        }
+      },
+      "assertions": {
+        "portfolio_band": "caveated",
+        "must_flag": {
+          "SKU-SPIKE": [
+            "OUTLIER_CANDIDATE"
+          ],
+          "SKU-LEVELSHIFT": [
+            "LEVEL_SHIFT"
+          ],
+          "SKU-SUSPECTZERO": [
+            "SUSPECT_ZERO"
+          ]
+        },
+        "must_not_flag": [
+          "SKU-SEASONAL"
+        ],
+        "must_not_raise": {
+          "SKU-LEVELSHIFT": [
+            "UNIT_SCALE_BREAK_SUSPECTED"
+          ],
+          "SKU-SEASONAL": [
+            "OUTLIER_CANDIDATE"
+          ]
+        },
+        "note": "SKU-SEASONAL has a genuine 3x December peak in all three years. Flagging it as an outlier is the single most common defect in naive implementations. SKU-LEVELSHIFT moves by 1.6x, which is not a pack factor, so it is a level shift and not a unit break.",
+        "expected_bands": {
+          "SKU-SEASONAL": "clean",
+          "SKU-SPIKE": "caveated",
+          "SKU-LEVELSHIFT": "caveated",
+          "SKU-SUSPECTZERO": "caveated"
+        }
+      }
+    }
+  },
+  "thresholds": {
+    "history_short_periods": 18,
+    "history_not_usable_periods": 6,
+    "coverage_not_usable_pct": 50,
+    "series_stale_trailing_periods": 3,
+    "series_discontinued_trailing_periods": 6,
+    "extract_stale_trailing_periods": 2,
+    "gap_block_min_run": 3,
+    "gap_block_concentration_ratio": 0.8,
+    "sparse_coverage_pct": 70,
+    "volume_immaterial_share_pct": 0.1,
+    "long_tail_cumulative_pct": 99,
+    "suspect_zero_max_zero_share_pct": 10,
+    "suspect_zero_max_adi": 1.25,
+    "outlier_modified_z": 3.5,
+    "outlier_deseasonalise_min_periods": 24,
+    "level_shift_min_run": 3,
+    "level_shift_pack_factor_tolerance_pct": 12,
+    "portfolio_not_usable_volume_pct": 20,
+    "portfolio_caveated_volume_pct": 5,
+    "note": "history_short and history_not_usable are measured on SPAN from first to last period, never on rows present. Rows present measures sparsity, not age."
+  }
+}
