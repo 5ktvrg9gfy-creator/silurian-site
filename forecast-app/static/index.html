@@ -86,6 +86,20 @@ const fmt=value=>Math.round(value).toLocaleString('en-GB');
 const pct=value=>`${value.toFixed(1)}%`;
 const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 function validationWhy(finding){
+  const reasons={
+    WRONG_FILE_TYPE:'Inventory levels describe a stock position, not customer demand over time, so they cannot support a demand forecast.',
+    REQUIRED_COLUMN_MISSING:'The forecast cannot identify the required demand series while this field is missing.',
+    COLUMN_NAME_UNRECOGNISED:'Unmapped columns may contain important data, and guessing their meaning could change the result.',
+    PREAMBLE_ROWS_BEFORE_HEADER:'Report titles and notes would otherwise be read as data, shifting every column and row.',
+    TOTALS_ROW_PRESENT:'A total row would be counted as another demand period and would overstate demand.',
+    UNIT_SCALE_BREAK_SUSPECTED:'Combining case quantities and each quantities would create a false change in demand.',
+    UOM_INCONSISTENT:'Different units may not be comparable until the unit used for each series is confirmed.',
+    FORECAST_ROWS_IN_ACTUALS:'Including a previous forecast in actual demand history would teach the model from an assumption rather than observed demand.',
+    RECORD_TYPE_MIXED:'The system cannot safely decide which record types are observed demand without confirmation.',
+    HISTORY_TOO_SHORT:'A short history reduces the evidence available for back-testing and forecast selection.',
+    SERIES_DISCONTINUED:'A series ending before the portfolio cut-off may represent a discontinued product or missing recent data.'
+  };
+  if(reasons[finding.code])return reasons[finding.code];
   if(finding.severity==='blocking')return 'This ambiguity could produce a credible-looking but incorrect forecast, so the run has stopped.';
   if(finding.severity==='warning')return 'The run may continue, but this condition could affect how the result should be interpreted.';
   return 'The file was transformed transparently so the source and normalised result remain auditable.';
@@ -93,7 +107,7 @@ function validationWhy(finding){
 function renderValidation(validation,targetId){
   const panel=document.getElementById(targetId);if(!validation){panel.style.display='none';return}
   const verdict=validation.verdict,findings=validation.findings||[],title=verdict==='reject'?'File rejected before forecasting':verdict==='accept_with_warnings'?'File accepted with warnings':'File accepted';
-  const cards=findings.map(finding=>{const evidence=(finding.examples||[]).map(item=>`${item.row}   ${item.raw}   ${item.note}`).join('\n');return `<article class="finding"><div class="finding-code">${esc(finding.code)} · ${esc(finding.severity)}</div><div class="finding-line"><strong>What</strong><span>${esc(finding.detail)}</span></div><div class="finding-line"><strong>Why</strong><span>${esc(validationWhy(finding))}</span></div><div class="finding-line"><strong>Do this</strong><span>${esc(finding.action)}${finding.resolution?` Resolution: ${esc(finding.resolution)}.`:''}</span></div>${evidence?`<div class="evidence">${esc(evidence)}</div>`:''}</article>`}).join('');
+  const cards=findings.map(finding=>{const evidence=(finding.examples||[]).map(item=>`${item.row}   ${item.raw}   ${item.note}`).join('\n');return `<article class="finding"><div class="finding-code">${esc(finding.code)} · ${esc(finding.severity)}</div><div class="finding-line"><strong>What</strong><span>${esc(finding.detail)}</span></div><div class="finding-line"><strong>Why</strong><span>${esc(validationWhy(finding))}</span></div><div class="finding-line"><strong>Do this</strong><span>${esc(finding.action)}</span></div>${evidence?`<div class="evidence">${esc(evidence)}</div>`:''}</article>`}).join('');
   panel.className=`validation-panel ${verdict}`;panel.innerHTML=`<div class="validation-head"><div><div class="kicker">Input validation</div><h2>${title}</h2><div class="small">${findings.length} ${findings.length===1?'finding':'findings'}. No model was called for a rejected file.</div></div><div class="validation-badge">${esc(verdict.replaceAll('_',' '))}</div></div>${cards}<button type="button" class="download-record">Download validation record</button>`;
   panel.querySelector('.download-record').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(validation.run_record,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`silurian-validation-${validation.run_record.dataset_sha256.slice(0,12)}.json`;link.click();URL.revokeObjectURL(url)});
   panel.style.display='block';
