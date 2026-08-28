@@ -95,6 +95,24 @@ class QualityEngineTests(unittest.TestCase):
         self.assertEqual(volumes, sorted(volumes, reverse=True))
         self.assertEqual(expected["assertions"]["portfolio_band"], first.to_dict()["portfolio"]["band"])
 
+    def test_outlier_wording_uses_correct_number(self):
+        mixed, _ = self.run_fixture("20_portfolio_mixed.csv")
+        shifted, _ = self.run_fixture("22_outliers_and_shift.csv")
+        mixed_detail = next(
+            finding["detail"]
+            for item in mixed["skus"]
+            for finding in item["findings"]
+            if finding["code"] == "OUTLIER_CANDIDATE"
+        )
+        shifted_detail = next(
+            finding["detail"]
+            for item in shifted["skus"]
+            for finding in item["findings"]
+            if finding["code"] == "OUTLIER_CANDIDATE"
+        )
+        self.assertEqual(mixed_detail, "2 periods are robust outlier candidates.")
+        self.assertEqual(shifted_detail, "1 period is a robust outlier candidate.")
+
 
 if __name__ == "__main__":
     unittest.main()
