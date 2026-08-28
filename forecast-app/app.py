@@ -45,6 +45,14 @@ def _validation_response(validation):
     }
 
 
+def _check_upload(raw: bytes) -> None:
+    if len(raw) > 4_000_000:
+        raise HTTPException(
+            status_code=413,
+            detail="This diagnostic accepts files up to 4 MB. Request the top 500 SKUs by value or the last 36 months of history.",
+        )
+
+
 def _series_from_validation(validation) -> DemandSeries:
     rows = [row for row in validation.normalised_rows if row.get("demand") is not None and float(row["demand"]) >= 0]
     skus = {str(row["sku"]) for row in rows}
