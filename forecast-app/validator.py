@@ -669,11 +669,13 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                  transform="removed exact duplicate rows", reversible=True))
     normalised = deduplicated
 
+    has_dimensions = any("customer" in row or "site" in row for row in normalised)
     conflicts = []
-    for key, group in key_groups.items():
-        values = {row["demand"] for row in group}
-        if len(values) > 1 and not ({value for value in values if value < 0} and sum(values) == 0):
-            conflicts.extend(_example(row["source_row"], str(row["demand"]), f"conflicting key {key[0]} {key[1]}") for row in group[:5])
+    if not has_dimensions:
+        for key, group in key_groups.items():
+            values = {row["demand"] for row in group}
+            if len(values) > 1 and not ({value for value in values if value < 0} and sum(values) == 0):
+                conflicts.extend(_example(row["source_row"], str(row["demand"]), f"conflicting key {key[0]} {key[1]}") for row in group[:5])
     if conflicts:
         findings.append(_finding("DUPLICATE_KEY_CONFLICT", "blocking", "keys", "A SKU and period contain different demand quantities.",
                                  "Choose whether to aggregate the lines or treat the later row as a correction.", count=len(conflicts),
@@ -693,7 +695,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
         findings.append(_finding("SKU_ALIAS_SUSPECTED", "warning", "keys", f"Related SKU forms were found: {', '.join(values)}.",
                                  "Confirm whether these are separate items or aliases.", level="sku", ref=values[0], count=len(values)))
 
-    if any("customer" in row or "site" in row for row in normalised):
+    if has_dimensions:
         depths = defaultdict(set)
         depth_counts = Counter()
         for row in normalised:
@@ -716,7 +718,8 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                     remaining = sum(item["demand"] for item in group if item is not candidate)
                     if remaining and abs(candidate["demand"] - remaining) / abs(remaining) <= 0.005:
                         arithmetic_subtotals.append(candidate)
-        suspects = subtotal_rows + arithmetic_subtotals
+        suspects_by_row = {row["source_row"]: row for row in subtotal_rows + arithmetic_subtotals}
+        suspects = [suspects_by_row[source_row] for source_row in sorted(suspects_by_row)]
         if suspects:
             findings.append(_finding("SUBTOTAL_ROW_SUSPECTED", "blocking", "keys", "Label or arithmetic checks found suspected subtotal rows.",
                                      "Confirm which rows are totals.", count=len(suspects),
@@ -724,6 +727,9 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                      resolution="confirm subtotal exclusions"))
             findings.append(_finding("DOUBLE_COUNT_RISK", "blocking", "keys", "Summing all rows would count detail and subtotal quantities together.",
                                      "Select one analysis level before aggregation.", resolution="select analysis level"))
+        if any(finding.severity == "blocking" and finding.stage == "keys" for finding in findings):
+            metadata["parsed_rows"] = len(raw_records)
+            return _finish(raw, opts, findings, normalised, metadata)
 
     if "Sales Org" in headers:
         index = header_index_by_name["Sales Org"]
