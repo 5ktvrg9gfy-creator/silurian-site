@@ -1,0 +1,248 @@
+{
+  "schema_version": "1.1",
+  "run_id": "run_42fcfd5cefbb126019ec0eb06e5144ef",
+  "created_at": "2026-08-28T17:12:04Z",
+  "as_of_date": "2026-08-01",
+  "as_of_source": "user",
+  "source": {
+    "filename": "20_portfolio_mixed.csv",
+    "bytes": 8210,
+    "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
+    "rows_raw": 324,
+    "encoding_detected": "utf-8",
+    "delimiter_detected": ",",
+    "received_at": "2026-08-28T17:12:01Z"
+  },
+  "stages": [
+    {
+      "stage": "validation",
+      "story": "1.1",
+      "engine_version": "1.0.0",
+      "started_at": "2026-08-28T17:12:01Z",
+      "completed_at": "2026-08-28T17:12:02Z",
+      "duration_ms": 840,
+      "input_ref": {
+        "type": "source_file",
+        "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
+        "rows": 324
+      },
+      "output_ref": {
+        "type": "normalised_dataset",
+        "sha256": "a6e8587569651f4781c398556252c64bceb32f2a8f0319b29ed8fc37a6df632c",
+        "rows": 324,
+        "series": 12
+      },
+      "options": {
+        "as_of_date": "2026-08-01",
+        "as_of_source": "user",
+        "encoding": "utf-8",
+        "encoding_source": "detected",
+        "delimiter": ",",
+        "delimiter_source": "detected",
+        "header_row": 1,
+        "column_map": {
+          "sku": "sku",
+          "date": "date",
+          "demand": "demand"
+        },
+        "column_map_source": "canonical",
+        "date_order": "iso",
+        "decimal_convention": "point",
+        "grain_hint": null
+      },
+      "passes": [
+        {
+          "pass": 1,
+          "verdict": "accept",
+          "options_supplied": {},
+          "finding_codes": []
+        }
+      ],
+      "transformations": [],
+      "outcome": {
+        "verdict": "accept",
+        "findings": 0,
+        "rows_in": 324,
+        "rows_out": 324,
+        "series": 12
+      }
+    },
+    {
+      "stage": "quality",
+      "story": "1.2",
+      "engine_version": "1.0.0",
+      "started_at": "2026-08-28T17:12:02Z",
+      "completed_at": "2026-08-28T17:12:03Z",
+      "duration_ms": 610,
+      "input_ref": {
+        "type": "normalised_dataset",
+        "sha256": "a6e8587569651f4781c398556252c64bceb32f2a8f0319b29ed8fc37a6df632c",
+        "rows": 324,
+        "series": 12
+      },
+      "output_ref": {
+        "type": "quality_result",
+        "sha256": "0495471d4dddd9949204b79c855799e9b683cd20914907de30ea7056c2276b0a",
+        "series": 12
+      },
+      "options": {
+        "as_of_date": "2026-08-01",
+        "grain": "month",
+        "grain_source": "inferred",
+        "grain_evidence": "modal spacing, 12 of 12 series agree",
+        "weighting": "volume",
+        "thresholds": {
+          "history_short_periods": 18,
+          "history_not_usable_periods": 6,
+          "coverage_not_usable_pct": 50,
+          "series_stale_trailing_periods": 3,
+          "series_discontinued_trailing_periods": 6,
+          "extract_stale_trailing_periods": 2,
+          "gap_block_min_run": 3,
+          "gap_block_concentration_ratio": 0.8,
+          "sparse_coverage_pct": 70,
+          "volume_immaterial_share_pct": 0.1,
+          "long_tail_cumulative_pct": 99,
+          "suspect_zero_max_zero_share_pct": 10,
+          "suspect_zero_max_adi": 1.25,
+          "outlier_modified_z": 3.5,
+          "outlier_deseasonalise_min_periods": 24,
+          "level_shift_min_run": 3,
+          "level_shift_pack_factor_tolerance_pct": 12,
+          "portfolio_not_usable_volume_pct": 20,
+          "portfolio_caveated_volume_pct": 5
+        }
+      },
+      "outcome": {
+        "portfolio_band": "caveated",
+        "series": 12,
+        "bands": {
+          "clean": 5,
+          "caveated": 5,
+          "not_usable": 2
+        },
+        "flagged_sku_share_pct": 66.7,
+        "flagged_volume_share_pct": 16.43,
+        "clean_volume_share_pct": 83.58,
+        "finding_codes": [
+          "ZERO_VS_MISSING_AMBIGUOUS",
+          "HISTORY_TOO_SHORT",
+          "SERIES_DISCONTINUED",
+          "GAP_BLOCK",
+          "OUTLIER_CANDIDATE",
+          "SERIES_STALE",
+          "VOLUME_IMMATERIAL",
+          "LONG_TAIL"
+        ]
+      }
+    },
+    {
+      "stage": "forecast",
+      "story": "MVP forecast path, routed by 1.2 bands",
+      "engine_version": "0.9.0",
+      "started_at": "2026-08-28T17:12:03Z",
+      "completed_at": "2026-08-28T17:12:06Z",
+      "duration_ms": 3120,
+      "input_ref": {
+        "type": "normalised_dataset",
+        "sha256": "a6e8587569651f4781c398556252c64bceb32f2a8f0319b29ed8fc37a6df632c",
+        "rows": 324,
+        "series": 12
+      },
+      "output_ref": {
+        "type": "forecast_result",
+        "sha256": "01cc2f83617b034f5522a474c74e9488c08909bd4dedc105e3c874dd4ba64b42",
+        "series": 9
+      },
+      "options": {
+        "horizon": 12,
+        "exclude_bands": [
+          "not_usable"
+        ],
+        "confidence_level": 0.9,
+        "context_window": 512,
+        "context_window_source": "pinned_by_silurian",
+        "provider": "bigquery_timesfm",
+        "bigquery_use_query_cache": false
+      },
+      "model": {
+        "family": "TimesFM",
+        "version": "2.5",
+        "provider": "BigQuery AI.FORECAST",
+        "checkpoint": "provider_managed_not_exposed",
+        "context_window_requested": 512,
+        "context_points_supplied": {
+          "min": 8,
+          "median": 35,
+          "max": 35
+        },
+        "horizon": 12,
+        "confidence_level": 0.9,
+        "interval_bounds": [
+          0.05,
+          0.95
+        ],
+        "backend": "provider_managed_not_exposed",
+        "precision": "provider_managed_not_exposed",
+        "preprocessing": {
+          "applied_by_silurian": "none",
+          "note": "Provider internals are not inferred"
+        },
+        "provider_limitations": [
+          "Google manages the underlying weights and does not expose a revision hash through AI.FORECAST",
+          "Backend and numerical precision are not exposed by the service",
+          "The friendly version string can remain unchanged while the managed model is updated, so drift is detected by reference_check rather than by version"
+        ],
+        "reference_check": {
+          "reference_series_sha256": "731a4c635d5627e1b54e679b01b415eb54302c7a4bdf4035d35d380281cd16b5",
+          "reference_output_sha256": "743ceda0424a95994e438ecb26be5e522b0141c81ace89eb69c0a77e88508a09",
+          "baseline_output_sha256": "743ceda0424a95994e438ecb26be5e522b0141c81ace89eb69c0a77e88508a09",
+          "status": "match",
+          "checked_at": "2026-08-28T17:12:06Z"
+        },
+        "series_included": 9,
+        "series_excluded": 3,
+        "exclusion_reasons": {
+          "not_usable_band": 2,
+          "insufficient_context": 1
+        }
+      },
+      "determinism": {
+        "class": "unknown",
+        "tolerance_pct": null,
+        "seed": null,
+        "statement": "Not yet measured. Ten repeats on the deployed path with the BigQuery query cache disabled, then set bitwise or tolerant with the measured figure."
+      },
+      "outcome": {
+        "series_forecast": 9,
+        "horizon": 12,
+        "points_produced": 108
+      }
+    }
+  ],
+  "environment": {
+    "app_version": "SUPPLIED_BY_DEPLOYMENT",
+    "git_commit": "0000000",
+    "runtime": "SUPPLIED_BY_DEPLOYMENT",
+    "key_libraries": {
+      "SUPPLIED_BY_DEPLOYMENT": "only libraries whose version can change numerical output"
+    },
+    "container_image_digest": "SUPPLIED_BY_DEPLOYMENT",
+    "region": "SUPPLIED_BY_DEPLOYMENT"
+  },
+  "reproducibility": {
+    "deterministic_stages": [
+      "validation",
+      "quality"
+    ],
+    "non_deterministic_stages": [
+      "forecast"
+    ],
+    "statement": "Validation and quality are bitwise reproducible: the same file with the same options produces byte-identical output. The forecast stage runs on a managed BigQuery model whose reproducibility has not yet been measured, so it is reported as unknown rather than assumed stable."
+  },
+  "integrity": {
+    "manifest_sha256": "1316f4b4132656b9f7108aa6646a2dfb08b01b4fad25dda2be16b5ec46014b9b",
+    "content_fingerprint_sha256": "a8b11d96a619de4dfc9a4d9de28ab95167fc0f109442ebd2c89e17c6d3684a00",
+    "chain_verified": true
+  }
+}
