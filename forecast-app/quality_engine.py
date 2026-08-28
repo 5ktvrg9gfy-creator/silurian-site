@@ -285,7 +285,12 @@ def assess_quality(validation: ValidationResult, options: QualityOptions) -> Qua
             findings_by_sku[sku].append(_finding("SUSPECT_ZERO", sku, f"Recorded zero demand appears inside an otherwise continuous series.", "The zero may represent a stockout or missed posting and may understate true demand.", "Check stock availability and source postings for the affected period.", periods=periods, metric={"zero_share_pct": round(zero_share, 4), "adi": round(adi, 6)}))
         outliers = _outlier_periods(values, thresholds)
         if outliers:
-            findings_by_sku[sku].append(_finding("OUTLIER_CANDIDATE", sku, f"{len(outliers)} period or periods are robust outlier candidates.", "A promotion, tender, stock build or data error may have changed the observed demand.", "Review the affected periods. No values have been removed or corrected.", periods=outliers, metric={"method": "modified_z_with_seasonal_adjustment"}))
+            outlier_detail = (
+                "1 period is a robust outlier candidate."
+                if len(outliers) == 1
+                else f"{len(outliers)} periods are robust outlier candidates."
+            )
+            findings_by_sku[sku].append(_finding("OUTLIER_CANDIDATE", sku, outlier_detail, "A promotion, tender, stock build or data error may have changed the observed demand.", "Review the affected periods. No values have been removed or corrected.", periods=outliers, metric={"method": "modified_z_with_seasonal_adjustment"}))
         shift = None if metrics_by_sku[sku]["coverage_pct"] < thresholds["sparse_coverage_pct"] else _level_shift(values, thresholds)
         if shift:
             shift_period, ratio = shift
