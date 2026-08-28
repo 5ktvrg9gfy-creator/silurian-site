@@ -450,7 +450,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
         if "demand" in missing and {"on_hand", "safety_stock"}.issubset(lower_headers):
             findings.append(_finding("WRONG_FILE_TYPE", "blocking", "columns",
                                      "The file appears to be an inventory snapshot, not demand history.",
-                                     "Request the historical demand extract from the client.", resolution="none. supply the correct file"))
+                                     "Request the historical demand extract from the client.", resolution="supply the correct file"))
     if any(f.severity == "blocking" and f.stage == "columns" for f in findings) and not (
         "Material Number" in headers and "Req. Dely Date" in headers
     ):
@@ -581,16 +581,31 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     record_types = [row.get("record_type", "") for row in normalised if "record_type" in row]
     if record_types:
         canonical_types = {str(value).strip().lower() for value in record_types}
+        display_types = [value if value else "(blank)" for value in sorted(canonical_types)]
+        type_examples = [
+            _example(row["source_row"], f"record_type={str(row.get('record_type', '')).strip() or '(blank)'}", "record type")
+            for row in normalised if "record_type" in row
+        ][:5]
         actual_variants = {str(value).strip() for value in record_types if str(value).strip().lower() == "actual"}
         if len(actual_variants) > 1:
             findings.append(_finding("RECORD_TYPE_CASE_VARIANT", "info", "rows", "Record-type case variants were normalised.",
                                      "No action is required.", transform="normalised record-type case", reversible=True))
         if len(canonical_types) > 1:
-            findings.append(_finding("RECORD_TYPE_MIXED", "blocking", "rows", f"Record types found: {', '.join(sorted(canonical_types))}.",
-                                     "Confirm which record types represent actual demand.", resolution="supply actual record types"))
+            findings.append(_finding("RECORD_TYPE_MIXED", "blocking", "rows", f"Record types found: {', '.join(display_types)}.",
+                                     "Confirm which record types represent actual demand.", count=len(record_types),
+                                     examples=type_examples, resolution="supply actual record types"))
         if canonical_types & {"forecast", "budget", "plan"}:
+            plan_rows = [
+                row for row in normalised
+                if str(row.get("record_type", "")).strip().lower() in {"forecast", "budget", "plan"}
+            ]
+            plan_examples = [
+                _example(row["source_row"], f"record_type={str(row.get('record_type', '')).strip()}", "forward-looking row")
+                for row in plan_rows
+            ][:5]
             findings.append(_finding("FORECAST_ROWS_IN_ACTUALS", "blocking", "rows", "Forward-looking plan rows are mixed with actual demand.",
-                                     "Filter the run to confirmed actual record types.", resolution="supply actual record types"))
+                                     "Filter the run to confirmed actual record types.", count=len(plan_rows),
+                                     examples=plan_examples, resolution="supply actual record types"))
 
     if "Order Type" in headers:
         order_index = header_index_by_name["Order Type"]
