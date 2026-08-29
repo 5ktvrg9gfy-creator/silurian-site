@@ -18,6 +18,8 @@ class _VercelTokenSupplier(identity_pool.SubjectTokenSupplier):
 
 class BigQueryTimesFMProvider:
     name = "TimesFM 2.5 through BigQuery"
+    context_window = 512
+    confidence_level = 0.9
 
     def __init__(self, oidc_token: str) -> None:
         from google.cloud import bigquery
@@ -46,8 +48,9 @@ class BigQueryTimesFMProvider:
         )
         self._bigquery = bigquery
         self._client = bigquery.Client(project=project, credentials=credentials)
-        self._location = os.environ.get("BIGQUERY_LOCATION", "US")
+        self._location = os.environ.get("BIGQUERY_LOCATION", "europe-west2")
         self._maximum_bytes = int(os.environ.get("BIGQUERY_MAX_BYTES_BILLED", "10000000"))
+        self.last_cache_hit = True
 
     def forecast(self, history: Sequence[float], horizon: int, dates: Sequence[date] | None = None) -> list[float]:
         bigquery = self._bigquery
@@ -67,18 +70,22 @@ class BigQueryTimesFMProvider:
           timestamp_col => 'observed_date',
           model => 'TimesFM 2.5',
           horizon => {int(horizon)},
-          confidence_level => 0.9
+          confidence_level => {self.confidence_level},
+          context_window => {self.context_window}
         )
         ORDER BY forecast_timestamp
         """
         config = bigquery.QueryJobConfig(
             maximum_bytes_billed=self._maximum_bytes,
+            use_query_cache=False,
             query_parameters=[
                 bigquery.ArrayQueryParameter("dates", "DATE", list(dates)),
                 bigquery.ArrayQueryParameter("demand", "FLOAT64", [float(value) for value in history]),
             ],
         )
-        rows = list(self._client.query(query, job_config=config, location=self._location).result())
+        job = self._client.query(query, job_config=config, location=self._location)
+        rows = list(job.result())
+        self.last_cache_hit = bool(job.cache_hit)
         if not rows:
             raise RuntimeError("TimesFM returned no forecast")
         if rows[0].ai_forecast_status:

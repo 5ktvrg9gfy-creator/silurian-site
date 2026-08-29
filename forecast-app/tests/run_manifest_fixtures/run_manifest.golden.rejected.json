@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.1",
+  "run_id": "run_e2e1f3c8d8d701aa69202affa7e4aff9",
+  "created_at": "2026-08-28T17:20:11Z",
+  "as_of_date": "2026-08-01",
+  "as_of_source": "server_default",
+  "source": {
+    "filename": "02_date_disorder.csv",
+    "bytes": 454,
+    "sha256": "f3fddcc66fa84e97855dd86152b178177d16d78b3ce13fb293cee6a26632712b",
+    "rows_raw": 18,
+    "encoding_detected": "utf-8",
+    "delimiter_detected": ",",
+    "received_at": "2026-08-28T17:20:10Z"
+  },
+  "stages": [
+    {
+      "stage": "validation",
+      "story": "1.1",
+      "engine_version": "1.0.0",
+      "started_at": "2026-08-28T17:20:10Z",
+      "completed_at": "2026-08-28T17:20:11Z",
+      "duration_ms": 210,
+      "input_ref": {
+        "type": "source_file",
+        "sha256": "f3fddcc66fa84e97855dd86152b178177d16d78b3ce13fb293cee6a26632712b",
+        "rows": 18
+      },
+      "output_ref": {
+        "type": "normalised_dataset",
+        "sha256": "e3d49e3406a9f0f58b04ba44beaf333689029feb2772efadc451573afe0e3e58",
+        "rows": 0,
+        "series": 0
+      },
+      "options": {
+        "as_of_date": "2026-08-01",
+        "as_of_source": "server_default",
+        "encoding": "utf-8",
+        "encoding_source": "detected",
+        "delimiter": ",",
+        "delimiter_source": "detected",
+        "header_row": 1,
+        "column_map": {
+          "sku": "sku",
+          "date": "date",
+          "demand": "demand"
+        },
+        "column_map_source": "canonical"
+      },
+      "passes": [
+        {
+          "pass": 1,
+          "verdict": "reject",
+          "options_supplied": {},
+          "finding_codes": [
+            "DATE_FORMAT_MIXED",
+            "DATE_FORMAT_AMBIGUOUS",
+            "DATE_INVALID",
+            "DATE_MISSING",
+            "EXCEL_SERIAL_DATE",
+            "DATE_FUTURE",
+            "DUPLICATE_ROW_EXACT"
+          ]
+        }
+      ],
+      "transformations": [
+        {
+          "code": "DUPLICATE_ROW_EXACT",
+          "count": 1,
+          "reversible": true
+        }
+      ],
+      "outcome": {
+        "verdict": "reject",
+        "findings": 7,
+        "blocking": 4,
+        "rows_in": 18,
+        "rows_out": 0
+      }
+    }
+  ],
+  "environment": {
+    "app_version": "SUPPLIED_BY_DEPLOYMENT",
+    "git_commit": "0000000",
+    "runtime": "SUPPLIED_BY_DEPLOYMENT",
+    "key_libraries": {
+      "SUPPLIED_BY_DEPLOYMENT": "only libraries whose version can change numerical output"
+    },
+    "container_image_digest": "SUPPLIED_BY_DEPLOYMENT",
+    "region": "SUPPLIED_BY_DEPLOYMENT"
+  },
+  "reproducibility": {
+    "deterministic_stages": [
+      "validation"
+    ],
+    "non_deterministic_stages": [],
+    "statement": "Validation is bitwise reproducible. No quality or forecast stage ran, because the file was rejected."
+  },
+  "integrity": {
+    "manifest_sha256": "e3521005564a03cc8092281aa9e6ddb2ebb24e11f76c2ee9ceed97b9ad7f7919",
+    "content_fingerprint_sha256": "7af98db47c206d9f619575130dd715f276193672c9033116df21f8b33608d5db",
+    "chain_verified": true
+  }
+}

@@ -10,8 +10,20 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
+from determinism import measure_forecast_determinism
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
+from run_manifest import (
+    build_manifest,
+    forecast_stage,
+    model_identity,
+    quality_stage,
+    reference_check,
+    sha256_json,
+    source_record,
+    utc_now,
+    validation_stage,
+)
 from validator import ValidationOptions, validate_csv
 
 
@@ -43,6 +55,83 @@ def _validation_response(validation):
         "findings": [finding.to_dict() for finding in validation.findings],
         "run_record": validation.run_record,
     }
+
+
+def _source_skus(validation) -> list[str]:
+    return [str(row.get("sku", "")) for row in validation.normalised_rows]
+
+
+def _validation_manifest(raw: bytes, filename: str, validation, started_at: str, completed_at: str, as_of_source: str):
+    source = source_record(raw, filename, started_at, validation.metadata)
+    stage = validation_stage(validation, source, started_at, completed_at)
+    manifest = build_manifest(
+        source,
+        [stage],
+        date.fromisoformat(validation.run_record["options"]["as_of_date"]),
+        as_of_source,
+        _source_skus(validation),
+    )
+    return manifest, stage, source
+
+
+REFERENCE_SERIES = [100.0 + (index % 12) * 3.0 + (index // 12) * 2.0 for index in range(36)]
+REFERENCE_DATES = [date(2023 + index // 12, index % 12 + 1, 1) for index in range(36)]
+REFERENCE_DECIMAL_PLACES = 6
+
+
+def _forecast_identity(provider, histories: list[list[float]], horizon: int):
+    raw_canary_output = provider.forecast(REFERENCE_SERIES, 12, REFERENCE_DATES)
+    # BigQuery TimesFM can return immaterial floating-point noise between calls.
+    # Quantise only the canary fingerprint, never the forecast delivered to users.
+    canary_output = [round(float(value), REFERENCE_DECIMAL_PLACES) for value in raw_canary_output]
+    actual_hash = sha256_json(canary_output)
+    baseline_hash = os.getenv("TIMESFM_REFERENCE_BASELINE_SHA256", "").strip().lower()
+    is_managed = provider.__class__.__name__ == "BigQueryTimesFMProvider"
+    if is_managed and len(baseline_hash) != 64:
+        raise RuntimeError(
+            "The TimesFM reference baseline is not configured. "
+            f"Set TIMESFM_REFERENCE_BASELINE_SHA256 to {actual_hash}."
+        )
+    baseline_hash = baseline_hash or actual_hash
+    check = reference_check(REFERENCE_SERIES, canary_output, baseline_hash)
+    if check["status"] == "drift_detected":
+        raise RuntimeError(
+            "The managed forecasting model has changed since the reference baseline was set. "
+            f"Current reference output: {actual_hash}."
+        )
+    if is_managed:
+        identity = model_identity(histories, horizon, check, included=len(histories))
+    else:
+        identity = model_identity(
+            histories, horizon, check, included=len(histories),
+            family="Silurian statistical baseline", version="1.0",
+            provider=provider.name, checkpoint="silurian-baseline-v1",
+            backend="python", precision="float64", provider_limitations=[],
+        )
+    raw_measurement = os.getenv("TIMESFM_DETERMINISM_JSON", "").strip()
+    if raw_measurement:
+        determinism = json.loads(raw_measurement)
+    elif is_managed and os.getenv("TIMESFM_MEASURE_DETERMINISM", "").strip() == "1":
+        determinism = measure_forecast_determinism(
+            provider,
+            REFERENCE_SERIES,
+            REFERENCE_DATES,
+            12,
+            runs=10,
+            environment_ref=(
+                os.getenv("VERCEL_DEPLOYMENT_ID")
+                or os.getenv("VERCEL_GIT_COMMIT_SHA")
+                or "vercel-preview"
+            ),
+        )
+    else:
+        determinism = {
+            "class": "unknown",
+            "tolerance_pct": None,
+            "seed": None,
+            "statement": "Forecast reproducibility has not yet been measured on this deployment.",
+        }
+    return identity, determinism
 
 
 def _check_upload(raw: bytes) -> None:
@@ -109,12 +198,19 @@ def sample_portfolio():
 
 @app.post("/api/validate")
 async def validate_upload(file: UploadFile = File(...), validation_options: str = Form("{}")):
+    started_at = utc_now()
     raw = await file.read()
     if len(raw) > 4_000_000:
         raise HTTPException(status_code=413, detail="This diagnostic accepts files up to 4 MB. Request the top 500 SKUs by value or the last 36 months of history.")
     validation = validate_csv(raw, _validation_options(validation_options))
+    completed_at = utc_now()
+    supplied = json.loads(validation_options or "{}")
+    manifest, _, _ = _validation_manifest(
+        raw, file.filename or "uploaded.csv", validation, started_at, completed_at,
+        "user" if supplied.get("as_of_date") else "server_default",
+    )
     status_code = 422 if validation.verdict == "reject" else 200
-    return JSONResponse(status_code=status_code, content={"validation": _validation_response(validation)})
+    return JSONResponse(status_code=status_code, content={"validation": _validation_response(validation), "manifest": manifest})
 
 
 @app.post("/api/quality")
@@ -124,6 +220,7 @@ async def quality_upload(
     grain: str | None = Form(None),
     validation_options: str = Form("{}"),
 ):
+    validation_started = utc_now()
     raw = await file.read()
     _check_upload(raw)
     try:
@@ -133,15 +230,30 @@ async def quality_upload(
     if grain and grain not in {"day", "week", "month"}:
         raise HTTPException(status_code=400, detail="Grain must be day, week or month")
     validation = validate_csv(raw, _validation_options(validation_options, effective_date.isoformat()))
+    validation_completed = utc_now()
+    validation_manifest, validation_record, source = _validation_manifest(
+        raw, file.filename or "uploaded.csv", validation, validation_started, validation_completed,
+        "user" if analysis_date else "server_default",
+    )
     if validation.verdict == "reject":
-        return JSONResponse(status_code=422, content={"detail": "Resolve the validation findings before assessing data quality.", "validation": _validation_response(validation)})
+        return JSONResponse(status_code=422, content={"detail": "Resolve the validation findings before assessing data quality.", "validation": _validation_response(validation), "manifest": validation_manifest})
+    quality_started = utc_now()
     quality = assess_quality(validation, QualityOptions(
         as_of_date=effective_date,
         as_of_date_source="user_supplied" if analysis_date else "server_default",
         grain=grain,
         thresholds=dict(DEFAULT_THRESHOLDS),
     ))
-    return {"validation": _validation_response(validation), "quality": quality.to_dict()}
+    quality_completed = utc_now()
+    quality_record = quality_stage(quality.to_dict(), validation_record["output_ref"], quality_started, quality_completed)
+    manifest = build_manifest(
+        source,
+        [validation_record, quality_record],
+        effective_date,
+        "user" if analysis_date else "server_default",
+        _source_skus(validation),
+    )
+    return {"validation": _validation_response(validation), "quality": quality.to_dict(), "manifest": manifest}
 
 
 @app.post("/api/analyse")
@@ -160,17 +272,24 @@ async def run_analysis(
     adjustment_reason: str = Form(""),
     validation_options: str = Form("{}"),
 ):
+    validation_started = utc_now()
     raw = await file.read()
     if len(raw) > 4_000_000:
         raise HTTPException(status_code=413, detail="This diagnostic accepts files up to 4 MB. Request the top 500 SKUs by value or the last 36 months of history.")
     try:
         validation = validate_csv(raw, _validation_options(validation_options))
+        validation_completed = utc_now()
+        validation_manifest, validation_record, source = _validation_manifest(
+            raw, file.filename or "uploaded.csv", validation, validation_started, validation_completed, "server_default"
+        )
         if validation.verdict == "reject":
-            return JSONResponse(status_code=422, content={"detail": "The file cannot proceed until the validation findings are resolved.", "validation": _validation_response(validation)})
+            return JSONResponse(status_code=422, content={"detail": "The file cannot proceed until the validation findings are resolved.", "validation": _validation_response(validation), "manifest": validation_manifest})
         series = _series_from_validation(validation)
+        provider = get_provider(request.headers.get("x-vercel-oidc-token"))
+        forecast_started = utc_now()
         result = analyse(
             series,
-            get_provider(request.headers.get("x-vercel-oidc-token")),
+            provider,
             horizon,
             current_inventory,
             confirmed_inbound,
@@ -182,7 +301,16 @@ async def run_analysis(
             adjustment_end=adjustment_end,
             adjustment_reason=adjustment_reason,
         )
+        identity, determinism = _forecast_identity(provider, [series.demand], horizon)
+        forecast_completed = utc_now()
+        forecast_record = forecast_stage(
+            result, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
+        )
+        manifest = build_manifest(
+            source, [validation_record, forecast_record], date.today(), "server_default", _source_skus(validation)
+        )
         result["validation"] = _validation_response(validation)
+        result["manifest"] = manifest
         return result
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -200,19 +328,36 @@ async def run_portfolio_analysis(
     horizon: int = Form(13),
     validation_options: str = Form("{}"),
 ):
+    validation_started = utc_now()
     raw = await file.read()
     if len(raw) > 4_000_000:
         raise HTTPException(status_code=413, detail="This diagnostic accepts files up to 4 MB. Request the top 500 SKUs by value or the last 36 months of history.")
     try:
         validation = validate_csv(raw, _validation_options(validation_options))
+        validation_completed = utc_now()
+        validation_manifest, validation_record, source = _validation_manifest(
+            raw, file.filename or "uploaded.csv", validation, validation_started, validation_completed, "server_default"
+        )
         if validation.verdict == "reject":
-            return JSONResponse(status_code=422, content={"detail": "The file cannot proceed until the validation findings are resolved.", "validation": _validation_response(validation)})
+            return JSONResponse(status_code=422, content={"detail": "The file cannot proceed until the validation findings are resolved.", "validation": _validation_response(validation), "manifest": validation_manifest})
+        items = parse_portfolio_csv(raw)
+        provider = get_provider(request.headers.get("x-vercel-oidc-token"))
+        forecast_started = utc_now()
         result = analyse_portfolio(
-            parse_portfolio_csv(raw),
-            get_provider(request.headers.get("x-vercel-oidc-token")),
+            items,
+            provider,
             horizon,
         )
+        identity, determinism = _forecast_identity(provider, [item.series.demand for item in items], horizon)
+        forecast_completed = utc_now()
+        forecast_record = forecast_stage(
+            result, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
+        )
+        manifest = build_manifest(
+            source, [validation_record, forecast_record], date.today(), "server_default", _source_skus(validation)
+        )
         result["validation"] = _validation_response(validation)
+        result["manifest"] = manifest
         return result
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

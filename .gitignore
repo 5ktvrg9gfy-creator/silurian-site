@@ -1,0 +1,8 @@
+.python-embed/
+.python-embed.zip
+.python-arm64/
+.python-arm64.zip
+.test-site/
+.test-site-arm/
+__pycache__/
+*.py[cod]
