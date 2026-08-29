@@ -75,10 +75,14 @@ def _validation_manifest(raw: bytes, filename: str, validation, started_at: str,
 
 REFERENCE_SERIES = [100.0 + (index % 12) * 3.0 + (index // 12) * 2.0 for index in range(36)]
 REFERENCE_DATES = [date(2023 + index // 12, index % 12 + 1, 1) for index in range(36)]
+REFERENCE_DECIMAL_PLACES = 6
 
 
 def _forecast_identity(provider, histories: list[list[float]], horizon: int):
-    canary_output = provider.forecast(REFERENCE_SERIES, 12, REFERENCE_DATES)
+    raw_canary_output = provider.forecast(REFERENCE_SERIES, 12, REFERENCE_DATES)
+    # BigQuery TimesFM can return immaterial floating-point noise between calls.
+    # Quantise only the canary fingerprint, never the forecast delivered to users.
+    canary_output = [round(float(value), REFERENCE_DECIMAL_PLACES) for value in raw_canary_output]
     actual_hash = sha256_json(canary_output)
     baseline_hash = os.getenv("TIMESFM_REFERENCE_BASELINE_SHA256", "").strip().lower()
     is_managed = provider.__class__.__name__ == "BigQueryTimesFMProvider"
