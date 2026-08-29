@@ -2,12 +2,14 @@
 
 Last updated: 29 August 2026
 
-This is the recovery document for the Silurian website and Forecast Diagnostic. It should be updated at the end of every sprint after the final production check. A new Codex task or another AI system should read this file before making changes.
+This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
 ## Current position
 
 - Stories 1.1, 1.2 and 1.3 are complete and merged into `main`.
 - Production is deployed and working.
+- Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
+- The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
 - No database is used. Uploaded files are processed in memory and are not deliberately retained.
@@ -16,10 +18,14 @@ This is the recovery document for the Silurian website and Forecast Diagnostic. 
 
 - GitHub repository: `https://github.com/5ktvrg9gfy-creator/silurian-site`
 - Production branch: `main`
+- Marketing website: `https://www.silurianconsulting.co.uk/`
+- Marketing Vercel project: `silurian-site`
 - Production application: `https://silurian-forecast-diagnostic.vercel.app/`
-- Vercel project: `https://vercel.com/silurian/silurian-forecast-diagnostic`
+- Forecast Vercel project: `https://vercel.com/silurian/silurian-forecast-diagnostic`
 - Local repository: `C:\Users\jksta\OneDrive\Documents\Silurian Consulting Limited\silurian-site-repo`
 - Forecast application: `forecast-app/`
+
+The additional domains `silurianconsultinglimited.co.uk` and `silurianconsultingltd.co.uk` redirect to `silurianconsulting.co.uk`.
 
 GitHub is the source of truth. Do not replace the repository with a complete design export or edit Production directly when the same change can be made through the normal branch and pull-request workflow.
 
@@ -31,7 +37,11 @@ GitHub is the source of truth. Do not replace the repository with a complete des
 - `forecast-risk.html`: entry page for the Forecast Diagnostic
 - `styles.css`, `ds-styles.css` and `ds-base.js`: shared visual system
 - `logo-stone.svg`: main logo asset
+- `privacy.html`: public privacy notice
+- `assets/fonts/Archivo-Variable.ttf`: self-hosted Archivo variable font
+- `assets/fonts/OFL.txt`: Archivo's SIL Open Font Licence
 - `MAINTENANCE.md`: marketing-site maintenance notes
+- `PROJECT_HANDOFF.md`: mandatory build recovery and transfer record
 
 ### Forecast Diagnostic
 
@@ -102,7 +112,22 @@ Key references:
 - `POST /api/analyse`: single-SKU forecast and risk analysis
 - `POST /api/analyse-portfolio`: portfolio forecast and prioritisation
 
-## Production configuration
+## Marketing-site production configuration
+
+- Vercel project: `silurian-site`
+- Framework preset: Other
+- Build command: empty
+- Output directory: repository root
+- Production branch: `main`
+- Primary domain: `www.silurianconsulting.co.uk`
+
+The site is static HTML and CSS. It has no application framework, package installation or build command. Routine wording is stored directly in `index.html`. The privacy notice is in `privacy.html`.
+
+Archivo is served from `assets/fonts/Archivo-Variable.ttf`. Do not restore Google Fonts or another third-party font request unless the privacy implications have been reviewed. Keep `assets/fonts/OFL.txt` whenever the font is redistributed with the site.
+
+The main repository is connected to both Vercel projects. Pull requests may therefore show checks for `silurian-site` and `silurian-forecast-diagnostic`. Confirm the check relevant to the changed component, and investigate any unexpected failure before merging.
+
+## Forecast production configuration
 
 The Vercel project uses the `forecast-app` Python application. Production is connected to `main`, and merging to `main` starts a Production deployment automatically.
 
@@ -190,11 +215,28 @@ Production smoke-test expectations:
 4. Run focused automated tests.
 5. Push the branch and use the Vercel Preview.
 6. Complete the agreed manual fixture tests.
-7. Open a pull request into `main`.
-8. Merge only after the Preview is approved.
-9. Wait for the Production deployment to become ready.
-10. Run the relevant Production smoke test.
-11. Update this handoff with the delivered scope, configuration changes, tests, known limitations and next work.
+7. Update this handoff with the build scope, files changed, checks completed, configuration impact, limitations and next starting point.
+8. Open a pull request into `main`.
+9. Merge only after the Preview is approved.
+10. Wait for the Production deployment to become ready.
+11. Run the relevant Production smoke test.
+12. If the Production result differs from the handoff entry, update the handoff immediately through a follow-up documentation pull request.
+
+## Mandatory handoff maintenance
+
+Every build must leave `PROJECT_HANDOFF.md` accurate enough for another AI system or competent developer to continue without access to the previous conversation.
+
+For every build:
+
+- Review the entire handoff, not only the latest-build entry.
+- Update the current position and relevant architecture sections.
+- Record user-visible changes and the files responsible for them.
+- Record test, Preview and Production status without claiming checks that have not run.
+- Record environment-variable changes by name only. Never record secret values.
+- Remove or correct stale instructions, links and known limitations.
+- State the exact next starting point when work remains.
+
+Do not treat the handoff update as optional documentation. It is part of the build definition of done.
 
 ## Operational cautions
 
@@ -216,6 +258,7 @@ Production smoke-test expectations:
 - The stored determinism result describes the measured deployment and options. Re-run the controlled measurement after a material model, provider, precision, region or forecast-option change.
 - Portfolio decisions still require planner confirmation of operational context, supply assumptions, returns, units and discontinuations.
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
+- The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 
 ## Next sprint starting point
 
@@ -227,7 +270,7 @@ No Story 1.4 brief has been adopted in this handoff. Before implementation:
 4. Create the next story branch from current `main`.
 5. Keep Story 1.1 to 1.3 behaviour backward-compatible unless the new brief explicitly changes an approved contract.
 
-## End-of-sprint handoff checklist
+## End-of-build handoff checklist
 
 Update this file with:
 
@@ -241,5 +284,6 @@ Update this file with:
 - known defects, limitations and deferred decisions
 - exact next starting point
 - current production and repository links
+- current marketing-site privacy, cookie and third-party-service position
 
 The handoff is complete only when another competent developer or AI system could continue safely without relying on the previous conversation.
