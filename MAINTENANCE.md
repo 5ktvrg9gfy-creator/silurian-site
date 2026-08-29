@@ -17,10 +17,13 @@ GitHub is the source of truth for this website. Do not replace the repository wi
 2. Create a branch named `codex/<short-change-name>`.
 3. Make the required edits on that branch.
 4. Check the automatic Vercel preview on desktop and mobile.
-5. Open a pull request into `main`.
-6. Merge only after the preview has been approved.
+5. Review and update `PROJECT_HANDOFF.md` so it reflects the build, checks, configuration impact and next starting point.
+6. Open a pull request into `main`.
+7. Merge only after the preview has been approved.
 
 A commit to `main` is a production release because Vercel deploys it automatically.
+
+The handoff update is part of every build, including small wording or layout changes. If Production behaves differently from the approved Preview, correct `PROJECT_HANDOFF.md` immediately through a follow-up documentation pull request.
 
 ## Routine content locations
 
