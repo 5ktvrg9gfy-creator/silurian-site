@@ -106,7 +106,7 @@ const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;'
 let latestQuality=null,latestManifest=null;
 function renderManifest(manifest,targetId){
   const panel=document.getElementById(targetId);if(!manifest){panel.style.display='none';return}
-  latestManifest=manifest;const forecast=(manifest.stages||[]).find(stage=>stage.stage==='forecast'),model=forecast?.model;
+  latestManifest=manifest;window.latestManifest=manifest;const forecast=(manifest.stages||[]).find(stage=>stage.stage==='forecast'),model=forecast?.model;
   const modelCopy=model?`${model.family} ${model.version}, ${model.checkpoint}`:'No model called';
   panel.innerHTML=`<div class="kicker">Run provenance</div><h2>What produced this result</h2><div class="provenance-grid"><div><span class="small">Run</span><strong>${esc(manifest.run_id)}</strong></div><div><span class="small">Source</span><strong>${esc(manifest.source.filename)} · ${esc(manifest.source.sha256.slice(0,12))}</strong></div><div><span class="small">Analysis date</span><strong>${esc(manifest.as_of_date)} · ${esc(manifest.as_of_source.replace('_',' '))}</strong></div><div><span class="small">Model</span><strong>${esc(modelCopy)}</strong></div><div><span class="small">Manifest</span><strong>${esc(manifest.integrity.manifest_sha256.slice(0,12))}</strong></div><div><span class="small">Reproducibility</span><strong>${esc(manifest.reproducibility.statement)}</strong></div></div><button type="button" class="download-manifest">Download run manifest</button>`;
   panel.querySelector('.download-manifest').addEventListener('click',()=>downloadManifest(manifest));panel.style.display='block';
