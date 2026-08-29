@@ -10,6 +10,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
+from determinism import measure_forecast_determinism
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
 from run_manifest import (
@@ -110,6 +111,19 @@ def _forecast_identity(provider, histories: list[list[float]], horizon: int):
     raw_measurement = os.getenv("TIMESFM_DETERMINISM_JSON", "").strip()
     if raw_measurement:
         determinism = json.loads(raw_measurement)
+    elif is_managed and os.getenv("TIMESFM_MEASURE_DETERMINISM", "").strip() == "1":
+        determinism = measure_forecast_determinism(
+            provider,
+            REFERENCE_SERIES,
+            REFERENCE_DATES,
+            12,
+            runs=10,
+            environment_ref=(
+                os.getenv("VERCEL_DEPLOYMENT_ID")
+                or os.getenv("VERCEL_GIT_COMMIT_SHA")
+                or "vercel-preview"
+            ),
+        )
     else:
         determinism = {
             "class": "unknown",
