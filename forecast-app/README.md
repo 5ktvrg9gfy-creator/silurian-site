@@ -45,11 +45,19 @@ Required server-side environment variables:
 
 - `FORECAST_PROVIDER=bigquery_timesfm`
 - `GOOGLE_CLOUD_PROJECT`: the Google Cloud project ID
-- `GOOGLE_SERVICE_ACCOUNT_JSON`: a restricted service-account key stored as a deployment secret
+- `GCP_PROJECT_NUMBER`: the numeric Google Cloud project identifier
+- `GCP_WORKLOAD_IDENTITY_POOL_ID`: the workload identity pool trusted by Vercel
+- `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID`: the Vercel identity provider
+- `GCP_SERVICE_ACCOUNT_EMAIL`: the restricted service account impersonated with a short-lived token
 - `BIGQUERY_LOCATION`: defaults to `europe-west2`
 - `BIGQUERY_MAX_BYTES_BILLED`: defaults to `10000000` bytes per query
+- `TIMESFM_REFERENCE_BASELINE_SHA256`: the approved synthetic canary output hash
+- `TIMESFM_DETERMINISM_JSON`: the ten-run, uncached measurement result
+- `APP_VERSION`: the deployed application version recorded in every manifest
 
 The service account should receive only the permissions required to run BigQuery jobs and access approved forecasting data. Configure a Google Cloud budget and alerts before enabling the connector. The browser never receives Google credentials. Keep the statistical baseline active until the connector has passed an authenticated test.
+
+Every BigQuery forecast explicitly requests a 512-point context window and disables query caching. The downloaded run manifest records the effective options, model limitations, reference canary, deployment region and measured reproducibility evidence.
 
 ## Deployment cost gate
 

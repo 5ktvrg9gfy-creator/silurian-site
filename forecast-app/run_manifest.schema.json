@@ -1,0 +1,617 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://silurian.example/schemas/run_manifest/1.1.json",
+  "title": "Silurian Forecast Diagnostic run manifest",
+  "description": "Provenance record for one diagnostic run. One user action is one run, and only stages that actually executed appear. Integrity is verified as a dependency graph, not a linear chain. Contains no client data: no SKU identifiers, no demand values, no descriptions, no customer or site identifiers. The source filename is the only client-controlled string.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "created_at",
+    "as_of_date",
+    "as_of_source",
+    "source",
+    "stages",
+    "environment",
+    "reproducibility",
+    "integrity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.1"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run_[0-9a-f]{32}$",
+      "description": "Stable identifier. Derived from source sha256 plus created_at, so two runs of the same file are distinguishable but a run is never guessable."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC, ISO 8601, with an explicit offset"
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date",
+      "description": "The analysis date. Immutable for the life of the run"
+    },
+    "as_of_source": {
+      "enum": [
+        "user",
+        "server_default"
+      ],
+      "description": "Why a run banded differently in June and September is answered by this field alone"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "filename",
+        "bytes",
+        "sha256",
+        "rows_raw",
+        "received_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "As supplied. The only client-controlled string in the manifest"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "rows_raw": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Physical lines excluding the header, before any transformation"
+        },
+        "encoding_detected": {
+          "type": "string"
+        },
+        "delimiter_detected": {
+          "type": "string"
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Stages in execution order, but integrity is verified as a dependency graph, not by array position. Validation consumes source.sha256. Quality consumes the validation stage's normalised_dataset output. Forecast consumes the artefact it actually used, which may be the same normalised_dataset or a later routing artefact. Only stages that executed appear: a rejected run carries the source and the validation stage alone.",
+      "items": {
+        "type": "object",
+        "required": [
+          "stage",
+          "story",
+          "engine_version",
+          "started_at",
+          "completed_at",
+          "duration_ms",
+          "input_ref",
+          "output_ref",
+          "options"
+        ],
+        "properties": {
+          "stage": {
+            "enum": [
+              "validation",
+              "quality",
+              "forecast"
+            ]
+          },
+          "story": {
+            "type": "string",
+            "description": "Backlog reference, so a manifest explains which build produced it"
+          },
+          "engine_version": {
+            "type": "string",
+            "description": "Semver of the stage engine, bumped whenever output could change for identical input"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "input_ref": {
+            "$ref": "#/$defs/artefact_ref"
+          },
+          "output_ref": {
+            "$ref": "#/$defs/artefact_ref"
+          },
+          "options": {
+            "type": "object",
+            "description": "Every effective option including defaults actually applied, never only the ones the user set"
+          },
+          "outcome": {
+            "type": "object",
+            "description": "Stage-specific summary. Counts and codes only"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "stage": {
+                  "const": "validation"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "passes": {
+                  "type": "array",
+                  "description": "One entry per pass. The decision trail that unblocked the run",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "pass",
+                      "verdict",
+                      "options_supplied",
+                      "finding_codes"
+                    ],
+                    "properties": {
+                      "pass": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "verdict": {
+                        "enum": [
+                          "accept",
+                          "accept_with_warnings",
+                          "reject"
+                        ]
+                      },
+                      "options_supplied": {
+                        "type": "object"
+                      },
+                      "finding_codes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "transformations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code",
+                      "count",
+                      "reversible"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "reversible": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              },
+              "required": [
+                "passes"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "stage": {
+                  "const": "forecast"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "model": {
+                  "$ref": "#/$defs/model_identity"
+                },
+                "determinism": {
+                  "$ref": "#/$defs/determinism"
+                }
+              },
+              "required": [
+                "model",
+                "determinism"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "environment": {
+      "type": "object",
+      "required": [
+        "app_version",
+        "git_commit",
+        "runtime"
+      ],
+      "properties": {
+        "app_version": {
+          "type": "string"
+        },
+        "git_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7,40}$"
+        },
+        "runtime": {
+          "type": "string",
+          "description": "For example node 22.11.0 or python 3.12.4"
+        },
+        "key_libraries": {
+          "type": "object",
+          "description": "Only libraries whose version can change numerical output. Not the full dependency tree",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "container_image_digest": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        }
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "required": [
+        "deterministic_stages",
+        "non_deterministic_stages",
+        "statement"
+      ],
+      "properties": {
+        "deterministic_stages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "non_deterministic_stages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "statement": {
+          "type": "string",
+          "description": "Plain English, client-facing. Must not overclaim"
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "manifest_sha256",
+        "content_fingerprint_sha256",
+        "chain_verified"
+      ],
+      "properties": {
+        "manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Identity of one exact run. SHA-256 of the manifest with this field set to the empty string, canonicalised. Includes run identity and timestamps, so it differs for every run."
+        },
+        "content_fingerprint_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Reproducibility fingerprint. Both integrity hashes cleared, then run_id, created_at, source.received_at, every stage started_at, completed_at and duration_ms removed. Stable when source, effective options, stage outputs, model identity and environment are unchanged."
+        },
+        "chain_verified": {
+          "type": "boolean",
+          "description": "True only when every stage input_ref resolves to source.sha256 or to another stage's output_ref. A false or unresolved graph prevents emission."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "artefact_ref": {
+      "type": "object",
+      "required": [
+        "type",
+        "sha256"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "source_file",
+            "normalised_dataset",
+            "quality_result",
+            "forecast_result"
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "series": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "model_identity": {
+      "type": "object",
+      "required": [
+        "family",
+        "version",
+        "provider",
+        "checkpoint",
+        "context_window_requested",
+        "context_points_supplied",
+        "horizon",
+        "confidence_level",
+        "interval_bounds",
+        "reference_check",
+        "provider_limitations"
+      ],
+      "description": "Enough to answer which model produced this number, a year later, without the data. Where a managed service does not expose a value, record the sentinel and state the limitation. Never invent a revision.",
+      "properties": {
+        "family": {
+          "type": "string",
+          "examples": [
+            "TimesFM"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "examples": [
+            "2.5"
+          ]
+        },
+        "provider": {
+          "type": "string",
+          "examples": [
+            "BigQuery AI.FORECAST",
+            "local container"
+          ]
+        },
+        "checkpoint": {
+          "type": "string",
+          "description": "Weights revision hash, or the sentinel provider_managed_not_exposed. A friendly name is not a checkpoint."
+        },
+        "context_window_requested": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Explicitly pinned in the request. Never left to provider auto-selection, which varies with input length and cannot be reconstructed later."
+        },
+        "context_points_supplied": {
+          "type": "object",
+          "description": "What the series actually carried. A pinned window of 512 over 35 monthly points is honest only if this is recorded alongside it.",
+          "properties": {
+            "min": {
+              "type": "integer"
+            },
+            "median": {
+              "type": "number"
+            },
+            "max": {
+              "type": "integer"
+            }
+          }
+        },
+        "horizon": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "confidence_level": {
+          "type": "number",
+          "description": "As requested from the provider"
+        },
+        "interval_bounds": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "The explicit quantiles the confidence level resolves to, for example 0.9 giving [0.05, 0.95]. Record both, because a bare 0.9 is ambiguous between a 90 percent interval and a 90th percentile."
+        },
+        "backend": {
+          "type": "string"
+        },
+        "precision": {
+          "type": "string"
+        },
+        "preprocessing": {
+          "type": "object",
+          "description": "Only behaviour Silurian documents or applies. Provider internals are never inferred."
+        },
+        "provider_limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Plain statements of what the service does not expose. A limitation, not a placeholder."
+        },
+        "reference_check": {
+          "$ref": "#/$defs/reference_check"
+        },
+        "series_included": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "series_excluded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exclusion_reasons": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "required": [
+        "class",
+        "statement"
+      ],
+      "properties": {
+        "class": {
+          "enum": [
+            "bitwise",
+            "tolerant",
+            "unknown"
+          ],
+          "description": "bitwise only after measurement with provider caching disabled. tolerant requires a measured figure. unknown must never survive into a sold engagement."
+        },
+        "tolerance_pct": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "measurement": {
+          "$ref": "#/$defs/determinism_measurement"
+        },
+        "statement": {
+          "type": "string",
+          "description": "Client-facing. Understating is safe, overstating cannot be walked back."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "class": {
+                "enum": [
+                  "bitwise",
+                  "tolerant"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "measurement"
+            ],
+            "description": "A measured class must carry its evidence. Omit measurement only while class is unknown."
+          }
+        }
+      ]
+    },
+    "reference_check": {
+      "type": "object",
+      "description": "Drift canary. A fixed reference series is sent through the same provider path and its output hashed. A managed model can be updated behind an unchanged friendly version string, and nothing else in this manifest would reveal it. When the output hash moves and the version does not, the provider changed the model.",
+      "required": [
+        "reference_series_sha256",
+        "reference_output_sha256",
+        "baseline_output_sha256",
+        "status",
+        "checked_at"
+      ],
+      "properties": {
+        "reference_series_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reference_output_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "baseline_output_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "status": {
+          "enum": [
+            "match",
+            "drift_detected",
+            "not_run"
+          ]
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "determinism_measurement": {
+      "type": "object",
+      "required": [
+        "runs",
+        "provider_cache_disabled",
+        "max_abs_diff",
+        "max_pct_diff",
+        "zero_denominator_rule",
+        "zero_denominator_points",
+        "points_compared",
+        "measured_at"
+      ],
+      "properties": {
+        "runs": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "provider_cache_disabled": {
+          "const": true,
+          "description": "Must be true. Ten identical BigQuery queries can return one cached result, which measures the cache and not the model, and yields a false bitwise claim."
+        },
+        "max_abs_diff": {
+          "type": "number"
+        },
+        "max_pct_diff": {
+          "type": "number"
+        },
+        "zero_denominator_rule": {
+          "type": "string",
+          "description": "Where the reference value is zero, report absolute difference only, exclude the point from the percentage statistic, and count such points separately."
+        },
+        "zero_denominator_points": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "points_compared": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "measured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "environment_ref": {
+          "type": "string",
+          "description": "Which environment the measurement holds for. It does not transfer to another region or runtime."
+        }
+      }
+    }
+  }
+}
+

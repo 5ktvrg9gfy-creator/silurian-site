@@ -7,6 +7,7 @@ dependencies = [
   "python-multipart==0.0.20",
   "google-cloud-bigquery==3.38.0",
   "google-auth==2.40.3",
+  "jsonschema==4.25.1",
 ]
 
 [tool.vercel]
