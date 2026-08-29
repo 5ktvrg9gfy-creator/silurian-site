@@ -94,7 +94,10 @@ def _forecast_identity(provider, histories: list[list[float]], horizon: int):
     baseline_hash = baseline_hash or actual_hash
     check = reference_check(REFERENCE_SERIES, canary_output, baseline_hash)
     if check["status"] == "drift_detected":
-        raise RuntimeError("The managed forecasting model has changed since the reference baseline was set")
+        raise RuntimeError(
+            "The managed forecasting model has changed since the reference baseline was set. "
+            f"Current reference output: {actual_hash}."
+        )
     if is_managed:
         identity = model_identity(histories, horizon, check, included=len(histories))
     else:
