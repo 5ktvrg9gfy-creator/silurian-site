@@ -10,10 +10,17 @@
 <style>
 /* Modernist â€” design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
 @font-face {
-  font-family: "Archivo";
-  src: url("assets/fonts/Archivo-Variable.ttf") format("truetype");
+  font-family: "TeX Gyre Heros";
+  src: url("assets/fonts/TeXGyreHeros-Regular.otf") format("opentype");
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "TeX Gyre Heros";
+  src: url("assets/fonts/TeXGyreHeros-Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 600 900;
   font-display: swap;
 }
 
@@ -57,9 +64,9 @@
   --color-accent-2-800: #71261b;
   --color-accent-2-900: #471d16;
 
-  --font-heading: "Archivo", system-ui, sans-serif;
+  --font-heading: "TeX Gyre Heros", Arial, sans-serif;
   --font-heading-weight: 800;
-  --font-body: "Archivo", system-ui, sans-serif;
+  --font-body: "TeX Gyre Heros", Arial, sans-serif;
 
   --space-1: 4.0px;
   --space-2: 8.0px;

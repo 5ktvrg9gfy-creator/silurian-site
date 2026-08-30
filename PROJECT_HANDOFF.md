@@ -9,6 +9,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Stories 1.1, 1.2 and 1.3 are complete and merged into `main`.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
+- Marketing preview branch `codex/preview-tex-gyre-heros` replaces Archivo with self-hosted TeX Gyre Heros on the public site and privacy page for visual comparison only. Production remains on Archivo unless the preview is approved and merged.
 - The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
@@ -40,6 +41,8 @@ GitHub is the source of truth. Do not replace the repository with a complete des
 - `privacy.html`: public privacy notice
 - `assets/fonts/Archivo-Variable.ttf`: self-hosted Archivo variable font
 - `assets/fonts/OFL.txt`: Archivo's SIL Open Font Licence
+- `assets/fonts/TeXGyreHeros-Regular.otf` and `assets/fonts/TeXGyreHeros-Bold.otf`: self-hosted comparison typeface used only by the current preview branch
+- `assets/fonts/GUST-FONT-LICENSE.txt`: TeX Gyre Heros licence retained with the preview font files
 - `MAINTENANCE.md`: marketing-site maintenance notes
 - `PROJECT_HANDOFF.md`: mandatory build recovery and transfer record
 
@@ -124,6 +127,8 @@ Key references:
 The site is static HTML and CSS. It has no application framework, package installation or build command. Routine wording is stored directly in `index.html`. The privacy notice is in `privacy.html`.
 
 Archivo is served from `assets/fonts/Archivo-Variable.ttf`. Do not restore Google Fonts or another third-party font request unless the privacy implications have been reviewed. Keep `assets/fonts/OFL.txt` whenever the font is redistributed with the site.
+
+The current marketing preview branch instead serves TeX Gyre Heros locally from `assets/fonts/`. It adds no third-party browser request, environment variable or deployment-setting change. If the preview is rejected, close the pull request without merging and Production will remain on Archivo.
 
 The main repository is connected to both Vercel projects. Pull requests may therefore show checks for `silurian-site` and `silurian-forecast-diagnostic`. Confirm the check relevant to the changed component, and investigate any unexpected failure before merging.
 
