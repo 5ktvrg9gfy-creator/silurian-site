@@ -7,7 +7,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 ## Current position
 
 - Stories 1.1, 1.2, 1.3 and 1.4 are complete and merged into `main`.
-- Story 1.5 is implemented on `codex/story-1-5-data-handling` in pull request 31. Focused tests and live Preview acceptance pass. It is not complete until the pull request is merged and the Production smoke test passes.
+- Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
 - Story 1.4 merged in pull request 29 at `86f9b02`. Quality and forecast-bundle Preview acceptance passed, and the Production quality-bundle smoke test passed.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
@@ -140,6 +140,8 @@ Vercel Preview acceptance confirmed the function in London, a Hobby plan with on
 
 Live testing found `BIGQUERY_LOCATION` set to the US despite the London code default. Preview and Production settings were corrected to London, the Preview was redeployed, and a subsequent TimesFM forecast completed in `europe-west2`. BigQuery job history and Cloud Audit Logs showed parameterised SQL placeholders rather than the actual dates and demand values. Cloud Logging has standard `_Default` and `_Required` sinks only. The remaining client-statement issue is written provider confirmation about the scope of platform backups, followed by qualified legal and contractual review.
 
+Production acceptance after merge `157b776` used the repository's synthetic single-SKU sample. Run `run_3db2788c1f2c78fcc58617202e9b0c3b` completed through TimesFM 2.5 with forecast demand 16,388 and minimum inventory 2,512. The primary BigQuery job `21ced5d4-1d15-4efa-863e-9c9014570445` ran in `europe-west2`. The matching Vercel request returned 200, was received in London `lhr1`, and had an empty Message field with no SKU or uploaded data. This closes the Story 1.5 technical acceptance criteria.
+
 Key references:
 
 - `forecast-app/docs/1.5-data-map.md`
@@ -202,7 +204,7 @@ Required Production environment variables:
 
 The Google Cloud values and the complete determinism JSON belong in Vercel, not in this repository. Never copy credentials, identity tokens or private Google Cloud identifiers into source files, commits, issues, manifests or this handoff.
 
-`BIGQUERY_LOCATION` must select the London BigQuery region in both Preview and Production. Story 1.5 live acceptance verified the corrected Preview job in `europe-west2`. Recheck the first Production forecast after merging a change that affects deployment settings.
+`BIGQUERY_LOCATION` must select the London BigQuery region in both Preview and Production. Story 1.5 live acceptance verified both Preview and Production jobs in `europe-west2`. Recheck the first Production forecast after any future change that affects deployment settings.
 
 `TIMESFM_MEASURE_DETERMINISM` is a temporary controlled-measurement flag. It must not remain enabled in Production. When enabled in an isolated Preview, each forecast request runs TimesFM ten times and incurs additional time and BigQuery usage.
 
@@ -321,14 +323,12 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 
 ## Next starting point
 
-Finish Story 1.5 through pull request 31:
+Story 1.5 is closed. Start the next story from current `main`:
 
-1. Merge pull request 31 only after its final checks pass.
-2. Wait for the Production Forecast Diagnostic deployment to become ready.
-3. Run the synthetic single-SKU TimesFM forecast and confirm the resulting BigQuery job location is `europe-west2`.
-4. Confirm the Production function is received in `lhr1` and the runtime entry remains metadata only.
-5. Update this handoff with the merge reference and Production evidence, then mark Story 1.5 complete.
-6. Treat written provider confirmation about backup scope and qualified legal wording as the next governance work, not as a reason to weaken the implemented controls.
+1. Obtain and review the next written build brief before changing behaviour.
+2. Preserve Story 1.5 controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening and manifest filename hashing.
+3. Treat written provider confirmation about backup scope and qualified legal wording as separate governance work. Do not weaken the implemented controls while that work remains open.
+4. Use the normal branch, Preview, acceptance, merge and Production workflow, then update this handoff again.
 
 ## End-of-build handoff checklist
 
