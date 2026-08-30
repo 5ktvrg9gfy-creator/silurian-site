@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 
-SCHEMA_VERSION = "1.2"
+SCHEMA_VERSION = "1.3"
 PLACEHOLDERS = {"REPLACE_WITH_ACTUAL", "SUPPLIED_BY_DEPLOYMENT", "0000000"}
 MANAGED_SENTINEL = "provider_managed_not_exposed"
 SCHEMA = json.loads((Path(__file__).with_name("run_manifest.schema.json")).read_text(encoding="utf-8"))
@@ -52,8 +52,13 @@ def artefact_ref(kind: str, payload: Any, *, rows: int | None = None, series: in
 
 
 def source_record(raw: bytes, filename: str, received_at: str, metadata: dict[str, Any]) -> dict[str, Any]:
+    source_name = Path(filename or "uploaded.csv").name
+    extension = Path(source_name).suffix.lower()
+    if not re.fullmatch(r"\.[a-z0-9]{1,10}", extension):
+        extension = ".other"
     return {
-        "filename": Path(filename or "uploaded.csv").name,
+        "filename_sha256": sha256_bytes(source_name.encode("utf-8")),
+        "extension": extension,
         "bytes": len(raw),
         "sha256": sha256_bytes(raw),
         "rows_raw": int(metadata.get("parsed_rows", metadata.get("source_physical_lines", 1) - 1)),
@@ -270,6 +275,8 @@ def content_fingerprint(manifest: dict[str, Any]) -> str:
     value.pop("created_at", None)
     value["source"].pop("received_at", None)
     value["source"].pop("filename", None)
+    value["source"].pop("filename_sha256", None)
+    value["source"].pop("extension", None)
     environment = value.get("environment", {})
     value["environment"] = {
         "key_libraries": deepcopy(environment.get("key_libraries", {})),
@@ -321,7 +328,8 @@ def _reproducibility(stages: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _assert_no_client_data(manifest: dict[str, Any], source_skus: Iterable[str]) -> None:
     value = deepcopy(manifest)
-    value["source"]["filename"] = ""
+    value["source"].pop("filename", None)
+    value["source"].pop("filename_sha256", None)
     serialised = canonical_json(value)
     for sku in {str(value).strip() for value in source_skus if str(value).strip()}:
         if sku in serialised:

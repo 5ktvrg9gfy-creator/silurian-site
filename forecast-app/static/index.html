@@ -107,7 +107,7 @@
     <div class="bundle-actions"><button id="downloadBundle" type="button" disabled>Download confidential run bundle</button></div>
     <form id="reopenBundleForm" class="bundle-form">
       <h3>Reopen a recorded run</h3>
-      <div class="wide small">Reopening verifies the file and renders only what was recorded. It never recalculates or changes a result.</div>
+      <div class="wide small">Reopening happens entirely in this browser. The bundle never leaves your device, and no result is recalculated or changed.</div>
       <div class="wide"><label for="reopenBundleFile">Confidential run bundle</label><input id="reopenBundleFile" name="file" type="file" accept=".json,application/json" required></div>
       <div class="wide"><button id="reopenBundle" type="submit">Reopen recorded run</button></div>
       <div id="bundleError" class="wide error" role="alert"></div>
@@ -131,6 +131,31 @@ const pct=value=>`${value.toFixed(1)}%`;
 const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 let latestQuality=null,latestManifest=null,latestBundle=null;
 function setLatestBundle(bundle){latestBundle=bundle||null;document.getElementById('downloadBundle').disabled=!latestBundle}
+function jsonCopy(value){return JSON.parse(JSON.stringify(value))}
+function canonicalJson(value){
+  if(value===null||typeof value==='boolean'||typeof value==='string')return JSON.stringify(value);
+  if(typeof value==='number'){if(!Number.isFinite(value))throw new Error('The run bundle contains an invalid number');return JSON.stringify(value)}
+  if(Array.isArray(value))return `[${value.map(canonicalJson).join(',')}]`;
+  if(typeof value==='object')return `{${Object.keys(value).sort().map(key=>`${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  throw new Error('The run bundle contains an unsupported value');
+}
+async function sha256Hex(value){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return [...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('')}
+async function verifyRecordedBundle(bundle){
+  if(!bundle||bundle.bundle_schema_version!=='1.0'||!bundle.manifest||!bundle.integrity||!bundle.results)throw new Error('This is not a supported Silurian run bundle');
+  if(!['1.2','1.3'].includes(bundle.manifest.schema_version))throw new Error('This run manifest version is not supported');
+  const manifest=jsonCopy(bundle.manifest),recordedManifestHash=manifest.integrity?.manifest_sha256;
+  if(!/^[0-9a-f]{64}$/.test(recordedManifestHash||''))throw new Error('The embedded run manifest has no valid integrity record');
+  manifest.integrity.manifest_sha256='';
+  if(await sha256Hex(canonicalJson(manifest))!==recordedManifestHash)throw new Error('The embedded run manifest failed its integrity check');
+  if(bundle.integrity.manifest_sha256!==recordedManifestHash)throw new Error('The run manifest in this bundle was swapped or altered');
+  if(bundle.integrity.content_fingerprint_sha256!==bundle.manifest.integrity.content_fingerprint_sha256)throw new Error('The copied content fingerprint does not match the embedded manifest');
+  const checked=jsonCopy(bundle),recordedBundleHash=checked.integrity.bundle_sha256;checked.integrity.bundle_sha256='';
+  if(await sha256Hex(canonicalJson(checked))!==recordedBundleHash)throw new Error('The run bundle failed its integrity check');
+  const stages=(bundle.manifest.stages||[]).map(stage=>stage.stage).sort(),results=Object.keys(bundle.results).sort();
+  if(JSON.stringify(stages)!==JSON.stringify(results))throw new Error('The recorded results do not match the stages that ran');
+  const current={validation:'1.0.0',quality:'1.0.0',forecast:'1.0.0'};
+  return (bundle.manifest.stages||[]).filter(stage=>stage.engine_version!==current[stage.stage]).map(stage=>({stage:stage.stage,recorded:stage.engine_version,current:current[stage.stage]||'not available'}));
+}
 function downloadBundle(bundle){const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`silurian-run-${bundle.manifest.run_id.slice(-8)}-CONFIDENTIAL.json`;link.click();URL.revokeObjectURL(url)}
 document.getElementById('downloadBundle').addEventListener('click',()=>{if(latestBundle)downloadBundle(latestBundle)});
 function renderRecordedBundle(bundle,versionDifferences=[]){
@@ -145,7 +170,8 @@ function renderManifest(manifest,targetId){
   const panel=document.getElementById(targetId);if(!manifest){panel.style.display='none';return}
   latestManifest=manifest;window.latestManifest=manifest;const forecast=(manifest.stages||[]).find(stage=>stage.stage==='forecast'),model=forecast?.model;
   const modelCopy=model?`${model.family} ${model.version}, ${model.checkpoint}`:'No model called';
-  panel.innerHTML=`<div class="kicker">Run provenance</div><h2>What produced this result</h2><div class="provenance-grid"><div><span class="small">Run</span><strong>${esc(manifest.run_id)}</strong></div><div><span class="small">Source</span><strong>${esc(manifest.source.filename)} · ${esc(manifest.source.sha256.slice(0,12))}</strong></div><div><span class="small">Analysis date</span><strong>${esc(manifest.as_of_date)} · ${esc(manifest.as_of_source.replace('_',' '))}</strong></div><div><span class="small">Model</span><strong>${esc(modelCopy)}</strong></div><div><span class="small">Manifest</span><strong>${esc(manifest.integrity.manifest_sha256.slice(0,12))}</strong></div><div><span class="small">Reproducibility</span><strong>${esc(manifest.reproducibility.statement)}</strong></div></div><button type="button" class="download-manifest">Download run manifest</button>`;
+  const sourceCopy=manifest.source.filename?manifest.source.filename:`${manifest.source.extension||'file'} name hash ${String(manifest.source.filename_sha256||'').slice(0,12)}`;
+  panel.innerHTML=`<div class="kicker">Run provenance</div><h2>What produced this result</h2><div class="provenance-grid"><div><span class="small">Run</span><strong>${esc(manifest.run_id)}</strong></div><div><span class="small">Source</span><strong>${esc(sourceCopy)} · ${esc(manifest.source.sha256.slice(0,12))}</strong></div><div><span class="small">Analysis date</span><strong>${esc(manifest.as_of_date)} · ${esc(manifest.as_of_source.replace('_',' '))}</strong></div><div><span class="small">Model</span><strong>${esc(modelCopy)}</strong></div><div><span class="small">Manifest</span><strong>${esc(manifest.integrity.manifest_sha256.slice(0,12))}</strong></div><div><span class="small">Reproducibility</span><strong>${esc(manifest.reproducibility.statement)}</strong></div></div><button type="button" class="download-manifest">Download run manifest</button>`;
   panel.querySelector('.download-manifest').addEventListener('click',()=>downloadManifest(manifest));panel.style.display='block';
   const footer=document.getElementById('qualityManifestFooter');if(footer)footer.textContent=`Run ${manifest.run_id} · Manifest ${manifest.integrity.manifest_sha256}`;
 }
@@ -297,7 +323,7 @@ document.getElementById('portfolioForm').addEventListener('submit',async event=>
 });
 document.getElementById('reopenBundleForm').addEventListener('submit',async event=>{
   event.preventDefault();const button=document.getElementById('reopenBundle'),error=document.getElementById('bundleError');error.textContent='';button.disabled=true;button.textContent='Verifying bundle';
-  try{const response=await fetch('/api/reopen-bundle',{method:'POST',body:new FormData(event.currentTarget)}),data=await response.json();if(!response.ok)throw new Error(data.detail||'The run bundle could not be reopened');setLatestBundle(data.bundle);renderRecordedBundle(data.bundle,data.version_differences||[])}catch(err){error.textContent=err.message;document.getElementById('bundleView').style.display='none'}finally{button.disabled=false;button.textContent='Reopen recorded run'}
+  try{const file=document.getElementById('reopenBundleFile').files[0];if(!file)throw new Error('Select a confidential run bundle');const bundle=JSON.parse(await file.text()),versionDifferences=await verifyRecordedBundle(bundle);setLatestBundle(bundle);renderRecordedBundle(bundle,versionDifferences)}catch(err){error.textContent=err instanceof SyntaxError?'The selected file is not a readable Silurian run bundle':err.message;document.getElementById('bundleView').style.display='none'}finally{button.disabled=false;button.textContent='Reopen recorded run'}
 });
 document.getElementById('reproduceBundleForm').addEventListener('submit',async event=>{
   event.preventDefault();const button=document.getElementById('reproduceBundle'),error=document.getElementById('reproductionError');error.textContent='';button.disabled=true;button.textContent='Reproducing run';

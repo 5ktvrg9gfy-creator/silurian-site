@@ -86,6 +86,8 @@ class BigQueryTimesFMProvider:
         job = self._client.query(query, job_config=config, location=self._location)
         rows = list(job.result())
         self.last_cache_hit = bool(job.cache_hit)
+        if self.last_cache_hit:
+            raise RuntimeError("BigQuery returned a cached forecast result, so the run was stopped")
         if not rows:
             raise RuntimeError("TimesFM returned no forecast")
         if rows[0].ai_forecast_status:

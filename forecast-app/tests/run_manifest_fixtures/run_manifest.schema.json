@@ -1,9 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://silurian.example/schemas/run_manifest/1.2.json",
+  "$id": "https://silurian.example/schemas/run_manifest/1.3.json",
   "title": "Silurian Forecast Diagnostic run manifest",
-  "description": "Provenance record for one diagnostic run. One user action is one run, and only stages that actually executed appear. Integrity is verified as a dependency graph, not a linear chain. Contains no client data: no SKU identifiers, no demand values, no descriptions, no customer or site identifiers. The source filename is the only client-controlled string.",
+  "description": "Provenance record for one diagnostic run. One user action is one run, and only stages that actually executed appear. Integrity is verified as a dependency graph, not a linear chain. Version 1.3 contains no readable client identifier or value. Legacy 1.2 manifests can contain a readable source filename and remain accepted for reopening and reproduction.",
   "type": "object",
+  "allOf": [
+    {
+      "if": {"properties": {"schema_version": {"const": "1.2"}}},
+      "then": {"properties": {"source": {"required": ["filename"]}}}
+    },
+    {
+      "if": {"properties": {"schema_version": {"const": "1.3"}}},
+      "then": {
+        "properties": {
+          "source": {
+            "required": ["filename_sha256", "extension"],
+            "not": {"required": ["filename"]}
+          }
+        }
+      }
+    }
+  ],
   "required": [
     "schema_version",
     "run_id",
@@ -20,7 +37,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.2"
+      "enum": ["1.2", "1.3"]
     },
     "run_id": {
       "type": "string",
@@ -47,7 +64,6 @@
     "source": {
       "type": "object",
       "required": [
-        "filename",
         "bytes",
         "sha256",
         "rows_raw",
@@ -57,7 +73,17 @@
       "properties": {
         "filename": {
           "type": "string",
-          "description": "As supplied. The only client-controlled string in the manifest"
+          "description": "Legacy 1.2 field. As supplied and potentially client identifying"
+        },
+        "filename_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the basename exactly as supplied, retained without a readable identifier"
+        },
+        "extension": {
+          "type": "string",
+          "pattern": "^\\.[a-z0-9]{1,10}$",
+          "description": "Lower-case source file extension only"
         },
         "bytes": {
           "type": "integer",

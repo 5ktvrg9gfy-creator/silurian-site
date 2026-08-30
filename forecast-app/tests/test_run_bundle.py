@@ -176,6 +176,20 @@ class RunBundleTests(unittest.TestCase):
         with self.assertRaises(BundleError):
             reopen_bundle(json.dumps(bundle).encode())
 
+    def test_legacy_manifest_with_readable_filename_remains_reopenable(self):
+        bundle = make_quality_bundle()
+        manifest = bundle["manifest"]
+        manifest["schema_version"] = "1.2"
+        manifest["source"]["filename"] = "legacy-client-file.csv"
+        manifest["source"].pop("filename_sha256")
+        manifest["source"].pop("extension")
+        manifest["integrity"]["content_fingerprint_sha256"] = content_fingerprint(manifest)
+        manifest["integrity"]["manifest_sha256"] = exact_manifest_hash(manifest)
+        bundle["integrity"]["manifest_sha256"] = manifest["integrity"]["manifest_sha256"]
+        bundle["integrity"]["content_fingerprint_sha256"] = manifest["integrity"]["content_fingerprint_sha256"]
+        bundle["integrity"]["bundle_sha256"] = bundle_hash(bundle)
+        self.assertEqual(reopen_bundle(json.dumps(bundle).encode()), bundle)
+
     def test_reproduction_matches_quality_run(self):
         first = make_quality_bundle()
         second = deepcopy(first)
