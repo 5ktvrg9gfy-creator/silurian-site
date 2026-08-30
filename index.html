@@ -540,14 +540,15 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
 .close .row { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: calc(1.5 * var(--leading)); }
 .close .btn-ghost { color: #fff; border-color: #fff; }
 .close .btn-ghost:hover { background: color-mix(in srgb, #fff 16%, transparent); }
-.close .linkedin-badge {
+.close .contact-badge {
   width: 40px; height: 40px; padding: 0; flex: none;
   justify-content: center; border-radius: 50%;
   border-color: var(--color-text); background: var(--color-text); color: #fff;
   font-family: Arial, sans-serif; font-size: 16px; font-weight: 700;
   letter-spacing: -0.04em; text-transform: none;
 }
-.close .linkedin-badge:hover { background: #fff; border-color: #fff; color: var(--color-text); }
+.close .contact-badge:hover { background: #fff; border-color: #fff; color: var(--color-text); }
+.close .email-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
 footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(--leading);
   color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */ }
 
@@ -656,8 +657,8 @@ body[data-baselines]::after {
   <div class="wrap">
     <h3><span class="line">Tell us what needs to land,</span> <span class="line">and by when.</span></h3>
     <div class="row">
-      <a class="btn btn-ghost" href="mailto:hello@silurianconsulting.co.uk">hello@silurianconsulting.co.uk</a>
-      <a class="btn linkedin-badge" href="https://www.linkedin.com/company/silurian-consulting/" target="_blank" rel="noopener" aria-label="Silurian Consulting on LinkedIn"><span aria-hidden="true">in</span></a>
+      <a class="btn contact-badge email-badge" href="mailto:hello@silurianconsulting.co.uk" aria-label="Email Silurian Consulting"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m4 7 8 6 8-6"/></svg></a>
+      <a class="btn contact-badge linkedin-badge" href="https://www.linkedin.com/company/silurian-consulting/" target="_blank" rel="noopener" aria-label="Silurian Consulting on LinkedIn"><span aria-hidden="true">in</span></a>
     </div>
   </div>
 </section>
