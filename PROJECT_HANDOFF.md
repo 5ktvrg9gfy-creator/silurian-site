@@ -7,6 +7,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 ## Current position
 
 - Stories 1.1, 1.2, 1.3 and 1.4 are complete and merged into `main`.
+- Story 1.5 is implemented on `codex/story-1-5-data-handling` in pull request 31. Focused tests and live Preview acceptance pass. It is not complete until the pull request is merged and the Production smoke test passes.
 - Story 1.4 merged in pull request 29 at `86f9b02`. Quality and forecast-bundle Preview acceptance passed, and the Production quality-bundle smoke test passed.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
@@ -14,7 +15,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
-- No database is used. Uploaded files are processed in memory and are not deliberately retained.
+- No application database or object store is used. Uploaded files are processed for the current request and are not deliberately saved by application code. The framework can spool a multipart upload temporarily, and BigQuery uses an anonymous result table for up to 24 hours, so do not make an unqualified no-retention claim.
 
 ## Authoritative locations
 
@@ -128,6 +129,27 @@ Key references:
 - `forecast-app/tests/generate_run_bundle_goldens.py`
 - `forecast-app/tests/test_run_bundle.py`
 
+### Story 1.5: data handling controls
+
+The implementation adds a complete data map and narrows data exposure without changing the forecasting contract. New manifest schema version 1.3 replaces the readable source filename with a filename SHA-256 and extension. Legacy version 1.2 manifests and bundles remain compatible and can still contain a readable filename.
+
+Client-data API responses use `Cache-Control: no-store`. Application logging uses fixed messages and does not deliberately record source rows, SKUs, findings, bundles or exception text. Every BigQuery forecast disables query-cache reuse and now fails closed if Google reports a cache hit. Confidential bundle reopening is performed entirely in the browser, and the former server reopen endpoint has been removed.
+
+Vercel Preview acceptance confirmed the function in London, a Hobby plan with one owner, no log drains or monitoring integrations, and no enabled Web Analytics, Speed Insights or Observability Plus. Successful quality, controlled-error and forecast requests produced metadata-only runtime entries with no uploaded filename, SKU, CSV row, request body or client-facing error detail.
+
+Live testing found `BIGQUERY_LOCATION` set to the US despite the London code default. Preview and Production settings were corrected to London, the Preview was redeployed, and a subsequent TimesFM forecast completed in `europe-west2`. BigQuery job history and Cloud Audit Logs showed parameterised SQL placeholders rather than the actual dates and demand values. Cloud Logging has standard `_Default` and `_Required` sinks only. The remaining client-statement issue is written provider confirmation about the scope of platform backups, followed by qualified legal and contractual review.
+
+Key references:
+
+- `forecast-app/docs/1.5-data-map.md`
+- `forecast-app/run_manifest.py`
+- `forecast-app/run_manifest.schema.json`
+- `forecast-app/bigquery_timesfm.py`
+- `forecast-app/app.py`
+- `forecast-app/static/index.html`
+- `forecast-app/tests/test_app_manifest.py`
+- `forecast-app/tests/test_bigquery_timesfm.py`
+
 ## Application routes
 
 - `GET /`: Forecast Diagnostic interface
@@ -138,8 +160,9 @@ Key references:
 - `POST /api/quality`: portfolio data-quality assessment
 - `POST /api/analyse`: single-SKU forecast and risk analysis
 - `POST /api/analyse-portfolio`: portfolio forecast and prioritisation
-- `POST /api/reopen-bundle`: integrity-check and return a recorded bundle without recomputation
 - `POST /api/reproduce-bundle`: rerun validation or quality from a supplied source and compare it with a bundle
+
+Recorded bundles reopen entirely in the browser. There is no server reopen route.
 
 ## Marketing-site production configuration
 
@@ -178,6 +201,8 @@ Required Production environment variables:
 
 The Google Cloud values and the complete determinism JSON belong in Vercel, not in this repository. Never copy credentials, identity tokens or private Google Cloud identifiers into source files, commits, issues, manifests or this handoff.
 
+`BIGQUERY_LOCATION` must select the London BigQuery region in both Preview and Production. Story 1.5 live acceptance verified the corrected Preview job in `europe-west2`. Recheck the first Production forecast after merging a change that affects deployment settings.
+
 `TIMESFM_MEASURE_DETERMINISM` is a temporary controlled-measurement flag. It must not remain enabled in Production. When enabled in an isolated Preview, each forecast request runs TimesFM ten times and incurs additional time and BigQuery usage.
 
 ## Authentication and model path
@@ -214,16 +239,16 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 python -m unittest discover -s tests
 ```
 
-Focused Story 1.3 and 1.4 checks:
+Focused Story 1.3, 1.4 and 1.5 checks:
 
 ```text
-python -m unittest tests.test_run_manifest tests.test_determinism tests.test_run_bundle
+python -m unittest tests.test_app_manifest tests.test_bigquery_timesfm tests.test_run_manifest tests.test_determinism tests.test_run_bundle
 ```
 
 On the current Windows machine, the repository's embedded Python can be used when the system `python` command is unavailable:
 
 ```text
-..\.python-embed\python.exe -m unittest tests.test_run_manifest tests.test_determinism tests.test_run_bundle
+..\.python-embed\python.exe -m unittest tests.test_app_manifest tests.test_bigquery_timesfm tests.test_run_manifest tests.test_determinism tests.test_run_bundle
 ```
 
 The fixed live TimesFM test file is:
@@ -291,16 +316,18 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
-- On the current local machine, the complete test discovery run is blocked in `test_app_manifest` by an inconsistent `anyio` installation and also reports eight pre-existing Story 1.1 fixture mismatches. The focused Story 1.3 and 1.4 suite passes 28 tests.
+- The Story 1.5 focused suite passes 51 tests. Full discovery still reports eight pre-existing Story 1.1 fixture mismatches caused by line-ending-sensitive fixture expectations; these are not Story 1.5 behaviour failures.
 
 ## Next starting point
 
-Start Story 1.5 from current `main`:
+Finish Story 1.5 through pull request 31:
 
-1. Obtain and review the Story 1.5 written data-handling brief.
-2. Cover the manifest and bundle confidentiality split, UK BigQuery region, provider role, working-data deletion, table expiry and job-result retention.
-3. Keep Story 1.1 to 1.4 behaviour backward-compatible unless the approved brief explicitly changes a contract.
-4. Create a dedicated story branch and use the normal Preview, acceptance, merge and Production workflow.
+1. Merge pull request 31 only after its final checks pass.
+2. Wait for the Production Forecast Diagnostic deployment to become ready.
+3. Run the synthetic single-SKU TimesFM forecast and confirm the resulting BigQuery job location is `europe-west2`.
+4. Confirm the Production function is received in `lhr1` and the runtime entry remains metadata only.
+5. Update this handoff with the merge reference and Production evidence, then mark Story 1.5 complete.
+6. Treat written provider confirmation about backup scope and qualified legal wording as the next governance work, not as a reason to weaken the implemented controls.
 
 ## End-of-build handoff checklist
 
