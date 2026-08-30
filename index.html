@@ -384,7 +384,7 @@ a.btn-ghost { border-color: currentColor; padding-inline: calc(var(--space-3) * 
 }
 
 /* â€” hero â€” */
-.hero { padding: var(--edge) 0 calc(3 * var(--leading)); }
+.hero { padding: calc(4 * var(--leading)) 0 calc(3 * var(--leading)); }
 .display {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: clamp(42px, 6.2vw, 84px);
@@ -551,7 +551,7 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(
   .feature { grid-template-columns: 1fr; gap: var(--half); }
 }
 @media (max-width: 720px) {
-  .hero { padding-top: var(--edge); }
+  .hero { padding-top: calc(2.5 * var(--leading)); }
   .stats .grid { grid-template-columns: repeat(2, 1fr); justify-content: start; }
   .split { grid-template-columns: 1fr; }
   .split-figure { order: -1; }
@@ -591,7 +591,7 @@ body[data-baselines]::after {
 
 
 
-  <section class="split" id="about" style="padding-top:calc(3.25 * var(--leading));padding-bottom:calc(3.25 * var(--leading))">
+  <section class="split" id="about" style="padding-top:var(--edge);padding-bottom:calc(3.25 * var(--leading))">
     <div class="split-copy">
       <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
       <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
