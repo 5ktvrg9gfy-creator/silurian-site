@@ -20,8 +20,8 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "a47819af3f94671126afc87effffe00b774de68a16a041eb01ff4fb0ab05ac44",
-      "manifest_sha256": "dd84ec93eb08bdafb9663d1f45cf860d525b4b9d93559713cef47d6d10190e96"
+      "content_fingerprint_sha256": "84854de5e3608682d4ecf4a4c04881ba1a77f8206cc7386272ea92923463beb3",
+      "manifest_sha256": "764efb1095409259f5117955c50913f879fc5338c8d6da09b28e9879936adb2e"
     },
     "reproducibility": {
       "deterministic_stages": [
@@ -32,12 +32,13 @@
       "statement": "Validation and quality are bitwise reproducible."
     },
     "run_id": "run_41e9813c5d822f573881eca47b83fdca",
-    "schema_version": "1.2",
+    "schema_version": "1.3",
     "source": {
       "bytes": 8535,
       "delimiter_detected": ",",
       "encoding_detected": "utf-8",
-      "filename": "20_portfolio_mixed.csv",
+      "extension": ".csv",
+      "filename_sha256": "d3820b4e8cc523a9400510ebefae904752f84d587285ba96e4fc2c81db4a7b01",
       "received_at": "2026-08-30T09:00:00Z",
       "rows_raw": 324,
       "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc"
@@ -1050,8 +1051,8 @@
     }
   },
   "integrity": {
-    "bundle_sha256": "2eeba417338c2a47dfcc3d5180d74321f2e04dd56f49fa5abc75e90b9380f4b2",
-    "manifest_sha256": "dd84ec93eb08bdafb9663d1f45cf860d525b4b9d93559713cef47d6d10190e96",
-    "content_fingerprint_sha256": "a47819af3f94671126afc87effffe00b774de68a16a041eb01ff4fb0ab05ac44"
+    "bundle_sha256": "cff37272ee75787c1c0a4c15d460fda2dcdbd72e64b046607f9d2d808e1f8ec7",
+    "manifest_sha256": "764efb1095409259f5117955c50913f879fc5338c8d6da09b28e9879936adb2e",
+    "content_fingerprint_sha256": "84854de5e3608682d4ecf4a4c04881ba1a77f8206cc7386272ea92923463beb3"
   }
 }

@@ -89,10 +89,11 @@ class RunManifestTests(unittest.TestCase):
         second["integrity"]["manifest_sha256"] = exact_manifest_hash(second)
         self.assertEqual(first["integrity"]["content_fingerprint_sha256"], second["integrity"]["content_fingerprint_sha256"])
 
-    def test_fingerprint_ignores_source_filename_and_received_time(self):
+    def test_fingerprint_ignores_source_filename_hash_and_received_time(self):
         first = make_validation_manifest("20_portfolio_mixed.csv")
         second = deepcopy(first)
-        second["source"]["filename"] = "renamed.csv"
+        second["source"]["filename_sha256"] = "b" * 64
+        second["source"]["extension"] = ".txt"
         second["source"]["received_at"] = "2026-08-31T09:00:00Z"
         self.assertEqual(content_fingerprint(first), content_fingerprint(second))
         self.assertNotEqual(first["integrity"]["manifest_sha256"], exact_manifest_hash(second))
@@ -117,6 +118,21 @@ class RunManifestTests(unittest.TestCase):
         serialised = json.dumps(manifest)
         self.assertNotIn("PKG-10432", serialised)
         self.assertNotIn("PKG-10518", serialised)
+
+    def test_manifest_contains_filename_hash_but_not_readable_filename(self):
+        manifest = make_validation_manifest("20_portfolio_mixed.csv")
+        source = manifest["source"]
+        self.assertEqual(manifest["schema_version"], "1.3")
+        self.assertNotIn("filename", source)
+        self.assertEqual(len(source["filename_sha256"]), 64)
+        self.assertEqual(source["extension"], ".csv")
+        self.assertNotIn("20_portfolio_mixed.csv", json.dumps(manifest))
+
+    def test_identifying_or_long_extension_is_not_emitted(self):
+        source = source_record(b"sku,date,demand\n", "AcmePharma_Q3.TREDEGAR_SITE", "2026-08-30T09:00:00Z", {})
+        self.assertEqual(source["extension"], ".other")
+        self.assertNotIn("AcmePharma", json.dumps(source))
+        self.assertNotIn("TREDEGAR", json.dumps(source))
 
     def test_reference_canary_detects_altered_baseline(self):
         output = [10.0, 11.0, 12.0]

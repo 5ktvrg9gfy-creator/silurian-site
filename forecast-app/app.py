@@ -46,6 +46,24 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+
+@app.middleware("http")
+async def prevent_client_data_caching(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.exception_handler(Exception)
+async def unhandled_diagnostic_error(request: Request, exc: Exception):
+    logging.error("Unhandled diagnostic request failed")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "The diagnostic could not be completed"},
+        headers={"Cache-Control": "no-store"},
+    )
+
 _provider = None
 
 
@@ -354,7 +372,7 @@ async def run_analysis(
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        logging.exception("TimesFM analysis failed")
+        logging.error("TimesFM analysis failed")
         raise HTTPException(status_code=503, detail="TimesFM analysis could not be completed") from exc
 
 
@@ -406,29 +424,8 @@ async def run_portfolio_analysis(
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        logging.exception("TimesFM portfolio analysis failed")
+        logging.error("TimesFM portfolio analysis failed")
         raise HTTPException(status_code=503, detail="TimesFM portfolio analysis could not be completed") from exc
-
-
-@app.post("/api/reopen-bundle")
-async def reopen_bundle_upload(file: UploadFile = File(...)):
-    raw = await file.read()
-    _check_upload(raw)
-    try:
-        bundle = reopen_bundle(raw)
-    except BundleError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    current_versions = {"validation": "1.0.0", "quality": "1.0.0", "forecast": "1.0.0"}
-    version_differences = [
-        {
-            "stage": stage["stage"],
-            "recorded": stage["engine_version"],
-            "current": current_versions[stage["stage"]],
-        }
-        for stage in bundle["manifest"]["stages"]
-        if stage["engine_version"] != current_versions.get(stage["stage"])
-    ]
-    return {"bundle": bundle, "version_differences": version_differences}
 
 
 @app.post("/api/reproduce-bundle")
