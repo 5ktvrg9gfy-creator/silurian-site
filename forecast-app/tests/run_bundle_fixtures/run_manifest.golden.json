@@ -1,13 +1,13 @@
 {
   "schema_version": "1.2",
-  "run_id": "run_390f6045fbe64de658ce7876d0cda9f5",
+  "run_id": "run_41e9813c5d822f573881eca47b83fdca",
   "created_at": "2026-08-30T09:00:03Z",
   "as_of_date": "2026-08-01",
   "as_of_source": "user",
   "source": {
     "filename": "20_portfolio_mixed.csv",
-    "bytes": 8210,
-    "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
+    "bytes": 8535,
+    "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
     "rows_raw": 324,
     "encoding_detected": "utf-8",
     "delimiter_detected": ",",
@@ -23,7 +23,7 @@
       "duration_ms": 1000,
       "input_ref": {
         "type": "source_file",
-        "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
+        "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
         "rows": 324
       },
       "output_ref": {
@@ -59,14 +59,21 @@
           "finding_codes": [
             "HISTORY_TOO_SHORT",
             "SERIES_DISCONTINUED",
-            "ZERO_VS_MISSING_AMBIGUOUS"
+            "ZERO_VS_MISSING_AMBIGUOUS",
+            "LINE_ENDINGS_CRLF"
           ]
         }
       ],
-      "transformations": [],
+      "transformations": [
+        {
+          "code": "LINE_ENDINGS_CRLF",
+          "count": 1,
+          "reversible": true
+        }
+      ],
       "outcome": {
         "verdict": "accept_with_warnings",
-        "findings": 3,
+        "findings": 4,
         "blocking": 0,
         "rows_in": 324,
         "rows_out": 324,
@@ -88,7 +95,7 @@
       },
       "output_ref": {
         "type": "quality_result",
-        "sha256": "4517fd38f7699e343849467d12d2b760637a024c4c87d347d553a03e75f70a7a",
+        "sha256": "40eb6397b214af5e5294e10218f158958585c779f7827f1efd095063933aff29",
         "series": 12
       },
       "options": {
@@ -152,8 +159,8 @@
     "statement": "Validation and quality are bitwise reproducible."
   },
   "integrity": {
-    "manifest_sha256": "73c7fe28ad77668fa394c2beca6a400e458aec3ed2e1117a5a35a41ba93bb6ad",
-    "content_fingerprint_sha256": "47e795c347ecd546f354d6a431b4b78649a34ef2d30d8d2d4bb2f63562d8ee2d",
+    "manifest_sha256": "dd84ec93eb08bdafb9663d1f45cf860d525b4b9d93559713cef47d6d10190e96",
+    "content_fingerprint_sha256": "a47819af3f94671126afc87effffe00b774de68a16a041eb01ff4fb0ab05ac44",
     "chain_verified": true
   }
 }

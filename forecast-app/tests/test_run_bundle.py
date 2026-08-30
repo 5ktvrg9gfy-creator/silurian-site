@@ -103,6 +103,21 @@ class RunBundleTests(unittest.TestCase):
         with self.assertRaises(BundleError):
             reopen_bundle(json.dumps(bundle).encode())
 
+    def test_browser_integer_serialisation_preserves_bundle_integrity(self):
+        bundle = make_quality_bundle()
+
+        def browser_numbers(value):
+            if isinstance(value, dict):
+                return {key: browser_numbers(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [browser_numbers(item) for item in value]
+            if isinstance(value, float) and value.is_integer():
+                return int(value)
+            return value
+
+        downloaded = browser_numbers(bundle)
+        self.assertEqual(reopen_bundle(json.dumps(downloaded).encode()), downloaded)
+
     def test_swapped_manifest_is_refused(self):
         bundle = make_quality_bundle()
         bundle["manifest"]["run_id"] = "run_" + "f" * 32

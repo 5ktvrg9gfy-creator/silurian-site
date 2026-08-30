@@ -282,7 +282,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 currently exposes deliberate reproduction for validation-only and validation-plus-quality bundles. Forecast comparison rules are implemented and tested, including unknown determinism and tolerance outcomes, but the browser reproduction form does not yet rerun a forecast bundle.
-- On the current local machine, the complete test discovery run is blocked in `test_app_manifest` by an inconsistent `anyio` installation and also reports eight pre-existing Story 1.1 fixture mismatches. The focused Story 1.3 and 1.4 suite passes 24 tests.
+- On the current local machine, the complete test discovery run is blocked in `test_app_manifest` by an inconsistent `anyio` installation and also reports eight pre-existing Story 1.1 fixture mismatches. The focused Story 1.3 and 1.4 suite passes 26 tests.
 
 ## Next starting point
 

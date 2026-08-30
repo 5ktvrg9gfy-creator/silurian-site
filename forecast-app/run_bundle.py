@@ -24,10 +24,21 @@ class BundleError(RuntimeError):
     pass
 
 
+def _normalise_json_numbers(value: Any) -> Any:
+    """Keep integrity stable when a browser serialises 95.0 as 95."""
+    if isinstance(value, dict):
+        return {key: _normalise_json_numbers(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalise_json_numbers(item) for item in value]
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
 def bundle_hash(bundle: dict[str, Any]) -> str:
     value = deepcopy(bundle)
     value["integrity"]["bundle_sha256"] = ""
-    return sha256_json(value)
+    return sha256_json(_normalise_json_numbers(value))
 
 
 def build_bundle(
