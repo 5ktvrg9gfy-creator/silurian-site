@@ -10,6 +10,7 @@
 .validation-panel{display:none;margin:24px 0;background:#fff;border-top:5px solid var(--text);padding:22px}.validation-panel.reject{border-color:var(--bad)}.validation-panel.accept_with_warnings{border-color:var(--warn)}.validation-panel.accept{border-color:var(--good)}.validation-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.validation-head h2{margin:4px 0 5px}.validation-badge{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;color:#fff;background:var(--text)}.finding{border-top:1px solid #aaa;padding:17px 0}.finding:first-child{margin-top:16px}.finding-code{font-size:11px;color:var(--muted);font-weight:700}.finding-line{display:grid;grid-template-columns:70px 1fr;gap:10px;margin-top:5px}.finding-line strong{text-transform:uppercase;font-size:11px;letter-spacing:.05em}.evidence{background:var(--bg);padding:10px;margin-top:10px;font:12px/1.5 Consolas,monospace;white-space:pre-wrap}.download-record{margin-top:15px;width:auto;padding-inline:18px}@media(max-width:680px){.validation-head{align-items:flex-start;flex-direction:column}.finding-line{grid-template-columns:1fr}}
 .quality-report{display:none;margin-top:28px}.quality-hero{background:var(--text);color:#fff;padding:26px;border-top:6px solid var(--accent)}.quality-hero h2{font-size:31px;margin:4px 0}.quality-hero .kicker{color:var(--accent)}.quality-summary{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-bottom:2px solid}.quality-summary>div{padding:18px}.quality-summary>div+div{border-left:1px solid #aaa}.quality-summary strong{display:block;font-size:28px}.quality-statement{font-size:22px;line-height:1.35;background:#fff;padding:24px;margin-top:20px;border-left:5px solid var(--accent)}.quality-actions{display:flex;gap:12px;margin:18px 0}.quality-actions button{width:auto}.band{font-weight:700;text-transform:uppercase}.band.clean{color:var(--good)}.band.caveated{color:var(--warn)}.band.not_usable{color:var(--bad)}.quality-exception{background:#fff;padding:18px;margin-top:12px;border-left:4px solid var(--warn)}.quality-exception.not_usable{border-color:var(--bad)}.quality-exception h3{margin:0 0 6px}.quality-method{background:#fff;padding:18px;margin-top:22px;color:var(--muted)}@media(max-width:680px){.quality-summary{grid-template-columns:1fr}.quality-summary>div+div{border-left:0;border-top:1px solid #aaa}.quality-actions{align-items:stretch;flex-direction:column}.quality-actions button{width:100%}}@media print{header,.hero,form,.validation-panel,.quality-actions,.portfolioResult{display:none!important}.wrap{max-width:none;padding:0}.quality-report{display:block!important}.quality-report table{font-size:11px}}
 .provenance{display:none;background:#fff;border-top:4px solid var(--text);padding:20px;margin:20px 0}.provenance h2{margin:3px 0 12px}.provenance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.provenance-grid strong{display:block;word-break:break-word}.provenance button{width:auto;margin-top:16px}.report-footer{border-top:1px solid #aaa;margin-top:20px;padding-top:10px;color:var(--muted);font-size:11px}@media(max-width:680px){.provenance-grid{grid-template-columns:1fr}}@media print{.provenance{display:none!important}.report-footer{display:block!important}}
+.bundle-centre{margin-top:60px;border-top:4px solid var(--text);padding-top:24px}.bundle-warning{background:#fff4e8;border-left:5px solid var(--warn);padding:18px;margin:14px 0}.bundle-actions{display:flex;gap:12px;flex-wrap:wrap}.bundle-actions button{width:auto}.bundle-view{display:none;background:#fff;border-top:5px solid var(--text);padding:22px;margin-top:22px}.bundle-view h2{margin:4px 0 8px}.bundle-finding{border-top:1px solid #aaa;padding:14px 0}.bundle-form{margin-top:18px}.bundle-form h3{grid-column:1/-1;margin:0}.bundle-form .small{grid-column:1/-1}@media(max-width:680px){.bundle-actions{flex-direction:column}.bundle-actions button{width:100%}}
 </style>
 </head>
 <body>
@@ -98,12 +99,48 @@
       <p class="small" id="portfolioDisclaimer"></p>
     </section>
   </section>
+  <section class="bundle-centre">
+    <div class="kicker">Portable run record</div>
+    <h2>Keep, reopen or reproduce a completed run.</h2>
+    <p><strong>The manifest is the proof and is safe to keep anywhere. The bundle is the evidence and belongs to the client.</strong></p>
+    <div class="bundle-warning">A run bundle contains client data, including SKU identifiers, metrics, findings and forecast values. Treat it as confidential and do not share it like a manifest.</div>
+    <div class="bundle-actions"><button id="downloadBundle" type="button" disabled>Download confidential run bundle</button></div>
+    <form id="reopenBundleForm" class="bundle-form">
+      <h3>Reopen a recorded run</h3>
+      <div class="wide small">Reopening verifies the file and renders only what was recorded. It never recalculates or changes a result.</div>
+      <div class="wide"><label for="reopenBundleFile">Confidential run bundle</label><input id="reopenBundleFile" name="file" type="file" accept=".json,application/json" required></div>
+      <div class="wide"><button id="reopenBundle" type="submit">Reopen recorded run</button></div>
+      <div id="bundleError" class="wide error" role="alert"></div>
+    </form>
+    <form id="reproduceBundleForm" class="bundle-form">
+      <h3>Reproduce a recorded run</h3>
+      <div class="wide small">Reproduce deliberately runs the source again and compares the new evidence with the recorded bundle.</div>
+      <div><label for="reproduceSource">Original source CSV</label><input id="reproduceSource" name="source_file" type="file" accept=".csv,text/csv" required></div>
+      <div><label for="reproduceBundleFile">Recorded bundle</label><input id="reproduceBundleFile" name="bundle_file" type="file" accept=".json,application/json" required></div>
+      <div><label for="reproduceDate">Analysis date</label><input id="reproduceDate" name="analysis_date" type="date"></div>
+      <div><label for="reproduceGrain">Data grain</label><select id="reproduceGrain" name="grain"><option value="">Use recorded or infer</option><option value="month">Month</option><option value="week">Week</option><option value="day">Day</option></select></div>
+      <div class="wide"><button id="reproduceBundle" type="submit">Reproduce and compare</button></div>
+      <div id="reproductionError" class="wide error" role="alert"></div>
+    </form>
+    <section id="bundleView" class="bundle-view" aria-live="polite"></section>
+  </section>
 </main>
 <script>
 const fmt=value=>Math.round(value).toLocaleString('en-GB');
 const pct=value=>`${value.toFixed(1)}%`;
 const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-let latestQuality=null,latestManifest=null;
+let latestQuality=null,latestManifest=null,latestBundle=null;
+function setLatestBundle(bundle){latestBundle=bundle||null;document.getElementById('downloadBundle').disabled=!latestBundle}
+function downloadBundle(bundle){const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`silurian-run-${bundle.manifest.run_id.slice(-8)}-CONFIDENTIAL.json`;link.click();URL.revokeObjectURL(url)}
+document.getElementById('downloadBundle').addEventListener('click',()=>{if(latestBundle)downloadBundle(latestBundle)});
+function renderRecordedBundle(bundle,versionDifferences=[]){
+  const view=document.getElementById('bundleView'),quality=bundle.results.quality,forecast=bundle.results.forecast,validation=bundle.results.validation;
+  const versionNote=versionDifferences.length?`<div class="bundle-warning">${versionDifferences.map(item=>`This run was produced by ${esc(item.stage)} engine ${esc(item.recorded)}. The current engine is ${esc(item.current)}. Results below are shown exactly as originally produced.`).join('<br>')}</div>`:'';
+  const validationHtml=`<h3>Validation: ${esc(validation.verdict.replaceAll('_',' '))}</h3>${validation.findings.length?validation.findings.map(item=>`<div class="bundle-finding"><strong>${esc(item.code||'Finding')}</strong><p>${esc(item.what||item.detail||'')}</p><p>${esc(item.why||item.implication||'')}</p><p>${esc(item.do_this||item.action||'')}</p></div>`).join(''):'<p>No validation findings were recorded.</p>'}`;
+  let qualityHtml='';if(quality){const rows=Object.entries(quality.per_sku).map(([sku,item])=>`<tr><td>${esc(sku)}</td><td>${Number(item.volume_share_pct||0).toFixed(2)}%</td><td>${Number(item.coverage_pct||0).toFixed(1)}%</td><td>${item.periods_present||0}</td><td>${esc(item.band||'')}</td><td>${(item.findings||[]).map(f=>esc(f.code||f)).join(', ')||'None'}</td></tr>`).join('');qualityHtml=`<h3>Recorded quality result: ${esc(quality.portfolio_band.replace('_',' '))}</h3><p>${quality.headline.skus_analysed} SKUs were analysed. Clean volume: ${Number(quality.headline.clean_volume_share_pct||0).toFixed(1)}%.</p><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Volume share</th><th>Coverage</th><th>Periods</th><th>Band</th><th>Findings</th></tr></thead><tbody>${rows}</tbody></table></div><h3>Recorded findings</h3>${quality.findings.map(f=>`<div class="bundle-finding"><strong>${esc(f.sku||'Portfolio')} · ${esc(f.code)}</strong><p>${esc(f.detail)}</p><p><strong>Implication:</strong> ${esc(f.implication)}</p><p><strong>Action:</strong> ${esc(f.action)}</p></div>`).join('')||'<p>No quality findings were recorded.</p>'}<p class="small">${esc(quality.method_note)}</p>`}
+  let forecastHtml='';if(forecast){forecastHtml=`<h3>Recorded forecast</h3>${Object.entries(forecast.series).map(([sku,item])=>`<div class="bundle-finding"><strong>${esc(sku)}</strong><div class="table-wrap"><table><thead><tr><th>Period</th><th>Forecast</th><th>Lower</th><th>Upper</th></tr></thead><tbody>${item.points.map(p=>`<tr><td>${esc(p.period)}</td><td>${fmt(p.forecast)}</td><td>${fmt(p.lower)}</td><td>${fmt(p.upper)}</td></tr>`).join('')}</tbody></table></div></div>`).join('')}`}
+  view.innerHTML=`<div class="kicker">Recorded run, read only</div><h2>${esc(bundle.manifest.run_id)}</h2><p><strong>CONFIDENTIAL:</strong> ${esc(bundle.confidentiality.statement)}</p>${versionNote}${validationHtml}${qualityHtml}${forecastHtml}<p class="small">Bundle integrity ${esc(bundle.integrity.bundle_sha256)} · Manifest ${esc(bundle.integrity.manifest_sha256)}</p>`;view.style.display='block';
+}
 function renderManifest(manifest,targetId){
   const panel=document.getElementById(targetId);if(!manifest){panel.style.display='none';return}
   latestManifest=manifest;window.latestManifest=manifest;const forecast=(manifest.stages||[]).find(stage=>stage.stage==='forecast'),model=forecast?.model;
@@ -199,7 +236,7 @@ document.getElementById('form').addEventListener('submit',async event=>{
   button.disabled=true;button.textContent='Running diagnostic';error.textContent='';
   try{
     const response=await fetch('/api/analyse',{method:'POST',body:new FormData(event.currentTarget)});
-    const data=await response.json();renderValidation(data.validation,'validationPanel');renderManifest(data.manifest,'provenancePanel');if(!response.ok)throw new Error(data.detail||'Analysis failed');
+    const data=await response.json();renderValidation(data.validation,'validationPanel');renderManifest(data.manifest,'provenancePanel');if(!response.ok)throw new Error(data.detail||'Analysis failed');setLatestBundle(data.bundle);
     document.getElementById('demand').textContent=fmt(data.total_forecast);
     document.getElementById('minimum').textContent=fmt(data.minimum_inventory);
     document.getElementById('safetyResult').textContent=fmt(data.safety_stock);
@@ -238,7 +275,7 @@ document.getElementById('runQuality').addEventListener('click',async()=>{
   button.disabled=true;button.textContent='Assessing data quality';
   try{
     const payload=new FormData();payload.append('file',file.files[0]);if(analysisDate)payload.append('analysis_date',analysisDate);if(grain)payload.append('grain',grain);
-    const response=await fetch('/api/quality',{method:'POST',body:payload}),raw=await response.text();let data;try{data=JSON.parse(raw)}catch{throw new Error(response.ok?'Quality assessment returned an unreadable response':'Quality assessment could not be completed')};renderValidation(data.validation,'portfolioValidationPanel');renderManifest(data.manifest,'portfolioProvenancePanel');if(!response.ok)throw new Error(data.detail||'Quality assessment failed');renderQuality(data.quality);
+    const response=await fetch('/api/quality',{method:'POST',body:payload}),raw=await response.text();let data;try{data=JSON.parse(raw)}catch{throw new Error(response.ok?'Quality assessment returned an unreadable response':'Quality assessment could not be completed')};renderValidation(data.validation,'portfolioValidationPanel');renderManifest(data.manifest,'portfolioProvenancePanel');if(!response.ok)throw new Error(data.detail||'Quality assessment failed');renderQuality(data.quality);setLatestBundle(data.bundle);
   }catch(err){error.textContent=err.message}
   finally{button.disabled=false;button.textContent='Assess data quality'}
 });
@@ -247,7 +284,7 @@ document.getElementById('portfolioForm').addEventListener('submit',async event=>
   button.disabled=true;button.textContent='Analysing portfolio';error.textContent='';
   try{
     const response=await fetch('/api/analyse-portfolio',{method:'POST',body:new FormData(event.currentTarget)});
-    const data=await response.json();renderValidation(data.validation,'portfolioValidationPanel');renderManifest(data.manifest,'portfolioProvenancePanel');if(!response.ok)throw new Error(data.detail||'Portfolio analysis failed');
+    const data=await response.json();renderValidation(data.validation,'portfolioValidationPanel');renderManifest(data.manifest,'portfolioProvenancePanel');if(!response.ok)throw new Error(data.detail||'Portfolio analysis failed');setLatestBundle(data.bundle);
     document.getElementById('totalSkus').textContent=data.total_skus;
     document.getElementById('redExceptions').textContent=data.red_exceptions;
     document.getElementById('amberExceptions').textContent=data.amber_exceptions;
@@ -257,6 +294,14 @@ document.getElementById('portfolioForm').addEventListener('submit',async event=>
     renderPortfolioInterpretation(data);
     document.getElementById('portfolioResult').style.display='block';
   }catch(err){error.textContent=err.message;document.getElementById('portfolioResult').style.display='none'}finally{button.disabled=false;button.textContent='Analyse portfolio'}
+});
+document.getElementById('reopenBundleForm').addEventListener('submit',async event=>{
+  event.preventDefault();const button=document.getElementById('reopenBundle'),error=document.getElementById('bundleError');error.textContent='';button.disabled=true;button.textContent='Verifying bundle';
+  try{const response=await fetch('/api/reopen-bundle',{method:'POST',body:new FormData(event.currentTarget)}),data=await response.json();if(!response.ok)throw new Error(data.detail||'The run bundle could not be reopened');setLatestBundle(data.bundle);renderRecordedBundle(data.bundle,data.version_differences||[])}catch(err){error.textContent=err.message;document.getElementById('bundleView').style.display='none'}finally{button.disabled=false;button.textContent='Reopen recorded run'}
+});
+document.getElementById('reproduceBundleForm').addEventListener('submit',async event=>{
+  event.preventDefault();const button=document.getElementById('reproduceBundle'),error=document.getElementById('reproductionError');error.textContent='';button.disabled=true;button.textContent='Reproducing run';
+  try{const response=await fetch('/api/reproduce-bundle',{method:'POST',body:new FormData(event.currentTarget)}),data=await response.json();if(!response.ok)throw new Error(data.detail||'The run could not be reproduced');const result=data.reproduction,diffs=(result.differences||[]).join(' ')||'No differences were found.';document.getElementById('bundleView').innerHTML=`<div class="kicker">Reproduction result</div><h2>${esc(result.outcome.replaceAll('_',' '))}</h2><p>${esc(diffs)}</p><p>Exact stages: ${(result.exact_stages||[]).map(esc).join(', ')||'None'}. Tolerant stages: ${(result.tolerant_stages||[]).map(esc).join(', ')||'None'}.</p><p class="small">Compared fingerprint ${esc(result.compared_fingerprint)}</p>`;document.getElementById('bundleView').style.display='block'}catch(err){error.textContent=err.message;document.getElementById('bundleView').innerHTML='';document.getElementById('bundleView').style.display='none'}finally{button.disabled=false;button.textContent='Reproduce and compare'}
 });
 </script>
 </body>

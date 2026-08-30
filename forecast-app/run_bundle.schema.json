@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://silurian.example/schemas/run_bundle/1.0.json",
+  "title": "Silurian Forecast Diagnostic run bundle",
+  "description": "A portable record containing client data. Reopening renders recorded results and never recomputes.",
+  "type": "object",
+  "required": ["bundle_schema_version", "confidentiality", "manifest", "results", "integrity"],
+  "additionalProperties": false,
+  "properties": {
+    "bundle_schema_version": {"type": "string", "const": "1.0"},
+    "confidentiality": {
+      "type": "object",
+      "required": ["contains_client_data", "statement"],
+      "additionalProperties": false,
+      "properties": {
+        "contains_client_data": {"type": "boolean", "const": true},
+        "statement": {"type": "string", "minLength": 1},
+        "source_filename": {"type": "string"}
+      }
+    },
+    "manifest": {"type": "object", "required": ["schema_version", "run_id", "integrity"]},
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "validation": {
+          "type": "object",
+          "required": ["verdict", "passes", "findings"],
+          "additionalProperties": false,
+          "properties": {
+            "verdict": {"enum": ["accept", "accept_with_warnings", "reject"]},
+            "passes": {"type": "array"},
+            "findings": {"type": "array"},
+            "transformations": {"type": "array"},
+            "row_counts": {"type": "object"}
+          }
+        },
+        "quality": {
+          "type": "object",
+          "required": ["portfolio_band", "headline", "per_sku", "findings"],
+          "additionalProperties": false,
+          "properties": {
+            "portfolio_band": {"enum": ["clean", "caveated", "not_usable"]},
+            "headline": {"type": "object"},
+            "per_sku": {"type": "object", "additionalProperties": {"type": "object"}},
+            "findings": {"type": "array"},
+            "exceptions": {"type": "array"},
+            "method_note": {"type": "string"}
+          }
+        },
+        "forecast": {
+          "type": "object",
+          "required": ["horizon", "series"],
+          "additionalProperties": false,
+          "properties": {
+            "horizon": {"type": "integer", "minimum": 1},
+            "series": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["points"],
+                "properties": {
+                  "points": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["period", "forecast"],
+                      "properties": {
+                        "period": {"type": "string", "format": "date"},
+                        "forecast": {"type": "number"},
+                        "lower": {"type": "number"},
+                        "upper": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "excluded_series": {"type": "object", "additionalProperties": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "required": ["attempted_at", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "attempted_at": {"type": "string", "format": "date-time"},
+        "outcome": {"enum": ["reproduced", "reproduced_within_tolerance", "differs", "not_comparable"]},
+        "compared_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "exact_stages": {"type": "array", "items": {"type": "string"}},
+        "tolerant_stages": {"type": "array", "items": {"type": "string"}},
+        "max_pct_diff": {"type": ["number", "null"]},
+        "differences": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["bundle_sha256", "manifest_sha256", "content_fingerprint_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "bundle_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "content_fingerprint_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

@@ -13,6 +13,15 @@ from fastapi.responses import FileResponse, JSONResponse
 from determinism import measure_forecast_determinism
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
+from run_bundle import (
+    BundleError,
+    build_bundle,
+    compare_reproduction,
+    forecast_bundle_result,
+    quality_bundle_result,
+    reopen_bundle,
+    validation_bundle_result,
+)
 from run_manifest import (
     build_manifest,
     forecast_stage,
@@ -163,6 +172,24 @@ def _series_from_validation(validation) -> DemandSeries:
     )
 
 
+def _all_series_from_validation(validation) -> list[DemandSeries]:
+    grouped: dict[str, list[dict]] = {}
+    for row in validation.normalised_rows:
+        if row.get("demand") is not None and float(row["demand"]) >= 0:
+            grouped.setdefault(str(row["sku"]), []).append(row)
+    series = []
+    for sku, rows in grouped.items():
+        rows.sort(key=lambda row: (str(row["date"]), int(row["source_row"])))
+        if len(rows) < 12 or len({str(row["date"]) for row in rows}) != len(rows):
+            raise ForecastError(f"SKU {sku} cannot be reproduced until its forecast history is unambiguous")
+        series.append(DemandSeries(
+            sku=sku,
+            dates=[date.fromisoformat(str(row["date"])) for row in rows],
+            demand=[float(row["demand"]) for row in rows],
+        ))
+    return series
+
+
 def get_provider(oidc_token: str | None = None):
     global _provider
     name = os.getenv("FORECAST_PROVIDER", "baseline").lower()
@@ -253,7 +280,12 @@ async def quality_upload(
         "user" if analysis_date else "server_default",
         _source_skus(validation),
     )
-    return {"validation": _validation_response(validation), "quality": quality.to_dict(), "manifest": manifest}
+    quality_payload = quality.to_dict()
+    bundle = build_bundle(manifest, {
+        "validation": validation_bundle_result(validation, validation_record),
+        "quality": quality_bundle_result(quality_payload),
+    }, file.filename or "uploaded.csv")
+    return {"validation": _validation_response(validation), "quality": quality_payload, "manifest": manifest, "bundle": bundle}
 
 
 @app.post("/api/analyse")
@@ -303,14 +335,19 @@ async def run_analysis(
         )
         identity, determinism = _forecast_identity(provider, [series.demand], horizon)
         forecast_completed = utc_now()
+        forecast_payload = forecast_bundle_result(result)
         forecast_record = forecast_stage(
-            result, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
+            forecast_payload, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
         )
         manifest = build_manifest(
             source, [validation_record, forecast_record], date.today(), "server_default", _source_skus(validation)
         )
         result["validation"] = _validation_response(validation)
         result["manifest"] = manifest
+        result["bundle"] = build_bundle(manifest, {
+            "validation": validation_bundle_result(validation, validation_record),
+            "forecast": forecast_payload,
+        }, file.filename or "uploaded.csv")
         return result
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -350,14 +387,19 @@ async def run_portfolio_analysis(
         )
         identity, determinism = _forecast_identity(provider, [item.series.demand for item in items], horizon)
         forecast_completed = utc_now()
+        forecast_payload = forecast_bundle_result(result)
         forecast_record = forecast_stage(
-            result, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
+            forecast_payload, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
         )
         manifest = build_manifest(
             source, [validation_record, forecast_record], date.today(), "server_default", _source_skus(validation)
         )
         result["validation"] = _validation_response(validation)
         result["manifest"] = manifest
+        result["bundle"] = build_bundle(manifest, {
+            "validation": validation_bundle_result(validation, validation_record),
+            "forecast": forecast_payload,
+        }, file.filename or "uploaded.csv")
         return result
     except ForecastError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -366,3 +408,92 @@ async def run_portfolio_analysis(
     except Exception as exc:
         logging.exception("TimesFM portfolio analysis failed")
         raise HTTPException(status_code=503, detail="TimesFM portfolio analysis could not be completed") from exc
+
+
+@app.post("/api/reopen-bundle")
+async def reopen_bundle_upload(file: UploadFile = File(...)):
+    raw = await file.read()
+    _check_upload(raw)
+    try:
+        bundle = reopen_bundle(raw)
+    except BundleError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    current_versions = {"validation": "1.0.0", "quality": "1.0.0", "forecast": "1.0.0"}
+    version_differences = [
+        {
+            "stage": stage["stage"],
+            "recorded": stage["engine_version"],
+            "current": current_versions[stage["stage"]],
+        }
+        for stage in bundle["manifest"]["stages"]
+        if stage["engine_version"] != current_versions.get(stage["stage"])
+    ]
+    return {"bundle": bundle, "version_differences": version_differences}
+
+
+@app.post("/api/reproduce-bundle")
+async def reproduce_bundle_upload(
+    request: Request,
+    source_file: UploadFile = File(...),
+    bundle_file: UploadFile = File(...),
+    analysis_date: str | None = Form(None),
+    grain: str | None = Form(None),
+    validation_options: str = Form("{}"),
+):
+    source_raw = await source_file.read()
+    bundle_raw = await bundle_file.read()
+    _check_upload(source_raw)
+    _check_upload(bundle_raw)
+    try:
+        original = reopen_bundle(bundle_raw)
+    except BundleError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    original_stages = [stage["stage"] for stage in original["manifest"]["stages"]]
+    if original_stages not in (["validation"], ["validation", "quality"], ["validation", "forecast"]):
+        raise HTTPException(status_code=400, detail="This combination of recorded stages is not supported for reproduction")
+    try:
+        effective_date = date.fromisoformat(analysis_date) if analysis_date else date.fromisoformat(original["manifest"]["as_of_date"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Analysis date must use YYYY-MM-DD format") from exc
+    validation_started = utc_now()
+    validation = validate_csv(source_raw, _validation_options(validation_options, effective_date.isoformat()))
+    validation_completed = utc_now()
+    _, validation_record, source = _validation_manifest(
+        source_raw, source_file.filename or "uploaded.csv", validation, validation_started, validation_completed,
+        original["manifest"]["as_of_source"],
+    )
+    stages = [validation_record]
+    results = {"validation": validation_bundle_result(validation, validation_record)}
+    if "quality" in original_stages and validation.verdict != "reject":
+        quality_started = utc_now()
+        quality = assess_quality(validation, QualityOptions(
+            as_of_date=effective_date,
+            as_of_date_source="user_supplied" if analysis_date else original["manifest"]["as_of_source"],
+            grain=grain,
+            thresholds=dict(DEFAULT_THRESHOLDS),
+        )).to_dict()
+        quality_completed = utc_now()
+        quality_record = quality_stage(quality, validation_record["output_ref"], quality_started, quality_completed)
+        stages.append(quality_record)
+        results["quality"] = quality_bundle_result(quality)
+    if "forecast" in original_stages and validation.verdict != "reject":
+        forecast_started = utc_now()
+        histories = _all_series_from_validation(validation)
+        horizon = int(next(stage for stage in original["manifest"]["stages"] if stage["stage"] == "forecast")["options"]["horizon"])
+        provider = get_provider(request.headers.get("x-vercel-oidc-token"))
+        reproduced_rows = [analyse(item, provider, horizon, 0, 0, 0) for item in histories]
+        reproduced = reproduced_rows[0] if len(reproduced_rows) == 1 else {"results": reproduced_rows}
+        forecast_payload = forecast_bundle_result(reproduced)
+        identity, determinism = _forecast_identity(provider, [item.demand for item in histories], horizon)
+        forecast_completed = utc_now()
+        forecast_record = forecast_stage(
+            forecast_payload, validation_record["output_ref"], identity, determinism, forecast_started, forecast_completed
+        )
+        stages.append(forecast_record)
+        results["forecast"] = forecast_payload
+    manifest = build_manifest(
+        source, stages, effective_date, original["manifest"]["as_of_source"], _source_skus(validation)
+    )
+    candidate = build_bundle(manifest, results, source_file.filename or "uploaded.csv")
+    reproduction = compare_reproduction(original, candidate)
+    return {"reproduction": reproduction, "candidate_manifest": manifest}

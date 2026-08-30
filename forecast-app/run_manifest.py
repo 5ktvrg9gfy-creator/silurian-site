@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 PLACEHOLDERS = {"REPLACE_WITH_ACTUAL", "SUPPLIED_BY_DEPLOYMENT", "0000000"}
 MANAGED_SENTINEL = "provider_managed_not_exposed"
 SCHEMA = json.loads((Path(__file__).with_name("run_manifest.schema.json")).read_text(encoding="utf-8"))
@@ -269,9 +269,18 @@ def content_fingerprint(manifest: dict[str, Any]) -> str:
     value.pop("run_id", None)
     value.pop("created_at", None)
     value["source"].pop("received_at", None)
+    value["source"].pop("filename", None)
+    environment = value.get("environment", {})
+    value["environment"] = {
+        "key_libraries": deepcopy(environment.get("key_libraries", {})),
+        "region": environment.get("region"),
+    }
     for stage in value["stages"]:
         for key in ("started_at", "completed_at", "duration_ms"):
             stage.pop(key, None)
+        reference = stage.get("model", {}).get("reference_check")
+        if isinstance(reference, dict):
+            reference.pop("checked_at", None)
     return sha256_json(value)
 
 

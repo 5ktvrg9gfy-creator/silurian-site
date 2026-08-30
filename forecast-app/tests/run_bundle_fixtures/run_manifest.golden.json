@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.2",
+  "run_id": "run_41e9813c5d822f573881eca47b83fdca",
+  "created_at": "2026-08-30T09:00:03Z",
+  "as_of_date": "2026-08-01",
+  "as_of_source": "user",
+  "source": {
+    "filename": "20_portfolio_mixed.csv",
+    "bytes": 8535,
+    "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
+    "rows_raw": 324,
+    "encoding_detected": "utf-8",
+    "delimiter_detected": ",",
+    "received_at": "2026-08-30T09:00:00Z"
+  },
+  "stages": [
+    {
+      "stage": "validation",
+      "story": "1.1",
+      "engine_version": "1.0.0",
+      "started_at": "2026-08-30T09:00:00Z",
+      "completed_at": "2026-08-30T09:00:01Z",
+      "duration_ms": 1000,
+      "input_ref": {
+        "type": "source_file",
+        "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
+        "rows": 324
+      },
+      "output_ref": {
+        "type": "normalised_dataset",
+        "sha256": "2c3f17d545a4b6f1f32d33b9978bd3649093bec230220986fdb4416ddac6d727",
+        "rows": 324,
+        "series": 12
+      },
+      "options": {
+        "as_of_date": "2026-08-01",
+        "encoding": null,
+        "delimiter": null,
+        "header_row": null,
+        "column_map": {},
+        "exclude_rows": [],
+        "exclude_columns": [],
+        "date_order": null,
+        "decimal_convention": null,
+        "unpivot": false,
+        "period_columns": null,
+        "year_basis": null,
+        "fiscal_year_start_month": null,
+        "exclude_deleted": false,
+        "aggregate_to": null,
+        "analysis_level": null,
+        "returns_in_demand": null
+      },
+      "passes": [
+        {
+          "pass": 1,
+          "verdict": "accept_with_warnings",
+          "options_supplied": {},
+          "finding_codes": [
+            "HISTORY_TOO_SHORT",
+            "SERIES_DISCONTINUED",
+            "ZERO_VS_MISSING_AMBIGUOUS",
+            "LINE_ENDINGS_CRLF"
+          ]
+        }
+      ],
+      "transformations": [
+        {
+          "code": "LINE_ENDINGS_CRLF",
+          "count": 1,
+          "reversible": true
+        }
+      ],
+      "outcome": {
+        "verdict": "accept_with_warnings",
+        "findings": 4,
+        "blocking": 0,
+        "rows_in": 324,
+        "rows_out": 324,
+        "series": 12
+      }
+    },
+    {
+      "stage": "quality",
+      "story": "1.2",
+      "engine_version": "1.0.0",
+      "started_at": "2026-08-30T09:00:01Z",
+      "completed_at": "2026-08-30T09:00:02Z",
+      "duration_ms": 1000,
+      "input_ref": {
+        "type": "normalised_dataset",
+        "sha256": "2c3f17d545a4b6f1f32d33b9978bd3649093bec230220986fdb4416ddac6d727",
+        "rows": 324,
+        "series": 12
+      },
+      "output_ref": {
+        "type": "quality_result",
+        "sha256": "40eb6397b214af5e5294e10218f158958585c779f7827f1efd095063933aff29",
+        "series": 12
+      },
+      "options": {
+        "as_of_date": "2026-08-01",
+        "as_of_date_source": "user_supplied",
+        "grain": "month",
+        "weighting": "volume",
+        "thresholds": {
+          "history_short_periods": 18,
+          "history_not_usable_periods": 6,
+          "coverage_not_usable_pct": 50,
+          "series_stale_trailing_periods": 3,
+          "series_discontinued_trailing_periods": 6,
+          "extract_stale_trailing_periods": 2,
+          "gap_block_min_run": 3,
+          "gap_block_concentration_ratio": 0.8,
+          "sparse_coverage_pct": 70,
+          "volume_immaterial_share_pct": 0.1,
+          "long_tail_cumulative_pct": 99,
+          "suspect_zero_max_zero_share_pct": 10,
+          "suspect_zero_max_adi": 1.25,
+          "outlier_modified_z": 3.5,
+          "outlier_deseasonalise_min_periods": 24,
+          "level_shift_min_run": 3,
+          "level_shift_pack_factor_tolerance_pct": 12,
+          "portfolio_not_usable_volume_pct": 20,
+          "portfolio_caveated_volume_pct": 5
+        },
+        "grain_evidence": {
+          "method": "modal_spacing",
+          "series_agree": 12,
+          "series_total": 12,
+          "minority": {}
+        }
+      },
+      "outcome": {
+        "band": "caveated",
+        "series": 12,
+        "flagged_series": 8,
+        "finding_codes": [
+          "LONG_TAIL_CONCENTRATION"
+        ]
+      }
+    }
+  ],
+  "environment": {
+    "app_version": "1.4.0",
+    "git_commit": "16ffb72",
+    "runtime": "python 3.12.4",
+    "key_libraries": {
+      "google-cloud-bigquery": "3.38.0"
+    },
+    "region": "europe-west2"
+  },
+  "reproducibility": {
+    "deterministic_stages": [
+      "validation",
+      "quality"
+    ],
+    "non_deterministic_stages": [],
+    "statement": "Validation and quality are bitwise reproducible."
+  },
+  "integrity": {
+    "manifest_sha256": "dd84ec93eb08bdafb9663d1f45cf860d525b4b9d93559713cef47d6d10190e96",
+    "content_fingerprint_sha256": "a47819af3f94671126afc87effffe00b774de68a16a041eb01ff4fb0ab05ac44",
+    "chain_verified": true
+  }
+}

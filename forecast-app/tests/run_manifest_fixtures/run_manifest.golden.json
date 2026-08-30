@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "run_id": "run_42fcfd5cefbb126019ec0eb06e5144ef",
   "created_at": "2026-08-28T17:12:04Z",
   "as_of_date": "2026-08-01",
@@ -241,8 +241,8 @@
     "statement": "Validation and quality are bitwise reproducible: the same file with the same options produces byte-identical output. The forecast stage runs on a managed BigQuery model whose reproducibility has not yet been measured, so it is reported as unknown rather than assumed stable."
   },
   "integrity": {
-    "manifest_sha256": "1316f4b4132656b9f7108aa6646a2dfb08b01b4fad25dda2be16b5ec46014b9b",
-    "content_fingerprint_sha256": "a8b11d96a619de4dfc9a4d9de28ab95167fc0f109442ebd2c89e17c6d3684a00",
+    "manifest_sha256": "7965d43d5ff3fc8ce8012ea7093b9537f5803edf2231895d31e600e92c713fb5",
+    "content_fingerprint_sha256": "83300d7faad132c48e1595ff40e008c51be363ba0344dedf80440c935255e455",
     "chain_verified": true
   }
 }
