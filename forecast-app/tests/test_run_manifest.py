@@ -71,8 +71,40 @@ class RunManifestTests(unittest.TestCase):
         second["integrity"]["content_fingerprint_sha256"] = content_fingerprint(second)
         second["integrity"]["manifest_sha256"] = exact_manifest_hash(second)
         self.assertEqual(first["integrity"]["manifest_sha256"], exact_manifest_hash(first))
-        self.assertNotEqual(first["integrity"]["manifest_sha256"], second["integrity"]["manifest_sha256"])
+        self.assertNotEqual(first["integrity"]["manifest_sha256"], exact_manifest_hash(second))
         self.assertEqual(first["integrity"]["content_fingerprint_sha256"], second["integrity"]["content_fingerprint_sha256"])
+
+    def test_fingerprint_ignores_deployment_identity_only(self):
+        first = make_validation_manifest("20_portfolio_mixed.csv")
+        environment = deepcopy(ENVIRONMENT)
+        environment.update({
+            "app_version": "9.9.9",
+            "git_commit": "abcdef1",
+            "runtime": "python 3.12.9",
+            "container_image_digest": "sha256:" + "a" * 64,
+        })
+        second = make_validation_manifest("20_portfolio_mixed.csv")
+        second["environment"] = environment
+        second["integrity"]["content_fingerprint_sha256"] = content_fingerprint(second)
+        second["integrity"]["manifest_sha256"] = exact_manifest_hash(second)
+        self.assertEqual(first["integrity"]["content_fingerprint_sha256"], second["integrity"]["content_fingerprint_sha256"])
+
+    def test_fingerprint_ignores_source_filename_and_received_time(self):
+        first = make_validation_manifest("20_portfolio_mixed.csv")
+        second = deepcopy(first)
+        second["source"]["filename"] = "renamed.csv"
+        second["source"]["received_at"] = "2026-08-31T09:00:00Z"
+        self.assertEqual(content_fingerprint(first), content_fingerprint(second))
+        self.assertNotEqual(first["integrity"]["manifest_sha256"], exact_manifest_hash(second))
+
+    def test_fingerprint_keeps_calculation_environment(self):
+        first = make_validation_manifest("20_portfolio_mixed.csv")
+        second = deepcopy(first)
+        second["environment"]["region"] = "EU"
+        self.assertNotEqual(content_fingerprint(first), content_fingerprint(second))
+        third = deepcopy(first)
+        third["environment"]["key_libraries"]["google-cloud-bigquery"] = "4.0.0"
+        self.assertNotEqual(content_fingerprint(first), content_fingerprint(third))
 
     def test_corrupted_dependency_fails_closed(self):
         manifest = make_validation_manifest("20_portfolio_mixed.csv")

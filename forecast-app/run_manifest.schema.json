@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://silurian.example/schemas/run_manifest/1.1.json",
+  "$id": "https://silurian.example/schemas/run_manifest/1.2.json",
   "title": "Silurian Forecast Diagnostic run manifest",
   "description": "Provenance record for one diagnostic run. One user action is one run, and only stages that actually executed appear. Integrity is verified as a dependency graph, not a linear chain. Contains no client data: no SKU identifiers, no demand values, no descriptions, no customer or site identifiers. The source filename is the only client-controlled string.",
   "type": "object",
@@ -20,7 +20,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.1"
+      "const": "1.2"
     },
     "run_id": {
       "type": "string",
@@ -614,4 +614,3 @@
     }
   }
 }
-

@@ -1,0 +1,1024 @@
+{
+  "bundle_schema_version": "1.0",
+  "confidentiality": {
+    "contains_client_data": true,
+    "statement": "CONFIDENTIAL: this bundle contains client data. It belongs to the client and must not be shared like a run manifest.",
+    "source_filename": "20_portfolio_mixed.csv"
+  },
+  "manifest": {
+    "as_of_date": "2026-08-01",
+    "as_of_source": "user",
+    "created_at": "2026-08-30T09:00:03Z",
+    "environment": {
+      "app_version": "1.4.0",
+      "git_commit": "16ffb72",
+      "key_libraries": {
+        "google-cloud-bigquery": "3.38.0"
+      },
+      "region": "europe-west2",
+      "runtime": "python 3.12.4"
+    },
+    "integrity": {
+      "chain_verified": true,
+      "content_fingerprint_sha256": "47e795c347ecd546f354d6a431b4b78649a34ef2d30d8d2d4bb2f63562d8ee2d",
+      "manifest_sha256": "73c7fe28ad77668fa394c2beca6a400e458aec3ed2e1117a5a35a41ba93bb6ad"
+    },
+    "reproducibility": {
+      "deterministic_stages": [
+        "validation",
+        "quality"
+      ],
+      "non_deterministic_stages": [],
+      "statement": "Validation and quality are bitwise reproducible."
+    },
+    "run_id": "run_390f6045fbe64de658ce7876d0cda9f5",
+    "schema_version": "1.2",
+    "source": {
+      "bytes": 8210,
+      "delimiter_detected": ",",
+      "encoding_detected": "utf-8",
+      "filename": "20_portfolio_mixed.csv",
+      "received_at": "2026-08-30T09:00:00Z",
+      "rows_raw": 324,
+      "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9"
+    },
+    "stages": [
+      {
+        "completed_at": "2026-08-30T09:00:01Z",
+        "duration_ms": 1000,
+        "engine_version": "1.0.0",
+        "input_ref": {
+          "rows": 324,
+          "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
+          "type": "source_file"
+        },
+        "options": {
+          "aggregate_to": null,
+          "analysis_level": null,
+          "as_of_date": "2026-08-01",
+          "column_map": {},
+          "date_order": null,
+          "decimal_convention": null,
+          "delimiter": null,
+          "encoding": null,
+          "exclude_columns": [],
+          "exclude_deleted": false,
+          "exclude_rows": [],
+          "fiscal_year_start_month": null,
+          "header_row": null,
+          "period_columns": null,
+          "returns_in_demand": null,
+          "unpivot": false,
+          "year_basis": null
+        },
+        "outcome": {
+          "blocking": 0,
+          "findings": 3,
+          "rows_in": 324,
+          "rows_out": 324,
+          "series": 12,
+          "verdict": "accept_with_warnings"
+        },
+        "output_ref": {
+          "rows": 324,
+          "series": 12,
+          "sha256": "2c3f17d545a4b6f1f32d33b9978bd3649093bec230220986fdb4416ddac6d727",
+          "type": "normalised_dataset"
+        },
+        "passes": [
+          {
+            "finding_codes": [
+              "HISTORY_TOO_SHORT",
+              "SERIES_DISCONTINUED",
+              "ZERO_VS_MISSING_AMBIGUOUS"
+            ],
+            "options_supplied": {},
+            "pass": 1,
+            "verdict": "accept_with_warnings"
+          }
+        ],
+        "stage": "validation",
+        "started_at": "2026-08-30T09:00:00Z",
+        "story": "1.1",
+        "transformations": []
+      },
+      {
+        "completed_at": "2026-08-30T09:00:02Z",
+        "duration_ms": 1000,
+        "engine_version": "1.0.0",
+        "input_ref": {
+          "rows": 324,
+          "series": 12,
+          "sha256": "2c3f17d545a4b6f1f32d33b9978bd3649093bec230220986fdb4416ddac6d727",
+          "type": "normalised_dataset"
+        },
+        "options": {
+          "as_of_date": "2026-08-01",
+          "as_of_date_source": "user_supplied",
+          "grain": "month",
+          "grain_evidence": {
+            "method": "modal_spacing",
+            "minority": {},
+            "series_agree": 12,
+            "series_total": 12
+          },
+          "thresholds": {
+            "coverage_not_usable_pct": 50,
+            "extract_stale_trailing_periods": 2,
+            "gap_block_concentration_ratio": 0.8,
+            "gap_block_min_run": 3,
+            "history_not_usable_periods": 6,
+            "history_short_periods": 18,
+            "level_shift_min_run": 3,
+            "level_shift_pack_factor_tolerance_pct": 12,
+            "long_tail_cumulative_pct": 99,
+            "outlier_deseasonalise_min_periods": 24,
+            "outlier_modified_z": 3.5,
+            "portfolio_caveated_volume_pct": 5,
+            "portfolio_not_usable_volume_pct": 20,
+            "series_discontinued_trailing_periods": 6,
+            "series_stale_trailing_periods": 3,
+            "sparse_coverage_pct": 70,
+            "suspect_zero_max_adi": 1.25,
+            "suspect_zero_max_zero_share_pct": 10,
+            "volume_immaterial_share_pct": 0.1
+          },
+          "weighting": "volume"
+        },
+        "outcome": {
+          "band": "caveated",
+          "finding_codes": [
+            "LONG_TAIL_CONCENTRATION"
+          ],
+          "flagged_series": 8,
+          "series": 12
+        },
+        "output_ref": {
+          "series": 12,
+          "sha256": "4517fd38f7699e343849467d12d2b760637a024c4c87d347d553a03e75f70a7a",
+          "type": "quality_result"
+        },
+        "stage": "quality",
+        "started_at": "2026-08-30T09:00:01Z",
+        "story": "1.2"
+      }
+    ]
+  },
+  "results": {
+    "quality": {
+      "exceptions": [
+        {
+          "band": "caveated",
+          "findings": [
+            {
+              "action": "Confirm the cause and recover the missing periods if available.",
+              "code": "GAP_BLOCK",
+              "detail": "A block of 4 consecutive periods is missing.",
+              "implication": "The gap may represent a system migration or transfer rather than demand behaviour.",
+              "metric": {
+                "concentration_ratio": 1.0,
+                "gap_count": 4,
+                "longest_gap": 4
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40003"
+            }
+          ],
+          "resolvable": null,
+          "sku": "PKG-40003",
+          "volume_share_pct": 6.913138
+        },
+        {
+          "band": "caveated",
+          "findings": [
+            {
+              "action": "Confirm whether the item remains active.",
+              "code": "SERIES_DISCONTINUED",
+              "detail": "The series ends 9 periods before the portfolio cut-off.",
+              "implication": "The history is sound, but the line appears discontinued or dormant and should not support forward-looking claims without confirmation.",
+              "metric": {
+                "trailing_periods": 9
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40002"
+            }
+          ],
+          "resolvable": null,
+          "sku": "PKG-40002",
+          "volume_share_pct": 2.834644
+        },
+        {
+          "band": "caveated",
+          "findings": [
+            {
+              "action": "Treat the result as early evidence and add history as it becomes available.",
+              "code": "HISTORY_TOO_SHORT",
+              "detail": "The supplied history spans 14 periods.",
+              "implication": "There is limited evidence for back-testing and stable conclusions.",
+              "metric": {
+                "span_periods": 14
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40007"
+            }
+          ],
+          "resolvable": null,
+          "sku": "PKG-40007",
+          "volume_share_pct": 2.571301
+        },
+        {
+          "band": "caveated",
+          "findings": [
+            {
+              "action": "Confirm whether later demand records are available.",
+              "code": "SERIES_STALE",
+              "detail": "The series ends 5 periods before the portfolio cut-off.",
+              "implication": "Recent demand may be missing for this item.",
+              "metric": {
+                "trailing_periods": 5
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40005"
+            }
+          ],
+          "resolvable": null,
+          "sku": "PKG-40005",
+          "volume_share_pct": 2.247347
+        },
+        {
+          "band": "caveated",
+          "findings": [
+            {
+              "action": "Review the affected periods. No values have been removed or corrected.",
+              "code": "OUTLIER_CANDIDATE",
+              "detail": "2 periods are robust outlier candidates.",
+              "implication": "A promotion, tender, stock build or data error may have changed the observed demand.",
+              "metric": {
+                "method": "modified_z_with_seasonal_adjustment"
+              },
+              "periods": [
+                "2024-11-01",
+                "2025-12-01"
+              ],
+              "scope": "sku",
+              "sku": "PKG-40004"
+            }
+          ],
+          "resolvable": null,
+          "sku": "PKG-40004",
+          "volume_share_pct": 1.355571
+        },
+        {
+          "band": "not_usable",
+          "findings": [
+            {
+              "action": "Treat the result as early evidence and add history as it becomes available.",
+              "code": "HISTORY_TOO_SHORT",
+              "detail": "The supplied history spans 5 periods.",
+              "implication": "There is limited evidence for back-testing and stable conclusions.",
+              "metric": {
+                "span_periods": 5
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40001"
+            }
+          ],
+          "resolvable": false,
+          "sku": "PKG-40001",
+          "volume_share_pct": 0.312839
+        },
+        {
+          "band": "not_usable",
+          "findings": [
+            {
+              "action": "Confirm whether omitted periods should be recorded as zero.",
+              "code": "ZERO_VS_MISSING_AMBIGUOUS",
+              "detail": "Only 24.2% of periods contain a row.",
+              "implication": "Omitted periods may be zero demand or missing records, and the distinction changes the demand history.",
+              "metric": {
+                "coverage_pct": 24.2424,
+                "gap_count": 25
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-30220"
+            }
+          ],
+          "resolvable": true,
+          "sku": "PKG-30220",
+          "volume_share_pct": 0.188387
+        }
+      ],
+      "findings": [
+        {
+          "action": "Prioritise material exceptions first and retain the long tail as a footnote.",
+          "code": "LONG_TAIL_CONCENTRATION",
+          "detail": "4 SKUs beyond the 99% cumulative line carry 0.73% of volume between them.",
+          "implication": "The portfolio is concentrated, so review effort should follow volume as well as SKU count.",
+          "metric": {
+            "combined_volume_share_pct": 0.733599,
+            "skus": [
+              "PKG-40001",
+              "PKG-30219",
+              "PKG-30220",
+              "PKG-40006"
+            ]
+          },
+          "periods": [],
+          "scope": "portfolio",
+          "sku": null
+        },
+        {
+          "action": "Confirm the cause and recover the missing periods if available.",
+          "code": "GAP_BLOCK",
+          "detail": "A block of 4 consecutive periods is missing.",
+          "implication": "The gap may represent a system migration or transfer rather than demand behaviour.",
+          "metric": {
+            "concentration_ratio": 1.0,
+            "gap_count": 4,
+            "longest_gap": 4
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-40003"
+        },
+        {
+          "action": "Confirm whether the item remains active.",
+          "code": "SERIES_DISCONTINUED",
+          "detail": "The series ends 9 periods before the portfolio cut-off.",
+          "implication": "The history is sound, but the line appears discontinued or dormant and should not support forward-looking claims without confirmation.",
+          "metric": {
+            "trailing_periods": 9
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-40002"
+        },
+        {
+          "action": "Treat the result as early evidence and add history as it becomes available.",
+          "code": "HISTORY_TOO_SHORT",
+          "detail": "The supplied history spans 14 periods.",
+          "implication": "There is limited evidence for back-testing and stable conclusions.",
+          "metric": {
+            "span_periods": 14
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-40007"
+        },
+        {
+          "action": "Confirm whether later demand records are available.",
+          "code": "SERIES_STALE",
+          "detail": "The series ends 5 periods before the portfolio cut-off.",
+          "implication": "Recent demand may be missing for this item.",
+          "metric": {
+            "trailing_periods": 5
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-40005"
+        },
+        {
+          "action": "Review the affected periods. No values have been removed or corrected.",
+          "code": "OUTLIER_CANDIDATE",
+          "detail": "2 periods are robust outlier candidates.",
+          "implication": "A promotion, tender, stock build or data error may have changed the observed demand.",
+          "metric": {
+            "method": "modified_z_with_seasonal_adjustment"
+          },
+          "periods": [
+            "2024-11-01",
+            "2025-12-01"
+          ],
+          "scope": "sku",
+          "sku": "PKG-40004"
+        },
+        {
+          "action": "Treat the result as early evidence and add history as it becomes available.",
+          "code": "HISTORY_TOO_SHORT",
+          "detail": "The supplied history spans 5 periods.",
+          "implication": "There is limited evidence for back-testing and stable conclusions.",
+          "metric": {
+            "span_periods": 5
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-40001"
+        },
+        {
+          "action": "Confirm whether omitted periods should be recorded as zero.",
+          "code": "ZERO_VS_MISSING_AMBIGUOUS",
+          "detail": "Only 24.2% of periods contain a row.",
+          "implication": "Omitted periods may be zero demand or missing records, and the distinction changes the demand history.",
+          "metric": {
+            "coverage_pct": 24.2424,
+            "gap_count": 25
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-30220"
+        },
+        {
+          "action": "Keep the line visible but direct management attention by materiality.",
+          "code": "VOLUME_IMMATERIAL",
+          "detail": "The SKU represents 0.01% of portfolio volume.",
+          "implication": "The data may be clean while the line is immaterial to the portfolio conclusion.",
+          "metric": {
+            "volume_share_pct": 0.00912
+          },
+          "periods": [],
+          "scope": "sku",
+          "sku": "PKG-40006"
+        }
+      ],
+      "headline": {
+        "clean_volume_share_pct": 83.5768,
+        "first_period": "2023-09-01",
+        "flagged_sku_share_pct": 66.6667,
+        "flagged_volume_share_pct": 16.4323,
+        "grain": "month",
+        "last_period": "2026-07-01",
+        "skus_analysed": 12
+      },
+      "method_note": "Metrics are descriptive. ADI and CV squared are reported as facts and are not classifications. Outliers are candidates, never corrections. Missing periods were not filled with zero, and no supplied value was altered.",
+      "per_sku": {
+        "PKG-10432": {
+          "adi": 1.0,
+          "band": "clean",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 66.154136,
+          "cv": 0.104234,
+          "cv_squared_nonzero": 0.010865,
+          "findings": [],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 8663.971429,
+          "median": 8410.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 2,
+          "resolvable": null,
+          "sku": "PKG-10432",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 28.808049,
+          "volume_total": 303239.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-10518": {
+          "adi": 1.0,
+          "band": "clean",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 83.344401,
+          "cv": 0.100115,
+          "cv_squared_nonzero": 0.010023,
+          "findings": [],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 5169.942857,
+          "median": 5166.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 3,
+          "resolvable": null,
+          "sku": "PKG-10518",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 17.190265,
+          "volume_total": 180948.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-20077": {
+          "adi": 1.0,
+          "band": "clean",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 37.346086,
+          "cv": 0.08427,
+          "cv_squared_nonzero": 0.007101,
+          "findings": [],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 11231.771429,
+          "median": 11281.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 1,
+          "resolvable": null,
+          "sku": "PKG-20077",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 37.346086,
+          "volume_total": 393112.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-30219": {
+          "adi": 3.181818,
+          "band": "clean",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 99.802493,
+          "cv": 1.491306,
+          "cv_squared_nonzero": 0.013255,
+          "findings": [],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 8,
+          "mean": 67.142857,
+          "median": 0.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 10,
+          "resolvable": null,
+          "sku": "PKG-30219",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 0.223253,
+          "volume_total": 2350.0,
+          "zero_periods": 24,
+          "zero_share_pct": 68.5714
+        },
+        "PKG-30220": {
+          "adi": 1.0,
+          "band": "not_usable",
+          "coverage_pct": 24.2424,
+          "cumulative_volume_share_pct": 99.99088,
+          "cv": 0.136637,
+          "cv_squared_nonzero": 0.01867,
+          "findings": [
+            {
+              "action": "Confirm whether omitted periods should be recorded as zero.",
+              "code": "ZERO_VS_MISSING_AMBIGUOUS",
+              "detail": "Only 24.2% of periods contain a row.",
+              "implication": "Omitted periods may be zero demand or missing records, and the distinction changes the demand history.",
+              "metric": {
+                "coverage_pct": 24.2424,
+                "gap_count": 25
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-30220"
+            }
+          ],
+          "first_period": "2023-11-01",
+          "gap_count": 25,
+          "last_period": "2026-07-01",
+          "longest_gap": 9,
+          "longest_zero_run": 0,
+          "mean": 247.875,
+          "median": 257.0,
+          "periods_expected_in_span": 33,
+          "periods_present": 8,
+          "rank_by_volume": 11,
+          "resolvable": true,
+          "sku": "PKG-30220",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 0.188387,
+          "volume_total": 1983.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-40001": {
+          "adi": 1.0,
+          "band": "not_usable",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 99.57924,
+          "cv": 0.104128,
+          "cv_squared_nonzero": 0.010843,
+          "findings": [
+            {
+              "action": "Treat the result as early evidence and add history as it becomes available.",
+              "code": "HISTORY_TOO_SHORT",
+              "detail": "The supplied history spans 5 periods.",
+              "implication": "There is limited evidence for back-testing and stable conclusions.",
+              "metric": {
+                "span_periods": 5
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40001"
+            }
+          ],
+          "first_period": "2026-03-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 658.6,
+          "median": 623.0,
+          "periods_expected_in_span": 5,
+          "periods_present": 5,
+          "rank_by_volume": 9,
+          "resolvable": false,
+          "sku": "PKG-40001",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 0.312839,
+          "volume_total": 3293.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-40002": {
+          "adi": 1.0,
+          "band": "caveated",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 93.092182,
+          "cv": 0.095858,
+          "cv_squared_nonzero": 0.009189,
+          "findings": [
+            {
+              "action": "Confirm whether the item remains active.",
+              "code": "SERIES_DISCONTINUED",
+              "detail": "The series ends 9 periods before the portfolio cut-off.",
+              "implication": "The history is sound, but the line appears discontinued or dormant and should not support forward-looking claims without confirmation.",
+              "metric": {
+                "trailing_periods": 9
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40002"
+            }
+          ],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2025-10-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 1147.615385,
+          "median": 1165.0,
+          "periods_expected_in_span": 26,
+          "periods_present": 26,
+          "rank_by_volume": 5,
+          "resolvable": null,
+          "sku": "PKG-40002",
+          "trailing_gap_periods": 9,
+          "volume_share_pct": 2.834644,
+          "volume_total": 29838.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-40003": {
+          "adi": 1.0,
+          "band": "caveated",
+          "coverage_pct": 88.5714,
+          "cumulative_volume_share_pct": 90.257539,
+          "cv": 0.090347,
+          "cv_squared_nonzero": 0.008162,
+          "findings": [
+            {
+              "action": "Confirm the cause and recover the missing periods if available.",
+              "code": "GAP_BLOCK",
+              "detail": "A block of 4 consecutive periods is missing.",
+              "implication": "The gap may represent a system migration or transfer rather than demand behaviour.",
+              "metric": {
+                "concentration_ratio": 1.0,
+                "gap_count": 4,
+                "longest_gap": 4
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40003"
+            }
+          ],
+          "first_period": "2023-09-01",
+          "gap_count": 4,
+          "last_period": "2026-07-01",
+          "longest_gap": 4,
+          "longest_zero_run": 0,
+          "mean": 2347.387097,
+          "median": 2346.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 31,
+          "rank_by_volume": 4,
+          "resolvable": null,
+          "sku": "PKG-40003",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 6.913138,
+          "volume_total": 72769.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-40004": {
+          "adi": 1.0,
+          "band": "caveated",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 99.266401,
+          "cv": 1.084908,
+          "cv_squared_nonzero": 1.177025,
+          "findings": [
+            {
+              "action": "Review the affected periods. No values have been removed or corrected.",
+              "code": "OUTLIER_CANDIDATE",
+              "detail": "2 periods are robust outlier candidates.",
+              "implication": "A promotion, tender, stock build or data error may have changed the observed demand.",
+              "metric": {
+                "method": "modified_z_with_seasonal_adjustment"
+              },
+              "periods": [
+                "2024-11-01",
+                "2025-12-01"
+              ],
+              "scope": "sku",
+              "sku": "PKG-40004"
+            }
+          ],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 407.685714,
+          "median": 301.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 8,
+          "resolvable": null,
+          "sku": "PKG-40004",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 1.355571,
+          "volume_total": 14269.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-40005": {
+          "adi": 1.0,
+          "band": "caveated",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 97.91083,
+          "cv": 0.094802,
+          "cv_squared_nonzero": 0.008987,
+          "findings": [
+            {
+              "action": "Confirm whether later demand records are available.",
+              "code": "SERIES_STALE",
+              "detail": "The series ends 5 periods before the portfolio cut-off.",
+              "implication": "Recent demand may be missing for this item.",
+              "metric": {
+                "trailing_periods": 5
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40005"
+            }
+          ],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-02-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 788.533333,
+          "median": 782.5,
+          "periods_expected_in_span": 30,
+          "periods_present": 30,
+          "rank_by_volume": 7,
+          "resolvable": null,
+          "sku": "PKG-40005",
+          "trailing_gap_periods": 5,
+          "volume_share_pct": 2.247347,
+          "volume_total": 23656.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        },
+        "PKG-40006": {
+          "adi": 1.206897,
+          "band": "clean",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 100.0,
+          "cv": 0.573768,
+          "cv_squared_nonzero": 0.101345,
+          "findings": [
+            {
+              "action": "Keep the line visible but direct management attention by materiality.",
+              "code": "VOLUME_IMMATERIAL",
+              "detail": "The SKU represents 0.01% of portfolio volume.",
+              "implication": "The data may be clean while the line is immaterial to the portfolio conclusion.",
+              "metric": {
+                "volume_share_pct": 0.00912
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40006"
+            }
+          ],
+          "first_period": "2023-09-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 1,
+          "mean": 2.742857,
+          "median": 3.0,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 12,
+          "resolvable": null,
+          "sku": "PKG-40006",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 0.00912,
+          "volume_total": 96.0,
+          "zero_periods": 6,
+          "zero_share_pct": 17.1429
+        },
+        "PKG-40007": {
+          "adi": 1.0,
+          "band": "caveated",
+          "coverage_pct": 100.0,
+          "cumulative_volume_share_pct": 95.663483,
+          "cv": 0.070435,
+          "cv_squared_nonzero": 0.004961,
+          "findings": [
+            {
+              "action": "Treat the result as early evidence and add history as it becomes available.",
+              "code": "HISTORY_TOO_SHORT",
+              "detail": "The supplied history spans 14 periods.",
+              "implication": "There is limited evidence for back-testing and stable conclusions.",
+              "metric": {
+                "span_periods": 14
+              },
+              "periods": [],
+              "scope": "sku",
+              "sku": "PKG-40007"
+            }
+          ],
+          "first_period": "2025-06-01",
+          "gap_count": 0,
+          "last_period": "2026-07-01",
+          "longest_gap": 0,
+          "longest_zero_run": 0,
+          "mean": 1933.285714,
+          "median": 1940.5,
+          "periods_expected_in_span": 14,
+          "periods_present": 14,
+          "rank_by_volume": 6,
+          "resolvable": null,
+          "sku": "PKG-40007",
+          "trailing_gap_periods": 0,
+          "volume_share_pct": 2.571301,
+          "volume_total": 27066.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0
+        }
+      },
+      "portfolio_band": "caveated"
+    },
+    "validation": {
+      "findings": [
+        {
+          "action": "Review the available history before forecasting.",
+          "auto": {
+            "applied": false,
+            "reversible": false,
+            "transform": null
+          },
+          "code": "HISTORY_TOO_SHORT",
+          "count": 8,
+          "detail": "SKU PKG-30220 has 8 periods.",
+          "examples": [],
+          "resolution": null,
+          "scope": {
+            "level": "sku",
+            "ref": "PKG-30220"
+          },
+          "severity": "warning",
+          "stage": "series"
+        },
+        {
+          "action": "Review the available history before forecasting.",
+          "auto": {
+            "applied": false,
+            "reversible": false,
+            "transform": null
+          },
+          "code": "HISTORY_TOO_SHORT",
+          "count": 5,
+          "detail": "SKU PKG-40001 has 5 periods.",
+          "examples": [],
+          "resolution": null,
+          "scope": {
+            "level": "sku",
+            "ref": "PKG-40001"
+          },
+          "severity": "warning",
+          "stage": "series"
+        },
+        {
+          "action": "Confirm whether the item is discontinued.",
+          "auto": {
+            "applied": false,
+            "reversible": false,
+            "transform": null
+          },
+          "code": "SERIES_DISCONTINUED",
+          "count": 1,
+          "detail": "SKU PKG-40002 stops before the latest portfolio period.",
+          "examples": [],
+          "resolution": null,
+          "scope": {
+            "level": "sku",
+            "ref": "PKG-40002"
+          },
+          "severity": "warning",
+          "stage": "series"
+        },
+        {
+          "action": "Confirm whether the item is discontinued.",
+          "auto": {
+            "applied": false,
+            "reversible": false,
+            "transform": null
+          },
+          "code": "SERIES_DISCONTINUED",
+          "count": 1,
+          "detail": "SKU PKG-40005 stops before the latest portfolio period.",
+          "examples": [],
+          "resolution": null,
+          "scope": {
+            "level": "sku",
+            "ref": "PKG-40005"
+          },
+          "severity": "warning",
+          "stage": "series"
+        },
+        {
+          "action": "Confirm whether missing periods mean zero demand.",
+          "auto": {
+            "applied": false,
+            "reversible": false,
+            "transform": null
+          },
+          "code": "ZERO_VS_MISSING_AMBIGUOUS",
+          "count": 2,
+          "detail": "Recorded zero demand appears for PKG-30219, PKG-40006; sparse comparison series are none.",
+          "examples": [
+            {
+              "note": "recorded zero",
+              "raw": "PKG-30219,2023-09-01,0",
+              "row": 107
+            },
+            {
+              "note": "recorded zero",
+              "raw": "PKG-30219,2023-10-01,0",
+              "row": 108
+            },
+            {
+              "note": "recorded zero",
+              "raw": "PKG-30219,2023-12-01,0",
+              "row": 110
+            },
+            {
+              "note": "recorded zero",
+              "raw": "PKG-30219,2024-01-01,0",
+              "row": 111
+            },
+            {
+              "note": "recorded zero",
+              "raw": "PKG-30219,2024-05-01,0",
+              "row": 115
+            }
+          ],
+          "resolution": null,
+          "scope": {
+            "level": "file",
+            "ref": null
+          },
+          "severity": "warning",
+          "stage": "series"
+        }
+      ],
+      "passes": [
+        {
+          "finding_codes": [
+            "HISTORY_TOO_SHORT",
+            "SERIES_DISCONTINUED",
+            "ZERO_VS_MISSING_AMBIGUOUS"
+          ],
+          "options_supplied": {},
+          "pass": 1,
+          "verdict": "accept_with_warnings"
+        }
+      ],
+      "row_counts": {
+        "rows_in": 324,
+        "rows_out": 324
+      },
+      "transformations": [],
+      "verdict": "accept_with_warnings"
+    }
+  },
+  "integrity": {
+    "bundle_sha256": "7b1c84add9800d47bdfc59bfbb3ae8ea8c162e7d70d14fbfbb136ed1ac9bc188",
+    "manifest_sha256": "73c7fe28ad77668fa394c2beca6a400e458aec3ed2e1117a5a35a41ba93bb6ad",
+    "content_fingerprint_sha256": "47e795c347ecd546f354d6a431b4b78649a34ef2d30d8d2d4bb2f63562d8ee2d"
+  }
+}
