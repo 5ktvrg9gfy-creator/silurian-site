@@ -228,9 +228,6 @@ def compare_reproduction(original: dict[str, Any], candidate: dict[str, Any]) ->
     if "forecast" not in original_stages:
         return {**base, "outcome": "reproduced"}
     left_forecast, right_forecast = original_stages["forecast"], candidate_stages["forecast"]
-    if left_forecast["output_ref"]["sha256"] == right_forecast["output_ref"]["sha256"]:
-        base["exact_stages"].append("forecast")
-        return {**base, "outcome": "reproduced"}
     determinism = left_forecast.get("determinism", {})
     if determinism.get("class") == "unknown":
         return {
@@ -238,6 +235,9 @@ def compare_reproduction(original: dict[str, Any], candidate: dict[str, Any]) ->
             "outcome": "not_comparable",
             "differences": ["Forecast stage cannot be verified because reproducibility is unknown"],
         }
+    if left_forecast["output_ref"]["sha256"] == right_forecast["output_ref"]["sha256"]:
+        base["exact_stages"].append("forecast")
+        return {**base, "outcome": "reproduced"}
     expected, actual = _forecast_values(original), _forecast_values(candidate)
     if len(expected) != len(actual):
         return {**base, "outcome": "differs", "differences": ["Forecast point count differs"]}

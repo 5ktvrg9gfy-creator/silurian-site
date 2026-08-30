@@ -7,7 +7,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 ## Current position
 
 - Stories 1.1, 1.2 and 1.3 are complete and merged into `main`.
-- Story 1.4 is implemented on `codex/story-1-4-run-bundles`. The Preview and agreed quality-bundle acceptance checks passed. Pull request, merge and Production checks have not yet occurred.
+- Story 1.4 is implemented on `codex/story-1-4-run-bundles` in pull request 29. The quality-bundle Preview acceptance checks passed. Forecast reproduction is implemented and awaiting its refreshed Preview check. Merge and Production checks have not yet occurred.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
 - Marketing preview branch `codex/preview-spacing-white-contact` keeps Archivo, reduces the hero top inset to match the responsive page gutter, corrects the mobile gap between capabilities 4 and 5, tightens the orange contact section and reverses its text and button outlines to white. Production remains unchanged unless the preview is approved and merged.
@@ -286,18 +286,19 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - Portfolio decisions still require planner confirmation of operational context, supply assumptions, returns, units and discontinuations.
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
-- Story 1.4 currently exposes deliberate reproduction for validation-only and validation-plus-quality bundles. Forecast comparison rules are implemented, including unknown determinism and tolerance outcomes, but the browser reproduction form does not yet rerun a forecast bundle.
-- On the current local machine, the complete test discovery run is blocked in `test_app_manifest` by an inconsistent `anyio` installation and also reports eight pre-existing Story 1.1 fixture mismatches. The focused Story 1.3 and 1.4 suite passes 26 tests.
+- Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
+- On the current local machine, the complete test discovery run is blocked in `test_app_manifest` by an inconsistent `anyio` installation and also reports eight pre-existing Story 1.1 fixture mismatches. The focused Story 1.3 and 1.4 suite passes 28 tests.
 
 ## Next starting point
 
 Finish Story 1.4 from `codex/story-1-4-run-bundles`:
 
 1. Open and review the pull request.
-2. Merge only after confirming the quality-only reproduction boundary is acceptable for this release.
-3. Wait for the Production deployment and repeat export, reopen and reproduce with the fixed quality fixture.
-4. Record the merge reference and Production result here.
-5. Implement browser-driven forecast reruns in a later increment if the capability is required beyond the quality-run golden contract.
+2. Run one forecast in the refreshed Preview, download its bundle, and reproduce it with the same source.
+3. Confirm that measured determinism returns an exact or tolerance outcome, while unknown determinism returns `not_comparable` with the explicit cannot-verify message.
+4. Merge only after the refreshed Preview check.
+5. Wait for the Production deployment and repeat export, reopen and reproduce with the fixed quality fixture.
+6. Record the merge reference and Production result here.
 
 ## End-of-build handoff checklist
 

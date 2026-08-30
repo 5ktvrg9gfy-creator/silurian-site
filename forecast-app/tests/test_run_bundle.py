@@ -11,11 +11,15 @@ from run_bundle import (
     build_bundle,
     bundle_hash,
     compare_reproduction,
+    forecast_bundle_result,
     quality_bundle_result,
     reopen_bundle,
     validation_bundle_result,
 )
-from run_manifest import build_manifest, content_fingerprint, exact_manifest_hash, quality_stage, source_record, validation_stage
+from run_manifest import (
+    build_manifest, content_fingerprint, exact_manifest_hash, forecast_stage, model_identity,
+    quality_stage, reference_check, sha256_json, source_record, validation_stage,
+)
 from validator import ValidationOptions, validate_csv
 from tests.generate_run_bundle_goldens import assert_independent_quality_target
 
@@ -48,6 +52,45 @@ def make_quality_bundle():
         "validation": validation_bundle_result(validation, validation_record),
         "quality": quality_bundle_result(quality),
     }, "20_portfolio_mixed.csv")
+
+
+def make_forecast_bundle(determinism_class="unknown"):
+    quality_bundle = make_quality_bundle()
+    validation_stage_record = deepcopy(quality_bundle["manifest"]["stages"][0])
+    source = deepcopy(quality_bundle["manifest"]["source"])
+    payload = {
+        "horizon": 2,
+        "series": {"SKU-TEST": {"points": [
+            {"period": "2026-01-01", "forecast": 100.0, "lower": 90.0, "upper": 110.0},
+            {"period": "2026-02-01", "forecast": 105.0, "lower": 94.5, "upper": 115.5},
+        ]}},
+        "excluded_series": {},
+    }
+    check = reference_check([1.0, 2.0], [3.0, 4.0], sha256_json([3.0, 4.0]), "2026-08-30T09:00:01Z")
+    model = model_identity(
+        [[float(value) for value in range(12)]], 2, check, included=1,
+        family="Silurian statistical baseline", version="1.0", provider="baseline",
+        checkpoint="silurian-baseline-v1", backend="python", precision="float64", provider_limitations=[],
+    )
+    determinism = {"class": determinism_class, "tolerance_pct": None, "seed": None, "statement": "Test evidence."}
+    if determinism_class == "bitwise":
+        determinism["tolerance_pct"] = 0.0
+        determinism["measurement"] = {
+            "runs": 10, "provider_cache_disabled": True, "max_abs_diff": 0.0, "max_pct_diff": 0.0,
+            "zero_denominator_rule": "Absolute difference only.", "zero_denominator_points": 0,
+            "points_compared": 20, "measured_at": "2026-08-30T09:00:00Z", "environment_ref": "test",
+        }
+    forecast_record = forecast_stage(
+        payload, validation_stage_record["output_ref"], model, determinism,
+        "2026-08-30T09:00:01Z", "2026-08-30T09:00:02Z",
+    )
+    manifest = build_manifest(
+        source, [validation_stage_record, forecast_record], date(2026, 8, 1), "user", ["SKU-TEST"],
+        created_at="2026-08-30T09:00:03Z", environment=deepcopy(ENVIRONMENT),
+    )
+    return build_bundle(manifest, {
+        "validation": deepcopy(quality_bundle["results"]["validation"]), "forecast": payload,
+    }, "forecast.csv")
 
 
 class RunBundleTests(unittest.TestCase):
@@ -161,6 +204,18 @@ class RunBundleTests(unittest.TestCase):
         result = compare_reproduction(first, second)
         self.assertEqual(result["outcome"], "not_comparable")
         self.assertIn("quality engine version differs", result["differences"])
+
+    def test_unknown_forecast_determinism_is_not_quietly_passed(self):
+        first = make_forecast_bundle("unknown")
+        result = compare_reproduction(first, deepcopy(first))
+        self.assertEqual(result["outcome"], "not_comparable")
+        self.assertIn("cannot be verified", result["differences"][0])
+
+    def test_measured_bitwise_forecast_reproduces_exactly(self):
+        first = make_forecast_bundle("bitwise")
+        result = compare_reproduction(first, deepcopy(first))
+        self.assertEqual(result["outcome"], "reproduced")
+        self.assertEqual(result["exact_stages"], ["validation", "forecast"])
 
 
 if __name__ == "__main__":
