@@ -10,7 +10,8 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Story 1.4 merged in pull request 29 at `86f9b02`. Quality and forecast-bundle Preview acceptance passed, and the Production quality-bundle smoke test passed.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
-- Marketing preview branch `codex/preview-spacing-white-contact` keeps Archivo, reduces the hero top inset to match the responsive page gutter, corrects the mobile gap between capabilities 4 and 5, tightens the orange contact section and reverses its text and button outlines to white. Production remains unchanged unless the preview is approved and merged.
+- The approved marketing spacing and white contact-section treatment from pull request 28 is present in `main`.
+- Marketing preview branch `codex/preview-linkedin-badge` replaces the rectangular LinkedIn text button with a compact circular `in` badge. Production remains unchanged unless the preview is approved and merged.
 - The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
