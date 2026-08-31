@@ -226,6 +226,18 @@ def home():
     return FileResponse(BASE_DIR / "static" / "index.html")
 
 
+@app.get("/workspace-assets/{asset_name}")
+def workspace_asset(asset_name: str):
+    assets = {
+        "Archivo-Variable.ttf": (BASE_DIR / "static" / "Archivo-Variable.ttf", "font/ttf"),
+        "logo-stone.svg": (BASE_DIR / "static" / "logo-stone.svg", "image/svg+xml"),
+    }
+    if asset_name not in assets:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    path, media_type = assets[asset_name]
+    return FileResponse(path, media_type=media_type)
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "provider": os.getenv("FORECAST_PROVIDER", "baseline")}

@@ -6,6 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
+- Story 2.0 is implemented on `codex/story-2-0-workspace` and awaits Preview acceptance and merge. It restructures the Forecast Diagnostic into a workspace with persistent run context, peer Validation, Data quality, Forecast and Provenance panels, a sortable and filterable quality grid, and an accessible line-detail drawer. It does not change any validation, quality, forecast, manifest or bundle calculation.
 - Stories 1.1 through 1.6 are complete and merged into `main`.
 - Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
 - Story 1.6 merged in pull request 37 at `4bc303d`. Local, Preview and Production acceptance passed.
@@ -175,12 +176,29 @@ Key references:
 - `forecast-app/tests/test_stage_consistency.py`
 - `forecast-app/validator.py`
 
+### Story 2.0: a tool rather than a page
+
+Story 2.0 is implemented on `codex/story-2-0-workspace` and awaits Preview acceptance and merge. It changes interface structure only. Validation, quality, forecast, manifest and bundle calculations are unchanged.
+
+The diagnostic now presents Validation, Data quality, Forecast and Provenance as peer panels beneath a sticky run-context bar. The context keeps the filename hash, analysis date, inferred frequency, verdict, quality band and run ID visible while the user changes panels or scrolls. The quality grid is the work surface: every column sorts, band filters and SKU search persist across panel changes, and every line carries both a visual treatment and its written band. Enter, Space or a pointer opens a side drawer with What, So what and Do this detail. Escape closes the drawer and restores focus and scroll position. The forecast empty state derives eligible and excluded counts and reasons from the actual quality result.
+
+Archivo and the stone mark are self-hosted by the Forecast Diagnostic. The route exposes only the two allow-listed packaged assets. There is no new third-party request, environment variable, engine call or persistence mechanism.
+
+Local verification covered 72 tests. Seventy-one passed in full discovery. The unchanged 50,000-row performance test exceeded its five-second threshold when run inside full discovery on the OneDrive worktree, then passed in isolation in 2.534 seconds. Mixed-portfolio browser acceptance used `20_portfolio_mixed.csv` with analysis date 1 August 2026 and confirmed 12 lines, 83.6% clean volume, persistent filtering and searching, keyboard row opening, Escape closure, and a derived forecast state of 10 eligible and 2 excluded. Preview and Production checks remain pending.
+
+Key references:
+
+- `forecast-app/static/index.html`
+- `forecast-app/tests/test_workspace_ui.py`
+- `forecast-app/docs/2.0-open-questions.md`
+
 ## Application routes
 
 - `GET /`: Forecast Diagnostic interface
 - `GET /health`: service and selected-provider status
 - `GET /sample-data.csv`: single-SKU sample
 - `GET /sample-portfolio.csv`: portfolio sample
+- `GET /workspace-assets/{asset_name}`: allow-listed self-hosted Archivo font and stone mark
 - `POST /api/validate`: validation-only run
 - `POST /api/quality`: portfolio data-quality assessment
 - `POST /api/analyse`: single-SKU forecast and risk analysis
@@ -343,11 +361,11 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
-- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Full local discovery passes 67 tests.
+- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Story 2.0 adds workspace contract tests without changing the engine.
 
 ## Next starting point
 
-Story 1.6 is released and Production acceptance is complete. The next build should start from current `main` after merge `4bc303d`. Preserve the existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
+Story 2.0 is ready for Preview deployment from `codex/story-2-0-workspace`. Verify the mixed portfolio workspace, keyboard behavior and responsive layout in Preview, then merge only after acceptance. Preserve the existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
 
 ## End-of-build handoff checklist
 
