@@ -10,6 +10,10 @@ from validator import ValidationOptions, validate_csv
 FIXTURES = Path(__file__).parent / "quality_fixtures"
 VALIDATION_FIXTURES = Path(__file__).parent / "fixtures"
 EXPECTED = json.loads((FIXTURES / "expected_quality.json").read_text(encoding="utf-8"))
+EXPECTED_METRIC_TO_ENGINE_METRIC = {
+    "trailing_gap_periods_vs_as_of": "trailing_gap_periods_as_of",
+    "trailing_gap_periods_vs_portfolio_cutoff": "trailing_gap_periods_to_portfolio_cutoff",
+}
 
 
 class QualityEngineTests(unittest.TestCase):
@@ -20,7 +24,10 @@ class QualityEngineTests(unittest.TestCase):
     def run_fixture(self, name):
         expected = EXPECTED["files"][name]
         as_of = date.fromisoformat(expected.get("as_of_date_override", EXPECTED["as_of_date"]))
-        raw = (FIXTURES / name).read_bytes()
+        fixture = FIXTURES / name
+        if not fixture.exists():
+            fixture = VALIDATION_FIXTURES / name
+        raw = fixture.read_bytes()
         validation = validate_csv(raw, ValidationOptions(as_of_date=as_of))
         self.assertNotEqual(validation.verdict, "reject", f"1.1 regression for {name}: {[item.code for item in validation.findings]}")
         options = QualityOptions(as_of_date=as_of, as_of_date_source="fixture", grain=EXPECTED["grain"], thresholds=EXPECTED["thresholds"])
@@ -34,14 +41,17 @@ class QualityEngineTests(unittest.TestCase):
                 actual_by_sku = {item["sku"]: item for item in report["skus"]}
                 self.assertEqual(report["headline"]["skus_analysed"], expected["sku_count"])
                 self.assertAlmostEqual(report["portfolio"]["portfolio_volume"], expected["portfolio_volume"], places=4)
+                if "portfolio_cutoff" in expected:
+                    self.assertEqual(report["headline"]["last_period"], expected["portfolio_cutoff"])
                 for sku, metrics in expected["per_sku"].items():
                     actual = actual_by_sku[sku]
                     for field, expected_value in metrics.items():
+                        actual_field = EXPECTED_METRIC_TO_ENGINE_METRIC.get(field, field)
                         if isinstance(expected_value, float):
                             allowed = tolerance.get(field, 0.001)
-                            self.assertAlmostEqual(actual[field], expected_value, delta=allowed, msg=f"{name} {sku} {field}")
+                            self.assertAlmostEqual(actual[actual_field], expected_value, delta=allowed, msg=f"{name} {sku} {field}")
                         else:
-                            self.assertEqual(actual[field], expected_value, f"{name} {sku} {field}")
+                            self.assertEqual(actual[actual_field], expected_value, f"{name} {sku} {field}")
 
     def test_required_and_prohibited_findings_and_bands(self):
         for name in EXPECTED["files"]:
@@ -50,6 +60,8 @@ class QualityEngineTests(unittest.TestCase):
                 assertions = expected["assertions"]
                 actual = {item["sku"]: {finding["code"] for finding in item["findings"]} for item in report["skus"]}
                 self.assertEqual(report["portfolio"]["band"], assertions["portfolio_band"])
+                portfolio_codes = {finding["code"] for finding in report["portfolio"]["findings"]}
+                self.assertTrue(set(assertions.get("must_flag_portfolio", [])).issubset(portfolio_codes))
                 must_flag = assertions.get("must_flag", {})
                 for sku, codes in (must_flag.items() if isinstance(must_flag, dict) else []):
                     self.assertTrue(set(codes).issubset(actual[sku]), f"{name} {sku}: {actual[sku]}")
@@ -63,6 +75,8 @@ class QualityEngineTests(unittest.TestCase):
                 for sku, resolvable in assertions.get("resolvable", {}).items():
                     item = next(row for row in report["skus"] if row["sku"] == sku)
                     self.assertEqual(item["resolvable"], resolvable, f"{name} {sku}")
+                for sku in assertions.get("cv_squared_null", []):
+                    self.assertIsNone(next(item for item in report["skus"] if item["sku"] == sku)["cv_squared_nonzero"])
 
     def test_stale_extract_is_one_portfolio_finding(self):
         report, _ = self.run_fixture("21_stale_extract.csv")
