@@ -1,6 +1,6 @@
 # Silurian project handoff
 
-Last updated: 30 August 2026
+Last updated: 31 August 2026
 
 This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
@@ -12,7 +12,8 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
 - The approved marketing spacing and white contact-section treatment from pull request 28 is present in `main`.
-- Marketing preview branch `codex/preview-linkedin-badge` changes the website and privacy-page ink to the logo charcoal `#3f3d3b`. It standardises the main orange and lighter logo facet at `#ec6917`; following visual review, the single darker orange facet is softened to `#c15613`. It also replaces the rectangular email and LinkedIn text buttons with matching white circular badges containing orange envelope and `in` symbols, reversing to the same charcoal with white symbols on rollover. The email address remains present in the `mailto:` link and therefore remains machine-readable. Production remains unchanged unless the preview is approved and merged.
+- Marketing-site pull request 34 is merged. Production was verified on 31 August 2026 with charcoal ink `#3f3d3b`, main and light-facet orange `#ec6917`, dark-facet orange `#c15613`, the shared logo favicon and matching circular email and LinkedIn badges. The email address remains present in the `mailto:` link and therefore remains machine-readable.
+- The approved optional warm neutral is `#cabfad`, exposed as `--color-neutral-brand`. It is not currently applied to a visible site element.
 - The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
@@ -179,6 +180,8 @@ Recorded bundles reopen entirely in the browser. There is no server reopen route
 The site is static HTML and CSS. It has no application framework, package installation or build command. Routine wording is stored directly in `index.html`. The privacy notice is in `privacy.html`.
 
 Archivo is served from `assets/fonts/Archivo-Variable.ttf`. Do not restore Google Fonts or another third-party font request unless the privacy implications have been reviewed. Keep `assets/fonts/OFL.txt` whenever the font is redistributed with the site.
+
+Approved brand palette tokens are charcoal ink `#3f3d3b`, main orange `#ec6917`, dark logo orange `#c15613` and optional warm neutral `#cabfad`. The optional neutral is available as `--color-neutral-brand` but is intentionally unused on the current site.
 
 The current marketing preview changes only spacing and contact-section colours in `index.html`. It adds no asset, third-party request, environment variable or deployment-setting change. The white contact text is a visual sample and should be reviewed for readability before merge.
 
