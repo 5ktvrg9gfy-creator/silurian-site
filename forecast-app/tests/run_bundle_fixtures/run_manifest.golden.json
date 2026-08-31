@@ -85,7 +85,7 @@
       },
       "output_ref": {
         "type": "quality_result",
-        "sha256": "1881bc946729e61d76a7403158c75d590596a896a896465af9125b5a331952f9",
+        "sha256": "8834ae5c3fd0068661ff69e10a6c50aef5d977fe45e8f0ff3c8e36d2edb42007",
         "series": 12
       },
       "options": {
@@ -94,6 +94,8 @@
         "grain": "month",
         "weighting": "volume",
         "thresholds": {
+          "cv_squared_estimator": "population",
+          "cv_squared_min_nonzero_observations": 3,
           "history_short_periods": 18,
           "history_not_usable_periods": 6,
           "coverage_not_usable_pct": 50,
@@ -149,8 +151,8 @@
     "statement": "Validation and quality are bitwise reproducible."
   },
   "integrity": {
-    "manifest_sha256": "58a40895be12a719f84946cec9b0c0fa55f64e243442b2613451bc091817c9ba",
-    "content_fingerprint_sha256": "69f564ea1598b03e6bd1cef361c16927e60231333556b707f480af1ffb087aef",
+    "manifest_sha256": "b6fc6056d3b7598542a6c282dce248ea70fe84c079622a150bdb8260ea7091e4",
+    "content_fingerprint_sha256": "e0504f81d5fef51cf1cda5d0b0604544f402fcd9369db6ab33389bd2a2633cbd",
     "chain_verified": true
   }
 }

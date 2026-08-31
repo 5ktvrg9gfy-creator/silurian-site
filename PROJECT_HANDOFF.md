@@ -160,9 +160,9 @@ Validation now gates whether processing may continue, while quality characterise
 
 Unresolved numeric date order now uses `DATE_ORDER_UNRESOLVABLE`. `DATE_FORMAT_AMBIGUOUS` is reserved for contradictory day-first and month-first evidence. Invalid dates are excluded from the evidence set, so `31/04/2025` raises `DATE_INVALID` without being cited as day-first evidence.
 
-The permanent suite checks static finding-code ownership, conflicting cross-stage properties for every fixture that can proceed, and duplicate codes in the real quality endpoint payload. A deliberate temporary duplicate proved that the ownership test fails correctly. The full local suite passes 65 tests. The bundle goldens were regenerated and still match the independent Story 1.2 quality target.
+The permanent suite checks static finding-code ownership, conflicting cross-stage properties for every fixture that can proceed, and duplicate codes in the real quality endpoint payload. A deliberate temporary duplicate proved that the ownership test fails correctly. The full local suite passes 67 tests. The bundle goldens were regenerated and still match the independent Story 1.2 quality target.
 
-Fixture 07 validates as `accept` with zero findings. Its observed quality output is recorded separately for owner review and is not yet part of `expected_quality.json`. The quality metrics, bands and findings are unchanged. Its manifest `quality_result` hash changes because that artefact includes the upstream validation verdict, which correctly changed from `accept_with_warnings` to `accept`.
+Fixture 07 validates as `accept` with zero findings. Its observed quality output is recorded separately for owner review and is not yet part of `expected_quality.json`. CV squared is explicitly a population estimate and is null below three non-zero observations. The manifest records both choices. Per-SKU trailing periods are exposed against both the portfolio cut-off and analysis date, and `EXTRACT_STALE` follows the portfolio cut-off, so fixture 07 correctly reports that the extract is seven periods stale. `SINGLE_OBSERVATION_SERIES` remains unimplemented because `HISTORY_TOO_SHORT` and the not-usable band already prevent a one-point series from proceeding.
 
 Key references:
 
@@ -337,16 +337,15 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
-- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Full local discovery passes 65 tests.
+- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Full local discovery passes 67 tests.
 
 ## Next starting point
 
 Story 1.6 is implemented but not yet released:
 
-1. Resolve the acceptance wording for fixture 07's `quality_result` hash using the evidence in `forecast-app/docs/1.6-verification.md`.
-2. Push `codex/story-1-6-stage-consistency`, open the pull request and wait for its checks.
-3. Test the Vercel Preview with fixtures 02, 07, 08, 11 and 20.
-4. Merge only after Preview approval, wait for Production, then repeat the mixed-portfolio check and update this handoff with the merge and deployment evidence.
+1. Push the owner-review corrections to pull request 37 and wait for its checks and refreshed Preview.
+2. Repeat Preview acceptance for fixture 07, including null CV squared, explicit trailing measures and `EXTRACT_STALE`.
+3. Merge only after Preview approval, wait for Production, then repeat the mixed-portfolio check and update this handoff with the merge and deployment evidence.
 5. Preserve Story 1.5 controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening and manifest filename hashing.
 
 ## End-of-build handoff checklist

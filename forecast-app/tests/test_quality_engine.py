@@ -8,6 +8,7 @@ from validator import ValidationOptions, validate_csv
 
 
 FIXTURES = Path(__file__).parent / "quality_fixtures"
+VALIDATION_FIXTURES = Path(__file__).parent / "fixtures"
 EXPECTED = json.loads((FIXTURES / "expected_quality.json").read_text(encoding="utf-8"))
 
 
@@ -70,6 +71,33 @@ class QualityEngineTests(unittest.TestCase):
         self.assertEqual(portfolio_codes.count("EXTRACT_STALE"), 1)
         self.assertNotIn("SERIES_STALE", sku_codes)
         self.assertNotIn("SERIES_DISCONTINUED", sku_codes)
+
+    def test_fixture_07_reports_undefined_cv_and_stale_extract(self):
+        raw = (VALIDATION_FIXTURES / "07_zeros_versus_gaps.csv").read_bytes()
+        as_of = date(2026, 8, 1)
+        validation = validate_csv(raw, ValidationOptions(as_of_date=as_of))
+        report = assess_quality(
+            validation,
+            QualityOptions(as_of_date=as_of, as_of_date_source="fixture", grain="month"),
+        ).to_dict()
+        by_sku = {item["sku"]: item for item in report["skus"]}
+        self.assertIsNone(by_sku["PKG-30223"]["cv_squared_nonzero"])
+        self.assertEqual(report["context"]["thresholds"]["cv_squared_estimator"], "population")
+        self.assertEqual(report["context"]["thresholds"]["cv_squared_min_nonzero_observations"], 3)
+        self.assertIn("EXTRACT_STALE", {item["code"] for item in report["portfolio"]["findings"]})
+        self.assertEqual(by_sku["PKG-30219"]["trailing_gap_periods_as_of"], 7)
+        self.assertEqual(by_sku["PKG-30219"]["trailing_gap_periods_to_portfolio_cutoff"], 0)
+
+    def test_cv_squared_estimator_is_explicit_and_effective(self):
+        raw = (VALIDATION_FIXTURES / "07_zeros_versus_gaps.csv").read_bytes()
+        as_of = date(2026, 8, 1)
+        validation = validate_csv(raw, ValidationOptions(as_of_date=as_of))
+        population = assess_quality(validation, QualityOptions(as_of_date=as_of, grain="month")).to_dict()
+        sample_thresholds = {**DEFAULT_THRESHOLDS, "cv_squared_estimator": "sample"}
+        sample = assess_quality(validation, QualityOptions(as_of_date=as_of, grain="month", thresholds=sample_thresholds)).to_dict()
+        population_metric = next(item for item in population["skus"] if item["sku"] == "PKG-30220")["cv_squared_nonzero"]
+        sample_metric = next(item for item in sample["skus"] if item["sku"] == "PKG-30220")["cv_squared_nonzero"]
+        self.assertAlmostEqual(sample_metric / population_metric, 1.5, delta=0.001)
 
     def test_flagged_sku_and_volume_shares_tell_both_sides(self):
         report, expected = self.run_fixture("20_portfolio_mixed.csv")

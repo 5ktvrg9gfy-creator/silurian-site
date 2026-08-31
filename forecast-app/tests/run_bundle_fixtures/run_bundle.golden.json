@@ -20,8 +20,8 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "69f564ea1598b03e6bd1cef361c16927e60231333556b707f480af1ffb087aef",
-      "manifest_sha256": "58a40895be12a719f84946cec9b0c0fa55f64e243442b2613451bc091817c9ba"
+      "content_fingerprint_sha256": "e0504f81d5fef51cf1cda5d0b0604544f402fcd9369db6ab33389bd2a2633cbd",
+      "manifest_sha256": "b6fc6056d3b7598542a6c282dce248ea70fe84c079622a150bdb8260ea7091e4"
     },
     "reproducibility": {
       "deterministic_stages": [
@@ -121,6 +121,8 @@
           },
           "thresholds": {
             "coverage_not_usable_pct": 50,
+            "cv_squared_estimator": "population",
+            "cv_squared_min_nonzero_observations": 3,
             "extract_stale_trailing_periods": 2,
             "gap_block_concentration_ratio": 0.8,
             "gap_block_min_run": 3,
@@ -152,7 +154,7 @@
         },
         "output_ref": {
           "series": 12,
-          "sha256": "1881bc946729e61d76a7403158c75d590596a896a896465af9125b5a331952f9",
+          "sha256": "8834ae5c3fd0068661ff69e10a6c50aef5d977fe45e8f0ff3c8e36d2edb42007",
           "type": "quality_result"
         },
         "stage": "quality",
@@ -442,7 +444,7 @@
         "last_period": "2026-07-01",
         "skus_analysed": 12
       },
-      "method_note": "Metrics are descriptive. ADI and CV squared are reported as facts and are not classifications. Outliers are candidates, never corrections. Missing periods were not filled with zero, and no supplied value was altered.",
+      "method_note": "Metrics are descriptive. ADI and CV squared are reported as facts and are not classifications. CV squared uses the population estimator and is null below three non-zero observations. Outliers are candidates, never corrections. Missing periods were not filled with zero, and no supplied value was altered.",
       "per_sku": {
         "PKG-10432": {
           "adi": 1.0,
@@ -465,6 +467,8 @@
           "resolvable": null,
           "sku": "PKG-10432",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 28.808049,
           "volume_total": 303239.0,
           "zero_periods": 0,
@@ -491,6 +495,8 @@
           "resolvable": null,
           "sku": "PKG-10518",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 17.190265,
           "volume_total": 180948.0,
           "zero_periods": 0,
@@ -517,6 +523,8 @@
           "resolvable": null,
           "sku": "PKG-20077",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 37.346086,
           "volume_total": 393112.0,
           "zero_periods": 0,
@@ -543,6 +551,8 @@
           "resolvable": null,
           "sku": "PKG-30219",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 0.223253,
           "volume_total": 2350.0,
           "zero_periods": 24,
@@ -583,6 +593,8 @@
           "resolvable": true,
           "sku": "PKG-30220",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 0.188387,
           "volume_total": 1983.0,
           "zero_periods": 0,
@@ -622,6 +634,8 @@
           "resolvable": false,
           "sku": "PKG-40001",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 0.312839,
           "volume_total": 3293.0,
           "zero_periods": 0,
@@ -661,6 +675,8 @@
           "resolvable": null,
           "sku": "PKG-40002",
           "trailing_gap_periods": 9,
+          "trailing_gap_periods_as_of": 9,
+          "trailing_gap_periods_to_portfolio_cutoff": 9,
           "volume_share_pct": 2.834644,
           "volume_total": 29838.0,
           "zero_periods": 0,
@@ -702,6 +718,8 @@
           "resolvable": null,
           "sku": "PKG-40003",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 6.913138,
           "volume_total": 72769.0,
           "zero_periods": 0,
@@ -744,6 +762,8 @@
           "resolvable": null,
           "sku": "PKG-40004",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 1.355571,
           "volume_total": 14269.0,
           "zero_periods": 0,
@@ -783,6 +803,8 @@
           "resolvable": null,
           "sku": "PKG-40005",
           "trailing_gap_periods": 5,
+          "trailing_gap_periods_as_of": 5,
+          "trailing_gap_periods_to_portfolio_cutoff": 5,
           "volume_share_pct": 2.247347,
           "volume_total": 23656.0,
           "zero_periods": 0,
@@ -822,6 +844,8 @@
           "resolvable": null,
           "sku": "PKG-40006",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 0.00912,
           "volume_total": 96.0,
           "zero_periods": 6,
@@ -861,6 +885,8 @@
           "resolvable": null,
           "sku": "PKG-40007",
           "trailing_gap_periods": 0,
+          "trailing_gap_periods_as_of": 0,
+          "trailing_gap_periods_to_portfolio_cutoff": 0,
           "volume_share_pct": 2.571301,
           "volume_total": 27066.0,
           "zero_periods": 0,
@@ -888,8 +914,8 @@
     }
   },
   "integrity": {
-    "bundle_sha256": "fa68c42862e5748ffbce85f6be0841fc9476a75bd5e11ca62be81e239f1dde27",
-    "manifest_sha256": "58a40895be12a719f84946cec9b0c0fa55f64e243442b2613451bc091817c9ba",
-    "content_fingerprint_sha256": "69f564ea1598b03e6bd1cef361c16927e60231333556b707f480af1ffb087aef"
+    "bundle_sha256": "b5820b60c044cc3b6156ee226c3fa6eb3a761d381429c505bf234584b7f411e4",
+    "manifest_sha256": "b6fc6056d3b7598542a6c282dce248ea70fe84c079622a150bdb8260ea7091e4",
+    "content_fingerprint_sha256": "e0504f81d5fef51cf1cda5d0b0604544f402fcd9369db6ab33389bd2a2633cbd"
   }
 }

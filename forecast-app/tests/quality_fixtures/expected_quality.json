@@ -585,6 +585,8 @@
     }
   },
   "thresholds": {
+    "cv_squared_estimator": "population",
+    "cv_squared_min_nonzero_observations": 3,
     "history_short_periods": 18,
     "history_not_usable_periods": 6,
     "coverage_not_usable_pct": 50,

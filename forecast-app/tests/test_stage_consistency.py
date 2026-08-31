@@ -19,8 +19,9 @@ FIXTURES = Path(__file__).parent / "fixtures"
 QUALITY_FIXTURES = Path(__file__).parent / "quality_fixtures"
 EXPECTED = json.loads((FIXTURES / "expected_findings.json").read_text(encoding="utf-8"))
 PRE_CHANGE_FIXTURE_07_QUALITY_HASH = "868ef3921f4ddb427106cef46d112f6be05a55b2d63c29df71fef6551c681a5f"
-POST_CHANGE_FIXTURE_07_QUALITY_HASH = "48797966072510f99af973003150e4c0d95b59a60bcb687d1a3982b7d4faa290"
-FIXTURE_07_QUALITY_PAYLOAD_HASH_WITHOUT_VALIDATION_VERDICT = "cccbf6f81f985904b2a146dcba4da317152a368d2fadde25ac10c6e19907fd28"
+POST_STAGE_SPLIT_FIXTURE_07_QUALITY_HASH = "48797966072510f99af973003150e4c0d95b59a60bcb687d1a3982b7d4faa290"
+POST_REVIEW_FIXTURE_07_QUALITY_HASH = "166118438a54da533227cbc68f80aa3373cda6276d042989fc41b11e5bc36e9e"
+POST_REVIEW_FIXTURE_07_NORMALISED_QUALITY_HASH = "856302975305fd0ee820546764de955978430ca1ce6ea966b4dd3b5c9f1ed02c"
 
 FINDING_PROPERTIES = {
     "HISTORY_TOO_SHORT": "history_sufficiency",
@@ -96,7 +97,7 @@ class StageConsistencyTests(unittest.TestCase):
         } | {finding["code"] for finding in payload["quality"]["portfolio"]["findings"]}
         self.assertEqual(validation_codes & quality_codes, set())
 
-    def test_fixture_07_quality_engine_payload_is_unchanged(self):
+    def test_fixture_07_quality_engine_payload_matches_reviewed_contract(self):
         fixture = FIXTURES / "07_zeros_versus_gaps.csv"
         raw = fixture.read_bytes()
         as_of = date(2026, 8, 1)
@@ -116,14 +117,15 @@ class StageConsistencyTests(unittest.TestCase):
         quality_record = quality_stage(
             quality, validation_record["output_ref"], "2026-08-31T09:00:01Z", "2026-08-31T09:00:02Z"
         )
-        self.assertNotEqual(PRE_CHANGE_FIXTURE_07_QUALITY_HASH, POST_CHANGE_FIXTURE_07_QUALITY_HASH)
-        self.assertEqual(quality_record["output_ref"]["sha256"], POST_CHANGE_FIXTURE_07_QUALITY_HASH)
+        self.assertNotEqual(PRE_CHANGE_FIXTURE_07_QUALITY_HASH, POST_STAGE_SPLIT_FIXTURE_07_QUALITY_HASH)
+        self.assertNotEqual(POST_STAGE_SPLIT_FIXTURE_07_QUALITY_HASH, POST_REVIEW_FIXTURE_07_QUALITY_HASH)
+        self.assertEqual(quality_record["output_ref"]["sha256"], POST_REVIEW_FIXTURE_07_QUALITY_HASH)
         quality_without_validation_verdict = dict(quality)
         quality_without_validation_verdict["source"] = dict(quality["source"])
         quality_without_validation_verdict["source"].pop("validation_verdict")
         self.assertEqual(
             sha256_json(quality_without_validation_verdict),
-            FIXTURE_07_QUALITY_PAYLOAD_HASH_WITHOUT_VALIDATION_VERDICT,
+            POST_REVIEW_FIXTURE_07_NORMALISED_QUALITY_HASH,
         )
 
 
