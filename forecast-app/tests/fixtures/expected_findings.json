@@ -1,9 +1,10 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "story": "1.1 Strict input contract and validation",
   "as_of_date": "2026-08-01",
   "changelog": [
-    "1.1: every file now uses a passes array; fixture 05 verdict corrected to reject; DUPLICATE_ROW_EXACT standardised to info; resolution added to every blocking defect; as_of_date fixed for deterministic DATE_FUTURE tests"
+    "1.1: every file now uses a passes array; fixture 05 verdict corrected to reject; DUPLICATE_ROW_EXACT standardised to info; resolution added to every blocking defect; as_of_date fixed for deterministic DATE_FUTURE tests",
+    "1.2: descriptive series findings removed from validation. Validation gates whether a run may proceed; quality characterises the history. DATE_FUTURE was removed from fixture 11 because every date precedes the fixed 2026-08-01 as_of_date."
   ],
   "contract": {
     "required_fields": ["sku", "date", "demand"],
@@ -52,8 +53,7 @@
             {"code": "TRAILING_DELIMITER", "severity": "info", "stage": "shape", "detail": "Every row ends with an empty field", "auto": true},
             {"code": "BLANK_ROWS_WITHIN_DATA", "severity": "warning", "stage": "shape", "detail": "Separator rows between SKU blocks"},
             {"code": "TRAILING_NON_DATA_ROWS", "severity": "warning", "stage": "shape", "detail": "Page footer text after the last data row"},
-            {"code": "VALUE_MISSING", "severity": "warning", "stage": "rows", "detail": "PKG-10518 March quantity is blank"},
-            {"code": "HISTORY_TOO_SHORT", "severity": "warning", "stage": "series", "detail": "Three and four periods only. Reported as fact, routed in sprint 2"}
+            {"code": "VALUE_MISSING", "severity": "warning", "stage": "rows", "detail": "PKG-10518 March quantity is blank"}
           ]
         }
       ]
@@ -69,6 +69,7 @@
           "defects": [
             {"code": "DATE_FORMAT_MIXED", "severity": "blocking", "stage": "rows", "detail": "At least eight distinct formats in one column", "resolution": "user states the date order, or splits the file by source system"},
             {"code": "DATE_FORMAT_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "DD/MM resolves for PKG-10432 and MM/DD for PKG-10518 within the same file", "resolution": "user states the order per source, since one answer cannot be right for both"},
+            {"code": "DATE_ORDER_UNRESOLVABLE", "severity": "blocking", "stage": "rows", "detail": "Four numeric dates have no evidence that resolves day-first or month-first order", "resolution": "user states the date order"},
             {"code": "DATE_INVALID", "severity": "blocking", "stage": "rows", "detail": "31/04/2025 does not exist under either order", "resolution": "user corrects or removes the row"},
             {"code": "DATE_MISSING", "severity": "blocking", "stage": "rows", "detail": "PKG-20077 row has an empty date", "resolution": "user supplies the date or removes the row"},
             {"code": "EXCEL_SERIAL_DATE", "severity": "warning", "stage": "rows", "detail": "Value 45778 is an Excel serial on the 1899-12-30 epoch"},
@@ -119,10 +120,9 @@
         {
           "pass": 2,
           "options": {"unpivot": true, "period_columns": "Jan-25..Dec-25", "exclude_columns": ["FY Total"], "exclude_rows": ["Total"], "year_basis": "calendar"},
-          "verdict": "accept_with_warnings",
+          "verdict": "accept",
           "defects": [
-            {"code": "NUMERIC_THOUSANDS_SEPARATOR", "severity": "info", "stage": "rows", "detail": "Quoted values such as 1,240", "auto": true},
-            {"code": "ZERO_VS_MISSING_AMBIGUOUS", "severity": "warning", "stage": "series", "detail": "PKG-30219 zeros may be true zeros or unrecorded periods"}
+            {"code": "NUMERIC_THOUSANDS_SEPARATOR", "severity": "info", "stage": "rows", "detail": "Quoted values such as 1,240", "auto": true}
           ]
         }
       ]
@@ -177,7 +177,7 @@
           "verdict": "reject",
           "defects": [
             {"code": "COLUMN_MAP_NON_CANONICAL", "severity": "info", "stage": "columns", "detail": "Mapping supplied by the user and recorded in the run record", "auto": true},
-            {"code": "DATE_FORMAT_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "01.01.2025 dotted format, no evidence resolving day and month order", "resolution": "user states the date order"},
+            {"code": "DATE_ORDER_UNRESOLVABLE", "severity": "blocking", "stage": "rows", "detail": "01.01.2025 dotted format, no evidence resolving day and month order", "resolution": "user states the date order"},
             {"code": "NUMERIC_DECIMAL_COMMA_AMBIGUOUS", "severity": "blocking", "stage": "rows", "detail": "1.240 under a European locale", "resolution": "user states the decimal convention"}
           ]
         }
@@ -191,16 +191,11 @@
         {
           "pass": 1,
           "options": {},
-          "verdict": "accept_with_warnings",
-          "defects": [
-            {"code": "ZERO_VS_MISSING_AMBIGUOUS", "severity": "warning", "stage": "series", "detail": "PKG-30219 records zeros, PKG-30220 omits the same periods. Same demand, different files"},
-            {"code": "SERIES_DISCONTINUED", "severity": "warning", "stage": "series", "detail": "PKG-30221 stops in May with no end-of-life flag"},
-            {"code": "HISTORY_TOO_SHORT", "severity": "warning", "stage": "series", "detail": "PKG-30222 has four periods"},
-            {"code": "SINGLE_OBSERVATION_SERIES", "severity": "warning", "stage": "series", "detail": "PKG-30223 has one spike and nothing else"}
-          ]
+          "verdict": "accept",
+          "defects": []
         }
       ],
-      "note": "Facts only. Method suitability is story 2.3."
+      "note": "Descriptive series findings moved to quality in v1.2. Fixture 07 quality expectations are intentionally pending owner review of the observed engine output."
     },
     {
       "file": "08_unit_change_midhistory.csv",
@@ -274,8 +269,7 @@
           "defects": [
             {"code": "RECORD_TYPE_CASE_VARIANT", "severity": "info", "stage": "rows", "detail": "Actual, ACTUAL and actual normalised", "auto": true},
             {"code": "RECORD_TYPE_MIXED", "severity": "blocking", "stage": "rows", "detail": "Actual, Forecast, Budget, Plan and blank in one file", "resolution": "user confirms which record types are actuals"},
-            {"code": "FORECAST_ROWS_IN_ACTUALS", "severity": "blocking", "stage": "rows", "detail": "Fitting to the client's own forecast makes every downstream number circular", "resolution": "resolved by the record type mapping above"},
-            {"code": "DATE_FUTURE", "severity": "warning", "stage": "rows", "detail": "Rows dated beyond as_of_date"}
+            {"code": "FORECAST_ROWS_IN_ACTUALS", "severity": "blocking", "stage": "rows", "detail": "Fitting to the client's own forecast makes every downstream number circular", "resolution": "resolved by the record type mapping above"}
           ]
         }
       ]

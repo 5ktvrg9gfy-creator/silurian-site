@@ -269,14 +269,25 @@ def _date_evidence(values: list[tuple[int, str, str]]) -> tuple[bool, bool, list
         match = SLASH_DATE_RE.match(raw.strip())
         if not match:
             continue
-        first, _, second, _ = match.groups()
-        a, b = int(first), int(second)
+        first, _, second, year = match.groups()
+        a, b, y = int(first), int(second), int(year)
+        y = y + 2000 if y < 100 else y
         if a > 12:
-            dmy = True
-            examples.append(_example(row, raw, f"{sku}: day-first evidence"))
+            try:
+                date(y, b, a)
+            except ValueError:
+                pass
+            else:
+                dmy = True
+                examples.append(_example(row, raw, f"{sku}: day-first evidence"))
         if b > 12:
-            mdy = True
-            examples.append(_example(row, raw, f"{sku}: month-first evidence"))
+            try:
+                date(y, a, b)
+            except ValueError:
+                pass
+            else:
+                mdy = True
+                examples.append(_example(row, raw, f"{sku}: month-first evidence"))
     return dmy, mdy, examples[:5]
 
 
@@ -357,7 +368,13 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
     metadata["header_row"] = source_lines[header_index]
     data_pairs = [(row, source_lines[index]) for index, row in enumerate(parsed[header_index + 1:], start=header_index + 1)]
 
-    total_rows = [(row, line) for row, line in data_pairs if row and TOTAL_RE.search(row[0].strip())
+    if any(current - previous > 1 for previous, current in zip([0] + source_lines[:-1], source_lines)):
+        findings.append(_finding("QUOTED_FIELD_MULTILINE", "info", "shape", "A quoted field spans multiple physical lines.",
+                                 "No action is required.", transform="parsed quoted multiline field", reversible=True))
+
+    total_rows = [(row, line) for row, line in data_pairs if row
+                  and (not opts.exclude_rows or not _rows_matching_exclusion(row, opts.exclude_rows))
+                  and TOTAL_RE.search(row[0].strip())
                   and not row[0].strip().lower().startswith("subtotal")]
     total_columns = [header for header in headers if re.search(r"(^|\s)(fy\s+)?(total|sum|ytd)($|\s)", header, re.I)]
     if header_index > 0 and not opts.header_row:
@@ -468,8 +485,9 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
         raw_records.append(record)
 
     if "Deleted Flag" in headers and any((row[header_index_by_name["Deleted Flag"]] if len(row) > header_index_by_name["Deleted Flag"] else "").strip() for row, _ in data_pairs):
-        findings.append(_finding("DELETED_LINES_PRESENT", "blocking", "rows", "Deleted order lines are present.",
-                                 "Confirm exclusion of rows carrying the deletion flag.", resolution="set exclude_deleted true"))
+        if not opts.exclude_deleted:
+            findings.append(_finding("DELETED_LINES_PRESENT", "blocking", "rows", "Deleted order lines are present.",
+                                     "Confirm exclusion of rows carrying the deletion flag.", resolution="set exclude_deleted true"))
         if opts.exclude_deleted:
             raw_records = [record for record, (row, _) in zip(raw_records, data_pairs)
                            if not (row[header_index_by_name["Deleted Flag"]] if len(row) > header_index_by_name["Deleted Flag"] else "").strip()]
@@ -483,8 +501,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
                                  "State the date order per source or split the file.", examples=evidence_examples,
                                  resolution="supply date order per source"))
 
-    ambiguous_dot = any(re.fullmatch(r"[-+]?\d{1,3}(?:,\d{3})+", str(record.get("demand", "")).strip()) or
-                        re.fullmatch(r"[-+]?\d{1,3}(?: \d{3})+", str(record.get("demand", "")).strip())
+    ambiguous_dot = any(re.fullmatch(r"[-+]?\d{1,3}\.\d{3}", str(record.get("demand", "")).strip())
                         for record in raw_records)
     normalised: list[dict[str, Any]] = []
     date_kinds: set[str] = set()
@@ -510,7 +527,7 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
         elif date_error == "invalid":
             date_errors["DATE_INVALID"].append(_example(source_row, str(record.get("date", "")), "not a valid date"))
         elif date_error == "ambiguous":
-            date_errors["DATE_FORMAT_AMBIGUOUS"].append(_example(source_row, str(record.get("date", "")), "order cannot be inferred"))
+            date_errors["DATE_ORDER_UNRESOLVABLE"].append(_example(source_row, str(record.get("date", "")), "order cannot be inferred"))
         if parsed_date and parsed_date > opts.as_of_date:
             date_errors["DATE_FUTURE"].append(_example(source_row, parsed_date.isoformat(), "after as_of_date"))
         number, codes, number_error = _parse_number(str(record.get("demand", "")), ambiguous_dot and not opts.decimal_convention)
@@ -747,32 +764,6 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
             series[row["sku"]].append(row)
     for sku, values in series.items():
         values.sort(key=lambda row: row["date"])
-        if len(values) == 1:
-            findings.append(_finding("SINGLE_OBSERVATION_SERIES", "warning", "series", f"SKU {sku} has one observation.",
-                                     "Review the available history before forecasting.", level="sku", ref=sku))
-        elif len(values) < 12:
-            findings.append(_finding("HISTORY_TOO_SHORT", "warning", "series", f"SKU {sku} has {len(values)} periods.",
-                                     "Review the available history before forecasting.", level="sku", ref=sku, count=len(values)))
-
-    if series:
-        latest = max(date.fromisoformat(row["date"]) for values in series.values() for row in values)
-        for sku, values in series.items():
-            last = date.fromisoformat(values[-1]["date"])
-            if len(values) >= 3 and (latest.year - last.year) * 12 + latest.month - last.month >= 3:
-                findings.append(_finding("SERIES_DISCONTINUED", "warning", "series", f"SKU {sku} stops before the latest portfolio period.",
-                                         "Confirm whether the item is discontinued.", level="sku", ref=sku))
-
-    zero_skus = {sku for sku, values in series.items() if any(row["demand"] == 0 for row in values)}
-    sparse_skus = {sku for sku, values in series.items() if len(values) <= 4 and len(values) > 1}
-    if zero_skus:
-        zero_names = ", ".join(sorted(zero_skus))
-        sparse_names = ", ".join(sorted(sparse_skus)) or "none"
-        zero_examples = [_example(row["source_row"], f"{row['sku']},{row['date']},0", "recorded zero")
-                         for sku in sorted(zero_skus) for row in series[sku] if row["demand"] == 0][:5]
-        findings.append(_finding("ZERO_VS_MISSING_AMBIGUOUS", "warning", "series",
-                                 f"Recorded zero demand appears for {zero_names}; sparse comparison series are {sparse_names}.",
-                                 "Confirm whether missing periods mean zero demand.", count=len(zero_skus | sparse_skus),
-                                 examples=zero_examples))
 
     for sku, values in series.items():
         if len(values) < 8:
@@ -784,23 +775,24 @@ def validate_csv(raw: bytes, options: ValidationOptions | dict[str, Any]) -> Val
             if before <= 0 or after <= 0:
                 continue
             ratio = before / after
-            candidates.append((abs(math.log(ratio)), split, ratio, before, after))
+            scale = ratio if ratio >= 1 else 1 / ratio
+            nearest = min(COMMON_PACK_FACTORS, key=lambda factor: abs(scale - factor) / factor)
+            persistent = len(values[split:]) >= 3 and all(0.5 * after <= value <= 2 * after for value in quantities[split:])
+            if scale >= 3 and persistent and abs(scale - nearest) / nearest <= 0.12:
+                candidates.append((abs(math.log(ratio)), split, ratio, before, after, nearest))
         if not candidates:
             continue
-        _, split, ratio, before, after = max(candidates)
+        _, split, ratio, before, after, nearest = max(candidates)
         scale = ratio if ratio >= 1 else 1 / ratio
-        nearest = min(COMMON_PACK_FACTORS, key=lambda factor: abs(scale - factor) / factor)
-        persistent = len(values[split:]) >= 3 and all(0.5 * after <= value <= 2 * after for value in quantities[split:])
-        if scale >= 3 and persistent and abs(scale - nearest) / nearest <= 0.12:
-            before_uoms = {row.get("uom", "") for row in values[:split]}
-            after_uoms = {row.get("uom", "") for row in values[split:]}
-            changed = bool(before_uoms and after_uoms and before_uoms != after_uoms)
-            code = "UOM_CHANGE_MIDHISTORY" if changed else "UNIT_SCALE_BREAK_SUSPECTED"
-            detail = f"SKU {sku} changes scale near {values[split]['date']} by a factor of {scale:.2f}, close to pack factor {nearest}."
-            action = "Supply the conversion factor or approve splitting the series." if changed else "Confirm whether to rescale or split the series."
-            findings.append(_finding(code, "blocking", "series", detail, action, level="sku", ref=sku,
-                                     count=len(values), examples=[_example(values[split]["source_row"], values[split]["date"], "first period after break")],
-                                     resolution="supply conversion factor or split decision"))
+        before_uoms = {row.get("uom", "") for row in values[:split]}
+        after_uoms = {row.get("uom", "") for row in values[split:]}
+        changed = bool(before_uoms and after_uoms and before_uoms != after_uoms)
+        code = "UOM_CHANGE_MIDHISTORY" if changed else "UNIT_SCALE_BREAK_SUSPECTED"
+        detail = f"SKU {sku} changes scale near {values[split]['date']} by a factor of {scale:.2f}, close to pack factor {nearest}."
+        action = "Supply the conversion factor or approve splitting the series." if changed else "Confirm whether to rescale or split the series."
+        findings.append(_finding(code, "blocking", "series", detail, action, level="sku", ref=sku,
+                                 count=len(values), examples=[_example(values[split]["source_row"], values[split]["date"], "first period after break")],
+                                 resolution="supply conversion factor or split decision"))
 
     metadata["parsed_rows"] = len(raw_records)
     return _finish(raw, opts, findings, normalised, metadata)

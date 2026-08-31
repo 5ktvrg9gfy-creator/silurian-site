@@ -35,7 +35,7 @@ class AppManifestTests(unittest.TestCase):
         stage = payload["manifest"]["stages"][0]
         self.assertEqual([item["stage"] for item in payload["manifest"]["stages"]], ["validation"])
         self.assertEqual(stage["outcome"]["findings"], 8)
-        self.assertEqual(stage["outcome"]["blocking"], 4)
+        self.assertEqual(stage["outcome"]["blocking"], 5)
         self.assertEqual(stage["outcome"]["rows_out"], 0)
 
     def test_quality_returns_chained_manifest(self):

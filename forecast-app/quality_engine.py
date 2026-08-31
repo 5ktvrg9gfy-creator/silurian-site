@@ -12,6 +12,8 @@ from validator import COMMON_PACK_FACTORS, ValidationResult
 
 
 DEFAULT_THRESHOLDS = {
+    "cv_squared_estimator": "population",
+    "cv_squared_min_nonzero_observations": 3,
     "history_short_periods": 18,
     "history_not_usable_periods": 6,
     "coverage_not_usable_pct": 50,
@@ -40,7 +42,7 @@ class QualityOptions:
     as_of_date_source: str = "server_default"
     grain: str | None = None
     weighting: str = "volume"
-    thresholds: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_THRESHOLDS))
+    thresholds: dict[str, Any] = field(default_factory=lambda: dict(DEFAULT_THRESHOLDS))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -152,17 +154,18 @@ def _missing_positions(rows: list[dict[str, Any]], grain: str) -> list[int]:
     return [position for position in range(positions[0], positions[-1] + 1) if position not in present]
 
 
-def _cv(values: list[float]) -> float:
+def _cv(values: list[float], estimator: str = "population") -> float:
     if not values:
         return 0.0
     average = mean(values)
     if average == 0 or len(values) < 2:
         return 0.0
-    variance = sum((value - average) ** 2 for value in values) / len(values)
+    denominator = len(values) - 1 if estimator == "sample" else len(values)
+    variance = sum((value - average) ** 2 for value in values) / denominator
     return math.sqrt(variance) / abs(average)
 
 
-def _outlier_periods(rows: list[dict[str, Any]], thresholds: dict[str, float]) -> list[str]:
+def _outlier_periods(rows: list[dict[str, Any]], thresholds: dict[str, Any]) -> list[str]:
     values = [float(row["demand"]) for row in rows]
     def flagged_indices(test_values: list[float]) -> set[int]:
         centre = median(test_values)
@@ -195,7 +198,7 @@ def _outlier_periods(rows: list[dict[str, Any]], thresholds: dict[str, float]) -
     return [str(rows[index]["date"]) for index in sorted(flagged)]
 
 
-def _level_shift(rows: list[dict[str, Any]], thresholds: dict[str, float]) -> tuple[str, float] | None:
+def _level_shift(rows: list[dict[str, Any]], thresholds: dict[str, Any]) -> tuple[str, float] | None:
     values = [float(row["demand"]) for row in rows]
     minimum = max(6, int(thresholds["level_shift_min_run"]))
     if len(values) < minimum * 2:
@@ -240,9 +243,9 @@ def assess_quality(validation: ValidationResult, options: QualityOptions) -> Qua
     portfolio_volume = sum(float(row["demand"]) for row in rows)
     latest_period = max(date.fromisoformat(str(row["date"])) for row in rows)
     common_last = Counter(str(values[-1]["date"]) for values in grouped.values()).most_common(1)[0]
-    extract_trailing = max(0, _month_distance(date.fromisoformat(common_last[0]), options.as_of_date) - 1) if grain == "month" else 0
-    if common_last[1] > len(grouped) / 2 and extract_trailing >= thresholds["extract_stale_trailing_periods"]:
-        portfolio_findings.append(QualityFinding("EXTRACT_STALE", "portfolio", f"Most series end at {common_last[0]}, {extract_trailing} periods before the analysis date.", "The dataset is internally consistent but does not represent the latest demand position.", "Request a current extract before using headline conclusions.", metric={"trailing_gap_periods": extract_trailing, "series_affected": common_last[1]}))
+    extract_trailing = max(0, _month_distance(latest_period, options.as_of_date) - 1) if grain == "month" else max(0, _period_position(options.as_of_date, grain) - _period_position(latest_period, grain) - 1)
+    if extract_trailing >= thresholds["extract_stale_trailing_periods"]:
+        portfolio_findings.append(QualityFinding("EXTRACT_STALE", "portfolio", f"The portfolio data ends at {latest_period.isoformat()}, {extract_trailing} periods before the analysis date.", "The dataset does not represent the latest demand position.", "Request a current extract before using headline conclusions.", metric={"trailing_gap_periods": extract_trailing, "portfolio_cutoff": latest_period.isoformat()}))
 
     metrics_by_sku: dict[str, dict[str, Any]] = {}
     findings_by_sku: dict[str, list[QualityFinding]] = defaultdict(list)
@@ -258,8 +261,12 @@ def assess_quality(validation: ValidationResult, options: QualityOptions) -> Qua
         nonzero = [value for value in demand if value != 0]
         zero_share = 100 * len(zeros) / present if present else 0
         adi = present / len(nonzero) if nonzero else float(present or 0)
-        cv_nonzero = _cv(nonzero)
         trailing_as_of = max(0, _month_distance(last, options.as_of_date) - 1) if grain == "month" else max(0, (_period_position(options.as_of_date, grain) - _period_position(last, grain) - 1))
+        trailing_to_cutoff = max(0, _period_position(latest_period, grain) - _period_position(last, grain))
+        cv_squared_nonzero = None
+        if len(nonzero) >= int(thresholds["cv_squared_min_nonzero_observations"]):
+            cv_nonzero = _cv(nonzero, str(thresholds["cv_squared_estimator"]))
+            cv_squared_nonzero = round(cv_nonzero ** 2, 6)
         volume = sum(demand)
         metrics_by_sku[sku] = {
             "sku": sku,
@@ -268,9 +275,11 @@ def assess_quality(validation: ValidationResult, options: QualityOptions) -> Qua
             "gap_count": len(missing), "longest_gap": longest_gap,
             "coverage_pct": round(100 * present / expected, 4) if expected else 0,
             "trailing_gap_periods": trailing_as_of,
+            "trailing_gap_periods_as_of": trailing_as_of,
+            "trailing_gap_periods_to_portfolio_cutoff": trailing_to_cutoff,
             "zero_periods": len(zeros), "zero_share_pct": round(zero_share, 4),
             "longest_zero_run": _runs([_period_position(dates[index], grain) for index in zeros]),
-            "adi": round(adi, 6), "cv_squared_nonzero": round(cv_nonzero ** 2, 6),
+            "adi": round(adi, 6), "cv_squared_nonzero": cv_squared_nonzero,
             "mean": round(mean(demand), 6) if demand else 0,
             "median": round(median(demand), 6) if demand else 0,
             "cv": round(_cv(demand), 6), "volume_total": round(volume, 6),
@@ -333,7 +342,7 @@ def assess_quality(validation: ValidationResult, options: QualityOptions) -> Qua
             band, resolvable = "not_usable", False
         elif metrics["coverage_pct"] < not_usable_codes["coverage"]:
             band, resolvable = "not_usable", True
-        elif metrics["trailing_gap_periods"] >= 12:
+        elif metrics["trailing_gap_periods_to_portfolio_cutoff"] >= 12:
             band, resolvable = "not_usable", True
         elif limiting:
             band = "caveated"

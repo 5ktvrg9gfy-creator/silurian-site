@@ -105,6 +105,7 @@ def quality_bundle_result(report: dict[str, Any]) -> dict[str, Any]:
         "exceptions": deepcopy(report.get("exceptions", [])),
         "method_note": (
             "Metrics are descriptive. ADI and CV squared are reported as facts and are not classifications. "
+            "CV squared uses the population estimator and is null below three non-zero observations. "
             "Outliers are candidates, never corrections. Missing periods were not filled with zero, and no supplied value was altered."
         ),
     }

@@ -8,6 +8,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 - Stories 1.1, 1.2, 1.3 and 1.4 are complete and merged into `main`.
 - Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
+- Story 1.6 is implemented on branch `codex/story-1-6-stage-consistency`. Local acceptance passes. Pull request, Preview, merge and Production acceptance remain pending.
 - Story 1.4 merged in pull request 29 at `86f9b02`. Quality and forecast-bundle Preview acceptance passed, and the Production quality-bundle smoke test passed.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
@@ -155,6 +156,23 @@ Key references:
 - `forecast-app/tests/test_app_manifest.py`
 - `forecast-app/tests/test_bigquery_timesfm.py`
 
+### Story 1.6: make the stages agree
+
+Validation now gates whether processing may continue, while quality characterises the demand history. Validation no longer emits `HISTORY_TOO_SHORT`, `SERIES_DISCONTINUED`, `SERIES_STALE`, `ZERO_VS_MISSING_AMBIGUOUS` or `SINGLE_OBSERVATION_SERIES`. Unit-scale, mid-history UOM-change and mixed record-type gates remain in validation.
+
+Unresolved numeric date order now uses `DATE_ORDER_UNRESOLVABLE`. `DATE_FORMAT_AMBIGUOUS` is reserved for contradictory day-first and month-first evidence. Invalid dates are excluded from the evidence set, so `31/04/2025` raises `DATE_INVALID` without being cited as day-first evidence.
+
+The permanent suite checks static finding-code ownership, conflicting cross-stage properties for every fixture that can proceed, and duplicate codes in the real quality endpoint payload. A deliberate temporary duplicate proved that the ownership test fails correctly. The full local suite passes 67 tests. The bundle goldens were regenerated and still match the independent Story 1.2 quality target.
+
+Fixture 07 validates as `accept` with zero findings. Its observed quality output is recorded separately for owner review and is not yet part of `expected_quality.json`. CV squared is explicitly a population estimate and is null below three non-zero observations. The manifest records both choices. Per-SKU trailing periods are exposed against both the portfolio cut-off and analysis date, and `EXTRACT_STALE` follows the portfolio cut-off, so fixture 07 correctly reports that the extract is seven periods stale. `SINGLE_OBSERVATION_SERIES` remains unimplemented because `HISTORY_TOO_SHORT` and the not-usable band already prevent a one-point series from proceeding.
+
+Key references:
+
+- `forecast-app/docs/1.6-verification.md`
+- `forecast-app/tests/fixtures/expected_findings.json`
+- `forecast-app/tests/test_stage_consistency.py`
+- `forecast-app/validator.py`
+
 ## Application routes
 
 - `GET /`: Forecast Diagnostic interface
@@ -246,10 +264,10 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 python -m unittest discover -s tests
 ```
 
-Focused Story 1.3, 1.4 and 1.5 checks:
+Focused Story 1.3, 1.4, 1.5 and 1.6 checks:
 
 ```text
-python -m unittest tests.test_app_manifest tests.test_bigquery_timesfm tests.test_run_manifest tests.test_determinism tests.test_run_bundle
+python -m unittest tests.test_app_manifest tests.test_bigquery_timesfm tests.test_run_manifest tests.test_determinism tests.test_run_bundle tests.test_stage_consistency tests.test_validator
 ```
 
 On the current Windows machine, the repository's embedded Python can be used when the system `python` command is unavailable:
@@ -323,16 +341,16 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
-- The Story 1.5 focused suite passes 51 tests. Full discovery still reports eight pre-existing Story 1.1 fixture mismatches caused by line-ending-sensitive fixture expectations; these are not Story 1.5 behaviour failures.
+- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Full local discovery passes 67 tests.
 
 ## Next starting point
 
-Story 1.5 is closed. Start the next story from current `main`:
+Story 1.6 is implemented but not yet released:
 
-1. Obtain and review the next written build brief before changing behaviour.
-2. Preserve Story 1.5 controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening and manifest filename hashing.
-3. Treat written provider confirmation about backup scope and qualified legal wording as separate governance work. Do not weaken the implemented controls while that work remains open.
-4. Use the normal branch, Preview, acceptance, merge and Production workflow, then update this handoff again.
+1. Push the owner-review corrections to pull request 37 and wait for its checks and refreshed Preview.
+2. Repeat Preview acceptance for fixture 07, including null CV squared, explicit trailing measures and `EXTRACT_STALE`.
+3. Merge only after Preview approval, wait for Production, then repeat the mixed-portfolio check and update this handoff with the merge and deployment evidence.
+5. Preserve Story 1.5 controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening and manifest filename hashing.
 
 ## End-of-build handoff checklist
 

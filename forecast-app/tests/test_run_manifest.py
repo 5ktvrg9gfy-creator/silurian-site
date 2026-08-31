@@ -57,7 +57,7 @@ class RunManifestTests(unittest.TestCase):
         manifest = make_validation_manifest("02_date_disorder.csv")
         self.assertEqual([stage["stage"] for stage in manifest["stages"]], ["validation"])
         self.assertEqual(manifest["stages"][0]["outcome"]["verdict"], "reject")
-        self.assertEqual(manifest["stages"][0]["outcome"]["blocking"], 4)
+        self.assertEqual(manifest["stages"][0]["outcome"]["blocking"], 5)
         Draft202012Validator(SCHEMA).validate(manifest)
 
     def test_exact_hash_verifies_and_fingerprint_ignores_run_timing(self):
