@@ -6,7 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
-- Story 2.0 is implemented on `codex/story-2-0-workspace` and awaits Preview acceptance and merge. It restructures the Forecast Diagnostic into a workspace with persistent run context, peer Validation, Data quality, Forecast and Provenance panels, a sortable and filterable quality grid, and an accessible line-detail drawer. It does not change any validation, quality, forecast, manifest or bundle calculation.
+- Story 2.0 is complete. Pull request 39 merged at `cc338d5` on 31 August 2026. Preview acceptance passed with the mixed portfolio fixture, and both Vercel Production deployments completed successfully. The Forecast Diagnostic Production shell, self-hosted Archivo font and stone mark all returned HTTP 200 after deployment.
 - Stories 1.1 through 1.6 are complete and merged into `main`.
 - Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
 - Story 1.6 merged in pull request 37 at `4bc303d`. Local, Preview and Production acceptance passed.
@@ -178,13 +178,13 @@ Key references:
 
 ### Story 2.0: a tool rather than a page
 
-Story 2.0 is implemented on `codex/story-2-0-workspace` and awaits Preview acceptance and merge. It changes interface structure only. Validation, quality, forecast, manifest and bundle calculations are unchanged.
+Story 2.0 merged in pull request 39 at `cc338d5`. It changes interface structure only. Validation, quality, forecast, manifest and bundle calculations are unchanged.
 
 The diagnostic now presents Validation, Data quality, Forecast and Provenance as peer panels beneath a sticky run-context bar. The context keeps the filename hash, analysis date, inferred frequency, verdict, quality band and run ID visible while the user changes panels or scrolls. The quality grid is the work surface: every column sorts, band filters and SKU search persist across panel changes, and every line carries both a visual treatment and its written band. Enter, Space or a pointer opens a side drawer with What, So what and Do this detail. Escape closes the drawer and restores focus and scroll position. The forecast empty state derives eligible and excluded counts and reasons from the actual quality result.
 
 Archivo and the stone mark are self-hosted by the Forecast Diagnostic. The route exposes only the two allow-listed packaged assets. There is no new third-party request, environment variable, engine call or persistence mechanism.
 
-Local verification covered 72 tests. Seventy-one passed in full discovery. The unchanged 50,000-row performance test exceeded its five-second threshold when run inside full discovery on the OneDrive worktree, then passed in isolation in 2.534 seconds. Mixed-portfolio browser acceptance used `20_portfolio_mixed.csv` with analysis date 1 August 2026 and confirmed 12 lines, 83.6% clean volume, persistent filtering and searching, keyboard row opening, Escape closure, and a derived forecast state of 10 eligible and 2 excluded. Preview and Production checks remain pending.
+Local verification covered 72 tests. Seventy-one passed in full discovery. The unchanged 50,000-row performance test exceeded its five-second threshold when run inside full discovery on the OneDrive worktree, then passed in isolation in 2.534 seconds. Mixed-portfolio browser acceptance used `20_portfolio_mixed.csv` with analysis date 1 August 2026 and confirmed 12 lines, 83.6% clean volume, persistent filtering and searching, keyboard row opening, Escape closure, and a derived forecast state of 10 eligible and 2 excluded. The user repeated the mixed-portfolio check in Preview and approved the result before merge. GitHub reported successful Production deployments for both Vercel projects. The public Forecast Diagnostic shell and both packaged workspace assets returned HTTP 200 after deployment.
 
 Key references:
 
@@ -365,7 +365,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 
 ## Next starting point
 
-Story 2.0 is ready for Preview deployment from `codex/story-2-0-workspace`. Verify the mixed portfolio workspace, keyboard behavior and responsive layout in Preview, then merge only after acceptance. Preserve the existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
+Story 2.0 is released and closed. The next build starts with Story 2.1 from current `main` after merge `cc338d5`. Preserve the workspace component boundary and existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
 
 ## End-of-build handoff checklist
 
