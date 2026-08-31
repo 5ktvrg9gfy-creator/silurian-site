@@ -1,8 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="110 80 200 290" role="img" aria-label="Silurian Consulting">
-  <defs><clipPath id="s"><polygon points="130,180 285,90 300,360 120,360"></polygon></clipPath></defs>
+  <defs>
+    <clipPath id="s"><polygon points="130,180 285,90 300,360 120,360"></polygon></clipPath>
+    <clipPath id="top"><rect x="100" y="0" width="240" height="225"></rect></clipPath>
+    <clipPath id="bottom"><rect x="100" y="225" width="240" height="200"></rect></clipPath>
+  </defs>
   <g clip-path="url(#s)">
-    <rect x="100" y="0" width="240" height="225" fill="#201e1d"></rect>
-    <rect x="100" y="225" width="240" height="200" fill="#ee7623"></rect>
-    <polygon points="130,180 285,90 300,330" fill="#f3f2f2" opacity="0.18"></polygon>
+    <g clip-path="url(#top)">
+      <polygon points="130,180 285,90 300,360 120,360" fill="#2b2a29"></polygon>
+      <polygon points="130,180 285,90 300,330" fill="#3f3d3b"></polygon>
+      <polygon points="130,180 300,330 300,360 120,360" fill="#1a1918"></polygon>
+      <polygon points="285,90 300,360 300,330" fill="#111010"></polygon>
+    </g>
+    <g clip-path="url(#bottom)">
+      <polygon points="130,180 285,90 300,360 120,360" fill="#c15613"></polygon>
+      <polygon points="130,180 285,90 300,330" fill="#ec6917"></polygon>
+    </g>
   </g>
 </svg>
