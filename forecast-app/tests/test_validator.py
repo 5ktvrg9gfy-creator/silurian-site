@@ -54,6 +54,38 @@ class ValidatorFixtureTests(unittest.TestCase):
         self.assertIn("ENCODING_NOT_UTF8", {finding.code for finding in result.findings})
         self.assertTrue(all(finding.stage == "bytes" for finding in result.findings))
 
+    def test_date_conditions_are_separate_and_invalid_date_is_not_evidence(self):
+        result = validate_csv(
+            (FIXTURES / "02_date_disorder.csv").read_bytes(),
+            ValidationOptions(as_of_date=self.as_of_date),
+        )
+        by_code = {}
+        for finding in result.findings:
+            by_code.setdefault(finding.code, []).append(finding)
+        self.assertEqual(len(by_code["DATE_FORMAT_AMBIGUOUS"]), 1)
+        self.assertEqual(len(by_code["DATE_ORDER_UNRESOLVABLE"]), 1)
+        contradiction_rows = {example["row"] for example in by_code["DATE_FORMAT_AMBIGUOUS"][0].examples}
+        invalid_rows = {example["row"] for example in by_code["DATE_INVALID"][0].examples}
+        self.assertNotIn(14, contradiction_rows)
+        self.assertIn(14, invalid_rows)
+
+    def test_validation_gates_remain_after_characterisations_move(self):
+        unit_result = validate_csv(
+            (FIXTURES / "08_unit_change_midhistory.csv").read_bytes(),
+            ValidationOptions(as_of_date=self.as_of_date),
+        )
+        unit_codes = {finding.code for finding in unit_result.findings}
+        self.assertTrue({"UNIT_SCALE_BREAK_SUSPECTED", "UOM_CHANGE_MIDHISTORY"}.issubset(unit_codes))
+        self.assertEqual(unit_result.verdict, "reject")
+
+        record_result = validate_csv(
+            (FIXTURES / "11_actuals_and_forecast_mixed.csv").read_bytes(),
+            ValidationOptions(as_of_date=self.as_of_date),
+        )
+        record_codes = {finding.code for finding in record_result.findings}
+        self.assertTrue({"RECORD_TYPE_MIXED", "FORECAST_ROWS_IN_ACTUALS"}.issubset(record_codes))
+        self.assertEqual(record_result.verdict, "reject")
+
     def test_every_blocking_expectation_has_resolution(self):
         for fixture in self.expectations["files"]:
             for expected_pass in fixture["passes"]:

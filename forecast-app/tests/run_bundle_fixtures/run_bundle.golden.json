@@ -20,8 +20,8 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "84854de5e3608682d4ecf4a4c04881ba1a77f8206cc7386272ea92923463beb3",
-      "manifest_sha256": "764efb1095409259f5117955c50913f879fc5338c8d6da09b28e9879936adb2e"
+      "content_fingerprint_sha256": "69f564ea1598b03e6bd1cef361c16927e60231333556b707f480af1ffb087aef",
+      "manifest_sha256": "58a40895be12a719f84946cec9b0c0fa55f64e243442b2613451bc091817c9ba"
     },
     "reproducibility": {
       "deterministic_stages": [
@@ -31,17 +31,17 @@
       "non_deterministic_stages": [],
       "statement": "Validation and quality are bitwise reproducible."
     },
-    "run_id": "run_41e9813c5d822f573881eca47b83fdca",
+    "run_id": "run_390f6045fbe64de658ce7876d0cda9f5",
     "schema_version": "1.3",
     "source": {
-      "bytes": 8535,
+      "bytes": 8210,
       "delimiter_detected": ",",
       "encoding_detected": "utf-8",
       "extension": ".csv",
       "filename_sha256": "d3820b4e8cc523a9400510ebefae904752f84d587285ba96e4fc2c81db4a7b01",
       "received_at": "2026-08-30T09:00:00Z",
       "rows_raw": 324,
-      "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc"
+      "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9"
     },
     "stages": [
       {
@@ -50,7 +50,7 @@
         "engine_version": "1.0.0",
         "input_ref": {
           "rows": 324,
-          "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
+          "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
           "type": "source_file"
         },
         "options": {
@@ -74,11 +74,11 @@
         },
         "outcome": {
           "blocking": 0,
-          "findings": 4,
+          "findings": 0,
           "rows_in": 324,
           "rows_out": 324,
           "series": 12,
-          "verdict": "accept_with_warnings"
+          "verdict": "accept"
         },
         "output_ref": {
           "rows": 324,
@@ -88,27 +88,16 @@
         },
         "passes": [
           {
-            "finding_codes": [
-              "HISTORY_TOO_SHORT",
-              "SERIES_DISCONTINUED",
-              "ZERO_VS_MISSING_AMBIGUOUS",
-              "LINE_ENDINGS_CRLF"
-            ],
+            "finding_codes": [],
             "options_supplied": {},
             "pass": 1,
-            "verdict": "accept_with_warnings"
+            "verdict": "accept"
           }
         ],
         "stage": "validation",
         "started_at": "2026-08-30T09:00:00Z",
         "story": "1.1",
-        "transformations": [
-          {
-            "code": "LINE_ENDINGS_CRLF",
-            "count": 1,
-            "reversible": true
-          }
-        ]
+        "transformations": []
       },
       {
         "completed_at": "2026-08-30T09:00:02Z",
@@ -163,7 +152,7 @@
         },
         "output_ref": {
           "series": 12,
-          "sha256": "40eb6397b214af5e5294e10218f158958585c779f7827f1efd095063933aff29",
+          "sha256": "1881bc946729e61d76a7403158c75d590596a896a896465af9125b5a331952f9",
           "type": "quality_result"
         },
         "stage": "quality",
@@ -881,178 +870,26 @@
       "portfolio_band": "caveated"
     },
     "validation": {
-      "findings": [
-        {
-          "action": "Review the available history before forecasting.",
-          "auto": {
-            "applied": false,
-            "reversible": false,
-            "transform": null
-          },
-          "code": "HISTORY_TOO_SHORT",
-          "count": 8,
-          "detail": "SKU PKG-30220 has 8 periods.",
-          "examples": [],
-          "resolution": null,
-          "scope": {
-            "level": "sku",
-            "ref": "PKG-30220"
-          },
-          "severity": "warning",
-          "stage": "series"
-        },
-        {
-          "action": "Review the available history before forecasting.",
-          "auto": {
-            "applied": false,
-            "reversible": false,
-            "transform": null
-          },
-          "code": "HISTORY_TOO_SHORT",
-          "count": 5,
-          "detail": "SKU PKG-40001 has 5 periods.",
-          "examples": [],
-          "resolution": null,
-          "scope": {
-            "level": "sku",
-            "ref": "PKG-40001"
-          },
-          "severity": "warning",
-          "stage": "series"
-        },
-        {
-          "action": "Confirm whether the item is discontinued.",
-          "auto": {
-            "applied": false,
-            "reversible": false,
-            "transform": null
-          },
-          "code": "SERIES_DISCONTINUED",
-          "count": 1,
-          "detail": "SKU PKG-40002 stops before the latest portfolio period.",
-          "examples": [],
-          "resolution": null,
-          "scope": {
-            "level": "sku",
-            "ref": "PKG-40002"
-          },
-          "severity": "warning",
-          "stage": "series"
-        },
-        {
-          "action": "Confirm whether the item is discontinued.",
-          "auto": {
-            "applied": false,
-            "reversible": false,
-            "transform": null
-          },
-          "code": "SERIES_DISCONTINUED",
-          "count": 1,
-          "detail": "SKU PKG-40005 stops before the latest portfolio period.",
-          "examples": [],
-          "resolution": null,
-          "scope": {
-            "level": "sku",
-            "ref": "PKG-40005"
-          },
-          "severity": "warning",
-          "stage": "series"
-        },
-        {
-          "action": "Confirm whether missing periods mean zero demand.",
-          "auto": {
-            "applied": false,
-            "reversible": false,
-            "transform": null
-          },
-          "code": "ZERO_VS_MISSING_AMBIGUOUS",
-          "count": 2,
-          "detail": "Recorded zero demand appears for PKG-30219, PKG-40006; sparse comparison series are none.",
-          "examples": [
-            {
-              "note": "recorded zero",
-              "raw": "PKG-30219,2023-09-01,0",
-              "row": 107
-            },
-            {
-              "note": "recorded zero",
-              "raw": "PKG-30219,2023-10-01,0",
-              "row": 108
-            },
-            {
-              "note": "recorded zero",
-              "raw": "PKG-30219,2023-12-01,0",
-              "row": 110
-            },
-            {
-              "note": "recorded zero",
-              "raw": "PKG-30219,2024-01-01,0",
-              "row": 111
-            },
-            {
-              "note": "recorded zero",
-              "raw": "PKG-30219,2024-05-01,0",
-              "row": 115
-            }
-          ],
-          "resolution": null,
-          "scope": {
-            "level": "file",
-            "ref": null
-          },
-          "severity": "warning",
-          "stage": "series"
-        },
-        {
-          "action": "No action is required.",
-          "auto": {
-            "applied": true,
-            "reversible": true,
-            "transform": "normalised CRLF line endings"
-          },
-          "code": "LINE_ENDINGS_CRLF",
-          "count": 1,
-          "detail": "The file uses Windows line endings.",
-          "examples": [],
-          "resolution": null,
-          "scope": {
-            "level": "file",
-            "ref": null
-          },
-          "severity": "info",
-          "stage": "bytes"
-        }
-      ],
+      "findings": [],
       "passes": [
         {
-          "finding_codes": [
-            "HISTORY_TOO_SHORT",
-            "SERIES_DISCONTINUED",
-            "ZERO_VS_MISSING_AMBIGUOUS",
-            "LINE_ENDINGS_CRLF"
-          ],
+          "finding_codes": [],
           "options_supplied": {},
           "pass": 1,
-          "verdict": "accept_with_warnings"
+          "verdict": "accept"
         }
       ],
       "row_counts": {
         "rows_in": 324,
         "rows_out": 324
       },
-      "transformations": [
-        {
-          "code": "LINE_ENDINGS_CRLF",
-          "count": 1,
-          "reversible": true
-        }
-      ],
-      "verdict": "accept_with_warnings"
+      "transformations": [],
+      "verdict": "accept"
     }
   },
   "integrity": {
-    "bundle_sha256": "cff37272ee75787c1c0a4c15d460fda2dcdbd72e64b046607f9d2d808e1f8ec7",
-    "manifest_sha256": "764efb1095409259f5117955c50913f879fc5338c8d6da09b28e9879936adb2e",
-    "content_fingerprint_sha256": "84854de5e3608682d4ecf4a4c04881ba1a77f8206cc7386272ea92923463beb3"
+    "bundle_sha256": "fa68c42862e5748ffbce85f6be0841fc9476a75bd5e11ca62be81e239f1dde27",
+    "manifest_sha256": "58a40895be12a719f84946cec9b0c0fa55f64e243442b2613451bc091817c9ba",
+    "content_fingerprint_sha256": "69f564ea1598b03e6bd1cef361c16927e60231333556b707f480af1ffb087aef"
   }
 }
