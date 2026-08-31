@@ -14,6 +14,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - The approved marketing spacing and white contact-section treatment from pull request 28 is present in `main`.
 - Marketing-site pull request 34 is merged. Production was verified on 31 August 2026 with charcoal ink `#3f3d3b`, main and light-facet orange `#ec6917`, dark-facet orange `#c15613`, the shared logo favicon and matching circular email and LinkedIn badges. The email address remains present in the `mailto:` link and therefore remains machine-readable.
 - The approved optional warm neutral is `#cabfad`, exposed as `--color-neutral-brand`. It is not currently applied to a visible site element.
+- The approved deep charcoal is `#1a1918`, exposed as `--color-charcoal-deep`. It is used in the logo and is available for future design work.
 - The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
@@ -181,7 +182,7 @@ The site is static HTML and CSS. It has no application framework, package instal
 
 Archivo is served from `assets/fonts/Archivo-Variable.ttf`. Do not restore Google Fonts or another third-party font request unless the privacy implications have been reviewed. Keep `assets/fonts/OFL.txt` whenever the font is redistributed with the site.
 
-Approved brand palette tokens are charcoal ink `#3f3d3b`, main orange `#ec6917`, dark logo orange `#c15613` and optional warm neutral `#cabfad`. The optional neutral is available as `--color-neutral-brand` but is intentionally unused on the current site.
+Approved brand palette tokens are charcoal ink `#3f3d3b`, deep logo charcoal `#1a1918`, main orange `#ec6917`, dark logo orange `#c15613` and optional warm neutral `#cabfad`. Deep charcoal is available as `--color-charcoal-deep`; the optional neutral is available as `--color-neutral-brand` but is intentionally unused on the current site.
 
 The current marketing preview changes only spacing and contact-section colours in `index.html`. It adds no asset, third-party request, environment variable or deployment-setting change. The white contact text is a visual sample and should be reviewed for readability before merge.
 
