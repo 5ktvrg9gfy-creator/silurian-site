@@ -18,6 +18,7 @@ APP = Path(__file__).parents[1]
 FIXTURES = Path(__file__).parent / "fixtures"
 QUALITY_FIXTURES = Path(__file__).parent / "quality_fixtures"
 EXPECTED = json.loads((FIXTURES / "expected_findings.json").read_text(encoding="utf-8"))
+QUALITY_EXPECTED = json.loads((QUALITY_FIXTURES / "expected_quality.json").read_text(encoding="utf-8"))
 PRE_CHANGE_FIXTURE_07_QUALITY_HASH = "868ef3921f4ddb427106cef46d112f6be05a55b2d63c29df71fef6551c681a5f"
 POST_STAGE_SPLIT_FIXTURE_07_QUALITY_HASH = "48797966072510f99af973003150e4c0d95b59a60bcb687d1a3982b7d4faa290"
 POST_REVIEW_FIXTURE_07_QUALITY_HASH = "166118438a54da533227cbc68f80aa3373cda6276d042989fc41b11e5bc36e9e"
@@ -125,6 +126,10 @@ class StageConsistencyTests(unittest.TestCase):
         quality_without_validation_verdict["source"].pop("validation_verdict")
         self.assertEqual(
             sha256_json(quality_without_validation_verdict),
+            POST_REVIEW_FIXTURE_07_NORMALISED_QUALITY_HASH,
+        )
+        self.assertEqual(
+            QUALITY_EXPECTED["files"]["07_zeros_versus_gaps.csv"]["assertions"]["normalised_source_sha256"],
             POST_REVIEW_FIXTURE_07_NORMALISED_QUALITY_HASH,
         )
 

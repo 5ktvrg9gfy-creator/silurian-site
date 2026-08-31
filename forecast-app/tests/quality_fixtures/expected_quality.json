@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "story": "1.2 Data quality report",
   "as_of_date": "2026-08-01",
   "grain": "month",
@@ -582,11 +582,149 @@
           "SKU-SUSPECTZERO": "caveated"
         }
       }
+    },
+    "07_zeros_versus_gaps.csv": {
+      "sku_count": 5,
+      "portfolio_volume": 8761,
+      "portfolio_cutoff": "2025-12-01",
+      "per_sku": {
+        "PKG-30219": {
+          "first_period": "2025-01-01",
+          "last_period": "2025-12-01",
+          "periods_present": 12,
+          "periods_expected_in_span": 12,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 9,
+          "zero_share_pct": 75.0,
+          "longest_zero_run": 3,
+          "adi": 4.0,
+          "cv_squared_nonzero": 0.00692,
+          "trailing_gap_periods_vs_as_of": 7,
+          "trailing_gap_periods_vs_portfolio_cutoff": 0,
+          "volume_total": 595,
+          "volume_share_pct": 6.79
+        },
+        "PKG-30220": {
+          "first_period": "2025-03-01",
+          "last_period": "2025-10-01",
+          "periods_present": 3,
+          "periods_expected_in_span": 8,
+          "gap_count": 5,
+          "longest_gap": 3,
+          "coverage_pct": 37.5,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.00692,
+          "trailing_gap_periods_vs_as_of": 9,
+          "trailing_gap_periods_vs_portfolio_cutoff": 2,
+          "volume_total": 595,
+          "volume_share_pct": 6.79
+        },
+        "PKG-30221": {
+          "first_period": "2025-01-01",
+          "last_period": "2025-05-01",
+          "periods_present": 5,
+          "periods_expected_in_span": 5,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.000504,
+          "trailing_gap_periods_vs_as_of": 14,
+          "trailing_gap_periods_vs_portfolio_cutoff": 7,
+          "volume_total": 2205,
+          "volume_share_pct": 25.17
+        },
+        "PKG-30222": {
+          "first_period": "2025-09-01",
+          "last_period": "2025-12-01",
+          "periods_present": 4,
+          "periods_expected_in_span": 4,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": 0.000562,
+          "trailing_gap_periods_vs_as_of": 7,
+          "trailing_gap_periods_vs_portfolio_cutoff": 0,
+          "volume_total": 566,
+          "volume_share_pct": 6.46
+        },
+        "PKG-30223": {
+          "first_period": "2025-06-01",
+          "last_period": "2025-06-01",
+          "periods_present": 1,
+          "periods_expected_in_span": 1,
+          "gap_count": 0,
+          "longest_gap": 0,
+          "coverage_pct": 100.0,
+          "zero_periods": 0,
+          "zero_share_pct": 0.0,
+          "longest_zero_run": 0,
+          "adi": 1.0,
+          "cv_squared_nonzero": null,
+          "trailing_gap_periods_vs_as_of": 13,
+          "trailing_gap_periods_vs_portfolio_cutoff": 6,
+          "volume_total": 4800,
+          "volume_share_pct": 54.79
+        }
+      },
+      "assertions": {
+        "portfolio_band": "not_usable",
+        "must_flag_portfolio": [
+          "EXTRACT_STALE"
+        ],
+        "must_flag": {
+          "PKG-30219": [
+            "HISTORY_TOO_SHORT"
+          ],
+          "PKG-30220": [
+            "ZERO_VS_MISSING_AMBIGUOUS",
+            "HISTORY_TOO_SHORT"
+          ],
+          "PKG-30221": [
+            "HISTORY_TOO_SHORT",
+            "SERIES_DISCONTINUED"
+          ],
+          "PKG-30222": [
+            "HISTORY_TOO_SHORT"
+          ],
+          "PKG-30223": [
+            "HISTORY_TOO_SHORT",
+            "SERIES_DISCONTINUED"
+          ]
+        },
+        "expected_bands": {
+          "PKG-30219": "caveated",
+          "PKG-30220": "not_usable",
+          "PKG-30221": "not_usable",
+          "PKG-30222": "not_usable",
+          "PKG-30223": "not_usable"
+        },
+        "must_not_raise": {
+          "PKG-30219": [
+            "ZERO_VS_MISSING_AMBIGUOUS"
+          ]
+        },
+        "cv_squared_null": [
+          "PKG-30223"
+        ],
+        "normalised_source_sha256": "856302975305fd0ee820546764de955978430ca1ce6ea966b4dd3b5c9f1ed02c",
+        "note": "Every SKU is short by span, so HISTORY_TOO_SHORT is universal here and is not a defect. PKG-30219 records 9 zeros across 12 periods with ADI 4.00 and must not be flagged for zero versus missing: recorded zeros are intermittency. PKG-30223 has one observation, so CV squared is null rather than zero. Staleness codes follow the portfolio cut-off of 2025-12, not as_of, which is why PKG-30219 and PKG-30222 carry no staleness finding despite sitting 7 periods behind as_of."
+      }
     }
   },
   "thresholds": {
-    "cv_squared_estimator": "population",
-    "cv_squared_min_nonzero_observations": 3,
     "history_short_periods": 18,
     "history_not_usable_periods": 6,
     "coverage_not_usable_pct": 50,
@@ -606,6 +744,8 @@
     "level_shift_pack_factor_tolerance_pct": 12,
     "portfolio_not_usable_volume_pct": 20,
     "portfolio_caveated_volume_pct": 5,
-    "note": "history_short and history_not_usable are measured on SPAN from first to last period, never on rows present. Rows present measures sparsity, not age."
+    "note": "history_short and history_not_usable are measured on SPAN from first to last period, never on rows present. Rows present measures sparsity, not age. CV squared uses the population estimator, dividing by n, and is null below three non-zero observations. Series staleness and discontinuation are measured against the portfolio cut-off; extract staleness is measured against as_of_date.",
+    "cv_squared_estimator": "population",
+    "cv_squared_min_nonzero_observations": 3
   }
 }
