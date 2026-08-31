@@ -1,6 +1,6 @@
 # Silurian project handoff
 
-Last updated: 30 August 2026
+Last updated: 31 August 2026
 
 This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
@@ -12,7 +12,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
 - The approved marketing spacing and white contact-section treatment from pull request 28 is present in `main`.
-- Marketing preview branch `codex/preview-linkedin-badge` changes the website and privacy-page ink to the logo charcoal `#3f3d3b`. It standardises the main orange and lighter logo facet at `#ec6917`; following visual review, the single darker orange facet is softened to `#c15613`. It also replaces the rectangular email and LinkedIn text buttons with matching white circular badges containing orange envelope and `in` symbols, reversing to the same charcoal with white symbols on rollover. The email address remains present in the `mailto:` link and therefore remains machine-readable. Production remains unchanged unless the preview is approved and merged.
+- Marketing-site pull request 34 is merged. Production was verified on 31 August 2026 with charcoal ink `#3f3d3b`, main and light-facet orange `#ec6917`, dark-facet orange `#c15613`, the shared logo favicon and matching circular email and LinkedIn badges. The email address remains present in the `mailto:` link and therefore remains machine-readable.
 - The marketing site does not intentionally use analytics, advertising cookies or non-essential tracking technologies.
 - The Forecast Diagnostic accepts single-SKU and portfolio CSV files, validates them before forecasting, assesses portfolio data quality, runs forecasts through TimesFM 2.5 in BigQuery, produces inventory-risk analysis, and creates a downloadable run manifest.
 - Production was checked on 29 August 2026 using the fixed TimesFM reference fixture. The file was accepted, the TimesFM forecast completed, and the saved ten-run reproducibility evidence was displayed without errors.
