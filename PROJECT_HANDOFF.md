@@ -6,9 +6,9 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
-- Stories 1.1, 1.2, 1.3 and 1.4 are complete and merged into `main`.
+- Stories 1.1 through 1.6 are complete and merged into `main`.
 - Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
-- Story 1.6 is implemented on branch `codex/story-1-6-stage-consistency`. Local acceptance passes. Pull request, Preview, merge and Production acceptance remain pending.
+- Story 1.6 merged in pull request 37 at `4bc303d`. Local, Preview and Production acceptance passed.
 - Story 1.4 merged in pull request 29 at `86f9b02`. Quality and forecast-bundle Preview acceptance passed, and the Production quality-bundle smoke test passed.
 - Production is deployed and working.
 - Marketing-site pull request 26 is merged. Archivo is self-hosted, the SIL Open Font Licence is retained in the repository, and a privacy notice is linked from the footer.
@@ -163,6 +163,8 @@ Unresolved numeric date order now uses `DATE_ORDER_UNRESOLVABLE`. `DATE_FORMAT_A
 The permanent suite checks static finding-code ownership, conflicting cross-stage properties for every fixture that can proceed, and duplicate codes in the real quality endpoint payload. A deliberate temporary duplicate proved that the ownership test fails correctly. The full local suite passes 67 tests. The bundle goldens were regenerated and still match the independent Story 1.2 quality target.
 
 Fixture 07 validates as `accept` with zero findings. Its observed quality output is recorded separately for owner review and is not yet part of `expected_quality.json`. CV squared is explicitly a population estimate and is null below three non-zero observations. The manifest records both choices. Per-SKU trailing periods are exposed against both the portfolio cut-off and analysis date, and `EXTRACT_STALE` follows the portfolio cut-off, so fixture 07 correctly reports that the extract is seven periods stale. `SINGLE_OBSERVATION_SERIES` remains unimplemented because `HISTORY_TOO_SHORT` and the not-usable band already prevent a one-point series from proceeding.
+
+Pull request 37 passed all three GitHub checks with no merge conflict. Preview acceptance used fixtures 02, 07, 08, 11 and 20. The reviewed fixture 07 rerun confirmed zero validation findings, `EXTRACT_STALE`, the population CV-squared method note and the three-observation reporting minimum. Production acceptance after merge `4bc303d` used `20_portfolio_mixed.csv` with analysis date 1 August 2026. Validation returned zero findings, quality analysed 12 SKUs, clean volume was 83.6%, and flagged volume was 16.4%. Production run `run_f82e9e9c05f2f6a7c1d4f8cc344974e6` produced manifest `89dc494df54c7438858de617010e79a8eda134882e0f9365db245cd332394dd7`.
 
 Key references:
 
@@ -341,12 +343,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 
 ## Next starting point
 
-Story 1.6 is implemented but not yet released:
-
-1. Push the owner-review corrections to pull request 37 and wait for its checks and refreshed Preview.
-2. Repeat Preview acceptance for fixture 07, including null CV squared, explicit trailing measures and `EXTRACT_STALE`.
-3. Merge only after Preview approval, wait for Production, then repeat the mixed-portfolio check and update this handoff with the merge and deployment evidence.
-5. Preserve Story 1.5 controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening and manifest filename hashing.
+Story 1.6 is released and Production acceptance is complete. The next build should start from current `main` after merge `4bc303d`. Preserve the existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
 
 ## End-of-build handoff checklist
 
