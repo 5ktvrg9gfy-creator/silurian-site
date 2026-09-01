@@ -1,0 +1,525 @@
+{
+  "version": "1.2",
+  "story": "2.1 Demand classification and portfolio segmentation",
+  "fixture": "30_classification_portfolio.csv",
+  "as_of_date": "2026-08-01",
+  "portfolio_cutoff": "2026-07-01",
+  "grain": "month",
+  "tolerance": {
+    "adi": 0.02,
+    "cv_squared_nonzero": 0.005,
+    "cv_all_periods": 0.005,
+    "volume_share_pct": 0.05,
+    "cumulative_volume_share_pct": 0.1
+  },
+  "note": "Metrics are generated from the fixture data and are exact within tolerance. Class, ABC and XYZ are functions of those metrics under the thresholds below, so any disagreement is either a threshold difference or a metric defect, and the boundary_cases block tells you which. The fixture validates as accept with no findings, and the quality engine characterises it as caveated: see quality_interaction, which classification must carry through unchanged rather than re-derive or suppress.",
+  "thresholds": {
+    "adi_cut": 1.32,
+    "cv_squared_cut": 0.49,
+    "cv_squared_estimator": "population",
+    "cv_squared_min_nonzero_observations": 3,
+    "cv_squared_basis": "non_zero_periods_only",
+    "abc_basis": "volume",
+    "abc_a_cumulative_pct": 80,
+    "abc_b_cumulative_pct": 95,
+    "abc_rule": "cumulative share is taken inclusive of the ranked line, and the line that crosses a cut sits in the band it crosses into",
+    "xyz_basis": "cv_all_periods",
+    "xyz_x_max_cv": 0.5,
+    "xyz_y_max_cv": 1.0,
+    "xyz_min_periods_present": 3,
+    "note": "ADI is periods present divided by non-zero periods, counted over the span from a line's first to its last period, not over the portfolio span. CV squared is computed on non-zero periods only, with the population estimator dividing by n, matching the quality engine shipped in 1.2. XYZ is computed on all periods including zeros, which is why it is not meaningful on intermittent and lumpy lines."
+  },
+  "portfolio": {
+    "sku_count": 15,
+    "row_count": 466,
+    "volume_total": 636803,
+    "class_counts": {
+      "smooth": 5,
+      "erratic": 2,
+      "intermittent": 3,
+      "lumpy": 3,
+      "unclassifiable": 2
+    },
+    "volume_share_by_class_pct": {
+      "smooth": 67.06,
+      "lumpy": 17.73,
+      "erratic": 9.13,
+      "intermittent": 5.43,
+      "unclassifiable": 0.66
+    },
+    "abc_counts": {
+      "A": 4,
+      "B": 4,
+      "C": 7
+    },
+    "xyz_meaningful_count": 7,
+    "abc_by_class_cells": {
+      "A/erratic": [
+        "PKG-50101"
+      ],
+      "A/lumpy": [
+        "PKG-50301"
+      ],
+      "A/smooth": [
+        "PKG-50001",
+        "PKG-50002"
+      ],
+      "B/intermittent": [
+        "PKG-50201"
+      ],
+      "B/lumpy": [
+        "PKG-50402"
+      ],
+      "B/smooth": [
+        "PKG-50003",
+        "PKG-50401"
+      ],
+      "C/erratic": [
+        "PKG-50102"
+      ],
+      "C/intermittent": [
+        "PKG-50202",
+        "PKG-50501"
+      ],
+      "C/lumpy": [
+        "PKG-50302"
+      ],
+      "C/smooth": [
+        "PKG-50601"
+      ],
+      "C/unclassifiable": [
+        "PKG-50502",
+        "PKG-50602"
+      ]
+    }
+  },
+  "boundary_cases": [
+    {
+      "sku": "PKG-50401",
+      "tests": "both cuts from the smooth side",
+      "adi": 1.21,
+      "cv_squared_nonzero": 0.382705,
+      "expected_class": "smooth",
+      "assertion": "adi below 1.32 and cv squared below 0.49, so a wrong-sided comparison operator or a sample estimator moves this line"
+    },
+    {
+      "sku": "PKG-50402",
+      "tests": "both cuts from the lumpy side",
+      "adi": 1.46,
+      "cv_squared_nonzero": 0.600625,
+      "expected_class": "lumpy",
+      "assertion": "adi at or above 1.32 and cv squared at or above 0.49, the mirror of PKG-50401"
+    },
+    {
+      "sku": "PKG-50501",
+      "tests": "the minimum observation rule at exactly the minimum",
+      "non_zero_periods": 3,
+      "expected_class": "intermittent",
+      "assertion": "3 non-zero observations is enough, so cv squared is a number and the line classifies"
+    },
+    {
+      "sku": "PKG-50502",
+      "tests": "the minimum observation rule one below the minimum",
+      "non_zero_periods": 2,
+      "expected_class": "unclassifiable",
+      "assertion": "cv squared is null, never 0.0, and the line must not fall into smooth by default"
+    },
+    {
+      "sku": "PKG-50602",
+      "tests": "a single observation",
+      "non_zero_periods": 1,
+      "expected_class": "unclassifiable",
+      "assertion": "adi is 1.0 and cv squared is null. A line that reports smooth here has the 1.2 defect back"
+    },
+    {
+      "sku": "PKG-50601",
+      "tests": "a short but complete history",
+      "periods_present": 10,
+      "expected_class": "smooth",
+      "assertion": "10 periods is short, not unclassifiable. Classification refuses on observation count, not on history length, and any history caveat comes from the quality stage"
+    }
+  ],
+  "planted_findings": [
+    {
+      "sku": "PKG-50301",
+      "finding": "a material line that no statistical method will forecast well",
+      "why_it_matters": "third by volume at 13.86 percent of the portfolio and ABC class A, yet lumpy. This is the consulting finding the portfolio classification matrix exists to surface. If the interface shows the grid but a client cannot see this line inside a minute, the presentation has failed even though the numbers are right."
+    },
+    {
+      "sku": "PKG-50201",
+      "finding": "intermittent but regular, at 5 percent of volume",
+      "why_it_matters": "orders every third month at a consistent size. Routing should treat this differently from PKG-50301 despite both being sporadic, which is the whole point of separating ADI from CV squared"
+    },
+    {
+      "sku": "PKG-50102",
+      "finding": "erratic on a small line",
+      "why_it_matters": "demand every period, size swinging by an order of magnitude. Sits in class C, so it tests that the grid does not hide non-A problems entirely"
+    }
+  ],
+  "assertions": [
+    "All four SBC quadrants are populated, so a run that returns three classes has a threshold or estimator defect.",
+    "Two lines are unclassifiable and neither carries a class letter. Unclassifiable is a fifth state, not a nulled smooth.",
+    "cv_squared_nonzero is null, not zero, on every line with fewer than 3 non-zero observations.",
+    "expected_xyz is null on any line with fewer than 3 periods present.",
+    "xyz_meaningful is true only for smooth and erratic lines. It is a property of the class, not of the value.",
+    "Volume shares sum to 100 within 0.05.",
+    "ABC bands are assigned on cumulative volume in rank order, and the fixture contains a line at each band.",
+    "Validation returns accept with zero findings.",
+    "Quality returns the findings and the caveated portfolio band recorded in quality_interaction, and classification carries them through unchanged.",
+    "Classification emits no finding code that any other stage can emit, and contradicts no quality finding about the same SKU."
+  ],
+  "per_sku": {
+    "PKG-50001": {
+      "rank_by_volume": 1,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 35,
+      "zero_periods": 0,
+      "volume_total": 232064,
+      "volume_share_pct": 36.44,
+      "cumulative_volume_share_pct": 36.44,
+      "adi": 1.0,
+      "cv_squared_nonzero": 0.010111,
+      "cv_all_periods": 0.1006,
+      "expected_class": "smooth",
+      "expected_abc_volume": "A",
+      "expected_xyz": "X",
+      "xyz_meaningful": true
+    },
+    "PKG-50002": {
+      "rank_by_volume": 2,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 35,
+      "zero_periods": 0,
+      "volume_total": 132738,
+      "volume_share_pct": 20.84,
+      "cumulative_volume_share_pct": 57.28,
+      "adi": 1.0,
+      "cv_squared_nonzero": 0.010684,
+      "cv_all_periods": 0.1034,
+      "expected_class": "smooth",
+      "expected_abc_volume": "A",
+      "expected_xyz": "X",
+      "xyz_meaningful": true
+    },
+    "PKG-50301": {
+      "rank_by_volume": 3,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 9,
+      "zero_periods": 26,
+      "volume_total": 88255,
+      "volume_share_pct": 13.86,
+      "cumulative_volume_share_pct": 71.14,
+      "adi": 3.89,
+      "cv_squared_nonzero": 0.986984,
+      "cv_all_periods": 2.5937,
+      "expected_class": "lumpy",
+      "expected_abc_volume": "A",
+      "expected_xyz": "Z",
+      "xyz_meaningful": false
+    },
+    "PKG-50101": {
+      "rank_by_volume": 4,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 35,
+      "zero_periods": 0,
+      "volume_total": 44803,
+      "volume_share_pct": 7.04,
+      "cumulative_volume_share_pct": 78.18,
+      "adi": 1.0,
+      "cv_squared_nonzero": 1.348702,
+      "cv_all_periods": 1.1613,
+      "expected_class": "erratic",
+      "expected_abc_volume": "A",
+      "expected_xyz": "Z",
+      "xyz_meaningful": true
+    },
+    "PKG-50201": {
+      "rank_by_volume": 5,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 12,
+      "zero_periods": 23,
+      "volume_total": 31815,
+      "volume_share_pct": 5.0,
+      "cumulative_volume_share_pct": 83.18,
+      "adi": 2.92,
+      "cv_squared_nonzero": 0.00165,
+      "cv_all_periods": 1.3862,
+      "expected_class": "intermittent",
+      "expected_abc_volume": "B",
+      "expected_xyz": "Z",
+      "xyz_meaningful": false
+    },
+    "PKG-50003": {
+      "rank_by_volume": 6,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 35,
+      "zero_periods": 0,
+      "volume_total": 23768,
+      "volume_share_pct": 3.73,
+      "cumulative_volume_share_pct": 86.91,
+      "adi": 1.0,
+      "cv_squared_nonzero": 0.006372,
+      "cv_all_periods": 0.0798,
+      "expected_class": "smooth",
+      "expected_abc_volume": "B",
+      "expected_xyz": "X",
+      "xyz_meaningful": true
+    },
+    "PKG-50401": {
+      "rank_by_volume": 7,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 29,
+      "zero_periods": 6,
+      "volume_total": 23706,
+      "volume_share_pct": 3.72,
+      "cumulative_volume_share_pct": 90.63,
+      "adi": 1.21,
+      "cv_squared_nonzero": 0.382705,
+      "cv_all_periods": 0.8178,
+      "expected_class": "smooth",
+      "expected_abc_volume": "B",
+      "expected_xyz": "Y",
+      "xyz_meaningful": true
+    },
+    "PKG-50402": {
+      "rank_by_volume": 8,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 24,
+      "zero_periods": 11,
+      "volume_total": 19200,
+      "volume_share_pct": 3.02,
+      "cumulative_volume_share_pct": 93.65,
+      "adi": 1.46,
+      "cv_squared_nonzero": 0.600625,
+      "cv_all_periods": 1.1551,
+      "expected_class": "lumpy",
+      "expected_abc_volume": "B",
+      "expected_xyz": "Z",
+      "xyz_meaningful": false
+    },
+    "PKG-50601": {
+      "rank_by_volume": 9,
+      "first_period": "2025-10-01",
+      "last_period": "2026-07-01",
+      "periods_present": 10,
+      "periods_expected_in_span": 10,
+      "non_zero_periods": 10,
+      "zero_periods": 0,
+      "volume_total": 14837,
+      "volume_share_pct": 2.33,
+      "cumulative_volume_share_pct": 95.98,
+      "adi": 1.0,
+      "cv_squared_nonzero": 0.001362,
+      "cv_all_periods": 0.0369,
+      "expected_class": "smooth",
+      "expected_abc_volume": "C",
+      "expected_xyz": "X",
+      "xyz_meaningful": true
+    },
+    "PKG-50102": {
+      "rank_by_volume": 10,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 35,
+      "zero_periods": 0,
+      "volume_total": 13290,
+      "volume_share_pct": 2.09,
+      "cumulative_volume_share_pct": 98.07,
+      "adi": 1.0,
+      "cv_squared_nonzero": 1.682521,
+      "cv_all_periods": 1.2971,
+      "expected_class": "erratic",
+      "expected_abc_volume": "C",
+      "expected_xyz": "Z",
+      "xyz_meaningful": true
+    },
+    "PKG-50302": {
+      "rank_by_volume": 11,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 12,
+      "zero_periods": 23,
+      "volume_total": 5439,
+      "volume_share_pct": 0.85,
+      "cumulative_volume_share_pct": 98.92,
+      "adi": 2.92,
+      "cv_squared_nonzero": 0.553485,
+      "cv_all_periods": 1.8791,
+      "expected_class": "lumpy",
+      "expected_abc_volume": "C",
+      "expected_xyz": "Z",
+      "xyz_meaningful": false
+    },
+    "PKG-50602": {
+      "rank_by_volume": 12,
+      "first_period": "2024-10-01",
+      "last_period": "2024-10-01",
+      "periods_present": 1,
+      "periods_expected_in_span": 1,
+      "non_zero_periods": 1,
+      "zero_periods": 0,
+      "volume_total": 3100,
+      "volume_share_pct": 0.49,
+      "cumulative_volume_share_pct": 99.41,
+      "adi": 1.0,
+      "cv_squared_nonzero": null,
+      "cv_all_periods": 0.0,
+      "expected_class": "unclassifiable",
+      "expected_abc_volume": "C",
+      "expected_xyz": null,
+      "xyz_meaningful": false,
+      "unclassifiable_reason": "single observation, no variability can be estimated"
+    },
+    "PKG-50202": {
+      "rank_by_volume": 13,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 18,
+      "zero_periods": 17,
+      "volume_total": 1688,
+      "volume_share_pct": 0.27,
+      "cumulative_volume_share_pct": 99.68,
+      "adi": 1.94,
+      "cv_squared_nonzero": 0.006716,
+      "cv_all_periods": 0.9785,
+      "expected_class": "intermittent",
+      "expected_abc_volume": "C",
+      "expected_xyz": "Y",
+      "xyz_meaningful": false
+    },
+    "PKG-50502": {
+      "rank_by_volume": 14,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 2,
+      "zero_periods": 33,
+      "volume_total": 1060,
+      "volume_share_pct": 0.17,
+      "cumulative_volume_share_pct": 99.85,
+      "adi": 17.5,
+      "cv_squared_nonzero": null,
+      "cv_all_periods": 4.064,
+      "expected_class": "unclassifiable",
+      "expected_abc_volume": "C",
+      "expected_xyz": "Z",
+      "xyz_meaningful": false,
+      "unclassifiable_reason": "only 2 non-zero observations, below the minimum of 3"
+    },
+    "PKG-50501": {
+      "rank_by_volume": 15,
+      "first_period": "2023-09-01",
+      "last_period": "2026-07-01",
+      "periods_present": 35,
+      "periods_expected_in_span": 35,
+      "non_zero_periods": 3,
+      "zero_periods": 32,
+      "volume_total": 1040,
+      "volume_share_pct": 0.16,
+      "cumulative_volume_share_pct": 100.01,
+      "adi": 11.67,
+      "cv_squared_nonzero": 0.005594,
+      "cv_all_periods": 3.276,
+      "expected_class": "intermittent",
+      "expected_abc_volume": "C",
+      "expected_xyz": "Z",
+      "xyz_meaningful": false
+    }
+  },
+  "revision_note": "v1.2 replaces a stale grid name with the portfolio classification matrix, and states that quality bands are joined for display from quality_result rather than copied into classification_result. v1.1 corrected the false claim that the fixture is quality-clean: the live engine returns a caveated band, one portfolio finding and six findings across five SKUs, recorded in quality_interaction. Metrics, classes, ABC, XYZ and all boundary cases are unchanged since v1.0 and still verify.",
+  "quality_interaction": {
+    "status": "observed, not specified",
+    "observed_by": "product owner run against the live engine, analysis date 2026-08-01",
+    "authority": "The engine is authoritative. These are recorded expectations of engine behaviour on this fixture, not a specification of the quality engine. If the engine changes, this block is updated to match it. The engine is never weakened to make a fixture pass.",
+    "expected_validation": {
+      "verdict": "accept",
+      "findings": []
+    },
+    "expected_quality": {
+      "portfolio_band": "caveated",
+      "portfolio_findings": [
+        "LONG_TAIL_CONCENTRATION"
+      ],
+      "per_sku_findings": {
+        "PKG-50101": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "PKG-50102": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "PKG-50301": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "PKG-50601": [
+          "HISTORY_TOO_SHORT"
+        ],
+        "PKG-50602": [
+          "HISTORY_TOO_SHORT",
+          "SERIES_DISCONTINUED"
+        ]
+      },
+      "sku_with_no_quality_findings": [
+        "PKG-50001",
+        "PKG-50002",
+        "PKG-50003",
+        "PKG-50201",
+        "PKG-50202",
+        "PKG-50302",
+        "PKG-50401",
+        "PKG-50402",
+        "PKG-50501",
+        "PKG-50502"
+      ],
+      "counts": {
+        "portfolio_findings": 1,
+        "sku_level_findings": 6,
+        "skus_with_findings": 5,
+        "skus_with_no_findings": 10
+      }
+    },
+    "why_each_finding_is_correct": {
+      "LONG_TAIL_CONCENTRATION": "Lines beyond the 99 percent cumulative volume point. The fixture was built with a deliberate long tail, so the finding is a property of the data.",
+      "OUTLIER_CANDIDATE": "Raised on PKG-50101, PKG-50102 and PKG-50301, which are the two erratic lines and the lumpy line. A modified z-score test flags the large orders on a genuinely sporadic series. Those spikes are the demand pattern, not data errors. The smooth seasonal lines PKG-50001 and PKG-50002 are not flagged, which confirms deseasonalisation is doing its job above the 24 period minimum.",
+      "HISTORY_TOO_SHORT": "PKG-50601 has 10 periods and PKG-50602 has 1, both below the 18 period span threshold.",
+      "SERIES_DISCONTINUED": "PKG-50602 last transacted in 2024-10, more than 6 periods before the portfolio cut-off."
+    },
+    "classification_must": [
+      "Present every quality band and finding unchanged. Bands and findings stay sourced from quality_result and are joined to the classification view on SKU for display. They are not copied into classification_result, not re-derived, not suppressed and not softened. One owner per fact.",
+      "Classify all 15 lines regardless of quality band. A caveated or not usable line is still classified; whether a method may run on it is a routing decision in story 2.2.",
+      "Share no finding code with the validation or quality stage, per the 1.6 cross-stage rule.",
+      "Never contradict a quality finding about the same SKU. PKG-50602 is the test: quality says the history is too short and discontinued, classification says unclassifiable on observation count. Those agree. A classification output claiming PKG-50602 is smooth would contradict it."
+    ],
+    "the_finding_this_creates": "Three of the five flagged SKUs are flagged for outliers and all three are erratic or lumpy. This is the cross-stage story worth showing a client: the quality stage says these values look extreme, and the classification stage says the extremes are the pattern. Presenting the two together is more useful than either alone, and is the recommended copy treatment in the drawer."
+  }
+}

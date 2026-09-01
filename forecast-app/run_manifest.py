@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 
-SCHEMA_VERSION = "1.3"
+SCHEMA_VERSION = "1.4"
 PLACEHOLDERS = {"REPLACE_WITH_ACTUAL", "SUPPLIED_BY_DEPLOYMENT", "0000000"}
 MANAGED_SENTINEL = "provider_managed_not_exposed"
 SCHEMA = json.loads((Path(__file__).with_name("run_manifest.schema.json")).read_text(encoding="utf-8"))
@@ -170,6 +170,39 @@ def quality_stage(report: dict[str, Any], input_ref: dict[str, Any], started_at:
     }
 
 
+def classification_stage(
+    result: dict[str, Any], input_ref: dict[str, Any], started_at: str, completed_at: str
+) -> dict[str, Any]:
+    thresholds = deepcopy(result["thresholds"])
+    options = {
+        **thresholds,
+        "cv_squared_estimator_note": "Population variance divides by n and uses non-zero periods only.",
+        "abc_basis_note": "ABC uses cumulative demand volume because unit cost is not available until story 4.1.",
+    }
+    occupancy = {key: cell["line_count"] for key, cell in result["matrix"].items()}
+    return {
+        "stage": "classification",
+        "story": "2.1",
+        "engine_version": "1.0.0",
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "duration_ms": _duration_ms(started_at, completed_at),
+        "input_ref": deepcopy(input_ref),
+        "output_ref": artefact_ref(
+            "classification_result",
+            _strip_client_data(result),
+            series=result["portfolio"]["sku_count"],
+        ),
+        "options": options,
+        "outcome": {
+            "class_counts": deepcopy(result["portfolio"]["class_counts"]),
+            "abc_counts": deepcopy(result["portfolio"]["abc_counts"]),
+            "xyz_meaningful_count": result["portfolio"]["xyz_meaningful_count"],
+            "matrix_cell_occupancy": occupancy,
+        },
+    }
+
+
 def model_identity(
     histories: Iterable[Iterable[float]], horizon: int, reference_check: dict[str, Any],
     *, included: int, excluded: int = 0, exclusion_reasons: dict[str, int] | None = None,
@@ -315,10 +348,15 @@ def reference_check(reference_series: list[float], output: list[float], baseline
 
 def _reproducibility(stages: list[dict[str, Any]]) -> dict[str, Any]:
     names = [stage["stage"] for stage in stages]
-    deterministic = [name for name in names if name in {"validation", "quality"}]
+    deterministic = [name for name in names if name in {"validation", "quality", "classification"}]
     forecast = next((stage for stage in stages if stage["stage"] == "forecast"), None)
     non_deterministic = [] if not forecast or forecast["determinism"]["class"] == "bitwise" else ["forecast"]
-    statement = "Validation and quality are bitwise reproducible." if "quality" in names else "Validation is bitwise reproducible."
+    if "classification" in names:
+        statement = "Validation, quality and classification are bitwise reproducible."
+    elif "quality" in names:
+        statement = "Validation and quality are bitwise reproducible."
+    else:
+        statement = "Validation is bitwise reproducible."
     if forecast:
         statement += " " + forecast["determinism"]["statement"]
     elif stages[-1]["outcome"].get("verdict") == "reject":

@@ -1,5 +1,5 @@
 {
-  "bundle_schema_version": "1.0",
+  "bundle_schema_version": "1.1",
   "confidentiality": {
     "contains_client_data": true,
     "statement": "CONFIDENTIAL: this bundle contains client data. It belongs to the client and must not be shared like a run manifest.",
@@ -20,28 +20,29 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "e0504f81d5fef51cf1cda5d0b0604544f402fcd9369db6ab33389bd2a2633cbd",
-      "manifest_sha256": "b6fc6056d3b7598542a6c282dce248ea70fe84c079622a150bdb8260ea7091e4"
+      "content_fingerprint_sha256": "a90921c79cd00ec5fbc6e06bba3f341795ba0dfb596e357dd52aefbf60ee4317",
+      "manifest_sha256": "ed24e517f65931b8df648b11ec3f32381f917ab33795858e9aad4a9363b1535c"
     },
     "reproducibility": {
       "deterministic_stages": [
         "validation",
-        "quality"
+        "quality",
+        "classification"
       ],
       "non_deterministic_stages": [],
-      "statement": "Validation and quality are bitwise reproducible."
+      "statement": "Validation, quality and classification are bitwise reproducible."
     },
-    "run_id": "run_390f6045fbe64de658ce7876d0cda9f5",
-    "schema_version": "1.3",
+    "run_id": "run_41e9813c5d822f573881eca47b83fdca",
+    "schema_version": "1.4",
     "source": {
-      "bytes": 8210,
+      "bytes": 8535,
       "delimiter_detected": ",",
       "encoding_detected": "utf-8",
       "extension": ".csv",
       "filename_sha256": "d3820b4e8cc523a9400510ebefae904752f84d587285ba96e4fc2c81db4a7b01",
       "received_at": "2026-08-30T09:00:00Z",
       "rows_raw": 324,
-      "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9"
+      "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc"
     },
     "stages": [
       {
@@ -50,7 +51,7 @@
         "engine_version": "1.0.0",
         "input_ref": {
           "rows": 324,
-          "sha256": "558784ec94a1ddb59b8736e3b03fd2e741162db959f4da43628063422716f4d9",
+          "sha256": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
           "type": "source_file"
         },
         "options": {
@@ -74,7 +75,7 @@
         },
         "outcome": {
           "blocking": 0,
-          "findings": 0,
+          "findings": 1,
           "rows_in": 324,
           "rows_out": 324,
           "series": 12,
@@ -88,7 +89,9 @@
         },
         "passes": [
           {
-            "finding_codes": [],
+            "finding_codes": [
+              "LINE_ENDINGS_CRLF"
+            ],
             "options_supplied": {},
             "pass": 1,
             "verdict": "accept"
@@ -97,7 +100,13 @@
         "stage": "validation",
         "started_at": "2026-08-30T09:00:00Z",
         "story": "1.1",
-        "transformations": []
+        "transformations": [
+          {
+            "code": "LINE_ENDINGS_CRLF",
+            "count": 1,
+            "reversible": true
+          }
+        ]
       },
       {
         "completed_at": "2026-08-30T09:00:02Z",
@@ -154,16 +163,428 @@
         },
         "output_ref": {
           "series": 12,
-          "sha256": "8834ae5c3fd0068661ff69e10a6c50aef5d977fe45e8f0ff3c8e36d2edb42007",
+          "sha256": "56650e2a2b1c806cba6ad8fb2e9af1b7281fbc670f4596c9f35be2b5cf80e16e",
           "type": "quality_result"
         },
         "stage": "quality",
         "started_at": "2026-08-30T09:00:01Z",
         "story": "1.2"
+      },
+      {
+        "completed_at": "2026-08-30T09:00:03Z",
+        "duration_ms": 1000,
+        "engine_version": "1.0.0",
+        "input_ref": {
+          "series": 12,
+          "sha256": "56650e2a2b1c806cba6ad8fb2e9af1b7281fbc670f4596c9f35be2b5cf80e16e",
+          "type": "quality_result"
+        },
+        "options": {
+          "abc_a_cumulative_pct": 80,
+          "abc_b_cumulative_pct": 95,
+          "abc_basis": "volume",
+          "abc_basis_note": "ABC uses cumulative demand volume because unit cost is not available until story 4.1.",
+          "adi_cut": 1.32,
+          "cv_squared_basis": "non_zero_periods_only",
+          "cv_squared_cut": 0.49,
+          "cv_squared_estimator": "population",
+          "cv_squared_estimator_note": "Population variance divides by n and uses non-zero periods only.",
+          "cv_squared_min_nonzero_observations": 3,
+          "xyz_basis": "cv_all_periods",
+          "xyz_min_periods_present": 3,
+          "xyz_x_max_cv": 0.5,
+          "xyz_y_max_cv": 1
+        },
+        "outcome": {
+          "abc_counts": {
+            "A": 2,
+            "B": 3,
+            "C": 7
+          },
+          "class_counts": {
+            "erratic": 1,
+            "intermittent": 1,
+            "lumpy": 0,
+            "smooth": 10,
+            "unclassifiable": 0
+          },
+          "matrix_cell_occupancy": {
+            "A/erratic": 0,
+            "A/intermittent": 0,
+            "A/lumpy": 0,
+            "A/smooth": 2,
+            "A/unclassifiable": 0,
+            "B/erratic": 0,
+            "B/intermittent": 0,
+            "B/lumpy": 0,
+            "B/smooth": 3,
+            "B/unclassifiable": 0,
+            "C/erratic": 1,
+            "C/intermittent": 1,
+            "C/lumpy": 0,
+            "C/smooth": 5,
+            "C/unclassifiable": 0
+          },
+          "xyz_meaningful_count": 11
+        },
+        "output_ref": {
+          "series": 12,
+          "sha256": "51de88da2b59b1c3134ab362a71cc9a9a38d6540732c54d8170a02576fdc1983",
+          "type": "classification_result"
+        },
+        "stage": "classification",
+        "started_at": "2026-08-30T09:00:02Z",
+        "story": "2.1"
       }
     ]
   },
   "results": {
+    "classification": {
+      "matrix": {
+        "A/erratic": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "A/intermittent": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "A/lumpy": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "A/smooth": {
+          "line_count": 2,
+          "volume_share_pct": 66.154135
+        },
+        "A/unclassifiable": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "B/erratic": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "B/intermittent": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "B/lumpy": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "B/smooth": {
+          "line_count": 3,
+          "volume_share_pct": 26.938047
+        },
+        "B/unclassifiable": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "C/erratic": {
+          "line_count": 1,
+          "volume_share_pct": 1.355571
+        },
+        "C/intermittent": {
+          "line_count": 1,
+          "volume_share_pct": 0.223253
+        },
+        "C/lumpy": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        },
+        "C/smooth": {
+          "line_count": 5,
+          "volume_share_pct": 5.328994
+        },
+        "C/unclassifiable": {
+          "line_count": 0,
+          "volume_share_pct": 0.0
+        }
+      },
+      "method_note": "ADI and CV squared are consumed unchanged from the quality result. CV squared uses the population estimator on non-zero periods and is null below three non-zero observations. ABC is based on cumulative volume because cost is not yet available. Quality bands and findings remain in the quality result and must be joined by SKU for display.",
+      "per_sku": {
+        "PKG-10432": {
+          "abc_volume_class": "A",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 66.154136,
+          "cv_all_periods": 0.104234,
+          "cv_squared_nonzero": 0.010865,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a material line carrying 28.81% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 35,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 2,
+          "volume_share_pct": 28.808049,
+          "volume_total": 303239.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-10518": {
+          "abc_volume_class": "B",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 83.344401,
+          "cv_all_periods": 0.100115,
+          "cv_squared_nonzero": 0.010023,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a mid-volume line carrying 17.19% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 35,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 3,
+          "volume_share_pct": 17.190265,
+          "volume_total": 180948.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-20077": {
+          "abc_volume_class": "A",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 37.346086,
+          "cv_all_periods": 0.08427,
+          "cv_squared_nonzero": 0.007101,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a material line carrying 37.35% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 35,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 1,
+          "volume_share_pct": 37.346086,
+          "volume_total": 393112.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-30219": {
+          "abc_volume_class": "C",
+          "adi": 3.181818,
+          "cumulative_volume_share_pct": 99.802493,
+          "cv_all_periods": 1.491306,
+          "cv_squared_nonzero": 0.013255,
+          "demand_class": "intermittent",
+          "first_period": "2023-09-01",
+          "implication": "Demand arrives infrequently with comparatively stable non-zero orders. This is a long-tail line carrying 0.22% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 11,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 10,
+          "volume_share_pct": 0.223253,
+          "volume_total": 2350.0,
+          "xyz": "Z",
+          "xyz_meaningful": false,
+          "zero_periods": 24
+        },
+        "PKG-30220": {
+          "abc_volume_class": "C",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 99.99088,
+          "cv_all_periods": 0.136637,
+          "cv_squared_nonzero": 0.01867,
+          "demand_class": "smooth",
+          "first_period": "2023-11-01",
+          "implication": "Demand is frequent and comparatively stable. This is a long-tail line carrying 0.19% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 8,
+          "periods_expected_in_span": 33,
+          "periods_present": 8,
+          "rank_by_volume": 11,
+          "volume_share_pct": 0.188387,
+          "volume_total": 1983.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-40001": {
+          "abc_volume_class": "C",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 99.57924,
+          "cv_all_periods": 0.104128,
+          "cv_squared_nonzero": 0.010843,
+          "demand_class": "smooth",
+          "first_period": "2026-03-01",
+          "implication": "Demand is frequent and comparatively stable. This is a long-tail line carrying 0.31% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 5,
+          "periods_expected_in_span": 5,
+          "periods_present": 5,
+          "rank_by_volume": 9,
+          "volume_share_pct": 0.312839,
+          "volume_total": 3293.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-40002": {
+          "abc_volume_class": "B",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 93.092182,
+          "cv_all_periods": 0.095858,
+          "cv_squared_nonzero": 0.009189,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a mid-volume line carrying 2.83% of portfolio volume.",
+          "last_period": "2025-10-01",
+          "non_zero_periods": 26,
+          "periods_expected_in_span": 26,
+          "periods_present": 26,
+          "rank_by_volume": 5,
+          "volume_share_pct": 2.834644,
+          "volume_total": 29838.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-40003": {
+          "abc_volume_class": "B",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 90.257539,
+          "cv_all_periods": 0.090347,
+          "cv_squared_nonzero": 0.008162,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a mid-volume line carrying 6.91% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 31,
+          "periods_expected_in_span": 35,
+          "periods_present": 31,
+          "rank_by_volume": 4,
+          "volume_share_pct": 6.913138,
+          "volume_total": 72769.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-40004": {
+          "abc_volume_class": "C",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 99.266401,
+          "cv_all_periods": 1.084908,
+          "cv_squared_nonzero": 1.177025,
+          "demand_class": "erratic",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent but order size varies materially. This is a long-tail line carrying 1.36% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 35,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 8,
+          "volume_share_pct": 1.355571,
+          "volume_total": 14269.0,
+          "xyz": "Z",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-40005": {
+          "abc_volume_class": "C",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 97.91083,
+          "cv_all_periods": 0.094802,
+          "cv_squared_nonzero": 0.008987,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a long-tail line carrying 2.25% of portfolio volume.",
+          "last_period": "2026-02-01",
+          "non_zero_periods": 30,
+          "periods_expected_in_span": 30,
+          "periods_present": 30,
+          "rank_by_volume": 7,
+          "volume_share_pct": 2.247347,
+          "volume_total": 23656.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        },
+        "PKG-40006": {
+          "abc_volume_class": "C",
+          "adi": 1.206897,
+          "cumulative_volume_share_pct": 100.0,
+          "cv_all_periods": 0.573768,
+          "cv_squared_nonzero": 0.101345,
+          "demand_class": "smooth",
+          "first_period": "2023-09-01",
+          "implication": "Demand is frequent and comparatively stable. This is a long-tail line carrying 0.01% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 29,
+          "periods_expected_in_span": 35,
+          "periods_present": 35,
+          "rank_by_volume": 12,
+          "volume_share_pct": 0.00912,
+          "volume_total": 96.0,
+          "xyz": "Y",
+          "xyz_meaningful": true,
+          "zero_periods": 6
+        },
+        "PKG-40007": {
+          "abc_volume_class": "C",
+          "adi": 1.0,
+          "cumulative_volume_share_pct": 95.663483,
+          "cv_all_periods": 0.070435,
+          "cv_squared_nonzero": 0.004961,
+          "demand_class": "smooth",
+          "first_period": "2025-06-01",
+          "implication": "Demand is frequent and comparatively stable. This is a long-tail line carrying 2.57% of portfolio volume.",
+          "last_period": "2026-07-01",
+          "non_zero_periods": 14,
+          "periods_expected_in_span": 14,
+          "periods_present": 14,
+          "rank_by_volume": 6,
+          "volume_share_pct": 2.571301,
+          "volume_total": 27066.0,
+          "xyz": "X",
+          "xyz_meaningful": true,
+          "zero_periods": 0
+        }
+      },
+      "portfolio": {
+        "abc_counts": {
+          "A": 2,
+          "B": 3,
+          "C": 7
+        },
+        "class_counts": {
+          "erratic": 1,
+          "intermittent": 1,
+          "lumpy": 0,
+          "smooth": 10,
+          "unclassifiable": 0
+        },
+        "sku_count": 12,
+        "volume_share_by_class_pct": {
+          "erratic": 1.355571,
+          "intermittent": 0.223253,
+          "lumpy": 0.0,
+          "smooth": 98.421176,
+          "unclassifiable": 0.0
+        },
+        "volume_total": 1052619.0,
+        "xyz_meaningful_count": 11
+      },
+      "schema_version": "1.0",
+      "thresholds": {
+        "abc_a_cumulative_pct": 80,
+        "abc_b_cumulative_pct": 95,
+        "abc_basis": "volume",
+        "adi_cut": 1.32,
+        "cv_squared_basis": "non_zero_periods_only",
+        "cv_squared_cut": 0.49,
+        "cv_squared_estimator": "population",
+        "cv_squared_min_nonzero_observations": 3,
+        "xyz_basis": "cv_all_periods",
+        "xyz_min_periods_present": 3,
+        "xyz_x_max_cv": 0.5,
+        "xyz_y_max_cv": 1
+      }
+    },
     "quality": {
       "exceptions": [
         {
@@ -896,10 +1317,32 @@
       "portfolio_band": "caveated"
     },
     "validation": {
-      "findings": [],
+      "findings": [
+        {
+          "action": "No action is required.",
+          "auto": {
+            "applied": true,
+            "reversible": true,
+            "transform": "normalised CRLF line endings"
+          },
+          "code": "LINE_ENDINGS_CRLF",
+          "count": 1,
+          "detail": "The file uses Windows line endings.",
+          "examples": [],
+          "resolution": null,
+          "scope": {
+            "level": "file",
+            "ref": null
+          },
+          "severity": "info",
+          "stage": "bytes"
+        }
+      ],
       "passes": [
         {
-          "finding_codes": [],
+          "finding_codes": [
+            "LINE_ENDINGS_CRLF"
+          ],
           "options_supplied": {},
           "pass": 1,
           "verdict": "accept"
@@ -909,13 +1352,19 @@
         "rows_in": 324,
         "rows_out": 324
       },
-      "transformations": [],
+      "transformations": [
+        {
+          "code": "LINE_ENDINGS_CRLF",
+          "count": 1,
+          "reversible": true
+        }
+      ],
       "verdict": "accept"
     }
   },
   "integrity": {
-    "bundle_sha256": "b5820b60c044cc3b6156ee226c3fa6eb3a761d381429c505bf234584b7f411e4",
-    "manifest_sha256": "b6fc6056d3b7598542a6c282dce248ea70fe84c079622a150bdb8260ea7091e4",
-    "content_fingerprint_sha256": "e0504f81d5fef51cf1cda5d0b0604544f402fcd9369db6ab33389bd2a2633cbd"
+    "bundle_sha256": "4b7f12633eef30496171576a95aa043d417abf1095bb490e4d5b0d7acb94311f",
+    "manifest_sha256": "ed24e517f65931b8df648b11ec3f32381f917ab33795858e9aad4a9363b1535c",
+    "content_fingerprint_sha256": "a90921c79cd00ec5fbc6e06bba3f341795ba0dfb596e357dd52aefbf60ee4317"
   }
 }

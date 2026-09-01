@@ -34,18 +34,27 @@ class AppManifestTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         stage = payload["manifest"]["stages"][0]
         self.assertEqual([item["stage"] for item in payload["manifest"]["stages"]], ["validation"])
-        self.assertEqual(stage["outcome"]["findings"], 8)
+        self.assertEqual(stage["outcome"]["findings"], 9)
         self.assertEqual(stage["outcome"]["blocking"], 5)
         self.assertEqual(stage["outcome"]["rows_out"], 0)
 
     def test_quality_returns_chained_manifest(self):
         payload = asyncio.run(app.quality_upload(upload("20_portfolio_mixed.csv"), "2026-08-01", "month", "{}"))
-        self.assertEqual([stage["stage"] for stage in payload["manifest"]["stages"]], ["validation", "quality"])
+        self.assertEqual([stage["stage"] for stage in payload["manifest"]["stages"]], ["validation", "quality", "classification"])
         self.assertTrue(payload["manifest"]["integrity"]["chain_verified"])
         self.assertEqual(
             payload["manifest"]["stages"][1]["input_ref"]["sha256"],
             payload["manifest"]["stages"][0]["output_ref"]["sha256"],
         )
+        self.assertEqual(
+            payload["manifest"]["stages"][2]["input_ref"]["sha256"],
+            payload["manifest"]["stages"][1]["output_ref"]["sha256"],
+        )
+        self.assertEqual(payload["classification_result"]["portfolio"]["sku_count"], 12)
+        self.assertEqual(set(payload["bundle"]["results"]), {"validation", "quality", "classification"})
+        for item in payload["bundle"]["results"]["classification"]["per_sku"].values():
+            self.assertNotIn("band", item)
+            self.assertNotIn("findings", item)
 
     def test_forecast_returns_model_provenance(self):
         class Request:

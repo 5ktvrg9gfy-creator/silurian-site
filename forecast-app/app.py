@@ -11,11 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from determinism import measure_forecast_determinism
+from classification_engine import classify_quality
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
 from run_bundle import (
     BundleError,
     build_bundle,
+    classification_bundle_result,
     compare_reproduction,
     forecast_bundle_result,
     quality_bundle_result,
@@ -24,6 +26,7 @@ from run_bundle import (
 )
 from run_manifest import (
     build_manifest,
+    classification_stage,
     forecast_stage,
     model_identity,
     quality_stage,
@@ -303,9 +306,18 @@ async def quality_upload(
     ))
     quality_completed = utc_now()
     quality_record = quality_stage(quality.to_dict(), validation_record["output_ref"], quality_started, quality_completed)
+    classification_started = utc_now()
+    classification_payload = classify_quality(quality.to_dict())
+    classification_completed = utc_now()
+    classification_record = classification_stage(
+        classification_payload,
+        quality_record["output_ref"],
+        classification_started,
+        classification_completed,
+    )
     manifest = build_manifest(
         source,
-        [validation_record, quality_record],
+        [validation_record, quality_record, classification_record],
         effective_date,
         "user" if analysis_date else "server_default",
         _source_skus(validation),
@@ -314,8 +326,15 @@ async def quality_upload(
     bundle = build_bundle(manifest, {
         "validation": validation_bundle_result(validation, validation_record),
         "quality": quality_bundle_result(quality_payload),
+        "classification": classification_bundle_result(classification_payload),
     }, file.filename or "uploaded.csv")
-    return {"validation": _validation_response(validation), "quality": quality_payload, "manifest": manifest, "bundle": bundle}
+    return {
+        "validation": _validation_response(validation),
+        "quality": quality_payload,
+        "classification_result": classification_payload,
+        "manifest": manifest,
+        "bundle": bundle,
+    }
 
 
 @app.post("/api/analyse")
@@ -458,7 +477,12 @@ async def reproduce_bundle_upload(
     except BundleError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     original_stages = [stage["stage"] for stage in original["manifest"]["stages"]]
-    if original_stages not in (["validation"], ["validation", "quality"], ["validation", "forecast"]):
+    if original_stages not in (
+        ["validation"],
+        ["validation", "quality"],
+        ["validation", "quality", "classification"],
+        ["validation", "forecast"],
+    ):
         raise HTTPException(status_code=400, detail="This combination of recorded stages is not supported for reproduction")
     try:
         effective_date = date.fromisoformat(analysis_date) if analysis_date else date.fromisoformat(original["manifest"]["as_of_date"])
@@ -485,6 +509,18 @@ async def reproduce_bundle_upload(
         quality_record = quality_stage(quality, validation_record["output_ref"], quality_started, quality_completed)
         stages.append(quality_record)
         results["quality"] = quality_bundle_result(quality)
+        if "classification" in original_stages:
+            classification_started = utc_now()
+            classification = classify_quality(quality)
+            classification_completed = utc_now()
+            classification_record = classification_stage(
+                classification,
+                quality_record["output_ref"],
+                classification_started,
+                classification_completed,
+            )
+            stages.append(classification_record)
+            results["classification"] = classification_bundle_result(classification)
     if "forecast" in original_stages and validation.verdict != "reject":
         forecast_started = utc_now()
         histories = _all_series_from_validation(validation)

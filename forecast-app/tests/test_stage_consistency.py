@@ -9,6 +9,7 @@ from pathlib import Path
 from starlette.datastructures import UploadFile
 
 import app
+from classification_engine import classify_quality
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
 from run_manifest import quality_stage, sha256_json, source_record, validation_stage
 from validator import ValidationOptions, validate_csv
@@ -55,7 +56,9 @@ class StageConsistencyTests(unittest.TestCase):
     def test_finding_code_ownership_is_disjoint(self):
         validation_codes = emitted_codes(APP / "validator.py")
         quality_codes = emitted_codes(APP / "quality_engine.py")
+        classification_codes = emitted_codes(APP / "classification_engine.py")
         self.assertEqual(validation_codes & quality_codes, set())
+        self.assertEqual(classification_codes, set())
 
     def test_no_fixture_has_cross_stage_property_conflicts(self):
         as_of = date.fromisoformat(EXPECTED["as_of_date"])
@@ -97,6 +100,19 @@ class StageConsistencyTests(unittest.TestCase):
             for finding in item["findings"]
         } | {finding["code"] for finding in payload["quality"]["portfolio"]["findings"]}
         self.assertEqual(validation_codes & quality_codes, set())
+
+    def test_classification_does_not_copy_findings_or_contradict_refusal(self):
+        fixture = Path(__file__).parent / "classification_fixtures" / "30_classification_portfolio.csv"
+        as_of = date(2026, 8, 1)
+        validation = validate_csv(fixture.read_bytes(), ValidationOptions(as_of_date=as_of))
+        quality = assess_quality(validation, QualityOptions(as_of_date=as_of, grain="month")).to_dict()
+        classification = classify_quality(quality)
+        for item in classification["per_sku"].values():
+            self.assertNotIn("band", item)
+            self.assertNotIn("findings", item)
+        quality_50602 = next(item for item in quality["skus"] if item["sku"] == "PKG-50602")
+        self.assertEqual({finding["code"] for finding in quality_50602["findings"]}, {"HISTORY_TOO_SHORT", "SERIES_DISCONTINUED"})
+        self.assertEqual(classification["per_sku"]["PKG-50602"]["demand_class"], "unclassifiable")
 
     def test_fixture_07_quality_engine_payload_matches_reviewed_contract(self):
         fixture = FIXTURES / "07_zeros_versus_gaps.csv"

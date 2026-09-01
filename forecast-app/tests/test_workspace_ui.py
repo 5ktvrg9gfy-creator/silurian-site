@@ -7,7 +7,7 @@ HTML = (Path(__file__).parents[1] / "static" / "index.html").read_text(encoding=
 
 class WorkspaceUiTests(unittest.TestCase):
     def test_each_output_is_an_independent_panel(self):
-        for name in ("validation", "quality", "forecast", "provenance"):
+        for name in ("validation", "quality", "classification", "forecast", "provenance"):
             self.assertIn(f'data-workspace-panel="{name}"', HTML)
             self.assertIn(f'data-workspace-tab="{name}"', HTML)
         self.assertIn("renderPanel:name=>", HTML)
@@ -54,6 +54,23 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("excluded=all.filter(item=>item.band==='not_usable')", HTML)
         self.assertIn("reasons.map", HTML)
         self.assertNotIn("Nine of twelve lines are eligible", HTML)
+
+    def test_classification_panel_owns_matrix_grid_and_drawer_block(self):
+        self.assertLess(HTML.index('data-workspace-tab="quality"'), HTML.index('data-workspace-tab="classification"'))
+        self.assertLess(HTML.index('data-workspace-tab="classification"'), HTML.index('data-workspace-tab="forecast"'))
+        self.assertIn("Portfolio classification matrix", HTML)
+        self.assertIn("data-classification-cell", HTML)
+        self.assertIn("ABC volume class", HTML)
+        self.assertIn("Not meaningful for this demand class", HTML)
+        self.assertIn("classification-block", HTML)
+        self.assertIn('class="action-slot" aria-hidden="true"', HTML)
+
+    def test_classification_grid_keeps_state_and_joins_quality_for_display(self):
+        self.assertIn("workspaceState.classCell", HTML)
+        self.assertIn("workspaceState.classSearch", HTML)
+        self.assertIn("qualityBySku", HTML)
+        self.assertIn("item.band", HTML)
+        self.assertIn("item.findings", HTML)
 
 
 if __name__ == "__main__":
