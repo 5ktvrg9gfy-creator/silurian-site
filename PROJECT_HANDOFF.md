@@ -6,6 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
+- The build is being migrated to a new development environment. Complete the cold-start handover task before beginning Story 2.2. The migration task changes no engine behaviour and must finish with a merged documentation or fixture-integrity pull request and a green deployment.
 - Story 2.1 is complete. Pull request 41 merged at `40e3508` on 1 September 2026. Local verification passes 83 tests, the approved 15-SKU fixture passed Vercel Preview acceptance, and the same fixture passed the Production smoke test after deployment.
 - Story 2.0 is complete. Pull request 39 merged at `cc338d5` on 31 August 2026. Preview acceptance passed with the mixed portfolio fixture, and both Vercel Production deployments completed successfully. The Forecast Diagnostic Production shell, self-hosted Archivo font and stone mark all returned HTTP 200 after deployment.
 - Stories 1.1 through 1.6 are complete and merged into `main`.
@@ -38,6 +39,17 @@ The additional domains `silurianconsultinglimited.co.uk` and `silurianconsulting
 
 GitHub is the source of truth. Do not replace the repository with a complete design export or edit Production directly when the same change can be made through the normal branch and pull-request workflow.
 
+## Authority order
+
+When documentation disagrees, use this order:
+
+1. `expected_findings.json`, `expected_quality.json` and `expected_classification.json` for thresholds and expected behaviour.
+2. `run_manifest.schema.json` and `run_bundle.schema.json` for output shape.
+3. Build briefs for intent and reasoning, but not for numbers changed by later answers or expectation files.
+4. `CLAUDE.md` for standing build rules.
+
+Stop and report a contradiction rather than choosing a convenient source. The Story 1.2, 1.3 and 1.4 briefs predate later decisions and do not by themselves describe current Production thresholds or hashing behaviour.
+
 ## Repository map
 
 ### Root website
@@ -50,6 +62,7 @@ GitHub is the source of truth. Do not replace the repository with a complete des
 - `assets/fonts/Archivo-Variable.ttf`: self-hosted Archivo variable font
 - `assets/fonts/OFL.txt`: Archivo's SIL Open Font Licence
 - `MAINTENANCE.md`: marketing-site maintenance notes
+- `CLAUDE.md`: standing repository rules and authority order for a cold start
 - `PROJECT_HANDOFF.md`: mandatory build recovery and transfer record
 
 ### Forecast Diagnostic
@@ -68,6 +81,9 @@ GitHub is the source of truth. Do not replace the repository with a complete des
 - `forecast-app/determinism.py`: uncached repeat-run measurement
 - `forecast-app/tests/`: automated tests and fixed fixtures
 - `forecast-app/docs/`: signed-off contracts, surveys, open questions, amendments and deployment evidence
+- `forecast-app/docs/fixture-inventory.md`: every fixed fixture, its purpose and the deployed end-to-end check
+- `forecast-app/docs/ADR-001-manifest-integrity-hashing.md`: final two-hash manifest decision and rationale
+- `forecast-app/docs/final-handoff-audit.md`: final Codex shutdown audit and residual owner actions
 - `forecast-app/vercel.json`: Vercel Python application configuration
 - `forecast-app/requirements.txt`: deployed dependencies
 
@@ -217,18 +233,34 @@ Key references:
 
 ## Application routes
 
-- `GET /`: Forecast Diagnostic interface
-- `GET /health`: service and selected-provider status
-- `GET /sample-data.csv`: single-SKU sample
-- `GET /sample-portfolio.csv`: portfolio sample
-- `GET /workspace-assets/{asset_name}`: allow-listed self-hosted Archivo font and stone mark
-- `POST /api/validate`: validation-only run
-- `POST /api/quality`: portfolio data-quality assessment followed by classification
-- `POST /api/analyse`: single-SKU forecast and risk analysis
-- `POST /api/analyse-portfolio`: portfolio forecast and prioritisation
-- `POST /api/reproduce-bundle`: rerun validation, quality or classification from a supplied source and compare it with a bundle
+| Route | Purpose and return |
+|---|---|
+| `GET /` | Returns the Forecast Diagnostic HTML interface. |
+| `GET /health` | Returns `status` and the selected forecast provider name. |
+| `GET /sample-data.csv` | Downloads the synthetic single-SKU demand sample. |
+| `GET /sample-portfolio.csv` | Downloads the synthetic portfolio sample with inventory fields. |
+| `GET /workspace-assets/{asset_name}` | Returns only the allow-listed Archivo font or stone mark. Other names return 404. |
+| `POST /api/validate` | Validates one CSV. Returns validation and a manifest. A rejected file returns 422 and never calls a model. |
+| `POST /api/quality` | Validates, assesses quality and classifies. Returns validation, `quality`, `classification_result`, manifest and confidential bundle. A rejected file returns 422 before quality or classification. |
+| `POST /api/analyse` | Validates and forecasts one SKU, then returns the forecast and inventory result plus validation, manifest and confidential bundle. |
+| `POST /api/analyse-portfolio` | Validates and forecasts a portfolio with supply inputs, then returns prioritised results plus validation, manifest and confidential bundle. |
+| `POST /api/reproduce-bundle` | Verifies an uploaded bundle, reruns its recorded supported stages from the supplied source, and returns the comparison plus the candidate manifest. |
 
 Recorded bundles reopen entirely in the browser. There is no server reopen route.
+
+Current result and evidence versions:
+
+- validation result: 1.1
+- quality result: 1.2
+- classification result: 1.0
+- run manifest: 1.4, with legacy 1.2 and 1.3 accepted where the schema permits
+- confidential run bundle: 1.1
+
+## Fixture inventory and deployed check
+
+`forecast-app/docs/fixture-inventory.md` lists every validation, quality, classification, manifest and bundle fixture and explains its planted condition. Machine-readable thresholds and expected behaviour remain in the three expectation JSON files named in the authority order.
+
+For a deployed end-to-end classification check, upload the committed `forecast-app/tests/classification_fixtures/30_classification_portfolio.csv`, set analysis date `2026-08-01`, select monthly frequency and assess data quality. Classification must show 15 lines, 17.7 percent lumpy volume, two unclassifiable lines, 11 populated matrix cells and four disabled empty cells. Selecting A and lumpy must isolate `PKG-50301` at 13.86 percent of volume with caveated quality and `OUTLIER_CANDIDATE`.
 
 ## Marketing-site production configuration
 
@@ -245,27 +277,29 @@ Archivo is served from `assets/fonts/Archivo-Variable.ttf`. Do not restore Googl
 
 Approved brand palette tokens are charcoal ink `#3f3d3b`, deep logo charcoal `#1a1918`, main orange `#ec6917`, dark logo orange `#c15613` and optional warm neutral `#cabfad`. Deep charcoal is available as `--color-charcoal-deep`; the optional neutral is available as `--color-neutral-brand` but is intentionally unused on the current site.
 
-The current marketing preview changes only spacing and contact-section colours in `index.html`. It adds no asset, third-party request, environment variable or deployment-setting change. The white contact text is a visual sample and should be reviewed for readability before merge.
-
 The main repository is connected to both Vercel projects. Pull requests may therefore show checks for `silurian-site` and `silurian-forecast-diagnostic`. Confirm the check relevant to the changed component, and investigate any unexpected failure before merging.
 
 ## Forecast production configuration
 
 The Vercel project uses the `forecast-app` Python application. Production is connected to `main`, and merging to `main` starts a Production deployment automatically.
 
-Required Production environment variables:
+Vercel configuration inventory at 1 September 2026. This records names and scopes only:
 
-- `FORECAST_PROVIDER=bigquery_timesfm`
-- `GOOGLE_CLOUD_PROJECT`
-- `GCP_PROJECT_NUMBER`
-- `GCP_WORKLOAD_IDENTITY_POOL_ID`
-- `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID`
-- `GCP_SERVICE_ACCOUNT_EMAIL`
-- `BIGQUERY_LOCATION`
-- `BIGQUERY_MAX_BYTES_BILLED`
-- `TIMESFM_REFERENCE_BASELINE_SHA256`
-- `TIMESFM_DETERMINISM_JSON`
-- `APP_VERSION`
+| Variable | Production | Preview |
+|---|---:|---:|
+| `FORECAST_PROVIDER` | yes | yes |
+| `GOOGLE_CLOUD_PROJECT` | yes | yes |
+| `GCP_PROJECT_NUMBER` | yes | yes |
+| `GCP_WORKLOAD_IDENTITY_POOL_ID` | yes | yes |
+| `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID` | yes | yes |
+| `GCP_SERVICE_ACCOUNT_EMAIL` | yes | yes |
+| `BIGQUERY_LOCATION` | yes | yes |
+| `BIGQUERY_MAX_BYTES_BILLED` | yes | yes |
+| `TIMESFM_REFERENCE_BASELINE_SHA256` | yes | yes |
+| `TIMESFM_DETERMINISM_JSON` | yes | only the legacy `codex/story-1-3-run-manifest` Preview scope |
+| `APP_VERSION` | no custom value | only the legacy `codex/story-1-3-run-manifest` Preview scope |
+
+The marketing Vercel project requires no custom runtime environment variables. Vercel supplies its own system variables to both projects.
 
 The Google Cloud values and the complete determinism JSON belong in Vercel, not in this repository. Never copy credentials, identity tokens or private Google Cloud identifiers into source files, commits, issues, manifests or this handoff.
 
@@ -273,11 +307,16 @@ The Google Cloud values and the complete determinism JSON belong in Vercel, not 
 
 `TIMESFM_MEASURE_DETERMINISM` is a temporary controlled-measurement flag. It must not remain enabled in Production. When enabled in an isolated Preview, each forecast request runs TimesFM ten times and incurs additional time and BigQuery usage.
 
+The approved TimesFM canary output hash is `803063c75e9de5e3e2113be3de5e9614a86988f2589f423417bc1cefabff8a75`. It was last confirmed in Production on 29 August 2026. Every managed forecast runs the fixed synthetic reference series first. A changed rounded output sets `model.reference_check.status` to `drift_detected` and the API fails the forecast with a managed-model-change message. Do not replace the baseline until the provider change has been investigated and documented.
+
 ## Authentication and model path
 
 - Vercel obtains a short-lived identity token through its OIDC integration.
 - Google Workload Identity Federation exchanges that token for restricted Google credentials.
-- The application impersonates the configured service account.
+- The Google Cloud project identifier is supplied by `GOOGLE_CLOUD_PROJECT`. Its value is deliberately not committed.
+- The application impersonates the service account named by `GCP_SERVICE_ACCOUNT_EMAIL`. Its value is deliberately not committed.
+- No named BigQuery dataset is configured by the application. Parameterised forecast queries use anonymous query-result storage under provider lifecycle rules.
+- BigQuery processing region is `europe-west2`.
 - BigQuery runs its managed TimesFM 2.5 model through `AI.FORECAST`.
 - Query caching is explicitly disabled for managed forecasts.
 - No static Google service-account key is stored in GitHub or sent to the browser.
@@ -306,6 +345,8 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 ```text
 python -m unittest discover -s tests
 ```
+
+The current local suite contains 83 tests. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
 
 Focused provenance, bundle, stage-consistency and classification checks:
 
@@ -385,10 +426,15 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
 - Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Story 2.0 adds workspace contract tests without changing the engine. Story 2.1 classifies the portfolio but deliberately stops before forecast-method routing.
+- GitHub `main` has no classic branch protection and no repository ruleset. Pull requests and passing checks are process controls rather than enforced repository controls.
+- No pull-request workflow runs the Python suite. Vercel deployment readiness is not a substitute for automated engine tests.
+- Exact Google Cloud project and service-account identifiers are intentionally external to the repository. Vercel and Google Cloud access are required to administer them.
+- Five obsolete local worktrees contain line-ending-only CSV changes, and seven obsolete branch refs remain outside `main`. See `forecast-app/docs/final-handoff-audit.md`; deletion requires owner approval.
+- The committed `expected_classification.json` blob has the approved SHA-256, but a default Windows checkout rewrites its line endings because JSON is not yet pinned to LF. The migration task must fix `.gitattributes` before enforcing working-tree fixture hashes.
 
 ## Next starting point
 
-Story 2.1 is released and closed. Story 2.2 should start from current `main` after merge `40e3508`. Preserve the Story 2.1 classifications as evidence and implications only; do not turn them into method routing without a separately approved contract. Preserve the workspace component boundary and existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
+Do not begin Story 2.2 first. Prove the migration with the cold-start handover task: a new environment reads `CLAUDE.md`, runs the suite, exercises fixture 30 against the deployed site, adds the separately requested fixture-integrity control, records handover gaps, merges its pull request and reaches a green deployment. After that, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
 
 ## End-of-build handoff checklist
 
