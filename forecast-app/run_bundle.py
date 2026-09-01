@@ -13,7 +13,7 @@ from run_manifest import SCHEMA as MANIFEST_SCHEMA
 from run_manifest import canonical_json, exact_manifest_hash, sha256_json, utc_now
 
 
-BUNDLE_SCHEMA_VERSION = "1.0"
+BUNDLE_SCHEMA_VERSION = "1.1"
 BUNDLE_SCHEMA = json.loads(Path(__file__).with_name("run_bundle.schema.json").read_text(encoding="utf-8"))
 CONFIDENTIALITY_STATEMENT = (
     "CONFIDENTIAL: this bundle contains client data. It belongs to the client and must not be shared like a run manifest."
@@ -109,6 +109,14 @@ def quality_bundle_result(report: dict[str, Any]) -> dict[str, Any]:
             "Outliers are candidates, never corrections. Missing periods were not filled with zero, and no supplied value was altered."
         ),
     }
+
+
+def classification_bundle_result(result: dict[str, Any]) -> dict[str, Any]:
+    payload = deepcopy(result)
+    for item in payload.get("per_sku", {}).values():
+        if "band" in item or "findings" in item:
+            raise BundleError("Classification results must not duplicate quality bands or findings")
+    return payload
 
 
 def _next_month(value: date) -> date:
@@ -221,7 +229,7 @@ def compare_reproduction(original: dict[str, Any], candidate: dict[str, Any]) ->
     }
     if differences:
         return {**base, "outcome": "not_comparable"}
-    for name in ("validation", "quality"):
+    for name in ("validation", "quality", "classification"):
         if name in original_stages:
             if original_stages[name]["output_ref"]["sha256"] != candidate_stages[name]["output_ref"]["sha256"]:
                 return {**base, "outcome": "differs", "differences": [f"{name} result differs"]}

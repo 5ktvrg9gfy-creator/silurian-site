@@ -1,13 +1,41 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://silurian.example/schemas/run_bundle/1.0.json",
+  "$id": "https://silurian.example/schemas/run_bundle/1.1.json",
   "title": "Silurian Forecast Diagnostic run bundle",
   "description": "A portable record containing client data. Reopening renders recorded results and never recomputes.",
   "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "manifest": {
+            "properties": {
+              "stages": {"contains": {"properties": {"stage": {"const": "classification"}}, "required": ["stage"]}}
+            },
+            "required": ["stages"]
+          }
+        }
+      },
+      "then": {"properties": {"results": {"required": ["classification"]}}}
+    },
+    {
+      "if": {"properties": {"results": {"required": ["classification"]}}},
+      "then": {
+        "properties": {
+          "manifest": {
+            "properties": {
+              "stages": {"contains": {"properties": {"stage": {"const": "classification"}}, "required": ["stage"]}}
+            },
+            "required": ["stages"]
+          }
+        }
+      }
+    }
+  ],
   "required": ["bundle_schema_version", "confidentiality", "manifest", "results", "integrity"],
   "additionalProperties": false,
   "properties": {
-    "bundle_schema_version": {"type": "string", "const": "1.0"},
+    "bundle_schema_version": {"type": "string", "const": "1.1"},
     "confidentiality": {
       "type": "object",
       "required": ["contains_client_data", "statement"],
@@ -46,6 +74,33 @@
             "findings": {"type": "array"},
             "exceptions": {"type": "array"},
             "method_note": {"type": "string"}
+          }
+        },
+        "classification": {
+          "type": "object",
+          "required": ["schema_version", "thresholds", "per_sku", "portfolio", "matrix", "method_note"],
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {"type": "string"},
+            "thresholds": {"type": "object"},
+            "per_sku": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "not": {"anyOf": [{"required": ["band"]}, {"required": ["findings"]}]}
+              }
+            },
+            "portfolio": {"type": "object"},
+            "matrix": {
+              "type": "object",
+              "minProperties": 15,
+              "maxProperties": 15,
+              "additionalProperties": {
+                "type": "object",
+                "required": ["line_count", "volume_share_pct"]
+              }
+            },
+            "method_note": {"type": "string", "minLength": 1}
           }
         },
         "forecast": {

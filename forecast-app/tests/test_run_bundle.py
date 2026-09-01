@@ -5,11 +5,13 @@ from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
+from classification_engine import classify_quality
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
 from run_bundle import (
     BundleError,
     build_bundle,
     bundle_hash,
+    classification_bundle_result,
     compare_reproduction,
     forecast_bundle_result,
     quality_bundle_result,
@@ -17,7 +19,7 @@ from run_bundle import (
     validation_bundle_result,
 )
 from run_manifest import (
-    build_manifest, content_fingerprint, exact_manifest_hash, forecast_stage, model_identity,
+    build_manifest, classification_stage, content_fingerprint, exact_manifest_hash, forecast_stage, model_identity,
     quality_stage, reference_check, sha256_json, source_record, validation_stage,
 )
 from validator import ValidationOptions, validate_csv
@@ -43,14 +45,19 @@ def make_quality_bundle():
         as_of_date=date(2026, 8, 1), as_of_date_source="user_supplied", thresholds=dict(DEFAULT_THRESHOLDS)
     )).to_dict()
     quality_record = quality_stage(quality, validation_record["output_ref"], "2026-08-30T09:00:01Z", "2026-08-30T09:00:02Z")
+    classification = classify_quality(quality)
+    classification_record = classification_stage(
+        classification, quality_record["output_ref"], "2026-08-30T09:00:02Z", "2026-08-30T09:00:03Z"
+    )
     manifest = build_manifest(
-        source, [validation_record, quality_record], date(2026, 8, 1), "user",
+        source, [validation_record, quality_record, classification_record], date(2026, 8, 1), "user",
         [row["sku"] for row in validation.normalised_rows],
         created_at="2026-08-30T09:00:03Z", environment=deepcopy(ENVIRONMENT),
     )
     return build_bundle(manifest, {
         "validation": validation_bundle_result(validation, validation_record),
         "quality": quality_bundle_result(quality),
+        "classification": classification_bundle_result(classification),
     }, "20_portfolio_mixed.csv")
 
 
@@ -98,7 +105,7 @@ class RunBundleTests(unittest.TestCase):
         bundle = make_quality_bundle()
         reopened = reopen_bundle(json.dumps(bundle).encode())
         self.assertEqual(reopened, bundle)
-        self.assertEqual(set(bundle["results"]), {"validation", "quality"})
+        self.assertEqual(set(bundle["results"]), {"validation", "quality", "classification"})
         self.assertEqual(len(bundle["results"]["quality"]["per_sku"]), 12)
         self.assertEqual(bundle["integrity"]["bundle_sha256"], bundle_hash(bundle))
 
@@ -176,6 +183,19 @@ class RunBundleTests(unittest.TestCase):
         with self.assertRaises(BundleError):
             reopen_bundle(json.dumps(bundle).encode())
 
+    def test_classification_stage_and_result_are_required_together(self):
+        without_result = make_quality_bundle()
+        without_result["results"].pop("classification")
+        with self.assertRaises(BundleError):
+            reopen_bundle(json.dumps(without_result).encode())
+
+        without_stage = make_quality_bundle()
+        without_stage["manifest"]["stages"] = [
+            stage for stage in without_stage["manifest"]["stages"] if stage["stage"] != "classification"
+        ]
+        with self.assertRaises(BundleError):
+            reopen_bundle(json.dumps(without_stage).encode())
+
     def test_legacy_manifest_with_readable_filename_remains_reopenable(self):
         bundle = make_quality_bundle()
         manifest = bundle["manifest"]
@@ -204,7 +224,7 @@ class RunBundleTests(unittest.TestCase):
         second["integrity"]["bundle_sha256"] = bundle_hash(second)
         result = compare_reproduction(first, second)
         self.assertEqual(result["outcome"], "reproduced")
-        self.assertEqual(result["exact_stages"], ["validation", "quality"])
+        self.assertEqual(result["exact_stages"], ["validation", "quality", "classification"])
 
     def test_engine_change_is_not_comparable(self):
         first = make_quality_bundle()

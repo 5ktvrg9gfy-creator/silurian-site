@@ -3,9 +3,10 @@ from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
+from classification_engine import classify_quality
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
-from run_bundle import build_bundle, quality_bundle_result, stable_bundle_json, validation_bundle_result
-from run_manifest import build_manifest, quality_stage, source_record, validation_stage
+from run_bundle import build_bundle, classification_bundle_result, quality_bundle_result, stable_bundle_json, validation_bundle_result
+from run_manifest import build_manifest, classification_stage, quality_stage, source_record, validation_stage
 from validator import ValidationOptions, validate_csv
 
 
@@ -63,14 +64,19 @@ def main() -> None:
     )).to_dict()
     assert_independent_quality_target(quality, expected)
     quality_record = quality_stage(quality, validation_record["output_ref"], "2026-08-30T09:00:01Z", "2026-08-30T09:00:02Z")
+    classification = classify_quality(quality)
+    classification_record = classification_stage(
+        classification, quality_record["output_ref"], "2026-08-30T09:00:02Z", "2026-08-30T09:00:03Z"
+    )
     manifest = build_manifest(
-        source, [validation_record, quality_record], date(2026, 8, 1), "user",
+        source, [validation_record, quality_record, classification_record], date(2026, 8, 1), "user",
         [row["sku"] for row in validation.normalised_rows],
         created_at="2026-08-30T09:00:03Z", environment=deepcopy(ENVIRONMENT),
     )
     bundle = build_bundle(manifest, {
         "validation": validation_bundle_result(validation, validation_record),
         "quality": quality_bundle_result(quality),
+        "classification": classification_bundle_result(classification),
     }, "20_portfolio_mixed.csv")
     OUTPUT.mkdir(parents=True, exist_ok=True)
     (OUTPUT / "run_manifest.golden.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

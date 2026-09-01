@@ -1,11 +1,12 @@
 # Silurian project handoff
 
-Last updated: 31 August 2026
+Last updated: 1 September 2026
 
 This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
 ## Current position
 
+- Story 2.1 is implemented on branch `codex/story-2-1-classification` and is awaiting pull-request and Vercel Preview acceptance. Local verification passes 83 tests. Preview and Production have not yet been tested or changed.
 - Story 2.0 is complete. Pull request 39 merged at `cc338d5` on 31 August 2026. Preview acceptance passed with the mixed portfolio fixture, and both Vercel Production deployments completed successfully. The Forecast Diagnostic Production shell, self-hosted Archivo font and stone mark all returned HTTP 200 after deployment.
 - Stories 1.1 through 1.6 are complete and merged into `main`.
 - Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
@@ -57,6 +58,7 @@ GitHub is the source of truth. Do not replace the repository with a complete des
 - `forecast-app/static/index.html`: complete browser interface
 - `forecast-app/validator.py`: CSV input validation and normalisation
 - `forecast-app/quality_engine.py`: portfolio quality metrics and findings
+- `forecast-app/classification_engine.py`: demand-state, ABC volume-class and contextual XYZ classification derived from the quality result
 - `forecast-app/forecast_engine.py`: statistical baselines and inventory-risk calculations
 - `forecast-app/bigquery_timesfm.py`: BigQuery TimesFM 2.5 provider and Vercel OIDC authentication
 - `forecast-app/run_manifest.py`: run-manifest generation, integrity and provenance
@@ -192,6 +194,27 @@ Key references:
 - `forecast-app/tests/test_workspace_ui.py`
 - `forecast-app/docs/2.0-open-questions.md`
 
+### Story 2.1: portfolio classification
+
+Story 2.1 is implemented on branch `codex/story-2-1-classification`. It adds a classification stage after quality without changing validation, quality or forecast calculations. The stage consumes the recorded quality result and reuses its ADI and CV-squared values exactly. It never recomputes those structural metrics.
+
+Every usable line receives one of four demand states from the pinned ADI 1.32 and CV-squared 0.49 cuts: smooth, erratic, intermittent or lumpy. Lines that cannot be classified receive an explicit unclassifiable state and refusal reason. ABC is based on cumulative demand volume with 80 and 95 percent cuts. XYZ is shown only for smooth and erratic demand, where it is meaningful; other demand states display `Not meaningful for this demand class`. Classification supplies implications only and does not select or name a forecast method.
+
+The workspace adds Classification between Data quality and Forecast. Its primary matrix crosses ABC volume class with the five demand states. All 15 cells are always visible, empty cells are disabled, and each populated cell shows volume share before line count. Selecting a populated cell filters the sortable, searchable SKU grid. The grid joins quality band and findings from the quality result at display time, so the classification artefact does not duplicate them. The existing SKU drawer now includes demand class, ABC volume class, contextual XYZ, ADI, CV squared, non-zero observations and the classification implication.
+
+The manifest schema is version 1.4 and records the classification input and output references, thresholds, estimator choices and outcome counts without exposing SKU names or commercial volumes. The confidential bundle schema is version 1.1 and can store, reopen and exactly reproduce a classification result. Legacy manifests and bundles remain supported.
+
+The approved fixture contains 15 SKUs and 466 rows across 35 monthly periods. It covers all four statistical demand quadrants, all three ABC classes, both sides of the threshold cuts and three refusal cases. Local automated verification passes all 83 tests. The consistency suite proves exact ADI and CV-squared reuse, schema stage/result conditionals, bundle integrity and reproduction, and the contradiction case for PKG-50602. Local browser acceptance with analysis date 1 August 2026 confirmed 15 classified lines, 17.7 percent lumpy volume, two unclassifiable lines, 11 populated matrix cells, four disabled empty cells, the contextual XYZ wording, and a cell filter that isolates PKG-50301 as lumpy, class A, 13.86 percent of volume, caveated with `OUTLIER_CANDIDATE`. No environment variable or deployment setting was added or changed.
+
+Key references:
+
+- `forecast-app/classification_engine.py`
+- `forecast-app/tests/test_classification_engine.py`
+- `forecast-app/tests/classification_fixtures/30_classification_portfolio.csv`
+- `forecast-app/tests/classification_fixtures/expected_classification.json`
+- `forecast-app/docs/2.1-fixture-note.md`
+- `forecast-app/static/index.html`
+
 ## Application routes
 
 - `GET /`: Forecast Diagnostic interface
@@ -200,10 +223,10 @@ Key references:
 - `GET /sample-portfolio.csv`: portfolio sample
 - `GET /workspace-assets/{asset_name}`: allow-listed self-hosted Archivo font and stone mark
 - `POST /api/validate`: validation-only run
-- `POST /api/quality`: portfolio data-quality assessment
+- `POST /api/quality`: portfolio data-quality assessment followed by classification
 - `POST /api/analyse`: single-SKU forecast and risk analysis
 - `POST /api/analyse-portfolio`: portfolio forecast and prioritisation
-- `POST /api/reproduce-bundle`: rerun validation or quality from a supplied source and compare it with a bundle
+- `POST /api/reproduce-bundle`: rerun validation, quality or classification from a supplied source and compare it with a bundle
 
 Recorded bundles reopen entirely in the browser. There is no server reopen route.
 
@@ -284,10 +307,10 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 python -m unittest discover -s tests
 ```
 
-Focused Story 1.3, 1.4, 1.5 and 1.6 checks:
+Focused provenance, bundle, stage-consistency and classification checks:
 
 ```text
-python -m unittest tests.test_app_manifest tests.test_bigquery_timesfm tests.test_run_manifest tests.test_determinism tests.test_run_bundle tests.test_stage_consistency tests.test_validator
+python -m unittest tests.test_app_manifest tests.test_bigquery_timesfm tests.test_run_manifest tests.test_determinism tests.test_run_bundle tests.test_stage_consistency tests.test_validator tests.test_classification_engine tests.test_workspace_ui
 ```
 
 On the current Windows machine, the repository's embedded Python can be used when the system `python` command is unavailable:
@@ -361,11 +384,11 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The root design-system documentation contains legacy export material. The working Forecast Diagnostic interface is `forecast-app/static/index.html`.
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
-- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Story 2.0 adds workspace contract tests without changing the engine.
+- Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Story 2.0 adds workspace contract tests without changing the engine. Story 2.1 classifies the portfolio but deliberately stops before forecast-method routing.
 
 ## Next starting point
 
-Story 2.0 is released and closed. The next build starts with Story 2.1 from current `main` after merge `cc338d5`. Preserve the workspace component boundary and existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
+Story 2.1 is implemented locally on `codex/story-2-1-classification`. The next step is to push the branch, open a pull request, run the approved 15-SKU classification fixture in Vercel Preview, and verify the matrix, PKG-50301 discovery path, drawer evidence, bundle reopen and exact classification reproduction. Merge only after Preview approval, then repeat the relevant Production smoke test and replace this in-progress entry with the pull-request merge reference and Production evidence. Story 2.2 can then start from the resulting `main`. Preserve the workspace component boundary and existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
 
 ## End-of-build handoff checklist
 
