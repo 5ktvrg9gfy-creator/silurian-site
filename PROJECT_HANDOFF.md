@@ -6,7 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
-- Story 2.1 is implemented on branch `codex/story-2-1-classification` and is awaiting pull-request and Vercel Preview acceptance. Local verification passes 83 tests. Preview and Production have not yet been tested or changed.
+- Story 2.1 is complete. Pull request 41 merged at `40e3508` on 1 September 2026. Local verification passes 83 tests, the approved 15-SKU fixture passed Vercel Preview acceptance, and the same fixture passed the Production smoke test after deployment.
 - Story 2.0 is complete. Pull request 39 merged at `cc338d5` on 31 August 2026. Preview acceptance passed with the mixed portfolio fixture, and both Vercel Production deployments completed successfully. The Forecast Diagnostic Production shell, self-hosted Archivo font and stone mark all returned HTTP 200 after deployment.
 - Stories 1.1 through 1.6 are complete and merged into `main`.
 - Story 1.5 is complete. Pull request 31 merged at `157b776`, and both Preview and Production acceptance passed.
@@ -196,7 +196,7 @@ Key references:
 
 ### Story 2.1: portfolio classification
 
-Story 2.1 is implemented on branch `codex/story-2-1-classification`. It adds a classification stage after quality without changing validation, quality or forecast calculations. The stage consumes the recorded quality result and reuses its ADI and CV-squared values exactly. It never recomputes those structural metrics.
+Story 2.1 merged in pull request 41 at `40e3508`. It adds a classification stage after quality without changing validation, quality or forecast calculations. The stage consumes the recorded quality result and reuses its ADI and CV-squared values exactly. It never recomputes those structural metrics.
 
 Every usable line receives one of four demand states from the pinned ADI 1.32 and CV-squared 0.49 cuts: smooth, erratic, intermittent or lumpy. Lines that cannot be classified receive an explicit unclassifiable state and refusal reason. ABC is based on cumulative demand volume with 80 and 95 percent cuts. XYZ is shown only for smooth and erratic demand, where it is meaningful; other demand states display `Not meaningful for this demand class`. Classification supplies implications only and does not select or name a forecast method.
 
@@ -204,7 +204,7 @@ The workspace adds Classification between Data quality and Forecast. Its primary
 
 The manifest schema is version 1.4 and records the classification input and output references, thresholds, estimator choices and outcome counts without exposing SKU names or commercial volumes. The confidential bundle schema is version 1.1 and can store, reopen and exactly reproduce a classification result. Legacy manifests and bundles remain supported.
 
-The approved fixture contains 15 SKUs and 466 rows across 35 monthly periods. It covers all four statistical demand quadrants, all three ABC classes, both sides of the threshold cuts and three refusal cases. Local automated verification passes all 83 tests. The consistency suite proves exact ADI and CV-squared reuse, schema stage/result conditionals, bundle integrity and reproduction, and the contradiction case for PKG-50602. Local browser acceptance with analysis date 1 August 2026 confirmed 15 classified lines, 17.7 percent lumpy volume, two unclassifiable lines, 11 populated matrix cells, four disabled empty cells, the contextual XYZ wording, and a cell filter that isolates PKG-50301 as lumpy, class A, 13.86 percent of volume, caveated with `OUTLIER_CANDIDATE`. No environment variable or deployment setting was added or changed.
+The approved fixture contains 15 SKUs and 466 rows across 35 monthly periods. It covers all four statistical demand quadrants, all three ABC classes, both sides of the threshold cuts and three refusal cases. Local automated verification passes all 83 tests. The consistency suite proves exact ADI and CV-squared reuse, schema stage/result conditionals, bundle integrity and reproduction, and the contradiction case for PKG-50602. Browser acceptance used analysis date 1 August 2026 and monthly frequency. Local and Vercel Preview testing confirmed 15 classified lines, 17.7 percent lumpy volume, two unclassifiable lines, 11 populated matrix cells, four disabled empty cells, the contextual XYZ wording, and a cell filter that isolates PKG-50301 as lumpy, class A, 13.86 percent of volume, caveated with `OUTLIER_CANDIDATE`. The user repeated the fixture check in Production after merge and confirmed the result. The Production deployment for merge `40e3508` was Ready and the public application loaded successfully. No environment variable or deployment setting was added or changed.
 
 Key references:
 
@@ -388,7 +388,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 
 ## Next starting point
 
-Story 2.1 is implemented locally on `codex/story-2-1-classification`. The next step is to push the branch, open a pull request, run the approved 15-SKU classification fixture in Vercel Preview, and verify the matrix, PKG-50301 discovery path, drawer evidence, bundle reopen and exact classification reproduction. Merge only after Preview approval, then repeat the relevant Production smoke test and replace this in-progress entry with the pull-request merge reference and Production evidence. Story 2.2 can then start from the resulting `main`. Preserve the workspace component boundary and existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
+Story 2.1 is released and closed. Story 2.2 should start from current `main` after merge `40e3508`. Preserve the Story 2.1 classifications as evidence and implications only; do not turn them into method routing without a separately approved contract. Preserve the workspace component boundary and existing controls: London processing, cache-hit rejection, metadata-only logging, browser-only bundle reopening, manifest filename hashing, disjoint validation and quality finding ownership, and the pinned CV-squared estimator and observation minimum.
 
 ## End-of-build handoff checklist
 
