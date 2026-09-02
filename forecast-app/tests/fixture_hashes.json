@@ -19,6 +19,7 @@
     "forecast-app/tests/fixtures/10_header_variants_order_book.csv": "98cab3589b485ea588c88af1eca3ccf058e7340c9707964eca8416f5a6e24d91",
     "forecast-app/tests/fixtures/11_actuals_and_forecast_mixed.csv": "c31a7bab410f3ee0dd10e3f278b62015bc3cdaa554250559ad88261f01d9df5a",
     "forecast-app/tests/fixtures/12_wrong_file_inventory_snapshot.csv": "31b8ba62f2775e21745f5277a58617f6841ff338fa880156195096f28bcf760c",
+    "forecast-app/tests/fixtures/31_routing_portfolio.csv": "2c55f4f7c30e6f708c7389a2df3850a8fb7947b1187f19c95531b4aaca9601f6",
     "forecast-app/tests/fixtures/expected_findings.json": "b57a824fd873b82e31d3d41f6c7ef316460d1c90cd262085ed68934290bf167a",
     "forecast-app/tests/fixtures/MANIFEST.md": "50949a2dd6c362fb2199ac59dcceb7d47f86815f3e3c593065c2d1f1e5fc56f8",
     "forecast-app/tests/quality_fixtures/00_clean_control.csv": "c4518c47dd8e0709aaf4e5a8e4ec3513fc4c3cf6a5ed0e3787a947458ed20b1e",
