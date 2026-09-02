@@ -14,7 +14,7 @@ from determinism import measure_forecast_determinism
 from classification_engine import classify_quality
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
-from routing_engine import route_portfolio
+from routing_engine import RoutingError, route_portfolio
 from run_bundle import (
     BundleError,
     build_bundle,
@@ -276,16 +276,48 @@ async def validate_upload(file: UploadFile = File(...), validation_options: str 
     return JSONResponse(status_code=status_code, content={"validation": _validation_response(validation), "manifest": manifest})
 
 
+def _routing_resolutions(raw_resolutions: str) -> dict:
+    if not isinstance(raw_resolutions, str):
+        raw_resolutions = "{}"
+    try:
+        supplied = json.loads(raw_resolutions or "{}")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Routing resolutions must be valid JSON") from exc
+    if not isinstance(supplied, dict) or not all(isinstance(value, dict) for value in supplied.values()):
+        raise HTTPException(status_code=400, detail="Routing resolutions must map a SKU to a resolution record")
+    return supplied
+
+
+def _resolutions_from_bundle(routing_result: dict) -> dict:
+    """Rebuild the resolutions a recorded run applied, in pass order, so a reproduction repeats them."""
+    resolutions: dict = {}
+    per_sku = routing_result.get("per_sku", {})
+    for entry in routing_result.get("passes", []):
+        sku = entry.get("sku")
+        if not sku:
+            continue
+        recorded = (per_sku.get(sku) or {}).get("resolution") or {}
+        resolutions[sku] = {
+            "code": entry["code"],
+            "applied_at": entry["applied_at"],
+            "successor_sku": entry.get("successor_sku"),
+            "note": recorded.get("note"),
+        }
+    return resolutions
+
+
 @app.post("/api/quality")
 async def quality_upload(
     file: UploadFile = File(...),
     analysis_date: str | None = Form(None),
     grain: str | None = Form(None),
     validation_options: str = Form("{}"),
+    routing_resolutions: str = Form("{}"),
 ):
     validation_started = utc_now()
     raw = await file.read()
     _check_upload(raw)
+    resolutions = _routing_resolutions(routing_resolutions)
     try:
         effective_date = date.fromisoformat(analysis_date) if analysis_date else date.today()
     except ValueError as exc:
@@ -320,7 +352,10 @@ async def quality_upload(
     )
     quality_payload = quality.to_dict()
     routing_started = utc_now()
-    routing_payload = route_portfolio(quality_payload, classification_payload)
+    try:
+        routing_payload = route_portfolio(quality_payload, classification_payload, resolutions)
+    except RoutingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     routing_completed = utc_now()
     routing_record = routing_stage(
         routing_payload,
@@ -538,7 +573,12 @@ async def reproduce_bundle_upload(
             results["classification"] = classification_bundle_result(classification)
             if "routing" in original_stages:
                 routing_started = utc_now()
-                routing = route_portfolio(quality, classification)
+                try:
+                    routing = route_portfolio(
+                        quality, classification, _resolutions_from_bundle(original["results"].get("routing", {}))
+                    )
+                except RoutingError as exc:
+                    raise HTTPException(status_code=422, detail=str(exc)) from exc
                 routing_completed = utc_now()
                 routing_record = routing_stage(
                     routing,

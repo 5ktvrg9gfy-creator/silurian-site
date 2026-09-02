@@ -6,6 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
+- Story 2.3 planner action view is built on branch `claude/story-2-3-action-view` and is in a pull request awaiting Preview acceptance, merge and a green Production deployment. The local suite passes 119 tests. Fixtures 30 and 31 still produce their recorded results. The run manifest schema is 1.6 and the confidential bundle schema is 1.3. Sprint 2 does not close until the one minute action test in the brief's section 7 passes on a person who did not build the tool.
 - The expected JSON line-ending follow-up merged in pull request 48 at `7416fc8` on 2 September 2026. A fresh clone of `main` at that commit has a clean working tree and passes 110 tests.
 - Story 2.2 routing merged in pull request 47 at `5e41a4a` on 2 September 2026. A fresh clone of `main` at that commit has a clean working tree and passes 110 tests. All 14 fixture 31 decisions match `expected_routing.json` v1.1. The run manifest schema is 1.5 and the confidential bundle schema is 1.2. The Vercel Preview deployments for the merged head were Ready with no failed check. The Production smoke test and the fixture 31 routing check against Production have not been run from the build session, because its egress policy blocks `vercel.app`; the owner runs them and records the result here.
 - The cold-start handover merged in pull request 44 at `72ffd8c`. Fixture 31 merged in pull request 45 at `dce6b48` and the sample CSV line-ending fix in pull request 46 at `d85a030`, both on 2 September 2026. A fresh checkout of `main` is clean and passes 86 tests before Story 2.2.
@@ -261,6 +262,31 @@ Key references:
 - `forecast-app/docs/fixture-inventory.md`
 - `forecast-app/static/index.html`
 
+### Story 2.3: planner action view, open items and provenance
+
+Story 2.3 is built and awaits merge. It turns each routing decision into an action a planner can take and captures the answer when they take it. Every decision carries a do this written against section 2 of the brief: the planner's next move, numbers first, no hedging and no method name beyond the decision families. The do this and the classification so what say different things on every decision, and a test proves no sentence appears in both. The `refused_data_quality` action names the specific data request from the quality codes on the line.
+
+A resolution records an answer and changes scope membership, and never changes a routing decision or a quality band by assertion. The effects follow section 3 exactly: `DISCONTINUED_CONFIRMED`, `SUPERSEDED_BY_SKU`, `TREAT_AS_NEW_LINE` and `EXCLUDE_FROM_SCOPE` resolve the line and take it out of forecast scope; `STILL_ACTIVE_DEMAND_GAP` and `STILL_ACTIVE_DATA_MISSING` resolve it in scope; `SUPPLY_LONGER_HISTORY` and `SUPPLY_CORRECTED_EXTRACT` record a data request and keep the line on the open items list as awaiting data; `DEFER` changes nothing. Every code carries a consequence sentence the interface shows before the resolution is applied. A test applies every code to a refused line and asserts the decision, eligibility, band, refusal, reason and action are unchanged and every other line is untouched.
+
+The open items list is its own panel, reachable from the routing panel and from a pill in the run context. It lists every unresolved, awaiting-data or deferred refusal ranked by volume share descending, with a count and a volume total at the top, and its empty state names when the last refusal was resolved. On fixture 31 it opens with five lines carrying 25.39 percent of volume: the five refused lines. The brief's 34.43 percent is the not-eligible share, which also counts the two `policy_only` lines that carry no refusal; see Q1 in `docs/2.3-open-questions.md`.
+
+Resolution capture: the drawer on a refused line carries a closed-list picker, a successor picker limited to the SKUs in the file for `SUPERSEDED_BY_SKU`, an optional note and the consequence sentence. There is no free-text path to a resolution. Applying one stamps the time in UTC, re-runs the whole pipeline with the resolutions supplied as `routing_resolutions` on `/api/quality`, and reopens the line. Each applied resolution is a pass in the manifest's routing options with the code, the applied time, the status and the SKU as a hash, never the identifier, following the Story 1.5 filename rule; the readable SKU, successor and note are in the bundle only. Reproduction replays the recorded passes. Provenance: every drawer block carries a tag naming the stage that produced it, the reused metrics carry a title saying quality computed them and classification reused them, and the routing result publishes a field-to-stage map.
+
+The manifest schema is 1.6: routing options gain `passes` and the routing outcome gains resolved, data requested, deferred and out-of-scope counts, all constrained to counts, codes and hashes. The bundle schema is 1.3: the routing result gains the action, the resolution with its note, passes with readable SKUs, resolution effects and statement sources. The routing engine version is 1.1.0. Manifests 1.2 to 1.6 and bundles 1.1 to 1.3 remain accepted.
+
+Local automated verification passes all 119 tests. Two controls were proved able to fail: changing one entry in the effects table fails the effects test, and a do this that repeats the reason fails the register test. A Chromium check of the local application with fixture 31 showed the run context pill reading five open items, the open items panel reading five lines carrying 25.39 percent of volume in the expected order, the `RTG-60403` drawer with five stage tags, the do this text and a closed-list picker with no text input, the consequence sentence appearing on selection before apply, the applied `SUPERSEDED_BY_SKU` resolution recorded with its successor while the decision still read discontinued confirm status, the pill and list dropping to four lines and 12.54 percent, the manifest pass carrying a SKU hash and no readable SKU, the note present in the bundle only, a `DEFER` on `RTG-60501` leaving the list at four with the line marked deferred, the list surviving a panel switch, and the bundle reopening in the browser at version 1.3 with manifest 1.6. No Preview or Production check has run.
+
+Open questions and defaults are in `docs/2.3-open-questions.md`. Two touch the brief's wording: the open items volume figure and the SKU reference in manifest passes.
+
+Key references:
+
+- `docs/briefs/2.3-build-brief.md`
+- `docs/2.3-open-questions.md`
+- `forecast-app/routing_engine.py`
+- `forecast-app/tests/test_routing_engine.py`
+- `forecast-app/tests/test_workspace_ui.py`
+- `forecast-app/static/index.html`
+
 ## Application routes
 
 | Route | Purpose and return |
@@ -271,7 +297,7 @@ Key references:
 | `GET /sample-portfolio.csv` | Downloads the synthetic portfolio sample with inventory fields. |
 | `GET /workspace-assets/{asset_name}` | Returns only the allow-listed Archivo font or stone mark. Other names return 404. |
 | `POST /api/validate` | Validates one CSV. Returns validation and a manifest. A rejected file returns 422 and never calls a model. |
-| `POST /api/quality` | Validates, assesses quality, classifies and routes. Returns validation, `quality`, `classification_result`, `routing_result`, manifest and confidential bundle. A rejected file returns 422 before quality, classification or routing. |
+| `POST /api/quality` | Validates, assesses quality, classifies and routes. Accepts optional `routing_resolutions` JSON mapping a SKU to a resolution code, applied time, optional successor and optional note, validated against the closed vocabulary. Returns validation, `quality`, `classification_result`, `routing_result`, manifest and confidential bundle. A rejected file returns 422 before quality, classification or routing; an invalid resolution returns 400. |
 | `POST /api/analyse` | Validates and forecasts one SKU, then returns the forecast and inventory result plus validation, manifest and confidential bundle. |
 | `POST /api/analyse-portfolio` | Validates and forecasts a portfolio with supply inputs, then returns prioritised results plus validation, manifest and confidential bundle. |
 | `POST /api/reproduce-bundle` | Verifies an uploaded bundle, reruns its recorded supported stages from the supplied source, and returns the comparison plus the candidate manifest. |
@@ -283,9 +309,9 @@ Current result and evidence versions:
 - validation result: 1.1
 - quality result: 1.2
 - classification result: 1.0
-- routing result: 1.0, routing table 1.2
-- run manifest: 1.5, with legacy 1.2, 1.3 and 1.4 accepted where the schema permits
-- confidential run bundle: 1.2, with 1.1 accepted for reopen and reproduction
+- routing result: 1.1, routing table 1.2, routing engine 1.1.0
+- run manifest: 1.6, with legacy 1.2 to 1.5 accepted where the schema permits
+- confidential run bundle: 1.3, with 1.1 and 1.2 accepted for reopen and reproduction
 
 ## Fixture inventory and deployed check
 
@@ -379,7 +405,7 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 python -m unittest discover -s tests
 ```
 
-The current local suite contains 110 tests. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
+The current local suite contains 119 tests. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
 
 Focused provenance, bundle, stage-consistency and classification checks:
 
@@ -459,7 +485,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - The repository contains two independently deployed products. A change at the root affects the marketing site; a change under `forecast-app/` affects the Forecast Diagnostic.
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
 - Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Story 2.0 adds workspace contract tests without changing the engine. Story 2.1 classifies the portfolio. Story 2.2 records a routing decision per line and deliberately runs no method; method implementation is sprint 3.
-- Routing resolutions are defined, displayed and accepted by the engine, but not yet captured through the interface or re-run. That is Story 2.3.
+- Routing resolutions are captured through the interface and recorded as manifest passes, but a superseded line's history is not chained to its successor, and a launch line has no launch route. Both are sprint 3.
 - Staleness and discontinuation are measured on the last period present, not the last period with demand, so a line reporting explicit zeros for twelve months is never flagged as discontinued. `RTG-60602` in fixture 31 shows it. This is recorded in the Story 2.2 brief and open questions and needs its own story with a stated precedence against `ZERO_VS_MISSING_AMBIGUOUS`.
 - GitHub `main` has no classic branch protection and no repository ruleset. Pull requests and passing checks are process controls rather than enforced repository controls.
 - No pull-request workflow runs the Python suite. Vercel deployment readiness is not a substitute for automated engine tests.
@@ -470,7 +496,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 
 ## Next starting point
 
-Story 2.2 is merged at `5e41a4a`. Run the fixture 31 routing check above against Production and record the result here; that is the only Story 2.2 evidence still missing. Then read `docs/2.2-open-questions.md`: Q1 and Q2 are closed by `expected_routing.json` v1.1, and Q10 names the staleness story that measures discontinuation on the last period with demand, recommended as a separate small story after 2.2 rather than folded into 2.3. Story 2.3, the routing-aware planner action view, starts from current `main` once 2.2 is merged: it fills the drawer's empty do-this slot, captures a resolution code and optional note through the interface, records the new pass in the manifest options, and shows the open items list. Any forecasting method or baseline remains sprint 3.
+Story 2.3 is built on `claude/story-2-3-action-view` and awaits its Preview check, merge and Production smoke test. After merge, run the fixture 31 routing and planner action checks above against Production and record the results here. Then run the one minute action test in section 7 of `docs/briefs/2.3-build-brief.md` on one person who did not build the tool; sprint 2 closes only when it passes, and the result belongs in this file. Story 2.2's Production check is also still to be recorded. Then read `docs/2.2-open-questions.md`: Q1 and Q2 are closed by `expected_routing.json` v1.1, and Q10 names the staleness story that measures discontinuation on the last period with demand, recommended as a separate small story after 2.2 rather than folded into 2.3. Story 2.3, the routing-aware planner action view, starts from current `main` once 2.2 is merged: it fills the drawer's empty do-this slot, captures a resolution code and optional note through the interface, records the new pass in the manifest options, and shows the open items list. Any forecasting method or baseline remains sprint 3.
 
 Superseded note, kept for the record: the previous starting point read "Do not begin Story 2.2 until cold-start handover pull request 44 is merged and Production is green. The local handover work is complete at commit `727ce83`: `CLAUDE.md` was followed, 86 tests passed, fixture 30 passed against Production, fixture hashes were pinned, the guard was proved by a deliberate one-byte failure, both surviving UI defects gained regression coverage, and the missing-information record was added. After merge and Production confirmation, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
 

@@ -31,15 +31,15 @@
     "forecast-app/tests/quality_fixtures/22_outliers_and_shift.csv": "6ee3575247c5a57ecd4e97034e97d30d89eecdb1b54909d9b5c338d343629268",
     "forecast-app/tests/quality_fixtures/expected_quality.json": "177942dd9550faa9fc99000ab1ca71a4dec727c263e4c9c7dfe45ea95acd3791",
     "forecast-app/tests/quality_fixtures/README.md": "9dfeea910b65b80ce3d77b205ac4b3ddde13c0b18e1190418794c4dd9e154184",
-    "forecast-app/tests/run_bundle_fixtures/run_bundle.golden.json": "3838b8d7994e29d9b7781a4b2a11724dac37c17f9bca4ef9c05f1e9ecda9a408",
-    "forecast-app/tests/run_bundle_fixtures/run_bundle.schema.json": "df242097249caf04b60cbf4499201711305947c23ff1d54da86c92b3fc0baa59",
-    "forecast-app/tests/run_bundle_fixtures/run_manifest.golden.json": "043c51e9f88b1b8dbe6e1edee1fd31fb4976a4bb1693b041253a49602aa461f3",
+    "forecast-app/tests/run_bundle_fixtures/run_bundle.golden.json": "3d93c343696d22a81af28e09e23999b0b0ca7efb3f2718f8800004da90c56e89",
+    "forecast-app/tests/run_bundle_fixtures/run_bundle.schema.json": "933790a03396bd4f0b46a4065463c918ce57356a5a59a17c53d7e8d52d1903d1",
+    "forecast-app/tests/run_bundle_fixtures/run_manifest.golden.json": "aab59b8a6f4ca5ea3891b693232b922fa268fa131954bdf795b98e7857ff74b8",
     "forecast-app/tests/run_manifest_fixtures/02_date_disorder.csv": "f3e0d46ecc12e480b45f873e72ec83664ca4cf96fc2de80df180f4729471ac15",
     "forecast-app/tests/run_manifest_fixtures/1.3-build-brief.md": "d06125fbb9c12cc46cc6843839148c0837e3cc3bf6a7b8d6290b439db96394bc",
     "forecast-app/tests/run_manifest_fixtures/20_portfolio_mixed.csv": "fd17fcc4f270c1810b9b5a73c0c78403874aa95cc2eb837f2f3cd63e94b284dc",
     "forecast-app/tests/run_manifest_fixtures/run_manifest.golden.json": "85bd53ef110cbfa8f95c88eed083c28b335cc30b74ba3141e00c3f9af1fc1edb",
     "forecast-app/tests/run_manifest_fixtures/run_manifest.golden.rejected.json": "1b6637308f460290d266a8198b23b1989839261b8779cf17cc371c7ed76941b8",
-    "forecast-app/tests/run_manifest_fixtures/run_manifest.schema.json": "db61106289926cacac792172eb212bbb9995886fef6f3d0d215e476aa8280fb1",
+    "forecast-app/tests/run_manifest_fixtures/run_manifest.schema.json": "e9ef4e0d074d104ecd08de8b8d0c86ed12bc09bba97aabdd02040d8b56cf2b7e",
     "forecast-app/tests/run_manifest_fixtures/timesfm_reference_series.csv": "f609bfac9841fc7889d973d83d059c4919e2d4faad559a115acdd4741aac9eb5"
   }
 }

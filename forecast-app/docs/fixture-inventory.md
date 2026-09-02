@@ -93,4 +93,11 @@ For a deployed end-to-end routing check, upload the committed `31_routing_portfo
 5. Open `RTG-60403`. Confirm the decision is `discontinued confirm status`, not `refused data quality`, despite its not usable band.
 6. Open `RTG-60301`. Confirm `policy only`, not eligible, with no refusal block and the `OUTLIER_CANDIDATE` caveat shown.
 
+For a deployed end-to-end planner action check, continue from the routing check above:
+
+1. Open Open items. Confirm five lines carrying 25.39 percent of volume, ranked `RTG-60403`, `RTG-60401`, `RTG-60402`, `RTG-60502`, `RTG-60501`.
+2. Open `RTG-60301` from Routing. Confirm the do this block reads as a customer conversation about order patterns and lead time, with no refusal block and no resolution picker.
+3. Open `RTG-60403`. Choose `superseded by sku`, confirm the consequence sentence appears before applying, choose `RTG-60401` as the successor and apply. Confirm the decision still reads discontinued confirm status, the line leaves the open items list, and the run manifest's routing options carry a pass with a SKU hash and no readable SKU or note.
+4. Open `RTG-60501`, choose `defer` and apply. Confirm the line stays on the open items list marked deferred and nothing else changes.
+
 This check sends the synthetic fixture to the deployed application. Use synthetic or anonymised data only.

@@ -122,7 +122,7 @@ class RunManifestTests(unittest.TestCase):
     def test_manifest_contains_filename_hash_but_not_readable_filename(self):
         manifest = make_validation_manifest("20_portfolio_mixed.csv")
         source = manifest["source"]
-        self.assertEqual(manifest["schema_version"], "1.5")
+        self.assertEqual(manifest["schema_version"], "1.6")
         self.assertNotIn("filename", source)
         self.assertEqual(len(source["filename_sha256"]), 64)
         self.assertEqual(source["extension"], ".csv")

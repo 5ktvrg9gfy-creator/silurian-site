@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "run_id": "run_fe701b0eb24ced735e234a3091f497e5",
   "created_at": "2026-08-30T09:00:04Z",
   "as_of_date": "2026-08-01",
@@ -209,7 +209,7 @@
     {
       "stage": "routing",
       "story": "2.2",
-      "engine_version": "1.0.0",
+      "engine_version": "1.1.0",
       "started_at": "2026-08-30T09:00:03Z",
       "completed_at": "2026-08-30T09:00:04Z",
       "duration_ms": 1000,
@@ -220,7 +220,7 @@
       },
       "output_ref": {
         "type": "routing_result",
-        "sha256": "ccccb33a3359291d9ca74621b38a3f8c73f81484ab82bf1ee72e9b4c0115be4f",
+        "sha256": "2df9f6846c012418afd0b296e30982f1cc12ba69bd2b80a88514d6c907f09630",
         "series": 12
       },
       "options": {
@@ -255,7 +255,13 @@
         "resolutions_supplied": {
           "count": 0,
           "by_code": {}
-        }
+        },
+        "passes": [
+          {
+            "pass": 1,
+            "resolutions_applied": 0
+          }
+        ]
       },
       "outcome": {
         "decision_counts": {
@@ -274,7 +280,11 @@
           "REFUSED_DATA_QUALITY": 2,
           "INSUFFICIENT_EVIDENCE": 0
         },
-        "open_item_count": 3
+        "open_item_count": 3,
+        "resolved_count": 0,
+        "data_requested_count": 0,
+        "deferred_count": 0,
+        "out_of_scope_count": 0
       }
     }
   ],
@@ -298,8 +308,8 @@
     "statement": "Validation, quality, classification and routing are bitwise reproducible."
   },
   "integrity": {
-    "manifest_sha256": "b5795b24dc7ac002f7353c805386060c75c4d0abf603053fc463aece795d22ad",
-    "content_fingerprint_sha256": "15edeb37242f8bcfcb444d44fc796cd295584e06ca90c84db0f039016d1e2cc3",
+    "manifest_sha256": "ce96edf0bbf307c0ca1e625332658b19c8803c95104850676c9547a08d35f6b7",
+    "content_fingerprint_sha256": "aed5f9939d59813d14acf4f0a909988b3a42d5f53f989e4c1b7efab87e37fabd",
     "chain_verified": true
   }
 }
