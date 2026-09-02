@@ -72,6 +72,26 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("item.band", HTML)
         self.assertIn("item.findings", HTML)
 
+    def test_quality_non_json_response_has_a_controlled_error(self):
+        start = HTML.index("document.getElementById('runQuality')")
+        end = HTML.index("document.getElementById('portfolioForm')", start)
+        handler = HTML[start:end]
+        self.assertIn("raw=await response.text()", handler)
+        self.assertIn("try{data=JSON.parse(raw)}catch", handler)
+        self.assertIn("Quality assessment could not be completed", handler)
+        self.assertNotIn("await response.json()", handler)
+
+    def test_failed_reproduction_clears_stale_bundle_result(self):
+        start = HTML.index("document.getElementById('reproduceBundleForm')")
+        end = HTML.index("initWorkspace()", start)
+        handler = HTML[start:end]
+        self.assertIn(
+            "catch(err){error.textContent=err.message;"
+            "document.getElementById('bundleView').innerHTML='';"
+            "document.getElementById('bundleView').style.display='none'}",
+            handler,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
