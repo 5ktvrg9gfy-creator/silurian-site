@@ -1,5 +1,6 @@
 {
-  "version": "1.0",
+  "version": "1.1",
+  "revision_note": "v1.1 corrects the portfolio volume figures. v1.0 summed per-SKU shares that had already been rounded to two decimals and reported 65.58 percent eligible; the exact figure computed in units is 65.5687, which prints as 65.57. Six of the seven by-decision shares moved by a hundredth. No decision, eligibility flag, refusal or resolution list has changed. The build session found this, and it is the same error class I flagged in the 2.1 brief for cumulative ABC shares, made in my own file this time. trailing_periods_since_last_demand has also moved under fixture_metadata, because no stage owns that value and nothing should be required to emit it.",
   "story": "2.2 Routing decision, reason and refusal state",
   "fixture": "31_routing_portfolio.csv",
   "fixture_sha256": "2c55f4f7c30e6f708c7389a2df3850a8fb7947b1187f19c95531b4aaca9601f6",
@@ -163,17 +164,22 @@
       "insufficient_evidence": 1
     },
     "volume_share_by_decision_pct": {
-      "model_eligible": 47.55,
+      "model_eligible": 47.54,
       "discontinued_confirm_status": 12.85,
-      "refused_data_quality": 12.33,
+      "refused_data_quality": 12.34,
       "model_eligible_wide_interval": 11.84,
       "policy_only": 9.04,
       "intermittent_methods": 6.19,
       "insufficient_evidence": 0.2
     },
-    "forecast_eligible_volume_share_pct": 65.58,
-    "not_eligible_volume_share_pct": 34.42,
-    "headline_must_state": "65.58 percent of volume is forecast eligible and 34.42 percent is not, split by reason."
+    "forecast_eligible_volume_share_pct": 65.57,
+    "not_eligible_volume_share_pct": 34.43,
+    "computed_from": "unit volumes, not from rounded per-SKU shares",
+    "exact_before_rounding": {
+      "forecast_eligible_pct": 65.5687,
+      "not_eligible_pct": 34.4313
+    },
+    "headline_must_state": "65.57 percent of volume is forecast eligible and 34.43 percent is not, split by reason."
   },
   "boundary_cases": [
     {
@@ -234,7 +240,10 @@
       "abc_volume_class": "A",
       "quality_band_at_decision": "clean",
       "quality_finding_codes_referenced": [],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 26.74,
       "decision": "model_eligible",
       "decided_by": "class table, rule 3",
@@ -247,7 +256,10 @@
       "abc_volume_class": "A",
       "quality_band_at_decision": "clean",
       "quality_finding_codes_referenced": [],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 10.45,
       "decision": "model_eligible",
       "decided_by": "class table, rule 3",
@@ -260,7 +272,10 @@
       "abc_volume_class": "C",
       "quality_band_at_decision": "clean",
       "quality_finding_codes_referenced": [],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 1.16,
       "decision": "model_eligible",
       "decided_by": "class table, rule 3",
@@ -275,7 +290,10 @@
       "quality_finding_codes_referenced": [
         "OUTLIER_CANDIDATE"
       ],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 11.84,
       "decision": "model_eligible_wide_interval",
       "decided_by": "class table, rule 3",
@@ -291,7 +309,10 @@
       "abc_volume_class": "B",
       "quality_band_at_decision": "clean",
       "quality_finding_codes_referenced": [],
-      "trailing_periods_since_last_demand": 1,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 1,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 5.61,
       "decision": "intermittent_methods",
       "decided_by": "class table, rule 3",
@@ -304,7 +325,10 @@
       "abc_volume_class": "C",
       "quality_band_at_decision": "clean",
       "quality_finding_codes_referenced": [],
-      "trailing_periods_since_last_demand": 4,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 4,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 0.58,
       "decision": "intermittent_methods",
       "decided_by": "class table, rule 3",
@@ -319,7 +343,10 @@
       "quality_finding_codes_referenced": [
         "OUTLIER_CANDIDATE"
       ],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 8.28,
       "decision": "policy_only",
       "decided_by": "class table, rule 3",
@@ -337,7 +364,10 @@
       "quality_finding_codes_referenced": [
         "OUTLIER_CANDIDATE"
       ],
-      "trailing_periods_since_last_demand": 1,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 1,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 0.76,
       "decision": "policy_only",
       "decided_by": "class table, rule 3",
@@ -355,7 +385,10 @@
       "quality_finding_codes_referenced": [
         "HISTORY_TOO_SHORT"
       ],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 6.59,
       "decision": "refused_data_quality",
       "decided_by": "not usable, rule 2",
@@ -382,7 +415,10 @@
       "quality_finding_codes_referenced": [
         "ZERO_VS_MISSING_AMBIGUOUS"
       ],
-      "trailing_periods_since_last_demand": 1,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 1,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 4.34,
       "decision": "refused_data_quality",
       "decided_by": "not usable, rule 2",
@@ -409,7 +445,10 @@
       "quality_finding_codes_referenced": [
         "SERIES_DISCONTINUED"
       ],
-      "trailing_periods_since_last_demand": 14,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 14,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 12.85,
       "decision": "discontinued_confirm_status",
       "decided_by": "discontinued, rule 1",
@@ -434,7 +473,10 @@
       "abc_volume_class": "C",
       "quality_band_at_decision": "clean",
       "quality_finding_codes_referenced": [],
-      "trailing_periods_since_last_demand": 1,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 1,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 0.2,
       "decision": "insufficient_evidence",
       "decided_by": "class table, rule 3",
@@ -458,7 +500,10 @@
       "quality_finding_codes_referenced": [
         "HISTORY_TOO_SHORT"
       ],
-      "trailing_periods_since_last_demand": 1,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 1,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 1.4,
       "decision": "refused_data_quality",
       "decided_by": "not usable, rule 2",
@@ -485,7 +530,10 @@
       "quality_finding_codes_referenced": [
         "OUTLIER_CANDIDATE"
       ],
-      "trailing_periods_since_last_demand": 0,
+      "fixture_metadata": {
+        "trailing_periods_since_last_demand": 0,
+        "note": "Describes the fixture, not an output field. No stage owns this value, so nothing is required to emit it. It is here so a reader can see why the discontinuation rule fires where it does."
+      },
       "volume_share_pct": 9.2,
       "decision": "model_eligible",
       "decided_by": "class table, rule 3",

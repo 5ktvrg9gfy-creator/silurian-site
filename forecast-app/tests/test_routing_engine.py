@@ -86,7 +86,7 @@ class RoutingEngineTests(unittest.TestCase):
 
     def test_authoritative_fixture_and_validation(self):
         self.assertEqual(hashlib.sha256(self.raw).hexdigest(), EXPECTED["fixture_sha256"])
-        self.assertEqual(EXPECTED["version"], "1.0")
+        self.assertEqual(EXPECTED["version"], "1.1")
         self.assertEqual(self.validation.verdict, EXPECTED["quality_inputs_observed"]["validation"]["verdict"])
         self.assertEqual(self.validation.findings, ())
         self.assertEqual(self.result["routing_table_version"], EXPECTED["routing_table_version"])
@@ -173,8 +173,13 @@ class RoutingEngineTests(unittest.TestCase):
         for name, share in expected["volume_share_by_decision_pct"].items():
             self.assertAlmostEqual(portfolio["volume_share_by_decision_pct"][name], share, delta=0.05, msg=name)
         self.assertAlmostEqual(sum(portfolio["volume_share_by_decision_pct"].values()), 100, delta=0.05)
-        self.assertAlmostEqual(portfolio["forecast_eligible_volume_share_pct"], expected["forecast_eligible_volume_share_pct"], delta=0.05)
-        self.assertAlmostEqual(portfolio["not_eligible_volume_share_pct"], expected["not_eligible_volume_share_pct"], delta=0.05)
+        self.assertEqual(round(portfolio["forecast_eligible_volume_share_pct"], 2), expected["forecast_eligible_volume_share_pct"])
+        self.assertEqual(round(portfolio["not_eligible_volume_share_pct"], 2), expected["not_eligible_volume_share_pct"])
+        exact = expected["exact_before_rounding"]
+        self.assertAlmostEqual(portfolio["forecast_eligible_volume_share_pct"], exact["forecast_eligible_pct"], places=4)
+        self.assertAlmostEqual(portfolio["not_eligible_volume_share_pct"], exact["not_eligible_pct"], places=4)
+        for name, share in expected["volume_share_by_decision_pct"].items():
+            self.assertEqual(round(portfolio["volume_share_by_decision_pct"][name], 2), share, name)
         self.assertAlmostEqual(portfolio["forecast_eligible_volume_share_pct"] + portfolio["not_eligible_volume_share_pct"], 100, delta=0.05)
         eligible_from_lines = sum(item["volume_share_pct"] for item in self.result["per_sku"].values() if item["forecast_eligible"])
         self.assertAlmostEqual(portfolio["forecast_eligible_volume_share_pct"], eligible_from_lines, places=5)

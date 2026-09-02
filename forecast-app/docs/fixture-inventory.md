@@ -1,6 +1,6 @@
 # Forecast Diagnostic fixture inventory
 
-Repository fixtures are synthetic. Exact byte checks must use the committed files. CSV line endings are pinned to LF by the root `.gitattributes`.
+Repository fixtures are synthetic. Exact byte checks must use the committed files. CSV line endings, the JSON goldens and schema copies under the `tests/*_fixtures` directories, and the two runtime schemas are pinned to LF by the root `.gitattributes`. The `expected_*.json` files and the validation fixture directory stay byte-exact under `-text`.
 
 ## Validation fixtures
 
@@ -51,7 +51,7 @@ Approved hashes:
 
 ## Routing fixtures
 
-Authoritative expectations: `tests/fixtures/expected_routing.json` version 1.0, with the observed quality inputs recorded inside it.
+Authoritative expectations: `tests/fixtures/expected_routing.json` version 1.1, with the observed quality inputs recorded inside it. Version 1.1 supersedes 1.0 and computes portfolio shares from unit volumes.
 
 | File | Purpose |
 |---|---|
@@ -60,7 +60,7 @@ Authoritative expectations: `tests/fixtures/expected_routing.json` version 1.0, 
 Approved hashes:
 
 - `31_routing_portfolio.csv`: `2c55f4f7c30e6f708c7389a2df3850a8fb7947b1187f19c95531b4aaca9601f6`
-- `expected_routing.json`: `cd98dc46800e7563670907234ba9b010d979cb066781126af333c02d4fb693d4`
+- `expected_routing.json` v1.1: `7fea85d2ec16ed57781e37a74957d18af3313ca58afc4fad59f086e2f69bc607`
 
 ## Manifest and bundle fixtures
 
