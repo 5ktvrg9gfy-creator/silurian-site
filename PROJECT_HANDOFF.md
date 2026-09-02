@@ -6,7 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
-- The cold-start handover implementation is complete locally on `codex/cold-start-handover` and awaits pull-request Preview acceptance, merge and a green Production deployment. The replacement environment passed 86 tests and the deployed Story 2.1 fixture returned the approved 15-line classification result with a caveated portfolio band.
+- The cold-start handover implementation is in pull request 44 from commit `727ce83` and awaits Preview acceptance, merge and a green Production deployment. The replacement environment passed 86 tests and the deployed Story 2.1 fixture returned the approved 15-line classification result with a caveated portfolio band.
 - The build is being migrated to a new development environment. Complete the cold-start handover task before beginning Story 2.2. The migration task changes no engine behaviour and must finish with a merged documentation or fixture-integrity pull request and a green deployment.
 - Story 2.1 is complete. Pull request 41 merged at `40e3508` on 1 September 2026. Local verification passes 83 tests, the approved 15-SKU fixture passed Vercel Preview acceptance, and the same fixture passed the Production smoke test after deployment.
 - Story 2.0 is complete. Pull request 39 merged at `cc338d5` on 31 August 2026. Preview acceptance passed with the mixed portfolio fixture, and both Vercel Production deployments completed successfully. The Forecast Diagnostic Production shell, self-hosted Archivo font and stone mark all returned HTTP 200 after deployment.
@@ -437,7 +437,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 
 ## Next starting point
 
-Do not begin Story 2.2 until the cold-start handover pull request is merged and Production is green. The local handover work is complete: `CLAUDE.md` was followed, 86 tests passed, fixture 30 passed against Production, fixture hashes were pinned, the guard was proved by a deliberate one-byte failure, both surviving UI defects gained regression coverage, and the missing-information record was added. After merge and Production confirmation, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
+Do not begin Story 2.2 until cold-start handover pull request 44 is merged and Production is green. The local handover work is complete at commit `727ce83`: `CLAUDE.md` was followed, 86 tests passed, fixture 30 passed against Production, fixture hashes were pinned, the guard was proved by a deliberate one-byte failure, both surviving UI defects gained regression coverage, and the missing-information record was added. After merge and Production confirmation, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
 
 ## End-of-build handoff checklist
 
