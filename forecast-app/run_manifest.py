@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 
-SCHEMA_VERSION = "1.4"
+SCHEMA_VERSION = "1.5"
 PLACEHOLDERS = {"REPLACE_WITH_ACTUAL", "SUPPLIED_BY_DEPLOYMENT", "0000000"}
 MANAGED_SENTINEL = "provider_managed_not_exposed"
 SCHEMA = json.loads((Path(__file__).with_name("run_manifest.schema.json")).read_text(encoding="utf-8"))
@@ -203,6 +203,44 @@ def classification_stage(
     }
 
 
+def routing_stage(
+    result: dict[str, Any], input_ref: dict[str, Any], started_at: str, completed_at: str
+) -> dict[str, Any]:
+    """Record the routing stage. Counts and codes only: no SKU, volume or share reaches the manifest."""
+    portfolio = result["portfolio"]
+    resolutions_supplied = deepcopy(portfolio.get("resolution_code_counts", {}))
+    return {
+        "stage": "routing",
+        "story": "2.2",
+        "engine_version": "1.0.0",
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "duration_ms": _duration_ms(started_at, completed_at),
+        "input_ref": deepcopy(input_ref),
+        "output_ref": artefact_ref(
+            "routing_result",
+            _strip_client_data(result),
+            series=portfolio["sku_count"],
+        ),
+        "options": {
+            "routing_table_version": result["routing_table_version"],
+            "precedence": list(result["precedence"]),
+            "resolution_vocabulary": deepcopy(result["resolution_vocabulary"]),
+            "resolutions_supplied": {
+                "count": sum(resolutions_supplied.values()),
+                "by_code": resolutions_supplied,
+            },
+        },
+        "outcome": {
+            "decision_counts": deepcopy(portfolio["decision_counts"]),
+            "eligible_count": portfolio["eligible_count"],
+            "ineligible_count": portfolio["ineligible_count"],
+            "refusal_code_counts": deepcopy(portfolio["refusal_code_counts"]),
+            "open_item_count": portfolio["open_item_count"],
+        },
+    }
+
+
 def model_identity(
     histories: Iterable[Iterable[float]], horizon: int, reference_check: dict[str, Any],
     *, included: int, excluded: int = 0, exclusion_reasons: dict[str, int] | None = None,
@@ -348,10 +386,12 @@ def reference_check(reference_series: list[float], output: list[float], baseline
 
 def _reproducibility(stages: list[dict[str, Any]]) -> dict[str, Any]:
     names = [stage["stage"] for stage in stages]
-    deterministic = [name for name in names if name in {"validation", "quality", "classification"}]
+    deterministic = [name for name in names if name in {"validation", "quality", "classification", "routing"}]
     forecast = next((stage for stage in stages if stage["stage"] == "forecast"), None)
     non_deterministic = [] if not forecast or forecast["determinism"]["class"] == "bitwise" else ["forecast"]
-    if "classification" in names:
+    if "routing" in names:
+        statement = "Validation, quality, classification and routing are bitwise reproducible."
+    elif "classification" in names:
         statement = "Validation, quality and classification are bitwise reproducible."
     elif "quality" in names:
         statement = "Validation and quality are bitwise reproducible."
@@ -381,7 +421,7 @@ def _assert_no_placeholders(manifest: dict[str, Any]) -> None:
 
 
 def _strip_client_data(value: Any) -> Any:
-    prohibited = {"sku", "description", "customer", "site", "demand", "values", "periods"}
+    prohibited = {"sku", "description", "customer", "site", "demand", "values", "periods", "note", "successor_sku", "open_items"}
     if isinstance(value, dict):
         return {key: _strip_client_data(item) for key, item in value.items() if key.lower() not in prohibited}
     if isinstance(value, list):

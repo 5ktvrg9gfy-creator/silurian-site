@@ -13,7 +13,8 @@ from run_manifest import SCHEMA as MANIFEST_SCHEMA
 from run_manifest import canonical_json, exact_manifest_hash, sha256_json, utc_now
 
 
-BUNDLE_SCHEMA_VERSION = "1.1"
+BUNDLE_SCHEMA_VERSION = "1.2"
+SUPPORTED_BUNDLE_SCHEMA_VERSIONS = ("1.1", "1.2")
 BUNDLE_SCHEMA = json.loads(Path(__file__).with_name("run_bundle.schema.json").read_text(encoding="utf-8"))
 CONFIDENTIALITY_STATEMENT = (
     "CONFIDENTIAL: this bundle contains client data. It belongs to the client and must not be shared like a run manifest."
@@ -119,6 +120,16 @@ def classification_bundle_result(result: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def routing_bundle_result(result: dict[str, Any]) -> dict[str, Any]:
+    payload = deepcopy(result)
+    for item in payload.get("per_sku", {}).values():
+        if "band" in item or "findings" in item:
+            raise BundleError("Routing results must not duplicate quality bands or findings")
+        if item.get("decision") not in payload.get("decisions", {}):
+            raise BundleError("Routing results must carry a decision from the closed set")
+    return payload
+
+
 def _next_month(value: date) -> date:
     return date(value.year + (1 if value.month == 12 else 0), 1 if value.month == 12 else value.month + 1, 1)
 
@@ -143,7 +154,7 @@ def forecast_bundle_result(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def verify_bundle(bundle: dict[str, Any]) -> None:
-    if bundle.get("bundle_schema_version") != BUNDLE_SCHEMA_VERSION:
+    if bundle.get("bundle_schema_version") not in SUPPORTED_BUNDLE_SCHEMA_VERSIONS:
         raise BundleError("This run bundle version is not supported")
     try:
         Draft202012Validator(BUNDLE_SCHEMA).validate(bundle)
@@ -229,7 +240,7 @@ def compare_reproduction(original: dict[str, Any], candidate: dict[str, Any]) ->
     }
     if differences:
         return {**base, "outcome": "not_comparable"}
-    for name in ("validation", "quality", "classification"):
+    for name in ("validation", "quality", "classification", "routing"):
         if name in original_stages:
             if original_stages[name]["output_ref"]["sha256"] != candidate_stages[name]["output_ref"]["sha256"]:
                 return {**base, "outcome": "differs", "differences": [f"{name} result differs"]}

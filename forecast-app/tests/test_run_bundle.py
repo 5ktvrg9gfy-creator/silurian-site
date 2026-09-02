@@ -7,6 +7,7 @@ from pathlib import Path
 
 from classification_engine import classify_quality
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
+from routing_engine import route_portfolio
 from run_bundle import (
     BundleError,
     build_bundle,
@@ -16,11 +17,12 @@ from run_bundle import (
     forecast_bundle_result,
     quality_bundle_result,
     reopen_bundle,
+    routing_bundle_result,
     validation_bundle_result,
 )
 from run_manifest import (
     build_manifest, classification_stage, content_fingerprint, exact_manifest_hash, forecast_stage, model_identity,
-    quality_stage, reference_check, sha256_json, source_record, validation_stage,
+    quality_stage, reference_check, routing_stage, sha256_json, source_record, validation_stage,
 )
 from validator import ValidationOptions, validate_csv
 from tests.generate_run_bundle_goldens import assert_independent_quality_target
@@ -49,15 +51,20 @@ def make_quality_bundle():
     classification_record = classification_stage(
         classification, quality_record["output_ref"], "2026-08-30T09:00:02Z", "2026-08-30T09:00:03Z"
     )
+    routing = route_portfolio(quality, classification)
+    routing_record = routing_stage(
+        routing, classification_record["output_ref"], "2026-08-30T09:00:03Z", "2026-08-30T09:00:04Z"
+    )
     manifest = build_manifest(
-        source, [validation_record, quality_record, classification_record], date(2026, 8, 1), "user",
+        source, [validation_record, quality_record, classification_record, routing_record], date(2026, 8, 1), "user",
         [row["sku"] for row in validation.normalised_rows],
-        created_at="2026-08-30T09:00:03Z", environment=deepcopy(ENVIRONMENT),
+        created_at="2026-08-30T09:00:04Z", environment=deepcopy(ENVIRONMENT),
     )
     return build_bundle(manifest, {
         "validation": validation_bundle_result(validation, validation_record),
         "quality": quality_bundle_result(quality),
         "classification": classification_bundle_result(classification),
+        "routing": routing_bundle_result(routing),
     }, "20_portfolio_mixed.csv")
 
 
@@ -105,7 +112,7 @@ class RunBundleTests(unittest.TestCase):
         bundle = make_quality_bundle()
         reopened = reopen_bundle(json.dumps(bundle).encode())
         self.assertEqual(reopened, bundle)
-        self.assertEqual(set(bundle["results"]), {"validation", "quality", "classification"})
+        self.assertEqual(set(bundle["results"]), {"validation", "quality", "classification", "routing"})
         self.assertEqual(len(bundle["results"]["quality"]["per_sku"]), 12)
         self.assertEqual(bundle["integrity"]["bundle_sha256"], bundle_hash(bundle))
 
@@ -196,6 +203,38 @@ class RunBundleTests(unittest.TestCase):
         with self.assertRaises(BundleError):
             reopen_bundle(json.dumps(without_stage).encode())
 
+    def test_routing_stage_and_result_are_required_together(self):
+        without_result = make_quality_bundle()
+        without_result["results"].pop("routing")
+        with self.assertRaises(BundleError):
+            reopen_bundle(json.dumps(without_result).encode())
+
+        without_stage = make_quality_bundle()
+        without_stage["manifest"]["stages"] = [
+            stage for stage in without_stage["manifest"]["stages"] if stage["stage"] != "routing"
+        ]
+        with self.assertRaises(BundleError):
+            reopen_bundle(json.dumps(without_stage).encode())
+
+    def test_previous_bundle_version_without_routing_remains_reopenable(self):
+        golden = json.loads((Path(__file__).parent / "run_bundle_fixtures" / "run_bundle.golden.json").read_text(encoding="utf-8"))
+        legacy = deepcopy(golden)
+        legacy["bundle_schema_version"] = "1.1"
+        legacy["results"].pop("routing")
+        legacy["manifest"]["stages"] = [stage for stage in legacy["manifest"]["stages"] if stage["stage"] != "routing"]
+        legacy["manifest"]["schema_version"] = "1.4"
+        legacy["manifest"]["reproducibility"] = {
+            "deterministic_stages": ["validation", "quality", "classification"],
+            "non_deterministic_stages": [],
+            "statement": "Validation, quality and classification are bitwise reproducible.",
+        }
+        legacy["manifest"]["integrity"]["content_fingerprint_sha256"] = content_fingerprint(legacy["manifest"])
+        legacy["manifest"]["integrity"]["manifest_sha256"] = exact_manifest_hash(legacy["manifest"])
+        legacy["integrity"]["manifest_sha256"] = legacy["manifest"]["integrity"]["manifest_sha256"]
+        legacy["integrity"]["content_fingerprint_sha256"] = legacy["manifest"]["integrity"]["content_fingerprint_sha256"]
+        legacy["integrity"]["bundle_sha256"] = bundle_hash(legacy)
+        self.assertEqual(reopen_bundle(json.dumps(legacy).encode()), legacy)
+
     def test_legacy_manifest_with_readable_filename_remains_reopenable(self):
         bundle = make_quality_bundle()
         manifest = bundle["manifest"]
@@ -224,7 +263,7 @@ class RunBundleTests(unittest.TestCase):
         second["integrity"]["bundle_sha256"] = bundle_hash(second)
         result = compare_reproduction(first, second)
         self.assertEqual(result["outcome"], "reproduced")
-        self.assertEqual(result["exact_stages"], ["validation", "quality", "classification"])
+        self.assertEqual(result["exact_stages"], ["validation", "quality", "classification", "routing"])
 
     def test_engine_change_is_not_comparable(self):
         first = make_quality_bundle()
