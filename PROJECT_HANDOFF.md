@@ -6,6 +6,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
+- The cold-start handover implementation is complete locally on `codex/cold-start-handover` and awaits pull-request Preview acceptance, merge and a green Production deployment. The replacement environment passed 86 tests and the deployed Story 2.1 fixture returned the approved 15-line classification result with a caveated portfolio band.
 - The build is being migrated to a new development environment. Complete the cold-start handover task before beginning Story 2.2. The migration task changes no engine behaviour and must finish with a merged documentation or fixture-integrity pull request and a green deployment.
 - Story 2.1 is complete. Pull request 41 merged at `40e3508` on 1 September 2026. Local verification passes 83 tests, the approved 15-SKU fixture passed Vercel Preview acceptance, and the same fixture passed the Production smoke test after deployment.
 - Story 2.0 is complete. Pull request 39 merged at `cc338d5` on 31 August 2026. Preview acceptance passed with the mixed portfolio fixture, and both Vercel Production deployments completed successfully. The Forecast Diagnostic Production shell, self-hosted Archivo font and stone mark all returned HTTP 200 after deployment.
@@ -84,6 +85,7 @@ Stop and report a contradiction rather than choosing a convenient source. The St
 - `forecast-app/docs/fixture-inventory.md`: every fixed fixture, its purpose and the deployed end-to-end check
 - `forecast-app/docs/ADR-001-manifest-integrity-hashing.md`: final two-hash manifest decision and rationale
 - `forecast-app/docs/final-handoff-audit.md`: final Codex shutdown audit and residual owner actions
+- `docs/handover-gaps.md`: cold-start record of information missing from the repository or discoverable only through code and local environment inspection
 - `forecast-app/vercel.json`: Vercel Python application configuration
 - `forecast-app/requirements.txt`: deployed dependencies
 
@@ -346,7 +348,7 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 python -m unittest discover -s tests
 ```
 
-The current local suite contains 83 tests. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
+The current local suite contains 86 tests. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
 
 Focused provenance, bundle, stage-consistency and classification checks:
 
@@ -429,12 +431,13 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - GitHub `main` has no classic branch protection and no repository ruleset. Pull requests and passing checks are process controls rather than enforced repository controls.
 - No pull-request workflow runs the Python suite. Vercel deployment readiness is not a substitute for automated engine tests.
 - Exact Google Cloud project and service-account identifiers are intentionally external to the repository. Vercel and Google Cloud access are required to administer them.
+- Written provider assurance about backup scope for the client security questions remains unanswered. This is owned by the product owner and is not a build-session task.
 - Five obsolete local worktrees contain line-ending-only CSV changes, and seven obsolete branch refs remain outside `main`. See `forecast-app/docs/final-handoff-audit.md`; deletion requires owner approval.
-- The committed `expected_classification.json` blob has the approved SHA-256, but a default Windows checkout rewrites its line endings because JSON is not yet pinned to LF. The migration task must fix `.gitattributes` before enforcing working-tree fixture hashes.
+- Fixture and expectation bytes are protected by `tests/fixture_hashes.json` and `tests/test_fixture_integrity.py`. Git attributes mark the control directories and every `expected_*.json` as `-text`, so Git must not convert their line endings. Some fixtures intentionally remain CRLF because line-ending handling is part of their expected validation result.
 
 ## Next starting point
 
-Do not begin Story 2.2 first. Prove the migration with the cold-start handover task: a new environment reads `CLAUDE.md`, runs the suite, exercises fixture 30 against the deployed site, adds the separately requested fixture-integrity control, records handover gaps, merges its pull request and reaches a green deployment. After that, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
+Do not begin Story 2.2 until the cold-start handover pull request is merged and Production is green. The local handover work is complete: `CLAUDE.md` was followed, 86 tests passed, fixture 30 passed against Production, fixture hashes were pinned, the guard was proved by a deliberate one-byte failure, both surviving UI defects gained regression coverage, and the missing-information record was added. After merge and Production confirmation, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
 
 ## End-of-build handoff checklist
 

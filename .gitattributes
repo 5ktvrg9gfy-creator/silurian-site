@@ -1,1 +1,4 @@
 *.csv text eol=lf
+forecast-app/tests/fixtures/** -text
+forecast-app/tests/*_fixtures/** -text
+**/expected_*.json -text
