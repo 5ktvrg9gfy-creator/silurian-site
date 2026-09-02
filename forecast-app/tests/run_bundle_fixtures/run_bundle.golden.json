@@ -1,5 +1,5 @@
 {
-  "bundle_schema_version": "1.1",
+  "bundle_schema_version": "1.2",
   "confidentiality": {
     "contains_client_data": true,
     "statement": "CONFIDENTIAL: this bundle contains client data. It belongs to the client and must not be shared like a run manifest.",
@@ -8,7 +8,7 @@
   "manifest": {
     "as_of_date": "2026-08-01",
     "as_of_source": "user",
-    "created_at": "2026-08-30T09:00:03Z",
+    "created_at": "2026-08-30T09:00:04Z",
     "environment": {
       "app_version": "1.4.0",
       "git_commit": "16ffb72",
@@ -20,20 +20,21 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "a90921c79cd00ec5fbc6e06bba3f341795ba0dfb596e357dd52aefbf60ee4317",
-      "manifest_sha256": "ed24e517f65931b8df648b11ec3f32381f917ab33795858e9aad4a9363b1535c"
+      "content_fingerprint_sha256": "15edeb37242f8bcfcb444d44fc796cd295584e06ca90c84db0f039016d1e2cc3",
+      "manifest_sha256": "b5795b24dc7ac002f7353c805386060c75c4d0abf603053fc463aece795d22ad"
     },
     "reproducibility": {
       "deterministic_stages": [
         "validation",
         "quality",
-        "classification"
+        "classification",
+        "routing"
       ],
       "non_deterministic_stages": [],
-      "statement": "Validation, quality and classification are bitwise reproducible."
+      "statement": "Validation, quality, classification and routing are bitwise reproducible."
     },
-    "run_id": "run_41e9813c5d822f573881eca47b83fdca",
-    "schema_version": "1.4",
+    "run_id": "run_fe701b0eb24ced735e234a3091f497e5",
+    "schema_version": "1.5",
     "source": {
       "bytes": 8535,
       "delimiter_detected": ",",
@@ -235,6 +236,77 @@
         "stage": "classification",
         "started_at": "2026-08-30T09:00:02Z",
         "story": "2.1"
+      },
+      {
+        "completed_at": "2026-08-30T09:00:04Z",
+        "duration_ms": 1000,
+        "engine_version": "1.0.0",
+        "input_ref": {
+          "series": 12,
+          "sha256": "51de88da2b59b1c3134ab362a71cc9a9a38d6540732c54d8170a02576fdc1983",
+          "type": "classification_result"
+        },
+        "options": {
+          "precedence": [
+            "1. A line carrying SERIES_DISCONTINUED routes to discontinued_confirm_status, whatever its class and whatever its band.",
+            "2. Otherwise a not_usable band routes to refused_data_quality, whatever its class.",
+            "3. Otherwise the demand class decides, including unclassifiable to insufficient_evidence."
+          ],
+          "resolution_vocabulary": {
+            "DISCONTINUED": [
+              "DISCONTINUED_CONFIRMED",
+              "SUPERSEDED_BY_SKU",
+              "STILL_ACTIVE_DEMAND_GAP",
+              "STILL_ACTIVE_DATA_MISSING",
+              "DEFER"
+            ],
+            "INSUFFICIENT_EVIDENCE": [
+              "SUPPLY_LONGER_HISTORY",
+              "TREAT_AS_NEW_LINE",
+              "EXCLUDE_FROM_SCOPE",
+              "DEFER"
+            ],
+            "REFUSED_DATA_QUALITY": [
+              "SUPPLY_LONGER_HISTORY",
+              "SUPPLY_CORRECTED_EXTRACT",
+              "TREAT_AS_NEW_LINE",
+              "EXCLUDE_FROM_SCOPE",
+              "DEFER"
+            ]
+          },
+          "resolutions_supplied": {
+            "by_code": {},
+            "count": 0
+          },
+          "routing_table_version": "1.2"
+        },
+        "outcome": {
+          "decision_counts": {
+            "discontinued_confirm_status": 1,
+            "insufficient_evidence": 0,
+            "intermittent_methods": 1,
+            "model_eligible": 7,
+            "model_eligible_wide_interval": 1,
+            "policy_only": 0,
+            "refused_data_quality": 2
+          },
+          "eligible_count": 9,
+          "ineligible_count": 3,
+          "open_item_count": 3,
+          "refusal_code_counts": {
+            "DISCONTINUED": 1,
+            "INSUFFICIENT_EVIDENCE": 0,
+            "REFUSED_DATA_QUALITY": 2
+          }
+        },
+        "output_ref": {
+          "series": 12,
+          "sha256": "ccccb33a3359291d9ca74621b38a3f8c73f81484ab82bf1ee72e9b4c0115be4f",
+          "type": "routing_result"
+        },
+        "stage": "routing",
+        "started_at": "2026-08-30T09:00:03Z",
+        "story": "2.2"
       }
     ]
   },
@@ -1316,6 +1388,430 @@
       },
       "portfolio_band": "caveated"
     },
+    "routing": {
+      "decisions": {
+        "discontinued_confirm_status": {
+          "forecast_eligible": false
+        },
+        "insufficient_evidence": {
+          "forecast_eligible": false
+        },
+        "intermittent_methods": {
+          "forecast_eligible": true
+        },
+        "model_eligible": {
+          "forecast_eligible": true
+        },
+        "model_eligible_wide_interval": {
+          "forecast_eligible": true
+        },
+        "policy_only": {
+          "forecast_eligible": false
+        },
+        "refused_data_quality": {
+          "forecast_eligible": false
+        }
+      },
+      "method_note": "Routing records a decision and runs no method. The demand class is read from the classification result and the band, findings and discontinuation flag from the quality result; routing recomputes none of them. A caveated band attaches to the decision and never reroutes. ABC volume class and the portfolio band never affect a line decision. A resolution changes what happens to a line next and never changes its quality band. Quality codes named inside a refusal are references to the quality result, not findings raised by routing.",
+      "per_sku": {
+        "PKG-10432": {
+          "abc_volume_class": "A",
+          "caveat_codes_shown": [],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.010865,
+            "non_zero_periods": 35,
+            "periods_present": 35
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "clean",
+          "quality_finding_codes_referenced": [],
+          "rank_by_volume": 2,
+          "reason": "Demand arrives in 35 of 35 periods at a stable size (ADI 1.00, CV squared 0.011), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 28.808049
+        },
+        "PKG-10518": {
+          "abc_volume_class": "B",
+          "caveat_codes_shown": [],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.010023,
+            "non_zero_periods": 35,
+            "periods_present": 35
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "clean",
+          "quality_finding_codes_referenced": [],
+          "rank_by_volume": 3,
+          "reason": "Demand arrives in 35 of 35 periods at a stable size (ADI 1.00, CV squared 0.010), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 17.190265
+        },
+        "PKG-20077": {
+          "abc_volume_class": "A",
+          "caveat_codes_shown": [],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.007101,
+            "non_zero_periods": 35,
+            "periods_present": 35
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "clean",
+          "quality_finding_codes_referenced": [],
+          "rank_by_volume": 1,
+          "reason": "Demand arrives in 35 of 35 periods at a stable size (ADI 1.00, CV squared 0.007), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 37.346086
+        },
+        "PKG-30219": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [],
+          "decided_by": "class table, rule 3",
+          "decision": "intermittent_methods",
+          "demand_class": "intermittent",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 3.181818,
+            "cv_squared_nonzero": 0.013255,
+            "non_zero_periods": 11,
+            "periods_present": 35
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "clean",
+          "quality_finding_codes_referenced": [],
+          "rank_by_volume": 10,
+          "reason": "Demand arrives in 11 of 35 periods with regular gaps (ADI 3.18) at a consistent size (CV squared 0.013), which needs the Croston family rather than a general model.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 0.223253
+        },
+        "PKG-30220": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [],
+          "decided_by": "not usable, rule 2",
+          "decision": "refused_data_quality",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": true,
+          "evidence": {
+            "adi": 1.0,
+            "coverage_pct": 24.2424,
+            "cv_squared_nonzero": 0.01867,
+            "non_zero_periods": 8,
+            "periods_present": 8
+          },
+          "forecast_eligible": false,
+          "quality_band_at_decision": "not_usable",
+          "quality_finding_codes_referenced": [
+            "ZERO_VS_MISSING_AMBIGUOUS"
+          ],
+          "rank_by_volume": 11,
+          "reason": "The quality stage bands this line not usable (24.2% of periods carry a row), so no method may run until the data is corrected.",
+          "refusal": {
+            "code": "REFUSED_DATA_QUALITY",
+            "driven_by_finding_codes": [
+              "ZERO_VS_MISSING_AMBIGUOUS"
+            ],
+            "resolution_options": [
+              "SUPPLY_LONGER_HISTORY",
+              "SUPPLY_CORRECTED_EXTRACT",
+              "TREAT_AS_NEW_LINE",
+              "EXCLUDE_FROM_SCOPE",
+              "DEFER"
+            ]
+          },
+          "resolution": null,
+          "volume_share_pct": 0.188387
+        },
+        "PKG-40001": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [],
+          "decided_by": "not usable, rule 2",
+          "decision": "refused_data_quality",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": false,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.010843,
+            "non_zero_periods": 5,
+            "periods_present": 5,
+            "span_periods": 5
+          },
+          "forecast_eligible": false,
+          "quality_band_at_decision": "not_usable",
+          "quality_finding_codes_referenced": [
+            "HISTORY_TOO_SHORT"
+          ],
+          "rank_by_volume": 9,
+          "reason": "The quality stage bands this line not usable (5 periods of history), so no method may run until the data is corrected.",
+          "refusal": {
+            "code": "REFUSED_DATA_QUALITY",
+            "driven_by_finding_codes": [
+              "HISTORY_TOO_SHORT"
+            ],
+            "resolution_options": [
+              "SUPPLY_LONGER_HISTORY",
+              "SUPPLY_CORRECTED_EXTRACT",
+              "TREAT_AS_NEW_LINE",
+              "EXCLUDE_FROM_SCOPE",
+              "DEFER"
+            ]
+          },
+          "resolution": null,
+          "volume_share_pct": 0.312839
+        },
+        "PKG-40002": {
+          "abc_volume_class": "B",
+          "caveat_codes_shown": [
+            "SERIES_DISCONTINUED"
+          ],
+          "decided_by": "discontinued, rule 1",
+          "decision": "discontinued_confirm_status",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.009189,
+            "non_zero_periods": 26,
+            "periods_present": 26,
+            "trailing_periods": 9
+          },
+          "forecast_eligible": false,
+          "quality_band_at_decision": "caveated",
+          "quality_finding_codes_referenced": [
+            "SERIES_DISCONTINUED"
+          ],
+          "rank_by_volume": 5,
+          "reason": "No demand for 9 periods before the portfolio cut-off, so there is nothing to forecast forward until the status is confirmed.",
+          "refusal": {
+            "code": "DISCONTINUED",
+            "driven_by_finding_codes": [
+              "SERIES_DISCONTINUED"
+            ],
+            "resolution_options": [
+              "DISCONTINUED_CONFIRMED",
+              "SUPERSEDED_BY_SKU",
+              "STILL_ACTIVE_DEMAND_GAP",
+              "STILL_ACTIVE_DATA_MISSING",
+              "DEFER"
+            ]
+          },
+          "resolution": null,
+          "volume_share_pct": 2.834644
+        },
+        "PKG-40003": {
+          "abc_volume_class": "B",
+          "caveat_codes_shown": [
+            "GAP_BLOCK"
+          ],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.008162,
+            "non_zero_periods": 31,
+            "periods_present": 31
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "caveated",
+          "quality_finding_codes_referenced": [
+            "GAP_BLOCK"
+          ],
+          "rank_by_volume": 4,
+          "reason": "Demand arrives in 31 of 31 periods at a stable size (ADI 1.00, CV squared 0.008), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 6.913138
+        },
+        "PKG-40004": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [
+            "OUTLIER_CANDIDATE"
+          ],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible_wide_interval",
+          "demand_class": "erratic",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 1.177025,
+            "non_zero_periods": 35,
+            "periods_present": 35
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "caveated",
+          "quality_finding_codes_referenced": [
+            "OUTLIER_CANDIDATE"
+          ],
+          "rank_by_volume": 8,
+          "reason": "Demand arrives in 35 of 35 periods but its size swings hard (ADI 1.00, CV squared 1.177), so the interval is the useful output and the point number is not.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 1.355571
+        },
+        "PKG-40005": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [
+            "SERIES_STALE"
+          ],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.008987,
+            "non_zero_periods": 30,
+            "periods_present": 30
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "caveated",
+          "quality_finding_codes_referenced": [
+            "SERIES_STALE"
+          ],
+          "rank_by_volume": 7,
+          "reason": "Demand arrives in 30 of 30 periods at a stable size (ADI 1.00, CV squared 0.009), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 2.247347
+        },
+        "PKG-40006": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.206897,
+            "cv_squared_nonzero": 0.101345,
+            "non_zero_periods": 29,
+            "periods_present": 35
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "clean",
+          "quality_finding_codes_referenced": [
+            "VOLUME_IMMATERIAL"
+          ],
+          "rank_by_volume": 12,
+          "reason": "Demand arrives in 29 of 35 periods at a stable size (ADI 1.21, CV squared 0.101), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 0.00912
+        },
+        "PKG-40007": {
+          "abc_volume_class": "C",
+          "caveat_codes_shown": [
+            "HISTORY_TOO_SHORT"
+          ],
+          "decided_by": "class table, rule 3",
+          "decision": "model_eligible",
+          "demand_class": "smooth",
+          "engine_resolvable_flag": null,
+          "evidence": {
+            "adi": 1.0,
+            "cv_squared_nonzero": 0.004961,
+            "non_zero_periods": 14,
+            "periods_present": 14,
+            "span_periods": 14
+          },
+          "forecast_eligible": true,
+          "quality_band_at_decision": "caveated",
+          "quality_finding_codes_referenced": [
+            "HISTORY_TOO_SHORT"
+          ],
+          "rank_by_volume": 6,
+          "reason": "Demand arrives in 14 of 14 periods at a stable size (ADI 1.00, CV squared 0.005), so a model and the statistical baselines can both run.",
+          "refusal": null,
+          "resolution": null,
+          "volume_share_pct": 2.571301
+        }
+      },
+      "portfolio": {
+        "decision_counts": {
+          "discontinued_confirm_status": 1,
+          "insufficient_evidence": 0,
+          "intermittent_methods": 1,
+          "model_eligible": 7,
+          "model_eligible_wide_interval": 1,
+          "policy_only": 0,
+          "refused_data_quality": 2
+        },
+        "eligible_count": 9,
+        "forecast_eligible_volume_share_pct": 96.66413,
+        "ineligible_count": 3,
+        "not_eligible_volume_share_pct": 3.33587,
+        "open_item_count": 3,
+        "open_items": [
+          "PKG-40002",
+          "PKG-40001",
+          "PKG-30220"
+        ],
+        "refusal_code_counts": {
+          "DISCONTINUED": 1,
+          "INSUFFICIENT_EVIDENCE": 0,
+          "REFUSED_DATA_QUALITY": 2
+        },
+        "resolution_code_counts": {},
+        "sku_count": 12,
+        "volume_share_by_decision_pct": {
+          "discontinued_confirm_status": 2.834644,
+          "insufficient_evidence": 0.0,
+          "intermittent_methods": 0.223253,
+          "model_eligible": 95.085306,
+          "model_eligible_wide_interval": 1.355571,
+          "policy_only": 0.0,
+          "refused_data_quality": 0.501226
+        }
+      },
+      "precedence": [
+        "1. A line carrying SERIES_DISCONTINUED routes to discontinued_confirm_status, whatever its class and whatever its band.",
+        "2. Otherwise a not_usable band routes to refused_data_quality, whatever its class.",
+        "3. Otherwise the demand class decides, including unclassifiable to insufficient_evidence."
+      ],
+      "resolution_vocabulary": {
+        "DISCONTINUED": [
+          "DISCONTINUED_CONFIRMED",
+          "SUPERSEDED_BY_SKU",
+          "STILL_ACTIVE_DEMAND_GAP",
+          "STILL_ACTIVE_DATA_MISSING",
+          "DEFER"
+        ],
+        "INSUFFICIENT_EVIDENCE": [
+          "SUPPLY_LONGER_HISTORY",
+          "TREAT_AS_NEW_LINE",
+          "EXCLUDE_FROM_SCOPE",
+          "DEFER"
+        ],
+        "REFUSED_DATA_QUALITY": [
+          "SUPPLY_LONGER_HISTORY",
+          "SUPPLY_CORRECTED_EXTRACT",
+          "TREAT_AS_NEW_LINE",
+          "EXCLUDE_FROM_SCOPE",
+          "DEFER"
+        ]
+      },
+      "routing_table_version": "1.2",
+      "schema_version": "1.0"
+    },
     "validation": {
       "findings": [
         {
@@ -1363,8 +1859,8 @@
     }
   },
   "integrity": {
-    "bundle_sha256": "4b7f12633eef30496171576a95aa043d417abf1095bb490e4d5b0d7acb94311f",
-    "manifest_sha256": "ed24e517f65931b8df648b11ec3f32381f917ab33795858e9aad4a9363b1535c",
-    "content_fingerprint_sha256": "a90921c79cd00ec5fbc6e06bba3f341795ba0dfb596e357dd52aefbf60ee4317"
+    "bundle_sha256": "6d0dd6864aa8493cdca010929b1e4c2558a43c92eff749f46fed43e4f8682f4a",
+    "manifest_sha256": "b5795b24dc7ac002f7353c805386060c75c4d0abf603053fc463aece795d22ad",
+    "content_fingerprint_sha256": "15edeb37242f8bcfcb444d44fc796cd295584e06ca90c84db0f039016d1e2cc3"
   }
 }

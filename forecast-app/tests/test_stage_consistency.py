@@ -11,6 +11,7 @@ from starlette.datastructures import UploadFile
 import app
 from classification_engine import classify_quality
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
+from routing_engine import DECISIONS, REFUSAL_CODES, RESOLUTION_VOCABULARY, route_portfolio
 from run_manifest import quality_stage, sha256_json, source_record, validation_stage
 from validator import ValidationOptions, validate_csv
 
@@ -57,8 +58,12 @@ class StageConsistencyTests(unittest.TestCase):
         validation_codes = emitted_codes(APP / "validator.py")
         quality_codes = emitted_codes(APP / "quality_engine.py")
         classification_codes = emitted_codes(APP / "classification_engine.py")
+        routing_codes = emitted_codes(APP / "routing_engine.py")
         self.assertEqual(validation_codes & quality_codes, set())
         self.assertEqual(classification_codes, set())
+        self.assertEqual(routing_codes, set())
+        routing_vocabulary = set(DECISIONS) | set(REFUSAL_CODES.values()) | {code for options in RESOLUTION_VOCABULARY.values() for code in options}
+        self.assertEqual(routing_vocabulary & (validation_codes | quality_codes), set())
 
     def test_no_fixture_has_cross_stage_property_conflicts(self):
         as_of = date.fromisoformat(EXPECTED["as_of_date"])
@@ -113,6 +118,37 @@ class StageConsistencyTests(unittest.TestCase):
         quality_50602 = next(item for item in quality["skus"] if item["sku"] == "PKG-50602")
         self.assertEqual({finding["code"] for finding in quality_50602["findings"]}, {"HISTORY_TOO_SHORT", "SERIES_DISCONTINUED"})
         self.assertEqual(classification["per_sku"]["PKG-50602"]["demand_class"], "unclassifiable")
+
+    def test_routing_references_quality_without_emitting_or_contradicting_it(self):
+        fixture = FIXTURES / "31_routing_portfolio.csv"
+        as_of = date(2026, 8, 1)
+        validation = validate_csv(fixture.read_bytes(), ValidationOptions(as_of_date=as_of))
+        quality = assess_quality(validation, QualityOptions(as_of_date=as_of, grain="month")).to_dict()
+        classification = classify_quality(quality)
+        routing = route_portfolio(quality, classification)
+        quality_codes = {finding["code"] for item in quality["skus"] for finding in item["findings"]}
+        quality_by_sku = {item["sku"]: item for item in quality["skus"]}
+        for sku, item in routing["per_sku"].items():
+            self.assertNotIn("band", item)
+            self.assertNotIn("findings", item)
+            self.assertEqual(item["quality_band_at_decision"], quality_by_sku[sku]["band"])
+            self.assertEqual(item["demand_class"], classification["per_sku"][sku]["demand_class"])
+            codes = [finding["code"] for finding in quality_by_sku[sku]["findings"]]
+            self.assertEqual(item["quality_finding_codes_referenced"], codes)
+            self.assertEqual(item["decision"] == "discontinued_confirm_status", "SERIES_DISCONTINUED" in codes)
+            if item["decision"] == "refused_data_quality":
+                self.assertEqual(quality_by_sku[sku]["band"], "not_usable")
+            if item["refusal"]:
+                self.assertTrue(set(item["refusal"]["driven_by_finding_codes"]).issubset(codes))
+                self.assertNotIn(item["refusal"]["code"], quality_codes)
+            self.assertNotIn(item["decision"], quality_codes)
+        payload = asyncio.run(app.quality_upload(upload(fixture), "2026-08-01", "month", "{}"))
+        routing_codes = {item["decision"] for item in payload["routing_result"]["per_sku"].values()} | {
+            item["refusal"]["code"] for item in payload["routing_result"]["per_sku"].values() if item["refusal"]
+        }
+        endpoint_quality_codes = {finding["code"] for item in payload["quality"]["skus"] for finding in item["findings"]}
+        self.assertEqual(routing_codes & endpoint_quality_codes, set())
+        self.assertEqual(routing_codes & {finding["code"] for finding in payload["validation"]["findings"]}, set())
 
     def test_fixture_07_quality_engine_payload_matches_reviewed_contract(self):
         fixture = FIXTURES / "07_zeros_versus_gaps.csv"

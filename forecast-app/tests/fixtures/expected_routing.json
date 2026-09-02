@@ -1,0 +1,500 @@
+{
+  "version": "1.0",
+  "story": "2.2 Routing decision, reason and refusal state",
+  "fixture": "31_routing_portfolio.csv",
+  "fixture_sha256": "2c55f4f7c30e6f708c7389a2df3850a8fb7947b1187f19c95531b4aaca9601f6",
+  "as_of_date": "2026-08-01",
+  "grain": "month",
+  "routing_table_version": "1.2",
+  "note": "Routing records a decision. It does not run a method. Every decision in this file is a function of two inputs: the demand class, which classification owns, and the quality band, which the quality stage owns. Routing computes neither. The bands in quality_inputs_observed were taken from a live engine run rather than predicted, so this file is exact.",
+  "quality_inputs_observed": {
+    "status": "observed, not specified",
+    "observed_on": "2026-09-02, build session run at analysis date 2026-08-01",
+    "authority": "The engine is authoritative for bands and findings. If the engine changes, this block is updated to match it and the decisions are recomputed. The engine is never weakened to make a routing expectation pass.",
+    "validation": {
+      "verdict": "accept",
+      "findings": []
+    },
+    "portfolio_band": "not_usable",
+    "portfolio_findings": [
+      "LONG_TAIL_CONCENTRATION"
+    ],
+    "portfolio_flagged_volume_share_pct": 55.2657,
+    "per_sku": {
+      "RTG-60001": {
+        "band": "clean",
+        "finding_codes": [],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60002": {
+        "band": "clean",
+        "finding_codes": [],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60101": {
+        "band": "caveated",
+        "finding_codes": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60201": {
+        "band": "clean",
+        "finding_codes": [],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60301": {
+        "band": "caveated",
+        "finding_codes": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60401": {
+        "band": "not_usable",
+        "finding_codes": [
+          "HISTORY_TOO_SHORT"
+        ],
+        "engine_resolvable_flag": false
+      },
+      "RTG-60402": {
+        "band": "not_usable",
+        "finding_codes": [
+          "ZERO_VS_MISSING_AMBIGUOUS"
+        ],
+        "engine_resolvable_flag": true
+      },
+      "RTG-60403": {
+        "band": "not_usable",
+        "finding_codes": [
+          "SERIES_DISCONTINUED"
+        ],
+        "engine_resolvable_flag": true
+      },
+      "RTG-60501": {
+        "band": "clean",
+        "finding_codes": [],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60502": {
+        "band": "not_usable",
+        "finding_codes": [
+          "HISTORY_TOO_SHORT"
+        ],
+        "engine_resolvable_flag": false
+      },
+      "RTG-60601": {
+        "band": "caveated",
+        "finding_codes": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60602": {
+        "band": "clean",
+        "finding_codes": [],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60701": {
+        "band": "caveated",
+        "finding_codes": [
+          "OUTLIER_CANDIDATE"
+        ],
+        "engine_resolvable_flag": null
+      },
+      "RTG-60702": {
+        "band": "clean",
+        "finding_codes": [],
+        "engine_resolvable_flag": null
+      }
+    }
+  },
+  "rules": {
+    "precedence": [
+      "1. A line carrying SERIES_DISCONTINUED routes to discontinued_confirm_status, whatever its class and whatever its band.",
+      "2. Otherwise a not_usable band routes to refused_data_quality, whatever its class.",
+      "3. Otherwise the demand class decides, including unclassifiable to insufficient_evidence."
+    ],
+    "caveated_band_does_not_reroute": true,
+    "abc_volume_class_never_affects_the_decision": true,
+    "portfolio_band_never_affects_a_line_decision": "The portfolio band on this fixture is not_usable, and no per-line decision depends on it. The portfolio band describes the portfolio; routing reads the per-SKU band.",
+    "routing_computes_no_metric": "Routing reads demand_class from classification and band, findings and SERIES_DISCONTINUED from quality. It recomputes no trailing gap, no ADI, no CV squared and no coverage.",
+    "finding_codes_are_referenced_not_emitted": "quality_finding_codes_referenced and driven_by_finding_codes hold quality codes as provenance. Routing emits none of them, so the 1.6 cross-stage test still holds.",
+    "quality_band_at_decision": "Recorded beside the decision as the one approved exception to implementation default 4, because a decision that cannot show its input is not reproducible."
+  },
+  "resolution_vocabulary": {
+    "DISCONTINUED": [
+      "DISCONTINUED_CONFIRMED",
+      "SUPERSEDED_BY_SKU",
+      "STILL_ACTIVE_DEMAND_GAP",
+      "STILL_ACTIVE_DATA_MISSING",
+      "DEFER"
+    ],
+    "REFUSED_DATA_QUALITY": [
+      "SUPPLY_LONGER_HISTORY",
+      "SUPPLY_CORRECTED_EXTRACT",
+      "TREAT_AS_NEW_LINE",
+      "EXCLUDE_FROM_SCOPE",
+      "DEFER"
+    ],
+    "INSUFFICIENT_EVIDENCE": [
+      "SUPPLY_LONGER_HISTORY",
+      "TREAT_AS_NEW_LINE",
+      "EXCLUDE_FROM_SCOPE",
+      "DEFER"
+    ]
+  },
+  "resolution_rules": [
+    "The resolution code is required. A free-text note may accompany it and carries no behaviour.",
+    "The note is client data: it belongs in the bundle and never in the manifest.",
+    "SUPERSEDED_BY_SKU requires a successor SKU chosen from the SKUs present in the uploaded file, never typed.",
+    "A supplied resolution produces a new pass recorded in the manifest options, as story 1.1 does for validation.",
+    "DEFER is a legitimate answer. Unresolved lines appear on the open items list and are not a failure state."
+  ],
+  "portfolio": {
+    "sku_count": 14,
+    "decision_counts": {
+      "model_eligible": 4,
+      "model_eligible_wide_interval": 1,
+      "intermittent_methods": 2,
+      "policy_only": 2,
+      "refused_data_quality": 3,
+      "discontinued_confirm_status": 1,
+      "insufficient_evidence": 1
+    },
+    "volume_share_by_decision_pct": {
+      "model_eligible": 47.55,
+      "discontinued_confirm_status": 12.85,
+      "refused_data_quality": 12.33,
+      "model_eligible_wide_interval": 11.84,
+      "policy_only": 9.04,
+      "intermittent_methods": 6.19,
+      "insufficient_evidence": 0.2
+    },
+    "forecast_eligible_volume_share_pct": 65.58,
+    "not_eligible_volume_share_pct": 34.42,
+    "headline_must_state": "65.58 percent of volume is forecast eligible and 34.42 percent is not, split by reason."
+  },
+  "boundary_cases": [
+    {
+      "sku": "RTG-60403",
+      "tests": "precedence rule 1 against rule 2",
+      "detail": "not_usable band AND SERIES_DISCONTINUED, 12.85 percent of volume, rank two",
+      "expected_decision": "discontinued_confirm_status",
+      "assertion": "discontinued wins over the not usable band. A result of refused_data_quality here means the precedence order is reversed."
+    },
+    {
+      "sku": "RTG-60502",
+      "tests": "precedence rule 2 against rule 3",
+      "detail": "not_usable band AND unclassifiable class",
+      "expected_decision": "refused_data_quality",
+      "assertion": "the band wins over the class. A result of insufficient_evidence here means rule 2 is not being applied."
+    },
+    {
+      "sku": "RTG-60501",
+      "tests": "refusal on evidence with clean data",
+      "detail": "clean band, unclassifiable class, 2 non-zero observations in 35",
+      "expected_decision": "insufficient_evidence",
+      "assertion": "a clean line can still be refused. Any data quality refusal here is wrong."
+    },
+    {
+      "sku": "RTG-60601",
+      "tests": "a caveat must not reroute",
+      "detail": "caveated band with OUTLIER_CANDIDATE, smooth class",
+      "expected_decision": "model_eligible",
+      "assertion": "the decision is unchanged and the caveat is shown alongside it."
+    },
+    {
+      "sku": "RTG-60301",
+      "tests": "a caveat must not reroute on a non-eligible line either",
+      "detail": "caveated band with OUTLIER_CANDIDATE, lumpy class, 8.28 percent of volume",
+      "expected_decision": "policy_only",
+      "assertion": "policy_only is a route rather than a refusal, so refusal is null even though forecast_eligible is false."
+    },
+    {
+      "sku": "RTG-60401",
+      "tests": "the material refusal",
+      "detail": "not_usable on HISTORY_TOO_SHORT, 6.59 percent of volume, five period launch",
+      "expected_decision": "refused_data_quality",
+      "assertion": "TREAT_AS_NEW_LINE must appear in its resolution options. A launch is forecast by analogue, not from five points of its own history."
+    }
+  ],
+  "assertions": [
+    "Every SKU carries exactly one decision from the closed set of seven.",
+    "forecast_eligible is true only for model_eligible, model_eligible_wide_interval and intermittent_methods.",
+    "refusal is non-null exactly for discontinued_confirm_status, refused_data_quality and insufficient_evidence. policy_only carries a null refusal despite being ineligible.",
+    "Every non-null refusal carries a resolution_options list from the closed vocabulary, and every list contains DEFER.",
+    "No routing code appears in the validation or quality code sets, per the 1.6 cross-stage test.",
+    "Volume shares by decision sum to 100 within 0.05.",
+    "Routing emits no metric of its own: every number it shows traces to classification or quality."
+  ],
+  "per_sku": {
+    "RTG-60001": {
+      "demand_class": "smooth",
+      "abc_volume_class": "A",
+      "quality_band_at_decision": "clean",
+      "quality_finding_codes_referenced": [],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 26.74,
+      "decision": "model_eligible",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand in every period at a stable size, so a model and the statistical baselines can both run",
+      "refusal": null
+    },
+    "RTG-60002": {
+      "demand_class": "smooth",
+      "abc_volume_class": "A",
+      "quality_band_at_decision": "clean",
+      "quality_finding_codes_referenced": [],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 10.45,
+      "decision": "model_eligible",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand in every period at a stable size, so a model and the statistical baselines can both run",
+      "refusal": null
+    },
+    "RTG-60702": {
+      "demand_class": "smooth",
+      "abc_volume_class": "C",
+      "quality_band_at_decision": "clean",
+      "quality_finding_codes_referenced": [],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 1.16,
+      "decision": "model_eligible",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand in every period at a stable size, so a model and the statistical baselines can both run",
+      "refusal": null
+    },
+    "RTG-60101": {
+      "demand_class": "erratic",
+      "abc_volume_class": "A",
+      "quality_band_at_decision": "caveated",
+      "quality_finding_codes_referenced": [
+        "OUTLIER_CANDIDATE"
+      ],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 11.84,
+      "decision": "model_eligible_wide_interval",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand in every period but the size swings hard, so the interval carries the value and the point number does not",
+      "refusal": null,
+      "caveat_codes_shown": [
+        "OUTLIER_CANDIDATE"
+      ]
+    },
+    "RTG-60201": {
+      "demand_class": "intermittent",
+      "abc_volume_class": "B",
+      "quality_band_at_decision": "clean",
+      "quality_finding_codes_referenced": [],
+      "trailing_periods_since_last_demand": 1,
+      "volume_share_pct": 5.61,
+      "decision": "intermittent_methods",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand arrives with regular gaps at a consistent size, which needs the Croston family rather than a general model",
+      "refusal": null
+    },
+    "RTG-60602": {
+      "demand_class": "intermittent",
+      "abc_volume_class": "C",
+      "quality_band_at_decision": "clean",
+      "quality_finding_codes_referenced": [],
+      "trailing_periods_since_last_demand": 4,
+      "volume_share_pct": 0.58,
+      "decision": "intermittent_methods",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand arrives with regular gaps at a consistent size, which needs the Croston family rather than a general model",
+      "refusal": null
+    },
+    "RTG-60301": {
+      "demand_class": "lumpy",
+      "abc_volume_class": "A",
+      "quality_band_at_decision": "caveated",
+      "quality_finding_codes_referenced": [
+        "OUTLIER_CANDIDATE"
+      ],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 8.28,
+      "decision": "policy_only",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": false,
+      "reason_must_convey": "demand is sporadic and the size varies by an order of magnitude, so no statistical method will forecast it well",
+      "refusal": null,
+      "caveat_codes_shown": [
+        "OUTLIER_CANDIDATE"
+      ]
+    },
+    "RTG-60701": {
+      "demand_class": "lumpy",
+      "abc_volume_class": "C",
+      "quality_band_at_decision": "caveated",
+      "quality_finding_codes_referenced": [
+        "OUTLIER_CANDIDATE"
+      ],
+      "trailing_periods_since_last_demand": 1,
+      "volume_share_pct": 0.76,
+      "decision": "policy_only",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": false,
+      "reason_must_convey": "demand is sporadic and the size varies by an order of magnitude, so no statistical method will forecast it well",
+      "refusal": null,
+      "caveat_codes_shown": [
+        "OUTLIER_CANDIDATE"
+      ]
+    },
+    "RTG-60401": {
+      "demand_class": "smooth",
+      "abc_volume_class": "B",
+      "quality_band_at_decision": "not_usable",
+      "quality_finding_codes_referenced": [
+        "HISTORY_TOO_SHORT"
+      ],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 6.59,
+      "decision": "refused_data_quality",
+      "decided_by": "not usable, rule 2",
+      "forecast_eligible": false,
+      "reason_must_convey": "the quality stage bands this line not usable, so no method may run until the data is corrected",
+      "refusal": {
+        "code": "REFUSED_DATA_QUALITY",
+        "driven_by_finding_codes": [
+          "HISTORY_TOO_SHORT"
+        ],
+        "resolution_options": [
+          "SUPPLY_LONGER_HISTORY",
+          "SUPPLY_CORRECTED_EXTRACT",
+          "TREAT_AS_NEW_LINE",
+          "EXCLUDE_FROM_SCOPE",
+          "DEFER"
+        ]
+      }
+    },
+    "RTG-60402": {
+      "demand_class": "smooth",
+      "abc_volume_class": "C",
+      "quality_band_at_decision": "not_usable",
+      "quality_finding_codes_referenced": [
+        "ZERO_VS_MISSING_AMBIGUOUS"
+      ],
+      "trailing_periods_since_last_demand": 1,
+      "volume_share_pct": 4.34,
+      "decision": "refused_data_quality",
+      "decided_by": "not usable, rule 2",
+      "forecast_eligible": false,
+      "reason_must_convey": "the quality stage bands this line not usable, so no method may run until the data is corrected",
+      "refusal": {
+        "code": "REFUSED_DATA_QUALITY",
+        "driven_by_finding_codes": [
+          "ZERO_VS_MISSING_AMBIGUOUS"
+        ],
+        "resolution_options": [
+          "SUPPLY_LONGER_HISTORY",
+          "SUPPLY_CORRECTED_EXTRACT",
+          "TREAT_AS_NEW_LINE",
+          "EXCLUDE_FROM_SCOPE",
+          "DEFER"
+        ]
+      }
+    },
+    "RTG-60403": {
+      "demand_class": "smooth",
+      "abc_volume_class": "A",
+      "quality_band_at_decision": "not_usable",
+      "quality_finding_codes_referenced": [
+        "SERIES_DISCONTINUED"
+      ],
+      "trailing_periods_since_last_demand": 14,
+      "volume_share_pct": 12.85,
+      "decision": "discontinued_confirm_status",
+      "decided_by": "discontinued, rule 1",
+      "forecast_eligible": false,
+      "reason_must_convey": "no demand for six periods or more, so there is nothing to forecast forward until the status is confirmed",
+      "refusal": {
+        "code": "DISCONTINUED",
+        "driven_by_finding_codes": [
+          "SERIES_DISCONTINUED"
+        ],
+        "resolution_options": [
+          "DISCONTINUED_CONFIRMED",
+          "SUPERSEDED_BY_SKU",
+          "STILL_ACTIVE_DEMAND_GAP",
+          "STILL_ACTIVE_DATA_MISSING",
+          "DEFER"
+        ]
+      }
+    },
+    "RTG-60501": {
+      "demand_class": "unclassifiable",
+      "abc_volume_class": "C",
+      "quality_band_at_decision": "clean",
+      "quality_finding_codes_referenced": [],
+      "trailing_periods_since_last_demand": 1,
+      "volume_share_pct": 0.2,
+      "decision": "insufficient_evidence",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": false,
+      "reason_must_convey": "too few non-zero observations to describe a pattern",
+      "refusal": {
+        "code": "INSUFFICIENT_EVIDENCE",
+        "driven_by_finding_codes": [],
+        "resolution_options": [
+          "SUPPLY_LONGER_HISTORY",
+          "TREAT_AS_NEW_LINE",
+          "EXCLUDE_FROM_SCOPE",
+          "DEFER"
+        ]
+      }
+    },
+    "RTG-60502": {
+      "demand_class": "unclassifiable",
+      "abc_volume_class": "C",
+      "quality_band_at_decision": "not_usable",
+      "quality_finding_codes_referenced": [
+        "HISTORY_TOO_SHORT"
+      ],
+      "trailing_periods_since_last_demand": 1,
+      "volume_share_pct": 1.4,
+      "decision": "refused_data_quality",
+      "decided_by": "not usable, rule 2",
+      "forecast_eligible": false,
+      "reason_must_convey": "the quality stage bands this line not usable, so no method may run until the data is corrected",
+      "refusal": {
+        "code": "REFUSED_DATA_QUALITY",
+        "driven_by_finding_codes": [
+          "HISTORY_TOO_SHORT"
+        ],
+        "resolution_options": [
+          "SUPPLY_LONGER_HISTORY",
+          "SUPPLY_CORRECTED_EXTRACT",
+          "TREAT_AS_NEW_LINE",
+          "EXCLUDE_FROM_SCOPE",
+          "DEFER"
+        ]
+      }
+    },
+    "RTG-60601": {
+      "demand_class": "smooth",
+      "abc_volume_class": "A",
+      "quality_band_at_decision": "caveated",
+      "quality_finding_codes_referenced": [
+        "OUTLIER_CANDIDATE"
+      ],
+      "trailing_periods_since_last_demand": 0,
+      "volume_share_pct": 9.2,
+      "decision": "model_eligible",
+      "decided_by": "class table, rule 3",
+      "forecast_eligible": true,
+      "reason_must_convey": "demand in every period at a stable size, so a model and the statistical baselines can both run",
+      "refusal": null,
+      "caveat_codes_shown": [
+        "OUTLIER_CANDIDATE"
+      ]
+    }
+  }
+}

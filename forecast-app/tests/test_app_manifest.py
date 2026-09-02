@@ -40,7 +40,7 @@ class AppManifestTests(unittest.TestCase):
 
     def test_quality_returns_chained_manifest(self):
         payload = asyncio.run(app.quality_upload(upload("20_portfolio_mixed.csv"), "2026-08-01", "month", "{}"))
-        self.assertEqual([stage["stage"] for stage in payload["manifest"]["stages"]], ["validation", "quality", "classification"])
+        self.assertEqual([stage["stage"] for stage in payload["manifest"]["stages"]], ["validation", "quality", "classification", "routing"])
         self.assertTrue(payload["manifest"]["integrity"]["chain_verified"])
         self.assertEqual(
             payload["manifest"]["stages"][1]["input_ref"]["sha256"],
@@ -50,8 +50,17 @@ class AppManifestTests(unittest.TestCase):
             payload["manifest"]["stages"][2]["input_ref"]["sha256"],
             payload["manifest"]["stages"][1]["output_ref"]["sha256"],
         )
+        self.assertEqual(
+            payload["manifest"]["stages"][3]["input_ref"]["sha256"],
+            payload["manifest"]["stages"][2]["output_ref"]["sha256"],
+        )
         self.assertEqual(payload["classification_result"]["portfolio"]["sku_count"], 12)
-        self.assertEqual(set(payload["bundle"]["results"]), {"validation", "quality", "classification"})
+        self.assertEqual(payload["routing_result"]["portfolio"]["sku_count"], 12)
+        self.assertEqual(set(payload["bundle"]["results"]), {"validation", "quality", "classification", "routing"})
+        for item in payload["bundle"]["results"]["routing"]["per_sku"].values():
+            self.assertNotIn("band", item)
+            self.assertNotIn("findings", item)
+        self.assertNotIn("open_items", json.dumps(payload["manifest"]))
         for item in payload["bundle"]["results"]["classification"]["per_sku"].values():
             self.assertNotIn("band", item)
             self.assertNotIn("findings", item)

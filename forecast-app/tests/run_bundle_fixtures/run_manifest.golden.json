@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.4",
-  "run_id": "run_41e9813c5d822f573881eca47b83fdca",
-  "created_at": "2026-08-30T09:00:03Z",
+  "schema_version": "1.5",
+  "run_id": "run_fe701b0eb24ced735e234a3091f497e5",
+  "created_at": "2026-08-30T09:00:04Z",
   "as_of_date": "2026-08-01",
   "as_of_source": "user",
   "source": {
@@ -205,6 +205,77 @@
           "C/unclassifiable": 0
         }
       }
+    },
+    {
+      "stage": "routing",
+      "story": "2.2",
+      "engine_version": "1.0.0",
+      "started_at": "2026-08-30T09:00:03Z",
+      "completed_at": "2026-08-30T09:00:04Z",
+      "duration_ms": 1000,
+      "input_ref": {
+        "type": "classification_result",
+        "sha256": "51de88da2b59b1c3134ab362a71cc9a9a38d6540732c54d8170a02576fdc1983",
+        "series": 12
+      },
+      "output_ref": {
+        "type": "routing_result",
+        "sha256": "ccccb33a3359291d9ca74621b38a3f8c73f81484ab82bf1ee72e9b4c0115be4f",
+        "series": 12
+      },
+      "options": {
+        "routing_table_version": "1.2",
+        "precedence": [
+          "1. A line carrying SERIES_DISCONTINUED routes to discontinued_confirm_status, whatever its class and whatever its band.",
+          "2. Otherwise a not_usable band routes to refused_data_quality, whatever its class.",
+          "3. Otherwise the demand class decides, including unclassifiable to insufficient_evidence."
+        ],
+        "resolution_vocabulary": {
+          "DISCONTINUED": [
+            "DISCONTINUED_CONFIRMED",
+            "SUPERSEDED_BY_SKU",
+            "STILL_ACTIVE_DEMAND_GAP",
+            "STILL_ACTIVE_DATA_MISSING",
+            "DEFER"
+          ],
+          "REFUSED_DATA_QUALITY": [
+            "SUPPLY_LONGER_HISTORY",
+            "SUPPLY_CORRECTED_EXTRACT",
+            "TREAT_AS_NEW_LINE",
+            "EXCLUDE_FROM_SCOPE",
+            "DEFER"
+          ],
+          "INSUFFICIENT_EVIDENCE": [
+            "SUPPLY_LONGER_HISTORY",
+            "TREAT_AS_NEW_LINE",
+            "EXCLUDE_FROM_SCOPE",
+            "DEFER"
+          ]
+        },
+        "resolutions_supplied": {
+          "count": 0,
+          "by_code": {}
+        }
+      },
+      "outcome": {
+        "decision_counts": {
+          "model_eligible": 7,
+          "model_eligible_wide_interval": 1,
+          "intermittent_methods": 1,
+          "policy_only": 0,
+          "insufficient_evidence": 0,
+          "refused_data_quality": 2,
+          "discontinued_confirm_status": 1
+        },
+        "eligible_count": 9,
+        "ineligible_count": 3,
+        "refusal_code_counts": {
+          "DISCONTINUED": 1,
+          "REFUSED_DATA_QUALITY": 2,
+          "INSUFFICIENT_EVIDENCE": 0
+        },
+        "open_item_count": 3
+      }
     }
   ],
   "environment": {
@@ -220,14 +291,15 @@
     "deterministic_stages": [
       "validation",
       "quality",
-      "classification"
+      "classification",
+      "routing"
     ],
     "non_deterministic_stages": [],
-    "statement": "Validation, quality and classification are bitwise reproducible."
+    "statement": "Validation, quality, classification and routing are bitwise reproducible."
   },
   "integrity": {
-    "manifest_sha256": "ed24e517f65931b8df648b11ec3f32381f917ab33795858e9aad4a9363b1535c",
-    "content_fingerprint_sha256": "a90921c79cd00ec5fbc6e06bba3f341795ba0dfb596e357dd52aefbf60ee4317",
+    "manifest_sha256": "b5795b24dc7ac002f7353c805386060c75c4d0abf603053fc463aece795d22ad",
+    "content_fingerprint_sha256": "15edeb37242f8bcfcb444d44fc796cd295584e06ca90c84db0f039016d1e2cc3",
     "chain_verified": true
   }
 }

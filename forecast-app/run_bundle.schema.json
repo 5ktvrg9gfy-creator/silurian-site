@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://silurian.example/schemas/run_bundle/1.1.json",
+  "$id": "https://silurian.example/schemas/run_bundle/1.2.json",
   "title": "Silurian Forecast Diagnostic run bundle",
-  "description": "A portable record containing client data. Reopening renders recorded results and never recomputes.",
+  "description": "A portable record containing client data. Reopening renders recorded results and never recomputes. Version 1.2 adds the routing result, required exactly when the manifest carries a routing stage.",
   "type": "object",
   "allOf": [
     {
@@ -30,12 +30,38 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "manifest": {
+            "properties": {
+              "stages": {"contains": {"properties": {"stage": {"const": "routing"}}, "required": ["stage"]}}
+            },
+            "required": ["stages"]
+          }
+        }
+      },
+      "then": {"properties": {"results": {"required": ["routing"]}}}
+    },
+    {
+      "if": {"properties": {"results": {"required": ["routing"]}}},
+      "then": {
+        "properties": {
+          "manifest": {
+            "properties": {
+              "stages": {"contains": {"properties": {"stage": {"const": "routing"}}, "required": ["stage"]}}
+            },
+            "required": ["stages"]
+          }
+        }
+      }
     }
   ],
   "required": ["bundle_schema_version", "confidentiality", "manifest", "results", "integrity"],
   "additionalProperties": false,
   "properties": {
-    "bundle_schema_version": {"type": "string", "const": "1.1"},
+    "bundle_schema_version": {"type": "string", "enum": ["1.1", "1.2"]},
     "confidentiality": {
       "type": "object",
       "required": ["contains_client_data", "statement"],
@@ -100,6 +126,43 @@
                 "required": ["line_count", "volume_share_pct"]
               }
             },
+            "method_note": {"type": "string", "minLength": 1}
+          }
+        },
+        "routing": {
+          "type": "object",
+          "required": ["schema_version", "routing_table_version", "decisions", "precedence", "resolution_vocabulary", "per_sku", "portfolio", "method_note"],
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {"type": "string"},
+            "routing_table_version": {"type": "string"},
+            "decisions": {"type": "object", "minProperties": 7, "maxProperties": 7},
+            "precedence": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3},
+            "resolution_vocabulary": {"type": "object"},
+            "per_sku": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["decision", "reason", "forecast_eligible", "quality_band_at_decision", "refusal"],
+                "not": {"anyOf": [{"required": ["band"]}, {"required": ["findings"]}]},
+                "properties": {
+                  "decision": {"enum": ["model_eligible", "model_eligible_wide_interval", "intermittent_methods", "policy_only", "insufficient_evidence", "refused_data_quality", "discontinued_confirm_status"]},
+                  "reason": {"type": "string", "minLength": 1},
+                  "forecast_eligible": {"type": "boolean"},
+                  "quality_band_at_decision": {"enum": ["clean", "caveated", "not_usable"]},
+                  "refusal": {
+                    "type": ["object", "null"],
+                    "required": ["code", "driven_by_finding_codes", "resolution_options"],
+                    "properties": {
+                      "code": {"enum": ["DISCONTINUED", "REFUSED_DATA_QUALITY", "INSUFFICIENT_EVIDENCE"]},
+                      "driven_by_finding_codes": {"type": "array", "items": {"type": "string"}},
+                      "resolution_options": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+                    }
+                  }
+                }
+              }
+            },
+            "portfolio": {"type": "object"},
             "method_note": {"type": "string", "minLength": 1}
           }
         },

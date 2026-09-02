@@ -14,6 +14,7 @@ from determinism import measure_forecast_determinism
 from classification_engine import classify_quality
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
+from routing_engine import route_portfolio
 from run_bundle import (
     BundleError,
     build_bundle,
@@ -22,6 +23,7 @@ from run_bundle import (
     forecast_bundle_result,
     quality_bundle_result,
     reopen_bundle,
+    routing_bundle_result,
     validation_bundle_result,
 )
 from run_manifest import (
@@ -31,6 +33,7 @@ from run_manifest import (
     model_identity,
     quality_stage,
     reference_check,
+    routing_stage,
     sha256_json,
     source_record,
     utc_now,
@@ -315,23 +318,34 @@ async def quality_upload(
         classification_started,
         classification_completed,
     )
+    quality_payload = quality.to_dict()
+    routing_started = utc_now()
+    routing_payload = route_portfolio(quality_payload, classification_payload)
+    routing_completed = utc_now()
+    routing_record = routing_stage(
+        routing_payload,
+        classification_record["output_ref"],
+        routing_started,
+        routing_completed,
+    )
     manifest = build_manifest(
         source,
-        [validation_record, quality_record, classification_record],
+        [validation_record, quality_record, classification_record, routing_record],
         effective_date,
         "user" if analysis_date else "server_default",
         _source_skus(validation),
     )
-    quality_payload = quality.to_dict()
     bundle = build_bundle(manifest, {
         "validation": validation_bundle_result(validation, validation_record),
         "quality": quality_bundle_result(quality_payload),
         "classification": classification_bundle_result(classification_payload),
+        "routing": routing_bundle_result(routing_payload),
     }, file.filename or "uploaded.csv")
     return {
         "validation": _validation_response(validation),
         "quality": quality_payload,
         "classification_result": classification_payload,
+        "routing_result": routing_payload,
         "manifest": manifest,
         "bundle": bundle,
     }
@@ -481,6 +495,7 @@ async def reproduce_bundle_upload(
         ["validation"],
         ["validation", "quality"],
         ["validation", "quality", "classification"],
+        ["validation", "quality", "classification", "routing"],
         ["validation", "forecast"],
     ):
         raise HTTPException(status_code=400, detail="This combination of recorded stages is not supported for reproduction")
@@ -521,6 +536,18 @@ async def reproduce_bundle_upload(
             )
             stages.append(classification_record)
             results["classification"] = classification_bundle_result(classification)
+            if "routing" in original_stages:
+                routing_started = utc_now()
+                routing = route_portfolio(quality, classification)
+                routing_completed = utc_now()
+                routing_record = routing_stage(
+                    routing,
+                    classification_record["output_ref"],
+                    routing_started,
+                    routing_completed,
+                )
+                stages.append(routing_record)
+                results["routing"] = routing_bundle_result(routing)
     if "forecast" in original_stages and validation.verdict != "reject":
         forecast_started = utc_now()
         histories = _all_series_from_validation(validation)
