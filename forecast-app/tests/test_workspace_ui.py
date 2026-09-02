@@ -7,7 +7,7 @@ HTML = (Path(__file__).parents[1] / "static" / "index.html").read_text(encoding=
 
 class WorkspaceUiTests(unittest.TestCase):
     def test_each_output_is_an_independent_panel(self):
-        for name in ("validation", "quality", "classification", "routing", "forecast", "provenance"):
+        for name in ("validation", "quality", "classification", "routing", "openitems", "forecast", "provenance"):
             self.assertIn(f'data-workspace-panel="{name}"', HTML)
             self.assertIn(f'data-workspace-tab="{name}"', HTML)
         self.assertIn("renderPanel:name=>", HTML)
@@ -94,15 +94,70 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("esc(routing.reason)", drawer)
         self.assertIn("Quality band at decision", drawer)
         self.assertIn("routing.refusal.resolution_options.map", drawer)
-        self.assertIn("No option changes the quality band", drawer)
-        self.assertEqual(drawer.count('class="action-slot" aria-hidden="true"'), 1)
-        self.assertNotIn("Do this</strong><span>${esc(routing", drawer)
+        self.assertIn("never changes the decision or the quality band", drawer)
+        self.assertEqual(drawer.count('class="action-slot"'), 1)
+        self.assertIn('<strong>Do this</strong><span class="reason">${esc(routing.action)}</span>', drawer)
+        self.assertNotIn('aria-hidden="true"></div>', drawer)
 
     def test_recorded_bundle_view_and_version_gates_accept_routing(self):
-        self.assertIn("['1.0','1.1','1.2'].includes(bundle.bundle_schema_version)", HTML)
-        self.assertIn("['1.2','1.3','1.4','1.5'].includes(bundle.manifest.schema_version)", HTML)
-        self.assertIn("routing:'1.0.0'", HTML)
+        self.assertIn("['1.0','1.1','1.2','1.3'].includes(bundle.bundle_schema_version)", HTML)
+        self.assertIn("['1.2','1.3','1.4','1.5','1.6'].includes(bundle.manifest.schema_version)", HTML)
+        self.assertIn("routing:'1.1.0'", HTML)
         self.assertIn("Recorded routing result", HTML)
+        self.assertIn("<th>Resolution</th>", HTML)
+        self.assertIn("<th>Do this</th>", HTML)
+
+    def test_resolution_picker_is_a_closed_list_that_shows_its_consequence_first(self):
+        start = HTML.index("function openQualityDrawer(sku,opener){")
+        end = HTML.index("function closeQualityDrawer(){", start)
+        drawer = HTML[start:end]
+        self.assertIn('<select id="resolutionCode" name="code" required>', drawer)
+        self.assertIn("routing.refusal.resolution_options.map(option=>`<option value=", drawer)
+        self.assertIn('<select id="successorSku" name="successor_sku">', drawer)
+        self.assertIn("others.map(name=>`<option value=", drawer)
+        self.assertNotIn('type="text"', drawer)
+        self.assertNotIn("<input", drawer)
+        self.assertIn("latestRouting.resolution_effects[code.value]", drawer)
+        self.assertIn("consequence.textContent=effect?effect.consequence:''", drawer)
+        self.assertIn("workspaceState.resolutions[sku]=record", drawer)
+        self.assertIn("runQualityAssessment({reopen:sku})", drawer)
+        self.assertIn("It stays in the confidential bundle and never reaches the manifest", drawer)
+        self.assertIn("data-clear-resolution", drawer)
+
+    def test_open_items_panel_renders_alone_and_is_reachable_twice(self):
+        self.assertLess(HTML.index('data-workspace-tab="routing"'), HTML.index('data-workspace-tab="openitems"'))
+        self.assertLess(HTML.index('data-workspace-tab="openitems"'), HTML.index('data-workspace-tab="forecast"'))
+        self.assertIn('id="openItemsContent"', HTML)
+        self.assertIn('id="contextOpenItems"', HTML)
+        self.assertIn("document.getElementById('contextOpenItems').addEventListener('click',()=>showWorkspacePanel('openitems'))", HTML)
+        self.assertIn("openButton.addEventListener('click',()=>showWorkspacePanel('openitems'))", HTML)
+        start = HTML.index("function renderOpenItems(){")
+        end = HTML.index("function renderForecastEmpty(){", start)
+        renderer = HTML[start:end]
+        self.assertIn("portfolio.open_items", renderer)
+        self.assertIn("of your volume", renderer)
+        self.assertIn("waiting on you", renderer)
+        self.assertIn("Every refusal is resolved.", renderer)
+        self.assertIn("The last was resolved at ${esc(timeCopy(portfolio.last_resolved_at))}", renderer)
+        self.assertIn("<th>Rank</th>", renderer)
+        self.assertIn("<th>Resolution options</th>", renderer)
+        self.assertNotIn("sort(", renderer)
+        self.assertNotIn("qualityRows", renderer)
+        self.assertNotIn("routingRows", renderer)
+
+    def test_every_drawer_statement_names_its_stage(self):
+        start = HTML.index("function openQualityDrawer(sku,opener){")
+        end = HTML.index("function closeQualityDrawer(){", start)
+        drawer = HTML[start:end]
+        self.assertIn("stageTag('quality')", drawer)
+        self.assertIn("stageTag('classification')", drawer)
+        self.assertIn("stageTag('routing')", drawer)
+        self.assertIn('title="Computed by the quality stage, reused unchanged"', drawer)
+        self.assertIn('title="Produced by the ${esc(stage)} stage"', HTML)
+
+    def test_resolutions_travel_with_the_quality_request_and_reset_on_a_new_run(self):
+        self.assertIn("payload.append('routing_resolutions',JSON.stringify(workspaceState.resolutions))", HTML)
+        self.assertIn("document.getElementById('runQuality').addEventListener('click',()=>{workspaceState.resolutions={};runQualityAssessment()})", HTML)
 
     def test_classification_panel_owns_matrix_grid_and_drawer_block(self):
         self.assertLess(HTML.index('data-workspace-tab="quality"'), HTML.index('data-workspace-tab="classification"'))
@@ -112,7 +167,7 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("ABC volume class", HTML)
         self.assertIn("Not meaningful for this demand class", HTML)
         self.assertIn("classification-block", HTML)
-        self.assertIn('class="action-slot" aria-hidden="true"', HTML)
+        self.assertIn('class="action-slot"', HTML)
 
     def test_classification_grid_keeps_state_and_joins_quality_for_display(self):
         self.assertIn("workspaceState.classCell", HTML)

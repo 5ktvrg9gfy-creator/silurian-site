@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 
-SCHEMA_VERSION = "1.5"
+SCHEMA_VERSION = "1.6"
 PLACEHOLDERS = {"REPLACE_WITH_ACTUAL", "SUPPLIED_BY_DEPLOYMENT", "0000000"}
 MANAGED_SENTINEL = "provider_managed_not_exposed"
 SCHEMA = json.loads((Path(__file__).with_name("run_manifest.schema.json")).read_text(encoding="utf-8"))
@@ -206,13 +206,36 @@ def classification_stage(
 def routing_stage(
     result: dict[str, Any], input_ref: dict[str, Any], started_at: str, completed_at: str
 ) -> dict[str, Any]:
-    """Record the routing stage. Counts and codes only: no SKU, volume or share reaches the manifest."""
+    """Record the routing stage. Counts and codes only: no SKU, volume, share or note reaches the manifest.
+
+    Every applied resolution is a pass. The pass carries the code, the time it
+    was applied and a SKU reference, which is the identifier's hash rather than
+    the identifier, following the Story 1.5 filename rule.
+    """
+    from routing_engine import sku_reference
+
     portfolio = result["portfolio"]
     resolutions_supplied = deepcopy(portfolio.get("resolution_code_counts", {}))
+    passes = []
+    for entry in result.get("passes", []):
+        record = {"pass": entry["pass"]}
+        if "sku" in entry:
+            record.update({
+                "code": entry["code"],
+                "sku_sha256": sku_reference(entry["sku"]),
+                "applied_at": entry["applied_at"],
+                "status": entry["status"],
+            })
+            if entry.get("successor_sku"):
+                record["successor_sku_sha256"] = sku_reference(entry["successor_sku"])
+        else:
+            record["resolutions_applied"] = entry.get("resolutions_applied", 0)
+        passes.append(record)
+    status_counts = portfolio.get("resolution_status_counts", {})
     return {
         "stage": "routing",
         "story": "2.2",
-        "engine_version": "1.0.0",
+        "engine_version": "1.1.0",
         "started_at": started_at,
         "completed_at": completed_at,
         "duration_ms": _duration_ms(started_at, completed_at),
@@ -230,6 +253,7 @@ def routing_stage(
                 "count": sum(resolutions_supplied.values()),
                 "by_code": resolutions_supplied,
             },
+            "passes": passes,
         },
         "outcome": {
             "decision_counts": deepcopy(portfolio["decision_counts"]),
@@ -237,6 +261,10 @@ def routing_stage(
             "ineligible_count": portfolio["ineligible_count"],
             "refusal_code_counts": deepcopy(portfolio["refusal_code_counts"]),
             "open_item_count": portfolio["open_item_count"],
+            "resolved_count": int(status_counts.get("resolved", 0)),
+            "data_requested_count": int(status_counts.get("data_requested", 0)),
+            "deferred_count": int(status_counts.get("deferred", 0)),
+            "out_of_scope_count": int(portfolio.get("out_of_scope_count", 0)),
         },
     }
 

@@ -13,8 +13,8 @@ from run_manifest import SCHEMA as MANIFEST_SCHEMA
 from run_manifest import canonical_json, exact_manifest_hash, sha256_json, utc_now
 
 
-BUNDLE_SCHEMA_VERSION = "1.2"
-SUPPORTED_BUNDLE_SCHEMA_VERSIONS = ("1.1", "1.2")
+BUNDLE_SCHEMA_VERSION = "1.3"
+SUPPORTED_BUNDLE_SCHEMA_VERSIONS = ("1.1", "1.2", "1.3")
 BUNDLE_SCHEMA = json.loads(Path(__file__).with_name("run_bundle.schema.json").read_text(encoding="utf-8"))
 CONFIDENTIALITY_STATEMENT = (
     "CONFIDENTIAL: this bundle contains client data. It belongs to the client and must not be shared like a run manifest."

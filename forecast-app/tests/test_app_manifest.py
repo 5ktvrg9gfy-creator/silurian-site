@@ -65,6 +65,34 @@ class AppManifestTests(unittest.TestCase):
             self.assertNotIn("band", item)
             self.assertNotIn("findings", item)
 
+    def test_quality_records_resolutions_as_passes_without_client_data(self):
+        resolutions = json.dumps({
+            "PKG-10603": {"code": "DEFER", "applied_at": "2026-09-02T12:00:00Z", "note": "Planner note"},
+        })
+        baseline = asyncio.run(app.quality_upload(upload("20_portfolio_mixed.csv"), "2026-08-01", "month", "{}"))
+        refused = [sku for sku, item in baseline["routing_result"]["per_sku"].items() if item["refusal"]]
+        self.assertTrue(refused)
+        target = refused[0]
+        resolutions = json.dumps({target: {"code": "DEFER", "applied_at": "2026-09-02T12:00:00Z", "note": "Planner note"}})
+        payload = asyncio.run(app.quality_upload(upload("20_portfolio_mixed.csv"), "2026-08-01", "month", "{}", resolutions))
+        stage = payload["manifest"]["stages"][3]
+        self.assertEqual(stage["options"]["passes"][1]["code"], "DEFER")
+        self.assertEqual(len(stage["options"]["passes"][1]["sku_sha256"]), 64)
+        serialised = json.dumps(payload["manifest"])
+        self.assertNotIn(target, serialised)
+        self.assertNotIn("Planner note", serialised)
+        self.assertEqual(payload["routing_result"]["per_sku"][target]["resolution"]["note"], "Planner note")
+        self.assertEqual(payload["routing_result"]["per_sku"][target]["decision"], baseline["routing_result"]["per_sku"][target]["decision"])
+        self.assertEqual(payload["bundle"]["results"]["routing"]["passes"][1]["sku"], target)
+        self.assertEqual(payload["bundle"]["bundle_schema_version"], "1.3")
+        with self.assertRaises(HTTPException) as refused_json:
+            asyncio.run(app.quality_upload(upload("20_portfolio_mixed.csv"), "2026-08-01", "month", "{}", "not json"))
+        self.assertEqual(refused_json.exception.status_code, 400)
+        with self.assertRaises(HTTPException) as refused_code:
+            asyncio.run(app.quality_upload(upload("20_portfolio_mixed.csv"), "2026-08-01", "month", "{}", json.dumps({target: {"code": "NOT_A_CODE", "applied_at": "2026-09-02T12:00:00Z"}})))
+        self.assertEqual(refused_code.exception.status_code, 400)
+        self.assertNotIn(target, refused_code.exception.detail)
+
     def test_forecast_returns_model_provenance(self):
         class Request:
             headers = {}

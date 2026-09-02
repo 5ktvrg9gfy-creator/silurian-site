@@ -15,9 +15,12 @@ from routing_engine import (
     DECISIONS,
     PRECEDENCE,
     REFUSAL_CODES,
+    RESOLUTION_EFFECTS,
     RESOLUTION_VOCABULARY,
     RoutingError,
     route_portfolio,
+    sentence_overlap,
+    sku_reference,
 )
 from run_bundle import (
     BundleError,
@@ -242,34 +245,39 @@ class RoutingEngineTests(unittest.TestCase):
         self.assertEqual(self.classification, self.classification_before)
         quality, classification = deepcopy(self.quality), deepcopy(self.classification)
         resolved = route_portfolio(quality, classification, {
-            "RTG-60401": {"code": "TREAT_AS_NEW_LINE", "note": "Launch line, forecast by analogue."},
-            "RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "RTG-60401"},
-            "RTG-60501": {"code": "DEFER"},
+            "RTG-60401": {"code": "TREAT_AS_NEW_LINE", "note": "Launch line, forecast by analogue.", "applied_at": "2026-09-02T12:00:00Z"},
+            "RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "RTG-60401", "applied_at": "2026-09-02T12:01:00Z"},
+            "RTG-60501": {"code": "DEFER", "applied_at": "2026-09-02T12:02:00Z"},
         })
         self.assertEqual(quality, self.quality_before)
         for sku, line in resolved["per_sku"].items():
             self.assertEqual(line["decision"], self.result["per_sku"][sku]["decision"])
             self.assertEqual(line["quality_band_at_decision"], self.result["per_sku"][sku]["quality_band_at_decision"])
             self.assertEqual(line["refusal"], self.result["per_sku"][sku]["refusal"])
-        self.assertEqual(resolved["per_sku"]["RTG-60401"]["resolution"], {"code": "TREAT_AS_NEW_LINE", "successor_sku": None, "note": "Launch line, forecast by analogue."})
+        recorded = resolved["per_sku"]["RTG-60401"]["resolution"]
+        self.assertEqual((recorded["code"], recorded["successor_sku"], recorded["note"], recorded["applied_at"]), ("TREAT_AS_NEW_LINE", None, "Launch line, forecast by analogue.", "2026-09-02T12:00:00Z"))
         self.assertEqual(resolved["per_sku"]["RTG-60403"]["resolution"]["successor_sku"], "RTG-60401")
-        self.assertEqual(resolved["portfolio"]["open_items"], ["RTG-60402", "RTG-60502", "RTG-60501"])
+        self.assertEqual([item["sku"] for item in resolved["portfolio"]["open_items"]], ["RTG-60402", "RTG-60502", "RTG-60501"])
         self.assertEqual(resolved["portfolio"]["resolution_code_counts"], {"DEFER": 1, "SUPERSEDED_BY_SKU": 1, "TREAT_AS_NEW_LINE": 1})
         source = (APP / "routing_engine.py").read_text(encoding="utf-8")
         self.assertNotRegex(source, r'\["band"\]\s*=')
         self.assertNotRegex(source, r'\["resolvable"\]\s*=')
 
     def test_invalid_resolutions_are_refused(self):
+        at = "2026-09-02T12:00:00Z"
         cases = [
-            {"RTG-60001": {"code": "DEFER"}},
-            {"RTG-60401": {"code": "DISCONTINUED_CONFIRMED"}},
-            {"RTG-60401": {"code": "NOT_A_CODE"}},
+            {"RTG-60001": {"code": "DEFER", "applied_at": at}},
+            {"RTG-60401": {"code": "DISCONTINUED_CONFIRMED", "applied_at": at}},
+            {"RTG-60401": {"code": "NOT_A_CODE", "applied_at": at}},
             {"RTG-60401": {}},
-            {"RTG-60403": {"code": "SUPERSEDED_BY_SKU"}},
-            {"RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "TYPED-IN"}},
-            {"RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "RTG-60403"}},
-            {"RTG-60401": {"code": "DEFER", "successor_sku": "RTG-60001"}},
-            {"RTG-99999": {"code": "DEFER"}},
+            {"RTG-60403": {"code": "SUPERSEDED_BY_SKU", "applied_at": at}},
+            {"RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "TYPED-IN", "applied_at": at}},
+            {"RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "RTG-60403", "applied_at": at}},
+            {"RTG-60401": {"code": "DEFER", "successor_sku": "RTG-60001", "applied_at": at}},
+            {"RTG-99999": {"code": "DEFER", "applied_at": at}},
+            {"RTG-60401": {"code": "DEFER"}},
+            {"RTG-60401": {"code": "DEFER", "applied_at": "yesterday"}},
+            {"RTG-60401": {"code": "DEFER", "applied_at": "2026-09-02T12:00:00"}},
         ]
         for resolutions in cases:
             with self.subTest(resolutions=resolutions), self.assertRaises(RoutingError):
@@ -287,7 +295,12 @@ class RoutingEngineTests(unittest.TestCase):
             "ineligible_count": 7,
             "refusal_code_counts": {"DISCONTINUED": 1, "REFUSED_DATA_QUALITY": 3, "INSUFFICIENT_EVIDENCE": 1},
             "open_item_count": 5,
+            "resolved_count": 0,
+            "data_requested_count": 0,
+            "deferred_count": 0,
+            "out_of_scope_count": 0,
         })
+        self.assertEqual(stage["options"]["passes"], [{"pass": 1, "resolutions_applied": 0}])
         self.assertEqual(stage["options"]["routing_table_version"], EXPECTED["routing_table_version"])
         self.assertEqual(stage["options"]["precedence"], EXPECTED["rules"]["precedence"])
         self.assertEqual(stage["options"]["resolution_vocabulary"], EXPECTED["resolution_vocabulary"])
@@ -296,10 +309,24 @@ class RoutingEngineTests(unittest.TestCase):
             self.assertNotIn(sku, serialised)
         for banned in ("volume_share", "volume_total", "reason", "note", "open_items"):
             self.assertNotIn(banned, serialised)
-        resolved = route_portfolio(self.quality, self.classification, {"RTG-60401": {"code": "TREAT_AS_NEW_LINE", "note": "Client note"}})
+        resolved = route_portfolio(self.quality, self.classification, {
+            "RTG-60401": {"code": "TREAT_AS_NEW_LINE", "note": "Client note", "applied_at": "2026-09-02T12:00:00Z"},
+            "RTG-60403": {"code": "SUPERSEDED_BY_SKU", "successor_sku": "RTG-60402", "applied_at": "2026-09-02T12:05:00Z"},
+        })
         stage = routing_stage(resolved, input_ref, "2026-09-02T09:00:00Z", "2026-09-02T09:00:01Z")
-        self.assertEqual(stage["options"]["resolutions_supplied"], {"count": 1, "by_code": {"TREAT_AS_NEW_LINE": 1}})
-        self.assertNotIn("Client note", json.dumps(stage))
+        self.assertEqual(stage["options"]["resolutions_supplied"], {"count": 2, "by_code": {"SUPERSEDED_BY_SKU": 1, "TREAT_AS_NEW_LINE": 1}})
+        self.assertEqual(stage["options"]["passes"], [
+            {"pass": 1, "resolutions_applied": 0},
+            {"pass": 2, "code": "TREAT_AS_NEW_LINE", "sku_sha256": sku_reference("RTG-60401"), "applied_at": "2026-09-02T12:00:00Z", "status": "resolved"},
+            {"pass": 3, "code": "SUPERSEDED_BY_SKU", "sku_sha256": sku_reference("RTG-60403"), "applied_at": "2026-09-02T12:05:00Z", "status": "resolved", "successor_sku_sha256": sku_reference("RTG-60402")},
+        ])
+        self.assertEqual(stage["outcome"]["resolved_count"], 2)
+        self.assertEqual(stage["outcome"]["out_of_scope_count"], 2)
+        self.assertEqual(stage["outcome"]["open_item_count"], 3)
+        serialised = json.dumps(stage)
+        self.assertNotIn("Client note", serialised)
+        for sku in EXPECTED["per_sku"]:
+            self.assertNotIn(sku, serialised)
 
     def test_full_manifest_and_bundle_round_trip(self):
         source = source_record(self.raw, EXPECTED["fixture"], "2026-09-02T09:00:00Z", self.validation.metadata)
@@ -311,7 +338,7 @@ class RoutingEngineTests(unittest.TestCase):
             source, [validation_record, quality_record, classification_record, routing_record], date(2026, 8, 1), "user",
             [row["sku"] for row in self.validation.normalised_rows], created_at="2026-09-02T09:00:04Z", environment=deepcopy(ENVIRONMENT),
         )
-        self.assertEqual(manifest["schema_version"], "1.5")
+        self.assertEqual(manifest["schema_version"], "1.6")
         self.assertEqual(manifest["stages"][3]["input_ref"], manifest["stages"][2]["output_ref"])
         self.assertEqual(manifest["reproducibility"]["deterministic_stages"], ["validation", "quality", "classification", "routing"])
         serialised = json.dumps(manifest)
@@ -324,7 +351,7 @@ class RoutingEngineTests(unittest.TestCase):
             "routing": routing_bundle_result(self.result),
         }
         bundle = build_bundle(manifest, results, EXPECTED["fixture"])
-        self.assertEqual(bundle["bundle_schema_version"], "1.2")
+        self.assertEqual(bundle["bundle_schema_version"], "1.3")
         self.assertEqual(reopen_bundle(json.dumps(bundle).encode()), bundle)
         without_result = deepcopy(bundle)
         without_result["results"].pop("routing")
@@ -339,6 +366,130 @@ class RoutingEngineTests(unittest.TestCase):
         with self.assertRaises(BundleError):
             routing_bundle_result({**self.result, "per_sku": {"X": {**next(iter(self.result["per_sku"].values())), "band": "clean"}}})
 
+    def test_every_decision_carries_a_planner_action_in_the_house_register(self):
+        substance = {
+            "model_eligible": ("Nothing to decide", "forecast comparison", "sprint 3"),
+            "model_eligible_wide_interval": ("buffer conversation, not a plan number", "safety stock from the interval", "stop chasing the mean"),
+            "intermittent_methods": ("order-cycle conversation", "how they actually order", "min-max", "call-off", "consignment"),
+            "policy_only": ("customer conversation about order patterns and lead time", "No forecast will fix this line", "stocking agreement", "make to order", "carrying the buffer knowingly"),
+            "insufficient_evidence": ("scoping decision", "supply more history", "analogue", "out of scope"),
+            "refused_data_quality": ("data request",),
+            "discontinued_confirm_status": ("status question for the business", "master data", "stock holding", "where the money is"),
+        }
+        seen = set()
+        for sku, line in self.result["per_sku"].items():
+            action = line["action"]
+            seen.add(line["decision"])
+            with self.subTest(sku=sku, decision=line["decision"]):
+                for phrase in substance[line["decision"]]:
+                    self.assertIn(phrase.lower(), action.lower())
+                self.assertNotRegex(action, r"(?i)croston|\bsba\b|arima|holt|winters|exponential smoothing|timesfm|prophet|theta|ets\b")
+                self.assertNotRegex(action, r"(?i)\b(might|maybe|perhaps|possibly|could consider)\b")
+                self.assertRegex(action, r"^\d|^Nothing to decide|^Make a data request")
+                self.assertTrue(action.strip().endswith("."))
+                self.assertEqual(sentence_overlap(action, line["reason"], self.classification["per_sku"][sku]["implication"]), set())
+        self.assertEqual(seen, set(DECISIONS))
+        refused = self.result["per_sku"]
+        self.assertIn("genuinely new", refused["RTG-60401"]["action"])
+        self.assertIn("5 periods of history", refused["RTG-60401"]["action"])
+        self.assertIn("corrected extract", refused["RTG-60402"]["action"])
+        self.assertIn("zero demand or missing rows", refused["RTG-60402"]["action"])
+        self.assertIn("14 periods without demand", refused["RTG-60403"]["action"])
+        self.assertEqual(self.result["statement_sources"]["action"], "routing")
+        self.assertEqual(self.result["statement_sources"]["quality_band_at_decision"], "quality")
+        self.assertEqual(self.result["statement_sources"]["demand_class"], "classification")
+
+    def test_open_items_list_is_ranked_by_volume_and_names_its_total(self):
+        portfolio = self.result["portfolio"]
+        items = portfolio["open_items"]
+        self.assertEqual([item["sku"] for item in items], ["RTG-60403", "RTG-60401", "RTG-60402", "RTG-60502", "RTG-60501"])
+        shares = [item["volume_share_pct"] for item in items]
+        self.assertEqual(shares, sorted(shares, reverse=True))
+        self.assertEqual(portfolio["open_item_count"], 5)
+        self.assertAlmostEqual(portfolio["open_volume_share_pct"], sum(shares), places=6)
+        self.assertEqual(round(portfolio["open_volume_share_pct"], 2), 25.39)
+        refused_share = sum(line["volume_share_pct"] for line in self.result["per_sku"].values() if line["refusal"])
+        self.assertAlmostEqual(portfolio["open_volume_share_pct"], refused_share, places=6)
+        self.assertLess(portfolio["open_volume_share_pct"], portfolio["not_eligible_volume_share_pct"])
+        for item in items:
+            self.assertEqual(item["status"], "unresolved")
+            self.assertIn("reason", item)
+            self.assertEqual(item["resolution_options"][-1], "DEFER")
+            self.assertFalse(self.result["per_sku"][item["sku"]]["forecast_eligible"])
+        self.assertIsNone(portfolio["last_resolved_at"])
+        self.assertEqual(self.result["passes"], [{"pass": 1, "resolutions_applied": 0}])
+
+    def test_resolution_effects_match_the_table_and_never_move_a_decision(self):
+        expected_status = {
+            "DISCONTINUED_CONFIRMED": ("resolved", False, ["obsolescence_review", "master_data_review"]),
+            "SUPERSEDED_BY_SKU": ("resolved", False, ["successor_recorded"]),
+            "STILL_ACTIVE_DEMAND_GAP": ("resolved", True, []),
+            "STILL_ACTIVE_DATA_MISSING": ("resolved", True, ["new_extract_required"]),
+            "SUPPLY_LONGER_HISTORY": ("data_requested", True, ["data_request"]),
+            "SUPPLY_CORRECTED_EXTRACT": ("data_requested", True, ["data_request"]),
+            "TREAT_AS_NEW_LINE": ("resolved", False, ["launch_line"]),
+            "EXCLUDE_FROM_SCOPE": ("resolved", False, []),
+            "DEFER": ("deferred", True, []),
+        }
+        self.assertEqual(set(RESOLUTION_EFFECTS), set(expected_status))
+        self.assertEqual(set(self.result["resolution_effects"]), set(expected_status))
+        all_codes = {code for options in RESOLUTION_VOCABULARY.values() for code in options}
+        self.assertEqual(all_codes, set(expected_status))
+        for code, (status, in_scope, flags) in expected_status.items():
+            effect = self.result["resolution_effects"][code]
+            self.assertEqual((effect["status"], effect["in_forecast_scope"], effect["flags"]), (status, in_scope, flags), code)
+            self.assertTrue(effect["consequence"].endswith("."))
+        line_for_code = {"DISCONTINUED": "RTG-60403", "REFUSED_DATA_QUALITY": "RTG-60401", "INSUFFICIENT_EVIDENCE": "RTG-60501"}
+        for refusal_code, options in RESOLUTION_VOCABULARY.items():
+            sku = line_for_code[refusal_code]
+            for code in options:
+                supplied = {"code": code, "applied_at": "2026-09-02T12:00:00Z"}
+                if code == "SUPERSEDED_BY_SKU":
+                    supplied["successor_sku"] = "RTG-60001"
+                with self.subTest(sku=sku, code=code):
+                    resolved = route_portfolio(self.quality, self.classification, {sku: supplied})
+                    line, before = resolved["per_sku"][sku], self.result["per_sku"][sku]
+                    self.assertEqual(line["decision"], before["decision"])
+                    self.assertEqual(line["forecast_eligible"], before["forecast_eligible"])
+                    self.assertEqual(line["quality_band_at_decision"], before["quality_band_at_decision"])
+                    self.assertEqual(line["refusal"], before["refusal"])
+                    self.assertEqual(line["reason"], before["reason"])
+                    self.assertEqual(line["action"], before["action"])
+                    status, in_scope, flags = expected_status[code]
+                    self.assertEqual(line["resolution_status"], status)
+                    self.assertEqual(line["in_forecast_scope"], in_scope)
+                    self.assertEqual(line["resolution"]["flags"], flags)
+                    self.assertTrue(line["resolution"]["decision_unchanged"])
+                    on_list = sku in {item["sku"] for item in resolved["portfolio"]["open_items"]}
+                    self.assertEqual(on_list, status != "resolved")
+                    self.assertEqual(resolved["portfolio"]["open_item_count"], 5 if on_list else 4)
+                    self.assertEqual(resolved["portfolio"]["last_resolved_at"], "2026-09-02T12:00:00Z" if status == "resolved" else None)
+                    self.assertEqual(resolved["passes"][-1]["status"], status)
+                    for other in self.result["per_sku"]:
+                        if other != sku:
+                            self.assertEqual(resolved["per_sku"][other], self.result["per_sku"][other])
+        deferred = route_portfolio(self.quality, self.classification, {"RTG-60403": {"code": "DEFER", "applied_at": "2026-09-02T12:00:00Z"}})
+        self.assertEqual([item["sku"] for item in deferred["portfolio"]["open_items"]], [item["sku"] for item in self.result["portfolio"]["open_items"]])
+        self.assertEqual(deferred["portfolio"]["open_volume_share_pct"], self.result["portfolio"]["open_volume_share_pct"])
+        self.assertEqual(deferred["portfolio"]["out_of_scope_count"], 0)
+
+    def test_empty_open_items_names_the_last_resolution_time(self):
+        resolutions = {
+            "RTG-60403": {"code": "DISCONTINUED_CONFIRMED", "applied_at": "2026-09-02T12:00:00Z"},
+            "RTG-60401": {"code": "TREAT_AS_NEW_LINE", "applied_at": "2026-09-02T12:04:00Z"},
+            "RTG-60402": {"code": "EXCLUDE_FROM_SCOPE", "applied_at": "2026-09-02T12:02:00Z"},
+            "RTG-60502": {"code": "TREAT_AS_NEW_LINE", "applied_at": "2026-09-02T12:03:00Z"},
+            "RTG-60501": {"code": "STILL_ACTIVE_DEMAND_GAP", "applied_at": "2026-09-02T12:01:00Z"} if False else {"code": "EXCLUDE_FROM_SCOPE", "applied_at": "2026-09-02T12:01:00Z"},
+        }
+        resolved = route_portfolio(self.quality, self.classification, resolutions)
+        self.assertEqual(resolved["portfolio"]["open_items"], [])
+        self.assertEqual(resolved["portfolio"]["open_item_count"], 0)
+        self.assertEqual(resolved["portfolio"]["open_volume_share_pct"], 0)
+        self.assertEqual(resolved["portfolio"]["last_resolved_at"], "2026-09-02T12:04:00Z")
+        self.assertEqual(resolved["portfolio"]["resolution_status_counts"]["resolved"], 5)
+        self.assertEqual(len(resolved["passes"]), 6)
+        self.assertEqual(resolved["portfolio"]["forecast_eligible_volume_share_pct"], self.result["portfolio"]["forecast_eligible_volume_share_pct"])
+
     def test_production_copy_scope_check(self):
         for path in PRODUCTION_FILES:
             text = path.read_text(encoding="utf-8")
@@ -350,8 +501,8 @@ class RoutingEngineTests(unittest.TestCase):
         html = (APP / "static" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn("can be resolved", html)
         self.assertIn("can be lifted within this run", html)
-        self.assertIn("No option changes the quality band", html)
-        self.assertIn('aria-label="Resolution options"', html)
+        self.assertIn("it never changes the decision or the quality band", html)
+        self.assertIn('aria-label="Resolution for ${esc(sku)}"', html)
 
 
 if __name__ == "__main__":
