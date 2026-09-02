@@ -121,8 +121,21 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("consequence.textContent=effect?effect.consequence:''", drawer)
         self.assertIn("workspaceState.resolutions[sku]=record", drawer)
         self.assertIn("runQualityAssessment({reopen:sku})", drawer)
-        self.assertIn("It stays in the confidential bundle and never reaches the manifest", drawer)
+        self.assertIn('<label for="resolutionNote">Note, optional</label>', drawer)
+        self.assertIn('<p class="resolution-help">Stored with your data in the run bundle. It is never written to the run manifest.</p>', drawer)
+        self.assertNotIn("It stays in the confidential bundle and never reaches the manifest", drawer)
+        self.assertIn(".resolution-form .resolution-help{", HTML)
+        self.assertIn("text-transform:none", HTML)
         self.assertIn("data-clear-resolution", drawer)
+
+    def test_an_unanswered_line_is_never_pre_answered(self):
+        start = HTML.index("function openQualityDrawer(sku,opener){")
+        end = HTML.index("function closeQualityDrawer(){", start)
+        drawer = HTML[start:end]
+        picker = drawer[drawer.index('<select id="resolutionCode"'):]
+        self.assertTrue(picker.startswith('<select id="resolutionCode" name="code" required><option value="">Choose from the list</option>'))
+        self.assertLess(picker.index('<option value="">Choose from the list</option>'), picker.index("resolution_options.map"))
+        self.assertNotIn("selected", picker[:picker.index("</select>")])
 
     def test_open_items_panel_renders_alone_and_is_reachable_twice(self):
         self.assertLess(HTML.index('data-workspace-tab="routing"'), HTML.index('data-workspace-tab="openitems"'))
