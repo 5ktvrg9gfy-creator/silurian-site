@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import logging
 import json
@@ -8,8 +9,22 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
+from access_gate import (
+    COOKIE_NAME,
+    FAILURE_DELAY_SECONDS,
+    GATE_PATH,
+    LOCKED_DETAIL,
+    SESSION_SECONDS,
+    configured_password,
+    cookie_is_valid,
+    gate_page,
+    is_ungated_path,
+    issue_cookie_value,
+    log_gate_state,
+    password_is_correct,
+)
 from determinism import measure_forecast_determinism
 from classification_engine import classify_quality
 from glossary import payload as glossary_payload
@@ -60,6 +75,40 @@ async def prevent_client_data_caching(request: Request, call_next):
     if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
     return response
+
+
+def _locked_response(request: Request):
+    """Nothing behind the gate, and nothing about what is behind it.
+
+    An API caller gets JSON so a fetch fails cleanly rather than parsing a login
+    page as a result. Everything else gets the gate screen itself, so a planner
+    who lands on any URL is asked for the password instead of hitting a dead end.
+    """
+    headers = {"Cache-Control": "no-store"}
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=401, content={"detail": LOCKED_DETAIL}, headers=headers)
+    return HTMLResponse(status_code=401, content=gate_page(), headers=headers)
+
+
+@app.middleware("http")
+async def require_access_password(request: Request, call_next):
+    """Added last, so it wraps every other route and serves first.
+
+    The password is read per request rather than at import, so setting it in
+    Vercel takes effect on the next request and the test suite can turn the gate
+    on and off without reloading the application.
+    """
+    password = configured_password()
+    if password is None:
+        return await call_next(request)
+    if request.url.path == GATE_PATH or is_ungated_path(request.url.path):
+        return await call_next(request)
+    if cookie_is_valid(request.cookies.get(COOKIE_NAME), password):
+        return await call_next(request)
+    return _locked_response(request)
+
+
+log_gate_state()
 
 
 @app.exception_handler(Exception)
@@ -226,6 +275,46 @@ def get_provider(oidc_token: str | None = None):
         if name != "bigquery_timesfm":
             _provider = TimesFMProvider() if name == "timesfm" else BaselineProvider()
     return _provider
+
+
+@app.get("/access")
+def access_form():
+    """The gate screen on its own URL.
+
+    It answers the same way whether or not a gate is configured, so requesting
+    it tells a visitor nothing about whether the tool is protected.
+    """
+    return HTMLResponse(content=gate_page(), headers={"Cache-Control": "no-store"})
+
+
+@app.post("/access")
+async def access_submit(request: Request, password: str = Form("")):
+    """The only path the gate lets through.
+
+    A wrong password and an unconfigured gate take the same branch, after the
+    same fixed delay, and produce the same words. The submitted value is not
+    logged and not echoed.
+    """
+    configured = configured_password()
+    if configured is not None and password_is_correct(password, configured):
+        response = RedirectResponse(url="/", status_code=303)
+        response.set_cookie(
+            COOKIE_NAME,
+            issue_cookie_value(configured),
+            max_age=SESSION_SECONDS,
+            httponly=True,
+            samesite="lax",
+            secure=request.url.scheme == "https",
+            path="/",
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    await asyncio.sleep(FAILURE_DELAY_SECONDS)
+    return HTMLResponse(
+        status_code=401,
+        content=gate_page(error=True),
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/")
