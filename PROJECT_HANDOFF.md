@@ -6,13 +6,13 @@ This is the recovery and transfer document for the Silurian website and Forecast
 
 ## Current position
 
-- Marketing header update, 3 September 2026: approved AI Demand Forecasting disclosure beside the company name, linking to `https://assay.silurianconsulting.co.uk/` in a new tab. Implemented in `index.html` on `codex/assay-header-dropdown`. The label and Assay link match the live service list at 15.5px. Local browser checks passed at 1440, 768, 390 and 320px for sizing, overflow, click, keyboard, Escape, outside click and destination. Vercel Preview and Production checks are pending; do not treat this entry as release confirmation.
+- Marketing header update, 3 September 2026: released through pull request 67, merge `1e076271427e7a283d32933ae5f088e38da0c1a6`. AI Demand Forecasting sits beside the company name and opens a dropdown linking to `https://assay.silurianconsulting.co.uk/` in a new tab. The label and Assay link match the live service list at 15.5px. Local and public Production browser checks passed at 1440, 768, 390 and 320px for sizing, overflow, click, keyboard, Escape, outside click and destination.
 
 ### Marketing header delivery
 
 Only `index.html` and this handoff change. Native details/summary provides a closed-by-default dropdown, including without JavaScript. A small inline script closes it on Escape, outside click or focus leaving it. On narrow screens the navigation wraps below the company name without splitting the logo/name group. Archivo stays self-hosted; no analytics, cookies, third-party embeds, environment variables, DNS or Assay application changes are introduced. The external link uses `noopener noreferrer`.
 
-The owner approved the mockup and requested deployment. Pull request 67 contains this change. All 196 Python tests passed using the bundled Python runtime; the old embedded runtime lacks current dependencies. Both Vercel Preview deployment checks succeeded for `eb33dde`. The signed-in browser verified the marketing Preview's dropdown and Assay destination, including its narrow-screen appearance. Anonymous Preview requests lead to Vercel sign-in; deployment protection was not changed. Next: merge the focused pull request and smoke-test Production. Application story acceptance below remains separate and unchanged.
+The owner approved the mockup and requested deployment. All 196 Python tests passed using the bundled Python runtime; the old embedded runtime lacks current dependencies. Both Vercel Preview deployment checks succeeded for `ca53083`. The signed-in browser verified the marketing Preview's dropdown and Assay destination, including its narrow-screen appearance. Anonymous Preview requests lead to Vercel sign-in; deployment protection was not changed. Production smoke checks passed on `https://www.silurianconsulting.co.uk/` after merge, with the menu closed initially, matching service typography, correct new-tab link, no horizontal overflow and working keyboard and pointer dismissal at all four tested widths. No marketing work remains for this request. Application story acceptance below remains separate and unchanged.
 
 ### Existing application and marketing position
 
