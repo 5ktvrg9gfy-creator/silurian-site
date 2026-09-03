@@ -45,6 +45,12 @@ looks like one.
 
 ## Turning it on
 
+**Set the value before the merge, not after.** An environment variable only
+reaches the running application on a new deployment, and merging this work
+triggers one. Setting the value first means that deployment comes up already
+gated, and there is no manual redeploy to do. Setting it ahead of the code costs
+nothing: until the gate is deployed, the variable simply sits there unread.
+
 1. Sign in at `https://vercel.com` and open the **silurian-forecast-diagnostic**
    project.
 2. Go to **Settings**, then **Environment Variables** in the left column.
@@ -54,18 +60,31 @@ looks like one.
 5. Tick **Production**, **Preview** and **Development** so the gate is on
    everywhere. Leaving Preview unticked leaves every preview URL open.
 6. Save.
-7. Go to **Deployments**, open the most recent Production deployment, and use the
-   menu on the right to **Redeploy**. An environment variable only reaches the
-   running application on a new deployment.
-8. When the redeploy finishes, open `https://silurian-forecast-diagnostic.vercel.app/`
-   in a private browser window. You should see the gate screen. Enter the
-   password once and the tool should open.
+7. Merge the pull request. Watch the Production deployment in **Deployments**
+   until it reports Ready.
+8. Open `https://silurian-forecast-diagnostic.vercel.app/` in a private browser
+   window. You should see the gate screen. Enter the password once and the tool
+   should open.
 
-Changing the password later is the same sequence, editing the value at step 3.
-Everyone signed in is asked again on their next request.
+If the merge happened before the value was saved, the deployment came up ungated
+and is serving the tool to anyone. Save the value, then use the manual redeploy
+below. Nothing is broken; it is simply open until you do.
 
-Removing the gate is the same sequence, deleting the variable instead, followed
-by a redeploy.
+## Changing or removing the value later
+
+Once the gate is live, the code no longer changes when the password does, so
+there is no merge to carry the new value. A manual redeploy is the way to apply
+it.
+
+1. **Settings**, then **Environment Variables**, and edit or delete
+   `SILURIAN_ACCESS_PASSWORD`. Save.
+2. Go to **Deployments**, open the most recent Production deployment, and use the
+   menu on the right to **Redeploy**.
+3. Check the result in a private browser window, as above.
+
+Changing the password signs everyone out: the cookie signing key is derived from
+the password, so every session already open is asked again on its next request.
+Deleting the variable removes the gate entirely and the tool is public again.
 
 ## What this is not
 
@@ -103,3 +122,11 @@ screen abandoning the design system. The first version of the constant time test
 passed the `==` probe, because it searched the whole module and the cookie check
 uses `compare_digest` a few lines away. It now reads only the function it is
 about. That is the reason the probes are run at all.
+
+The committed secret scan then caught something the probes did not. The test
+constant holding the fake password was first called `TEST_PASSWORD`, and a name
+ending in `PASSWORD` given a value at the start of a line is exactly what
+`test_no_committed_credential_anywhere_in_the_tree` looks for. It stayed green
+until the file was committed, because the scan reads the files Git tracks and an
+untracked file is not one of them. The constant was renamed rather than the
+pattern loosened. Run the suite again after committing, not only before.
