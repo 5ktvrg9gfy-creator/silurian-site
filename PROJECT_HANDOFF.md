@@ -35,12 +35,17 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Production branch: `main`
 - Marketing website: `https://www.silurianconsulting.co.uk/`
 - Marketing Vercel project: `silurian-site`
-- Production application: `https://silurian-forecast-diagnostic.vercel.app/`
+- Production application, customer facing: `https://assay.silurianconsulting.co.uk`
+- Production application, original address: `https://silurian-forecast-diagnostic.vercel.app/`. Still resolves and is not retired.
 - Forecast Vercel project: `https://vercel.com/silurian/silurian-forecast-diagnostic`
 - Local repository: `C:\Users\jksta\OneDrive\Documents\Silurian Consulting Limited\silurian-site-repo`
 - Forecast application: `forecast-app/`
 
 The additional domains `silurianconsultinglimited.co.uk` and `silurianconsultingltd.co.uk` redirect to `silurianconsulting.co.uk`.
+
+Both application addresses are served by the same Vercel project and are gated by the same environment variable, `SILURIAN_ACCESS_PASSWORD`. Its value is set in Vercel by the product owner and appears nowhere in this repository. See `forecast-app/docs/access-gate.md`.
+
+DNS for `silurianconsulting.co.uk` is at Cloudflare. **The `assay` record must stay unproxied, DNS only, and never the orange cloud**, because proxied Vercel cannot verify the domain or issue its certificate. Somebody will eventually turn that on to be helpful, and the tool will stop resolving when they do.
 
 GitHub is the source of truth. Do not replace the repository with a complete design export or edit Production directly when the same change can be made through the normal branch and pull-request workflow.
 
@@ -498,6 +503,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - Five obsolete local worktrees contain line-ending-only CSV changes, and seven obsolete branch refs remain outside `main`. See `forecast-app/docs/final-handoff-audit.md`; deletion requires owner approval.
 - Fixture and expectation bytes are protected by `tests/fixture_hashes.json` and `tests/test_fixture_integrity.py`. Git attributes mark the control directories as `-text`, so Git must not convert CSV or Markdown control bytes, and some CSV fixtures intentionally remain CRLF because line-ending handling is part of their expected validation result. Every JSON control file (`expected_*.json`, the goldens and the schema copies) is pinned to LF, matching the LF copies the specification session holds, so a reissued expectations file hashes the same on both sides. This split is a decision, not a detail: JSON control files are `text eol=lf` so that a line-ending mangle self-corrects on checkout instead of stopping a run on a hash mismatch, while CSV fixtures stay `-text` because on some of them, fixture 01 among others, CRLF is the condition under test and must survive byte for byte. Do not tidy the CSV fixtures into the JSON rule.
 - The access gate is one shared password with no user accounts, so there is no record of who entered it and it cannot be revoked for one person. The fixed one second delay on a wrong attempt is not a rate limit, because real rate limiting needs state shared between serverless instances and this application deliberately has none. A long password is the control. Vercel's own deployment protection is stronger and should replace this if the project moves to a paid plan. See `forecast-app/docs/access-gate.md`.
+- Panel render order can break a sentence the suite considers passing. In band 2.7 the readiness sentence rendered truncated in the browser while all tests were green, because the quality panel renders before routing and routing owns the counts the sentence states. `test_routing_refreshes_the_sentence_because_routing_owns_the_counts` pins that one ordering; nothing generalises it. Any story that composes text across stages needs a browser check before acceptance, because a green suite does not prove the screen.
 
 ## Band 2.7, say it to a planner
 
