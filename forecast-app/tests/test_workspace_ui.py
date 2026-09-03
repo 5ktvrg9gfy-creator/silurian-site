@@ -66,7 +66,7 @@ class WorkspaceUiTests(unittest.TestCase):
         renderer = HTML[start:end]
         self.assertIn("eligibleShare.toFixed(2)", renderer)
         self.assertIn("ineligibleShare.toFixed(2)", renderer)
-        self.assertIn("percent</strong> of volume is forecast eligible", renderer)
+        self.assertIn("percent</strong> of volume is ${term('forecast eligible')}", renderer)
         self.assertIn("Split by reason", renderer)
         self.assertIn("data-routing-decision=", renderer)
         self.assertIn('id="routingSearch"', renderer)

@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from determinism import measure_forecast_determinism
 from classification_engine import classify_quality
+from glossary import payload as glossary_payload
 from forecast_engine import BaselineProvider, DemandSeries, ForecastError, TimesFMProvider, analyse, analyse_portfolio, parse_portfolio_csv
 from quality_engine import DEFAULT_THRESHOLDS, QualityOptions, assess_quality
 from routing_engine import RoutingError, route_portfolio
@@ -247,6 +248,12 @@ def workspace_asset(asset_name: str):
 @app.get("/health")
 def health():
     return {"status": "ok", "provider": os.getenv("FORECAST_PROVIDER", "baseline")}
+
+
+@app.get("/api/glossary")
+def glossary():
+    """One source for every specialist term, rendered by the tool and the report."""
+    return glossary_payload()
 
 
 @app.get("/sample-data.csv")

@@ -269,9 +269,9 @@ def _action(decision: str, item: dict[str, Any], findings: list[dict[str, Any]],
         )
     if decision == "model_eligible_wide_interval":
         return (
-            f"{non_zero} of {present} periods carry demand, and the point forecast will be wrong most months; that is expected. "
-            "This is a buffer conversation, not a plan number: set the safety stock from the interval and the service "
-            "level you have promised, and stop chasing the mean."
+            f"{non_zero} of {present} periods carry demand, so forecast the range rather than the number. "
+            "Size the buffer from the spread and the service level you have promised, and expect the monthly "
+            "figure to be wrong in both directions. Chasing the average here adds work and no accuracy."
         )
     if decision == "intermittent_methods":
         return (
@@ -281,9 +281,10 @@ def _action(decision: str, item: dict[str, Any], findings: list[dict[str, Any]],
         )
     if decision == "policy_only":
         return (
-            f"{non_zero} of {present} periods carry demand and no forecast will fix this line, so have a customer "
-            "conversation about order patterns and lead time. The options are a stocking agreement with committed "
-            "volumes, make to order with an agreed lead time, or carrying the buffer knowingly and pricing it."
+            f"{non_zero} of {present} periods carry demand and no forecasting method will predict this line, so the "
+            "answer is an arrangement rather than a number. Pick one: agree committed volumes with the customer, "
+            "make to order against an agreed lead time, or hold a buffer you have priced and accepted. "
+            "Start by asking the customer how they actually order."
         )
     if decision == "insufficient_evidence":
         return (

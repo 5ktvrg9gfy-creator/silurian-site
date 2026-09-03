@@ -20,8 +20,8 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "aed5f9939d59813d14acf4f0a909988b3a42d5f53f989e4c1b7efab87e37fabd",
-      "manifest_sha256": "ce96edf0bbf307c0ca1e625332658b19c8803c95104850676c9547a08d35f6b7"
+      "content_fingerprint_sha256": "97bede0b716b1b16de8e4801750d6362ad3a2675613b4b2ba343a078264050d7",
+      "manifest_sha256": "8d0b413b7b3df4a8a6875ff9dbd3bbb5b787cde68cc621e399db73f3a919ba06"
     },
     "reproducibility": {
       "deterministic_stages": [
@@ -311,7 +311,7 @@
         },
         "output_ref": {
           "series": 12,
-          "sha256": "2df9f6846c012418afd0b296e30982f1cc12ba69bd2b80a88514d6c907f09630",
+          "sha256": "1f4f7a9f788fbfb27235445ddd931b9c732bdaf79d1b8b39bde7f30829852f64",
           "type": "routing_result"
         },
         "stage": "routing",
@@ -1683,7 +1683,7 @@
         },
         "PKG-40004": {
           "abc_volume_class": "C",
-          "action": "35 of 35 periods carry demand, and the point forecast will be wrong most months; that is expected. This is a buffer conversation, not a plan number: set the safety stock from the interval and the service level you have promised, and stop chasing the mean.",
+          "action": "35 of 35 periods carry demand, so forecast the range rather than the number. Size the buffer from the spread and the service level you have promised, and expect the monthly figure to be wrong in both directions. Chasing the average here adds work and no accuracy.",
           "caveat_codes_shown": [
             "OUTLIER_CANDIDATE"
           ],
@@ -2060,8 +2060,8 @@
     }
   },
   "integrity": {
-    "bundle_sha256": "89426085aba21acd761063361003524c962eff9c8e524ef0c85931026fbff32a",
-    "manifest_sha256": "ce96edf0bbf307c0ca1e625332658b19c8803c95104850676c9547a08d35f6b7",
-    "content_fingerprint_sha256": "aed5f9939d59813d14acf4f0a909988b3a42d5f53f989e4c1b7efab87e37fabd"
+    "bundle_sha256": "42f5839a6b1c05fa72e1f801c8164e8c4942c1f0c9bc23b5f1cd8c6196e57de5",
+    "manifest_sha256": "8d0b413b7b3df4a8a6875ff9dbd3bbb5b787cde68cc621e399db73f3a919ba06",
+    "content_fingerprint_sha256": "97bede0b716b1b16de8e4801750d6362ad3a2675613b4b2ba343a078264050d7"
   }
 }
