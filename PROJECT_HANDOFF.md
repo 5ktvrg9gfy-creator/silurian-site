@@ -475,6 +475,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - Do not expose Google credentials or Vercel secrets in browser output or downloaded manifests.
 - Treat every merge to `main` as a Production release.
 - Keep environment variables aligned between the approved Preview and Production when promoting a story.
+- Never commit a value for `SILURIAN_ACCESS_PASSWORD`, never log it and never default it. The access gate reads it from the environment only. See `forecast-app/docs/access-gate.md`.
 
 ## Known limitations
 
@@ -496,6 +497,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - Written provider assurance about backup scope for the client security questions remains unanswered. This is owned by the product owner and is not a build-session task.
 - Five obsolete local worktrees contain line-ending-only CSV changes, and seven obsolete branch refs remain outside `main`. See `forecast-app/docs/final-handoff-audit.md`; deletion requires owner approval.
 - Fixture and expectation bytes are protected by `tests/fixture_hashes.json` and `tests/test_fixture_integrity.py`. Git attributes mark the control directories as `-text`, so Git must not convert CSV or Markdown control bytes, and some CSV fixtures intentionally remain CRLF because line-ending handling is part of their expected validation result. Every JSON control file (`expected_*.json`, the goldens and the schema copies) is pinned to LF, matching the LF copies the specification session holds, so a reissued expectations file hashes the same on both sides. This split is a decision, not a detail: JSON control files are `text eol=lf` so that a line-ending mangle self-corrects on checkout instead of stopping a run on a hash mismatch, while CSV fixtures stay `-text` because on some of them, fixture 01 among others, CRLF is the condition under test and must survive byte for byte. Do not tidy the CSV fixtures into the JSON rule.
+- The access gate is one shared password with no user accounts, so there is no record of who entered it and it cannot be revoked for one person. The fixed one second delay on a wrong attempt is not a rate limit, because real rate limiting needs state shared between serverless instances and this application deliberately has none. A long password is the control. Vercel's own deployment protection is stronger and should replace this if the project moves to a paid plan. See `forecast-app/docs/access-gate.md`.
 
 ## Band 2.7, say it to a planner
 
