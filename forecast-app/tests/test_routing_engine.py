@@ -369,9 +369,9 @@ class RoutingEngineTests(unittest.TestCase):
     def test_every_decision_carries_a_planner_action_in_the_house_register(self):
         substance = {
             "model_eligible": ("Nothing to decide", "forecast comparison", "sprint 3"),
-            "model_eligible_wide_interval": ("buffer conversation, not a plan number", "safety stock from the interval", "stop chasing the mean"),
+            "model_eligible_wide_interval": ("forecast the range rather than the number", "size the buffer from the spread", "service level you have promised", "wrong in both directions", "chasing the average"),
             "intermittent_methods": ("order-cycle conversation", "how they actually order", "min-max", "call-off", "consignment"),
-            "policy_only": ("customer conversation about order patterns and lead time", "No forecast will fix this line", "stocking agreement", "make to order", "carrying the buffer knowingly"),
+            "policy_only": ("no forecasting method will predict this line", "an arrangement rather than a number", "agree committed volumes", "make to order against an agreed lead time", "hold a buffer you have priced and accepted", "how they actually order"),
             "insufficient_evidence": ("scoping decision", "supply more history", "analogue", "out of scope"),
             "refused_data_quality": ("data request",),
             "discontinued_confirm_status": ("status question for the business", "master data", "stock holding", "where the money is"),
