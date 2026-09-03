@@ -588,12 +588,49 @@ body[data-baselines]::after {
       transparent calc(var(--half) + 1px) var(--leading));
 }
 </style>
+<style>
+/* Assay header navigation. Match the service-list type size. */
+.mast-brand { display: flex; align-items: center; gap: 14px; }
+.forecast-nav { position: relative; margin-left: 18px; }
+.forecast-nav summary {
+  display: flex; align-items: center; gap: 9px; min-height: 44px;
+  padding: 10px 14px; list-style: none; cursor: pointer;
+  font: 600 15.5px/1.5 var(--font-body); color: var(--color-text);
+}
+.forecast-nav summary::-webkit-details-marker { display: none; }
+.forecast-nav summary::after { content: '\25BE'; font-size: 14px; }
+.forecast-nav[open] summary::after { transform: rotate(180deg); }
+.forecast-nav summary:hover, .forecast-nav[open] summary { background: var(--color-bg); }
+.forecast-nav summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.forecast-links {
+  position: absolute; top: 100%; left: 0; width: 100%; min-width: 200px;
+  background: #fff; border-bottom: 2px solid var(--color-accent); z-index: 10;
+}
+.mast-bar .forecast-links a:not(.btn) {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 48px; padding: 12px 14px; font: 600 15.5px/1.5 var(--font-body);
+  letter-spacing: normal; text-transform: none; text-decoration: none;
+}
+.mast-bar .forecast-links a:not(.btn):hover { background: var(--color-bg); text-decoration: none; }
+.forecast-links a span { color: var(--color-accent); }
+@media (max-width: 620px) { .forecast-nav { margin-left: 0; } }
+</style>
 </head>
 <body>
 <header class="mast">
   <div class="mast-bar" style="background:#fff;gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
+    <div class="mast-brand">
     <img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" />
     <p style="margin:0;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:clamp(15px, 1.8vw, 18px);line-height:1.2;letter-spacing:-0.02em;white-space:nowrap;color:var(--color-text)">Silurian Consulting LTD</p>
+    </div>
+    <nav aria-label="Forecasting tools">
+      <details class="forecast-nav">
+        <summary>AI Demand Forecasting</summary>
+        <div class="forecast-links">
+          <a href="https://assay.silurianconsulting.co.uk/" target="_blank" rel="noopener noreferrer" aria-label="Assay (opens in a new tab)">Assay <span aria-hidden="true">&#8599;</span></a>
+        </div>
+      </details>
+    </nav>
   </div>
 </header>
 <div class="wrap">
@@ -666,6 +703,21 @@ body[data-baselines]::after {
 <div class="wrap">
   <footer style="display:flex;align-items:center;gap:14px"><img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" /><span style="display:block">Silurian Consulting LTD. Registered in England and Wales, company number 17415387. Registered office, 22 Gelliwastad Road, Pontypridd, CF37 2BW. <a href="privacy.html">Privacy</a>.</span></footer>
 </div>
+<script>
+(() => {
+  const dropdown = document.querySelector('.forecast-nav');
+  const summary = dropdown.querySelector('summary');
+  document.addEventListener('click', event => {
+    if (!dropdown.contains(event.target)) dropdown.open = false;
+  });
+  dropdown.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { dropdown.open = false; summary.focus(); }
+  });
+  dropdown.addEventListener('focusout', event => {
+    if (!dropdown.contains(event.relatedTarget)) dropdown.open = false;
+  });
+})();
+</script>
 </body>
 </html>
 
