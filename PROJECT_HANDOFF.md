@@ -35,12 +35,17 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Production branch: `main`
 - Marketing website: `https://www.silurianconsulting.co.uk/`
 - Marketing Vercel project: `silurian-site`
-- Production application: `https://silurian-forecast-diagnostic.vercel.app/`
+- Production application, customer facing: `https://assay.silurianconsulting.co.uk`
+- Production application, original address: `https://silurian-forecast-diagnostic.vercel.app/`. Still resolves and is not retired.
 - Forecast Vercel project: `https://vercel.com/silurian/silurian-forecast-diagnostic`
 - Local repository: `C:\Users\jksta\OneDrive\Documents\Silurian Consulting Limited\silurian-site-repo`
 - Forecast application: `forecast-app/`
 
 The additional domains `silurianconsultinglimited.co.uk` and `silurianconsultingltd.co.uk` redirect to `silurianconsulting.co.uk`.
+
+Both application addresses are served by the same Vercel project and are gated by the same environment variable, `SILURIAN_ACCESS_PASSWORD`. Its value is set in Vercel by the product owner and appears nowhere in this repository. See `forecast-app/docs/access-gate.md`.
+
+DNS for `silurianconsulting.co.uk` is at Cloudflare. **The `assay` record must stay unproxied, DNS only, and never the orange cloud**, because proxied Vercel cannot verify the domain or issue its certificate. Somebody will eventually turn that on to be helpful, and the tool will stop resolving when they do.
 
 GitHub is the source of truth. Do not replace the repository with a complete design export or edit Production directly when the same change can be made through the normal branch and pull-request workflow.
 
