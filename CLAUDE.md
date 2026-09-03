@@ -64,7 +64,7 @@ The non-negotiable controls, which carry the same weight:
 - Keep confidential bundles in the browser. Do not add server-side bundle storage. Enforced by `test_reopen_is_browser_only` and `test_reopen_never_calls_an_engine`.
 - Keep BigQuery query caching disabled for managed forecasts and fail closed on a reported cache hit. Enforced by `test_forecast_disables_cache_and_pins_london` and `test_any_production_cache_hit_stops_the_run`.
 - Keep Forecast processing in the approved London region. Enforced by `test_forecast_disables_cache_and_pins_london`.
-- Never commit credentials, identity tokens, environment variable values or private Google Cloud identifiers.
+- Never commit credentials, identity tokens, environment variable values or private Google Cloud identifiers. Enforced by `test_no_committed_credential_anywhere_in_the_tree`, which scans every tracked file for private key blocks, service account shapes, bearer and OAuth tokens and literal Google Cloud project, dataset and identity pool identifiers. `test_every_pattern_catches_a_planted_secret` proves each pattern still fires, `test_public_configuration_is_not_a_finding` keeps deployment settings such as `europe-west2` legal, and `test_the_scan_actually_reads_the_repository` and `test_the_scanner_scans_itself` stop the scan passing on nothing or exempting itself.
 - Do not change the approved TimesFM canary baseline because a new output differs. Investigate drift first. The detection is enforced by `test_reference_canary_detects_altered_baseline`; the decision not to move the baseline is yours.
 
 ---
@@ -117,7 +117,7 @@ Match the marketing site's register: short, declarative, no hedging. Numbers bef
 
 Every finding is written in the order **what, so what, do this**. What the data shows, why it matters to a planner, what to do about it.
 
-**No em dashes or en dashes anywhere in user-facing copy.** No em dash, no en dash, no spaced hyphen used as a dash. Standard hyphenation is fine. This is a house rule of the owner's and it applies to the product, not only to documents.
+**No em dashes or en dashes anywhere in user-facing copy.** No em dash, no en dash, no spaced hyphen used as a dash. Standard hyphenation is fine. This is a house rule of the owner's and it applies to the product, not only to documents. Enforced by `test_production_copy_scope_check`, which reads the production files for an em dash or en dash as a character, an HTML entity or an escape, alongside the nine box and ABC value bans.
 
 Absence is a result. An empty state names what was eligible, what was excluded and why, and offers the next action.
 

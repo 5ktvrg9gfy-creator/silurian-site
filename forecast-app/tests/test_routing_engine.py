@@ -491,11 +491,23 @@ class RoutingEngineTests(unittest.TestCase):
         self.assertEqual(resolved["portfolio"]["forecast_eligible_volume_share_pct"], self.result["portfolio"]["forecast_eligible_volume_share_pct"])
 
     def test_production_copy_scope_check(self):
+        """Banned strings and banned dashes, production only.
+
+        The dash rule is the owner's house rule and applies to the product,
+        not only to documents, so it is scoped the same way the nine box and
+        ABC value bans are: the shipped code, the schemas and the interface.
+        Both the characters and their HTML and unicode escapes are refused,
+        because an escape renders as the character the rule forbids.
+        """
         for path in PRODUCTION_FILES:
             text = path.read_text(encoding="utf-8")
             with self.subTest(file=path.name):
                 self.assertNotRegex(text, r"(?i)nine[ -]box")
                 self.assertNotRegex(text, r"(?i)abc.{0,24}\bvalue\b|\bvalue\b.{0,24}abc")
+                self.assertNotIn("\u2014", text, "em dash in production copy")
+                self.assertNotIn("\u2013", text, "en dash in production copy")
+                self.assertNotRegex(text, r"(?i)&(?:mdash|ndash|#8212|#8211|#x201[34]);")
+                self.assertNotRegex(text, r"\\u201[34]")
 
     def test_interface_never_uses_resolve_for_the_engine_flag(self):
         html = (APP / "static" / "index.html").read_text(encoding="utf-8")
