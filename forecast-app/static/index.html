@@ -38,10 +38,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <li><strong>What it checks.</strong> Your demand history line by line: whether the periods are complete, whether the units stay the same, and what shape the demand actually takes.</li>
         <li><strong>What it tells you.</strong> Which lines a forecast can be trusted on, which are waiting on a decision from you, and which no forecasting method will ever fix.</li>
         <li><strong>What it refuses to do.</strong> Guess. Where the data is ambiguous it declines to forecast the line and names the answer it needs from you.</li>
-        <li><strong>What happens to your file.</strong> It is processed for this request and not deliberately retained. The confidential record of a run stays in your browser until you download it.</li>
+        <li><strong>What happens to your file.</strong> It is read to produce this result. Only forecasting is sent onward: dates and quantities, never SKU names, go to Google BigQuery in London. The confidential record of a run stays in your browser until you download it.</li>
       </ul>
     </div>
-    <p class="notice">Use synthetic or anonymised data only. Files are processed for the current request and are not deliberately retained by this application.</p>
+    <p class="notice">Use synthetic or anonymised data only. Files are read to produce the result you get back.</p>
   </section>
   <form id="form">
     <div class="wide"><label for="file">Demand history CSV</label><input id="file" name="file" type="file" accept=".csv,text/csv" required><div class="small">Required columns: sku, date, demand. Minimum 12 periods.</div><a class="sample" href="/sample-data.csv" download>Download sample CSV</a></div>

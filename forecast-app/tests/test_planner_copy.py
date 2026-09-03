@@ -242,7 +242,7 @@ class LandingStateTests(unittest.TestCase):
 
     def test_it_answers_where_the_data_goes(self):
         block = HTML[HTML.index('<div class="what-it-does">'):HTML.index("</div>", HTML.index('<div class="what-it-does">'))]
-        self.assertIn("not deliberately retained", block)
+        self.assertIn("Only forecasting is sent onward: dates and quantities, never SKU names, go to Google BigQuery in London.", block)
         self.assertIn("stays in your browser", block)
 
     def test_it_is_plain_and_carries_no_marketing(self):
