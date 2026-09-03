@@ -22,7 +22,7 @@ Questions go in `docs/<story>-open-questions.md`, in this format: what it blocks
 
 When sources disagree, use this order:
 
-1. `expected_findings.json`, `expected_quality.json` and `expected_classification.json` define thresholds and expected behaviour.
+1. `expected_findings.json`, `expected_quality.json`, `expected_classification.json` and `expected_routing.json` define thresholds and expected behaviour.
 2. `run_manifest.schema.json` and `run_bundle.schema.json` define output shape.
 3. Build briefs explain intent and reasoning, but they are not authoritative for numbers changed by later answers or expectation files.
 4. This file defines standing build rules.
@@ -58,7 +58,7 @@ The non-negotiable controls, which carry the same weight:
 - Never remove or correct an outlier silently.
 - Keep validation gates separate from quality characterisation.
 - Reuse quality ADI and CV-squared values in classification. Do not recompute them.
-- Treat classification as evidence and implication only until a routing contract is approved.
+- Routing consumes the demand class and the quality band. It computes no metric of its own, and no routing decision changes because a user asserts something rather than because the data changed.
 - Keep confidential bundles in the browser. Do not add server-side bundle storage.
 - Keep BigQuery query caching disabled for managed forecasts and fail closed on a reported cache hit.
 - Keep Forecast processing in the approved London region.
