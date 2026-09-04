@@ -1,0 +1,59 @@
+/* Silurian marketing site: one source for the tokens.
+
+   Every colour the site renders and the font declaration are defined here and
+   nowhere else. Layout stays embedded in each page. Linked by index.html,
+   forecast-risk.html and privacy.html.
+
+   This file buys prevention, not repair. Nothing looks different because of it.
+   What it removes is the condition that let forecast-risk.html run a second
+   palette in Production for weeks without anyone seeing it: three pages using
+   three names for the same role, with nothing connecting them. */
+
+@font-face {
+  font-family: "Archivo";
+  src: url("assets/fonts/Archivo-Variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* Ground and surfaces. The site has surfaces on both sides of its own ground,
+     which inverts the usual expectation: --color-surface sits darker than the
+     page and --color-paper sits lighter. The darker panel is deliberate and is
+     recorded in CLAUDE.md section 9. */
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+
+  /* --color-paper carries two roles on one value: a surface lifted off the page
+     ground, such as the masthead band and the chart box, and type or marks
+     reversed out of a filled accent or ink field. One token rather than two,
+     because the system is print derived and both are the same idea, bare paper.
+     The design system named this role itself, in index.html: "type reversed to
+     the paper token". The trade: if the surface white ever moves off pure white,
+     the token splits then, and the split is cheap when it is actually needed.
+     Note that privacy.html defines --paper meaning #f3f2f2, a different name for
+     a different value. That one disappears in S1.3. */
+  --color-paper: #fff;
+
+  /* Ink and drawn structure. Rules are solid, not faded: this system does not
+     fade its rules, so the divider carries the full ink value. */
+  --color-text: #3f3d3b;
+  --color-divider: #3f3d3b;
+
+  /* The one accent. Spent as a mark or a field, never as a status palette. */
+  --color-accent: #ec6917;
+
+  /* Approved brand tokens. Both are deliberately unreferenced and not yet
+     applied to any visible element, recorded as approved in PROJECT_HANDOFF.md.
+     They are not dead values: do not remove them as unused. */
+  --color-charcoal-deep: #1a1918;
+  --color-neutral-brand: #cabfad;
+
+  /* Type. There is no type scale on this site: 24 distinct raw sizes on one page
+     is a list, not a scale, and creating one is design work rather than
+     extraction. Only the family and the display weight are shared values. */
+  --font-heading: "Archivo", system-ui, sans-serif;
+  --font-heading-weight: 800;
+  --font-body: "Archivo", system-ui, sans-serif;
+}
