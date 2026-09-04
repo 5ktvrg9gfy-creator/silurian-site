@@ -9,9 +9,14 @@
    palette in Production for weeks without anyone seeing it: three pages using
    three names for the same role, with nothing connecting them. */
 
+/* The font URL is root-relative on purpose. A URL inside a linked stylesheet
+   resolves against the stylesheet, not the page, so a page-relative URL would
+   break the moment this file moved to a subdirectory. It would break quietly:
+   font-display: swap paints a fallback rather than raising an error, so the
+   site would look deliberate while being wrong. Do not make it relative. */
 @font-face {
   font-family: "Archivo";
-  src: url("assets/fonts/Archivo-Variable.ttf") format("truetype");
+  src: url("/assets/fonts/Archivo-Variable.ttf") format("truetype");
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
@@ -49,6 +54,11 @@
      They are not dead values: do not remove them as unused. */
   --color-charcoal-deep: #1a1918;
   --color-neutral-brand: #cabfad;
+
+  /* Rule weights are deliberately not tokens. The site draws structure with 2px
+     seams and 1px hairlines and nothing else, and CLAUDE.md section 9 names the
+     2px drawn rule as a brand rule, so the case for a token exists. Two values
+     used consistently do not need naming. Revisit if a third weight appears. */
 
   /* Type. There is no type scale on this site: 24 distinct raw sizes on one page
      is a list, not a scale, and creating one is design work rather than
