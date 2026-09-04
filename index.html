@@ -9,29 +9,9 @@
 <link rel="icon" href="logo-stone.svg" />
 <link rel="stylesheet" href="tokens.css" />
 <style>
-/* Modernist â€” design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
-@font-face {
-  font-family: "Archivo";
-  src: url("assets/fonts/Archivo-Variable.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-}
+/* Modernist â€” this page's own layout. Colour and the font come from tokens.css, which is the source of truth for both; retune them there. The component library that stood here was removed as dead on 4 September 2026. */
 
 :root {
-  --color-bg: #f3f2f2;
-  --color-text: #3f3d3b;
-  --color-charcoal-deep: #1a1918;
-  --color-accent: #ec6917;
-  --color-neutral-brand: #cabfad;
-  --color-divider: color-mix(in srgb, #3f3d3b 40%, transparent);
-
-  /* Tonal ramps â€” generated in OKLCH on one shared lightness scale, so the
-     same step of any role matches the others in visual value. */
-
-  --font-heading: "Archivo", system-ui, sans-serif;
-  --font-heading-weight: 800;
-  --font-body: "Archivo", system-ui, sans-serif;
 
   --space-1: 4.0px;
   --space-2: 8.0px;
@@ -40,8 +20,6 @@
 
   --radius-md: 0px;
 
-  /* Elevation â€” derived from the ground: soft ink-tinted shadows on a
-     light theme, a hairline edge + ambient darkness on a dark one. */
 }
 
 body {
@@ -51,11 +29,8 @@ body {
 }
 h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   Components â€” built with the tokens above. Plain CSS
-   on plain HTML: no JavaScript, no build step. Each class is documented in
-   readme.md and demonstrated in foundations/ and components/.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* Base layer, and the one component class the page still uses.
+   Plain CSS on plain HTML: no JavaScript, no build step. */
 
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
@@ -87,8 +62,7 @@ figcaption {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   cursor: pointer; text-decoration: none;
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px â€”
-     the pair sits side by side in sign-up rows */
+  font-size: 14px; line-height: 1.2; color: var(--color-text); /* 14px */
   background: transparent; border: 1px solid transparent;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
   border-radius: var(--radius-md);
@@ -98,8 +72,8 @@ figcaption {
 
 </style>
 <style>
-/* Template scaffolding â€” page layout and web-scale sizing only; every color,
-   font, radius and shadow comes from ../../styles.css. The voice is the
+/* Template scaffolding â€” page layout and web-scale sizing only; colour and the
+   font come from tokens.css. The voice is the
    deck's, re-derived for a scrolling page: the grid SHOWS â€” 2px
    rules draw the structure â€” red is spent as a mark, and its one field
    moment is the poster close (the deck's divider logic: the red page sets
@@ -108,9 +82,7 @@ figcaption {
    THE RHYTHM: a 28px leading unit (17px Archivo body at ~1.65), 14px
    half-step; line-heights and block margins in unit multiples, heads
    cap-trimmed, ?baselines/B to review. The deck's seat-pinning relaxes to
-   per-block discipline on a fluid page. The system's own interface
-   components (nav, buttons, inputs) keep their styles.css leading â€” the
-   rhythm governs the page's text, not the controls.
+   per-block discipline on a fluid page.
 
    THE LANDING LAWS (shared by all six systems' landing templates):
    #1 display headers break per sentence (.line spans); #2 the landing
@@ -128,9 +100,6 @@ figcaption {
 .nav-brand, .stat-num { letter-spacing: -0.025em; }
 
 :root {
-  /* sleeve orange, carried across the accent role and its ramp steps */
-  --color-accent: #ec6917;
-  --color-divider: #3f3d3b;
   --leading: 28px;
   --half: 14px;
   --edge: clamp(20px, 5vw, 72px);
@@ -162,7 +131,7 @@ body { margin: 0; text-wrap: pretty; }
 .mast-bar a:not(.btn):hover { text-decoration: underline; text-underline-offset: 5px; }
 .mast-bar a[aria-current='location'] { text-decoration: underline; text-underline-offset: 5px; }
 .mast-bar .btn { margin-left: auto; border-color: var(--color-text); color: var(--color-text); background: transparent; }
-.mast-bar .btn:hover { background: color-mix(in srgb, #3f3d3b 14%, transparent); }
+.mast-bar .btn:hover { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
 @media (max-width: 560px) { .mast-bar .btn { margin-left: 0; } }
 
 /* anchors used as buttons: restore what the component gets from the button
@@ -223,7 +192,7 @@ a.btn { white-space: nowrap; }
    least 3:1 â€” "enough for icons, large text and interface chrome, not for
    body copy") â€” the same bar the system's own accent-filled primary button
    label rides everywhere. */
-.close { background: var(--color-accent); color: #fff; }
+.close { background: var(--color-accent); color: var(--color-paper); }
 .close .wrap { padding-top: calc(2 * var(--leading)); padding-bottom: calc(2 * var(--leading)); }
 .close h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: clamp(34px, 4.2vw, 56px); line-height: clamp(36px, 4.45vw, 59.4px); /* â‰ˆ1.06 â€”
@@ -236,11 +205,11 @@ a.btn { white-space: nowrap; }
 .close .contact-badge {
   width: 40px; height: 40px; padding: 0; flex: none;
   justify-content: center; border-radius: 50%;
-  border-color: #fff; background: #fff; color: var(--color-accent);
+  border-color: var(--color-paper); background: var(--color-paper); color: var(--color-accent);
   font-family: Arial, sans-serif; font-size: 16px; font-weight: 700;
   letter-spacing: -0.04em; text-transform: none;
 }
-.close .contact-badge:hover { background: #3f3d3b; border-color: #3f3d3b; color: #fff; }
+.close .contact-badge:hover { background: var(--color-text); border-color: var(--color-text); color: var(--color-paper); }
 .close .email-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
 footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(--leading);
   color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */ }
@@ -285,7 +254,7 @@ body[data-baselines]::after {
 </head>
 <body>
 <header class="mast">
-  <div class="mast-bar" style="background:#fff;gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
+  <div class="mast-bar" style="background:var(--color-paper);gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
     <div class="mast-brand">
     <img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" />
     <p style="margin:0;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:clamp(15px, 1.8vw, 18px);line-height:1.2;letter-spacing:-0.02em;white-space:nowrap;color:var(--color-text)">Silurian Consulting LTD</p>
