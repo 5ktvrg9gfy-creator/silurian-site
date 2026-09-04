@@ -33,24 +33,36 @@ knowing.
 
 ## Where the two copies differ
 
-**`2.7-build-brief.md`.** The archived copy is the later revision. It carries the
+**`2.7-build-brief.md`.** The archived copy was the later revision, carrying the
 corrected readiness sentence, "7 of 14 lines can be forecast", and a correction note
 dated 3 September recording that revision 1.0 said "Nine of fourteen" and why that
-was wrong. The repository copy is revision 1.0 and still reads nine. Nothing is lost
-by not copying the later one: the correction is recorded in full in
-`docs/2.7-open-questions.md` Q1 and Q2, and the built product says seven.
+was wrong. `docs/briefs/2.7-build-brief.md` was revision 1.0 and still read nine,
+which is the exact conflation band 2.7 exists to expose, standing in the live copy
+rather than in an archive. It has since been replaced with the corrected revision,
+so the two are now the same document and there is still only one copy of it.
 
 **`2.2-build-brief.md`.** Four lines of wording differ, none of them a number or a
 decision. The archived copy adds emphasis and says the headline is stated "to two
 decimals". The two are the same brief.
 
-**`MANIFEST.md`.** These disagree about fixture 05, and the disagreement is not
-cosmetic. The archived copy says the expected verdict is **reject**, on the
-conflicting key. The repository copy says **accept with warnings**.
+**`MANIFEST.md`.** These disagreed about fixture 05. The archived copy says the
+expected verdict is **reject**, on the conflicting key. The repository copy said
+**accept with warnings**, and `expected_findings.json` records **reject**.
 
-`expected_findings.json` records the verdict for `05_duplicates_and_aliases.csv` as
-**reject**. Under the authority order in `CLAUDE.md` section 2 the expectations file
-governs, so the archived prose agrees with the authority and the repository's copy of
-this manifest is stale on that point. Neither file was edited here. The prose
-manifest is a description; `expected_findings.json` is the control, and
-`test_every_fixture_pass` holds the engine against it.
+Checking that one found a second. `07_zeros_versus_gaps.csv` read "accept with
+warnings, one per SKU" where the control records `accept`, left behind when story
+1.6 moved the zero-versus-gap, staleness, discontinuation and short-history
+characterisations out of validation and into the quality stage.
+
+Both lines in `forecast-app/tests/fixtures/MANIFEST.md` were corrected, and the
+integrity pin in `tests/fixture_hashes.json` was reissued to match, as a recorded
+change rather than a quiet one. The fixture bytes did not move: `MANIFEST.md`
+describes the fixtures rather than being one. The archived copy was not edited, and
+it still differs from the corrected repository copy in the wording of the other
+eleven blocks.
+
+`tests/test_fixture_manifest.py` now holds the prose against the control, so the
+next drift fails the build rather than waiting to be noticed by someone reading two
+files side by side. The manifest remains a description, `expected_findings.json`
+remains the control, and where they disagree the control wins and the document
+moves.
