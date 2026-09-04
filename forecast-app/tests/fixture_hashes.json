@@ -22,7 +22,7 @@
     "forecast-app/tests/fixtures/31_routing_portfolio.csv": "2c55f4f7c30e6f708c7389a2df3850a8fb7947b1187f19c95531b4aaca9601f6",
     "forecast-app/tests/fixtures/expected_routing.json": "7fea85d2ec16ed57781e37a74957d18af3313ca58afc4fad59f086e2f69bc607",
     "forecast-app/tests/fixtures/expected_findings.json": "afbc00475ee0fc1168945a230a83ef509f79ccca806e3a483989e28a57234da4",
-    "forecast-app/tests/fixtures/MANIFEST.md": "50949a2dd6c362fb2199ac59dcceb7d47f86815f3e3c593065c2d1f1e5fc56f8",
+    "forecast-app/tests/fixtures/MANIFEST.md": "60de325f7acf7464253ab6ee59ade55b67cd7e6665a957777953528d55d215d2",
     "forecast-app/tests/quality_fixtures/00_clean_control.csv": "c4518c47dd8e0709aaf4e5a8e4ec3513fc4c3cf6a5ed0e3787a947458ed20b1e",
     "forecast-app/tests/quality_fixtures/1.2-answers.md": "6d594dae40783011b34430173eaa8de3c88ad32ad7d00c2847d30d2393cd9fdc",
     "forecast-app/tests/quality_fixtures/1.2-build-brief.md": "1d884e4b367cf100abcd21e409a254d8b776418799578d7b6c13c4f5bfbb9362",

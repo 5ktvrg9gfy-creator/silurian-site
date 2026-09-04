@@ -39,7 +39,7 @@ Months as columns, the format planners actually send. Quoted descriptions contai
 
 ### 05_duplicates_and_aliases.csv
 Exact duplicate rows, a conflicting duplicate for the same SKU and period, case variants, leading and trailing whitespace, a dropped separator, a revision suffix appearing mid-history, an underscore variant, and a negative reversal line posted separately.
-**Expect:** accept with warnings. De-duplicate exact matches silently, escalate the conflicting key, and surface suspected aliases for the user to confirm or reject. Never merge aliases automatically.
+**Expect:** reject, on the conflicting key. De-duplicate exact matches silently and report them as information findings, escalate the conflicting key, and surface suspected aliases for the user to confirm or reject. Never merge aliases automatically.
 
 ### 06_semicolon_latin1.csv
 German export. Semicolon delimited, latin-1 encoded, German date format, decimal comma, and a quoted description running across a line break.
@@ -47,7 +47,7 @@ German export. Semicolon delimited, latin-1 encoded, German date format, decimal
 
 ### 07_zeros_versus_gaps.csv
 Five SKUs, each a different history problem. Explicit zeros, the same pattern with zero months simply absent, a series discontinued mid-year with no end-of-life flag, a new introduction with four periods, and a single spike.
-**Expect:** accept with warnings, one per SKU, each naming the specific risk. This file is where the sprint 2 forecastability screen gets its requirements.
+**Expect:** accept, with zero validation findings. Story 1.6 moved the zero-versus-gap, staleness, discontinuation and short-history characterisations out of validation and into the quality stage, so the per-SKU risks this file provokes are reported there. This file is where the sprint 2 forecastability screen gets its requirements.
 
 ### 08_unit_change_midhistory.csv
 Quantities drop by roughly a factor of twelve partway through. On the first SKU the UOM column still says `EA`, so only the level break reveals it. On the second SKU the UOM column changes honestly.
