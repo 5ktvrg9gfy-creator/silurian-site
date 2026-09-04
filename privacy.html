@@ -10,6 +10,7 @@
 <style>
 :root {
   --edge: clamp(20px, 5vw, 72px);
+  --leading: 28px;
 }
 * { box-sizing: border-box; }
 body {
@@ -37,6 +38,8 @@ h2 { margin: 40px 0 12px; font-size: 22px; }
 p, ul { max-width: 68ch; }
 a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .updated { color: color-mix(in srgb, var(--color-text) 65%, transparent); font-size: 14px; }
+.page-foot { padding-inline: max(var(--edge), calc((100% - 1000px) / 2 + var(--edge))); }
+footer{padding:calc(2 * var(--leading)) 0;font-size:13px;line-height:var(--leading);color:color-mix(in srgb, var(--color-text) 70%, transparent)}
 </style>
 </head>
 <body>
@@ -75,5 +78,8 @@ a { color: var(--color-text); text-decoration-color: var(--color-accent); text-d
   <h2>Contact</h2>
   <p>For privacy questions or requests, email <a href="mailto:hello@silurianconsulting.co.uk">hello@silurianconsulting.co.uk</a>.</p>
 </main>
+<div class="page-foot">
+  <footer style="display:flex;align-items:center;gap:14px"><img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" /><span style="display:block">Silurian Consulting LTD. Registered in England and Wales, company number 17415387. Registered office, 22 Gelliwastad Road, Pontypridd, CF37 2BW. <a href="privacy.html">Privacy</a>.</span></footer>
+</div>
 </body>
 </html>
