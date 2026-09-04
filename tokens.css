@@ -55,6 +55,35 @@
   --color-charcoal-deep: #1a1918;
   --color-neutral-brand: #cabfad;
 
+  /* Secondary text: panel subheads, metric labels and chart axis labels.
+     Note that Assay uses #68615e for the same role, one digit apart. Nobody
+     decided that difference; it is recorded as band 2.9.2, not fixed here. */
+  --color-text-muted: #66615f;
+
+  /* Body copy reversed on the dark risk card. Distinct from --color-paper on
+     purpose: paper is pure white reversed on the orange field, this is
+     softened white on charcoal. Two grounds, two values. */
+  --color-text-on-dark: #e3dfdd;
+
+  /* Chart furniture, forecast-risk.html only. --color-chart-series names one
+     line today, the projected inventory, so the name overpromises. It is
+     still the right name: series extends when a second line appears, where
+     an inventory name would have to be renamed, and extending is cheaper
+     than renaming. */
+  --color-chart-grid: #d1cdca;
+  --color-chart-series: #77716e;
+
+  /* Status colours. THESE THREE ARE DEFINED TWICE, deliberately and with the
+     duplicate recorded rather than created quietly. Assay declares the same
+     three values in forecast-app/static/index.html as --good, --warn and
+     --bad. The two products deploy through separate Vercel projects from
+     separate directories and cannot share this file today without a build
+     step. Change both sides or neither. The pairs are held equal by
+     test_status_colours_match_assay, which fails if either side moves. */
+  --color-status-good: #356b46;
+  --color-status-warn: #9a5a12;
+  --color-status-bad: #a52a1f;
+
   /* Rule weights are deliberately not tokens. The site draws structure with 2px
      seams and 1px hairlines and nothing else, and CLAUDE.md section 9 names the
      2px drawn rule as a brand rule, so the case for a token exists. Two values
