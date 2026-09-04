@@ -40,6 +40,7 @@ This is the recovery and transfer document for the Silurian website and Forecast
 - Forecast Vercel project: `https://vercel.com/silurian/silurian-forecast-diagnostic`
 - Local repository: `C:\Users\jksta\OneDrive\Documents\Silurian Consulting Limited\silurian-site-repo`
 - Forecast application: `forecast-app/`
+- Fixture provenance: `forecast-app/tools/`, the generators that produced every pinned fixture and expectations file and the checkers that verify them. Read `forecast-app/tools/README.md` before running anything: the committed files are authoritative and the scripts are not.
 
 The additional domains `silurianconsultinglimited.co.uk` and `silurianconsultingltd.co.uk` redirect to `silurianconsulting.co.uk`.
 
