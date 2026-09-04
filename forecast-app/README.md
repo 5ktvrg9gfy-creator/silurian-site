@@ -29,6 +29,27 @@ python -m venv .venv
 
 Open `http://localhost:8000` and upload `sample-data.csv`.
 
+## Run the test suite in a fresh container
+
+A fresh container cannot run the suite until the pinned dependencies are installed and the preinstalled `cryptography` package is repaired. Both failures look like broken tests and are not. Recognise them rather than debugging them.
+
+The sequence below worked on 4 September 2026 against Python 3.11.15 on Debian. Run it from `forecast-app/`.
+
+```text
+python3 -m pip install --ignore-installed packaging -r requirements.txt
+python3 -m pip install --ignore-installed cryptography
+python3 -m unittest discover -s tests
+```
+
+The expected result is 200 tests and `OK`.
+
+What each step is for:
+
+- **Install the pinned dependencies.** Without them, eight test modules fail to import with `ModuleNotFoundError: No module named 'starlette'` and the run reports 107 tests with 8 errors. A plain `pip install -r requirements.txt` stops with `Cannot uninstall packaging 24.0, RECORD file not found`, because the system `packaging` came from the Debian package manager and carries no `RECORD` file for pip to remove. `--ignore-installed packaging` steps around it and leaves the system package alone.
+- **Repair `cryptography`.** The preinstalled 41.0.7 raises `pyo3_runtime.PanicException: Python API call failed` when its Rust bindings are imported. That takes out `test_bigquery_timesfm` alone, so the run reports 199 tests with 1 error and reads like a real defect in the BigQuery connector. Reinstalling the package fixes it.
+
+This is container setup only. Nothing in the repository is changed by it, and no committed file needs editing to make the suite pass. For the wider history of runtime problems in this project, including the stale embedded runtime path and the CSV line-ending mismatch, read `docs/handover-gaps.md` at the repository root rather than repeating the diagnosis here.
+
 ## Enable TimesFM
 
 Install `requirements-timesfm.txt` and set `FORECAST_PROVIDER=timesfm` before starting the app. The first run downloads the Google Research model weights.
