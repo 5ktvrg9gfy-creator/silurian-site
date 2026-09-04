@@ -1,12 +1,13 @@
 # Silurian project handoff
 
-Last updated: 3 September 2026
+Last updated: 4 September 2026
 
 This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
 ## Current position
 
 - Marketing header update, 3 September 2026: released through pull request 67, merge `1e076271427e7a283d32933ae5f088e38da0c1a6`. AI Demand Forecasting sits beside the company name and opens a dropdown linking to `https://assay.silurianconsulting.co.uk/` in a new tab. The label and Assay link match the live service list at 15.5px. Local and public Production browser checks passed at 1440, 768, 390 and 320px for sizing, overflow, click, keyboard, Escape, outside click and destination.
+- Marketing header release evidence, 3 September 2026: merged through pull request 68, merge `e53f802a121e4e46f56526318405994d07739199`. It recorded the Production smoke result for the header dropdown on `https://www.silurianconsulting.co.uk/` at 1440, 768, 390 and 320px and closed the marketing header work. It changed this handoff only, and no site file.
 
 ### Marketing header delivery
 
@@ -83,6 +84,7 @@ Stop and report a contradiction rather than choosing a convenient source. The St
 - `assets/fonts/Archivo-Variable.ttf`: self-hosted Archivo variable font
 - `assets/fonts/OFL.txt`: Archivo's SIL Open Font Licence
 - `MAINTENANCE.md`: marketing-site maintenance notes
+- `docs/marketing-site.md`: marketing-site intent as stated by the product owner, plus the conventions and traps that are not obvious from the files
 - `CLAUDE.md`: standing repository rules and authority order for a cold start
 - `PROJECT_HANDOFF.md`: mandatory build recovery and transfer record
 
