@@ -17,10 +17,10 @@
 :root {
   --bg:#f3f2f2;
   --surface:#eae9e9;
-  --text:#201e1d;
-  --accent:#ee7623;
+  --text:#3f3d3b;
+  --accent:#ec6917;
   --muted:#66615f;
-  --line:#201e1d;
+  --line:#3f3d3b;
   --good:#356b46;
   --warn:#9a5a12;
   --bad:#a52a1f;
@@ -60,13 +60,13 @@ select{width:100%;min-height:46px;border:2px solid var(--line);background:#fff;c
 .panel{border-top:2px solid var(--line);padding-top:18px}
 .panel h2{font-size:26px;margin-bottom:6px}
 .panel-sub{color:var(--muted);font-size:13px;margin:0 0 18px}
-.chart-wrap{background:#fff;border:1px solid #aaa5a2;padding:14px;height:390px}
+.chart-wrap{background:#fff;border:1px solid var(--line);padding:14px;height:390px}
 canvas{width:100%;height:100%;display:block}
 .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:7px}
 .legend i{width:16px;height:3px;background:var(--text);display:inline-block}
 .legend .forecast i{background:var(--accent)}
-.legend .range i{height:8px;background:rgba(238,118,35,.2);border:1px solid var(--accent)}
+.legend .range i{height:8px;background:rgba(236,105,23,.2);border:1px solid var(--accent)}
 .legend .inventory i{background:#77716e}
 .legend .safety i{background:var(--bad)}
 .risk-card{background:var(--text);color:var(--bg);padding:24px;margin-bottom:24px}
@@ -80,7 +80,7 @@ canvas{width:100%;height:100%;display:block}
 .exceptions{margin-top:54px}
 .exceptions h2{font-size:30px;margin-bottom:18px}
 table{width:100%;border-collapse:collapse;background:#fff}
-th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #bbb6b3}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--line)}
 th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid var(--line)}
 .risk-pill{display:inline-block;padding:3px 8px;font-size:11px;font-weight:800;text-transform:uppercase;border:1px solid currentColor}
 .risk-red{color:var(--bad)}
@@ -246,10 +246,10 @@ function renderChart(result){
  const demandValues=[...result.history,...result.quantiles.flatMap(q=>[q.lower,q.upper])],demandMax=Math.max(...demandValues)*1.12;const inventoryMin=Math.min(0,result.safety,...result.inventoryProjection),inventoryMax=Math.max(result.inventory,result.safety,...result.inventoryProjection)*1.1;const n=result.history.length+result.forecast.length;const x=i=>pad.l+i*(W-pad.l-pad.r)/(n-1),yd=v=>pad.t+(demandMax-v)*(H-pad.t-pad.b)/demandMax,yi=v=>pad.t+(inventoryMax-v)*(H-pad.t-pad.b)/(inventoryMax-inventoryMin);const start=result.history.length-1;
  ctx.font='11px Archivo';ctx.lineWidth=1;for(let j=0;j<=4;j++){const demand=demandMax*j/4,yy=yd(demand),inventory=inventoryMin+(inventoryMax-inventoryMin)*j/4;ctx.strokeStyle='#d1cdca';ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.fillStyle='#66615f';ctx.textAlign='left';ctx.fillText(fmt(demand),4,yy+4);ctx.textAlign='right';ctx.fillText(fmt(inventory),W-3,yi(inventory)+4)}
  ctx.fillStyle='#66615f';ctx.textAlign='left';ctx.fillText('Demand',4,12);ctx.textAlign='right';ctx.fillText('Inventory',W-3,12);
- ctx.fillStyle='rgba(238,118,35,.16)';ctx.beginPath();result.quantiles.forEach((q,i)=>{const xi=x(start+i+1);i?ctx.lineTo(xi,yd(q.upper)):ctx.moveTo(xi,yd(q.upper))});for(let i=result.quantiles.length-1;i>=0;i--){ctx.lineTo(x(start+i+1),yd(result.quantiles[i].lower))}ctx.closePath();ctx.fill();
+ ctx.fillStyle='rgba(236,105,23,.16)';ctx.beginPath();result.quantiles.forEach((q,i)=>{const xi=x(start+i+1);i?ctx.lineTo(xi,yd(q.upper)):ctx.moveTo(xi,yd(q.upper))});for(let i=result.quantiles.length-1;i>=0;i--){ctx.lineTo(x(start+i+1),yd(result.quantiles[i].lower))}ctx.closePath();ctx.fill();
  const safetyY=yi(result.safety);ctx.strokeStyle='#a52a1f';ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(pad.l,safetyY);ctx.lineTo(W-pad.r,safetyY);ctx.stroke();ctx.setLineDash([]);
- ctx.strokeStyle='#201e1d';ctx.lineWidth=2;ctx.beginPath();result.history.forEach((v,i)=>i?ctx.lineTo(x(i),yd(v)):ctx.moveTo(x(i),yd(v)));ctx.stroke();
- ctx.strokeStyle='#ee7623';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x(start),yd(result.history[result.history.length-1]));result.quantiles.forEach((q,i)=>ctx.lineTo(x(start+i+1),yd(q.median)));ctx.stroke();
+ ctx.strokeStyle='#3f3d3b';ctx.lineWidth=2;ctx.beginPath();result.history.forEach((v,i)=>i?ctx.lineTo(x(i),yd(v)):ctx.moveTo(x(i),yd(v)));ctx.stroke();
+ ctx.strokeStyle='#ec6917';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x(start),yd(result.history[result.history.length-1]));result.quantiles.forEach((q,i)=>ctx.lineTo(x(start+i+1),yd(q.median)));ctx.stroke();
  ctx.strokeStyle='#77716e';ctx.lineWidth=2;ctx.beginPath();result.inventoryProjection.forEach((v,i)=>{const xi=x(start+i+1);i?ctx.lineTo(xi,yi(v)):ctx.moveTo(xi,yi(v))});ctx.stroke();
  ctx.fillStyle='#66615f';ctx.textAlign='left';ctx.fillText('History',pad.l,H-10);ctx.fillText('Forecast',x(start+1),H-10);
 }
