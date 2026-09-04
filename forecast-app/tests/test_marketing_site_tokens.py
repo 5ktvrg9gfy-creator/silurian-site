@@ -96,12 +96,20 @@ COLOUR_FORMS: tuple[tuple[str, re.Pattern[str]], ...] = (
 def marketing_pages() -> tuple[Path, ...]:
     """Every HTML page at the repository root, from the filesystem.
 
-    Read from disk rather than from `git ls-files` on purpose. Vercel serves
-    the repository root, so any .html sitting there is live in Production
-    whether or not it has been staged, and a control that waits for `git add`
-    would pass on a page that is already serving. This was found by probing
-    the fourth-page guard with an untracked file: the git-based version
-    reported OK.
+    Read from disk rather than from `git ls-files` on purpose: the control
+    fires as soon as a page exists, rather than waiting for someone to stage
+    it. Failing earlier, and not depending on staging discipline, is the
+    reason.
+
+    Found by probing the fourth-page guard with an untracked file, which the
+    git-based version reported OK. Note what that probe did and did not
+    prove. It proved the guard was blind to an unstaged page. It did NOT
+    prove that page could reach the public: Vercel's Git integration builds
+    from the commit, so an untracked file is not deployed, and the guard
+    would have failed in CI once the page was committed and before any
+    deploy. The window was local, not public. A manual `vercel --prod` from a
+    working directory does upload untracked files and would make it public,
+    but that is not how this project is documented to deploy.
     """
     roots = sorted(path.name for path in REPOSITORY.glob("*.html"))
     return tuple(REPOSITORY / name for name in roots)
