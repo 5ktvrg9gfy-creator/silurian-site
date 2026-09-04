@@ -62,11 +62,15 @@ One more line to hold. **This is a test, not a pitch.** If it turns into a demon
 
 ## 4. Setup, before they arrive
 
-1. Open https://silurian-forecast-diagnostic.vercel.app/ in a clean browser tab.
-2. Upload `31_routing_portfolio.csv`, which is in your Google Drive.
-3. Analysis date **2026-08-01**, frequency **monthly**.
-4. Let it finish, then land on the **Routing** panel.
-5. Have a notebook. Do not sit where you can point at the screen.
+1. Open https://assay.silurianconsulting.co.uk in a clean browser tab. The older
+   https://silurian-forecast-diagnostic.vercel.app/ address still works and reaches the same application.
+2. The tool is behind a password. Enter it yourself before the planner arrives, so they never see the gate.
+   One entry lasts twelve hours. If you are handing them the tab on their own machine, they will need the
+   password from you.
+3. Upload `31_routing_portfolio.csv`, which is in your Google Drive.
+4. Analysis date **2026-08-01**, frequency **monthly**.
+5. Let it finish, then land on the **Routing** panel.
+6. Have a notebook. Do not sit where you can point at the screen.
 
 Ten minutes of their time. Fifteen if they talk.
 
