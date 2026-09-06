@@ -5,7 +5,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Silurian Consulting LTD</title>
-<meta name="description" content="Silurian Consulting LTD â€” project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
+<meta name="description" content="Silurian Consulting LTD, project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
 <link rel="icon" href="logo-stone.svg" />
 <link rel="stylesheet" href="tokens.css" />
 <style>
@@ -33,24 +33,24 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-headi
    Plain CSS on plain HTML: no JavaScript, no build step. */
 
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+body { margin: 0; font-size: var(--text-body); line-height: 1.55; font-weight: 400; }
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2);
 }
-h1 { font-size: 42px; }
-h2 { font-size: 32px; }
-h3 { font-size: 25px; }
-h4 { font-size: 20px; }
-h5 { font-size: 16px; }
-h6 { font-size: 13px; }
+h1 { font-size: var(--text-display); }
+h2 { font-size: var(--text-title); }
+h3 { font-size: var(--text-subhead); }
+h4 { font-size: var(--text-lead); }
+h5 { font-size: var(--text-body); }
+h6 { font-size: var(--text-label); }
 h6 { letter-spacing: 0.08em; text-transform: uppercase; }
 p { margin: 0 0 var(--space-3); }
 a { color: var(--color-accent); text-underline-offset: 3px; }
 img { display: block; max-width: 100%; }
 figure { margin: 0; }
 figcaption {
-  font-size: 11px; margin-top: var(--space-1);
+  font-size: var(--text-label); margin-top: var(--space-1);
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 :focus { outline: none; }
@@ -62,7 +62,7 @@ figcaption {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   cursor: pointer; text-decoration: none;
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 14px; line-height: 1.2; color: var(--color-text); /* 14px */
+  font-size: var(--text-body); line-height: 1.2; color: var(--color-text);
   background: transparent; border: 1px solid transparent;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
   border-radius: var(--radius-md);
@@ -126,7 +126,7 @@ body { margin: 0; text-wrap: pretty; }
   gap: clamp(20px, 3vw, 40px); flex-wrap: wrap;
   padding-top: var(--half); padding-bottom: var(--half); }
 .mast-bar a:not(.btn) { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--color-text); text-decoration: none; }
 .mast-bar a:not(.btn):hover { text-decoration: underline; text-underline-offset: 5px; }
 .mast-bar a[aria-current='location'] { text-decoration: underline; text-underline-offset: 5px; }
@@ -141,32 +141,53 @@ a.btn { white-space: nowrap; }
 /* â€” hero â€” */
 .display {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: clamp(42px, 6.2vw, 84px);
-  line-height: clamp(44.5px, 6.57vw, 89px); /* law #3: ratio-governed â‰ˆ1.06 â€”
+  font-size: var(--text-display);
+  line-height: 1.06; /* law #3: ratio-governed â‰ˆ1.06 â€”
      Archivo's 800 sits tight and all-cap-height; the display-block lattice
      exemption (no 14px step is both tighter than the old look and clear) */
   letter-spacing: -0.02em; margin: 0;
   margin-left: -0.058em; /* optical left alignment â€” the deck's measured Archivo 800 value */
   text-box: trim-both cap alphabetic;
 }
-.display .line { display: block; } /* law #1: one sentence per line */
-#about { grid-template-columns: minmax(0, 1fr); }
-#about .display { font-size: clamp(36px, 4vw, 58px); line-height: 1.06; }
-.hero .sub, #about .sub { font-size: 17px; line-height: var(--leading); max-width: var(--measure);
-  margin: calc(1.5 * var(--leading) - 1cap) 0 0;
-  text-box: trim-both cap alphabetic; } /* 1.5 units: clears the display's descenders with cluster-tight air (law #3) */
+#about { padding: 72px 0 80px; }
+/* The headline is uncapped and takes the full content width. It sets on one
+   line at desktop, which needs 958 of the 1056px available, and wraps below
+   about 1090px. No text-wrap: balance: it does nothing to a single line, and
+   once the headline wraps, balancing is what produces the orphaned last line
+   the design session rejected. */
+#about .display { font-size: var(--text-display); line-height: 1.06;
+  letter-spacing: -0.03em; }
+/* The subline carries the display weight, not the browser's bold. <strong>
+   defaults to 700 and the design calls for 800, which Archivo has as a
+   variable axis; without this the difference is one that only a computed
+   style shows. */
+.hero .sub, #about .sub, #about .sub strong { font-weight: var(--font-heading-weight); }
+.hero .sub, #about .sub { font-size: var(--text-lead); line-height: 1.4; max-width: 34em;
+  margin: 20px 0 0;
+  text-box: trim-both cap alphabetic; }
 
-/* copy and imagery split. #about runs it as one column: the faceted stone
-   that filled the second column was removed on 6 September 2026 as a repeat
-   of the header mark, and the mark is kept unused at assets/hero-stone.svg.
-   The second column returns with whatever image replaces it. */
-.split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: var(--leading) clamp(24px, 5vw, 96px); align-items: center;
-  padding: calc(2 * var(--leading)) 0 calc(3 * var(--leading)); }
-.split-copy .note { font-size: 15.5px; line-height: var(--leading);
+/* The lower band: the paragraph left, the three domains right, tops aligned.
+   The 2px seam above it is the page rule; the separators inside the list are
+   1px hairlines at the same full ink value, never faded. */
+#about .lower { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 56px; align-items: start;
+  margin-top: 56px; padding-top: 40px; border-top: 2px solid var(--color-divider); }
+#about .note { font-size: var(--text-body); line-height: 1.5;
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
-  margin: calc(var(--leading) - 1cap) 0 0; max-width: 48ch; text-box: trim-both cap alphabetic; }
-.split-copy .note + .note { margin-top: var(--leading); }
+  margin: 0; max-width: 48ch; }
+.domains { list-style: none; margin: 0; padding: 0; }
+.domains li { display: grid; grid-template-columns: 44px 1fr; gap: 14px;
+  padding: 20px 0; }
+.domains li:first-child { padding-top: 0; }
+.domains li:not(:last-child) { border-bottom: 1px solid var(--color-divider); }
+.domains .n { color: var(--color-accent); font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight); font-size: var(--text-lead);
+  line-height: 1.35; }
+.domains h2 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-subhead); line-height: 1.2; letter-spacing: -0.02em;
+  margin: 0; color: var(--color-text); }
+.domains p { font-size: var(--text-body); font-weight: 400; line-height: 1.5;
+  color: var(--color-text-muted); margin: 6px 0 0; }
 
 /* â€” quote (hanging punctuation, the deck's measured Archivo advances) â€” */
 
@@ -189,7 +210,7 @@ a.btn { white-space: nowrap; }
 .close { background: var(--color-accent); color: var(--color-paper); }
 .close .wrap { padding-top: calc(2 * var(--leading)); padding-bottom: calc(2 * var(--leading)); }
 .close h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: clamp(34px, 4.2vw, 56px); line-height: clamp(36px, 4.45vw, 59.4px); /* â‰ˆ1.06 â€”
+  font-size: var(--text-poster); line-height: 1.06; /* â‰ˆ1.06 â€”
      display-grade, so it carries the display-block lattice exemption (the
      rhythm probe excludes .display and .close h3 alike) */
   letter-spacing: -0.015em; margin: 0; margin-left: -0.058em;
@@ -200,21 +221,21 @@ a.btn { white-space: nowrap; }
   width: 40px; height: 40px; padding: 0; flex: none;
   justify-content: center; border-radius: 50%;
   border-color: var(--color-paper); background: var(--color-paper); color: var(--color-accent);
-  font-family: Arial, sans-serif; font-size: 16px; font-weight: 700;
+  font-family: Arial, sans-serif; font-size: var(--text-body); font-weight: 700;
   letter-spacing: -0.04em; text-transform: none;
 }
 .close .contact-badge:hover { background: var(--color-text); border-color: var(--color-text); color: var(--color-paper); }
 .close .email-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
-footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(--leading);
+footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label); line-height: var(--leading);
   color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */ }
 
 /* the feature grid's fixed-max columns (160 + 420 + gaps) crush the copy
    column in the tablet band, so it collapses earlier than the page */
 
 @media (max-width: 720px) {
-      .split { grid-template-columns: 1fr; }
-  #about .display { font-size: clamp(30px, 8.5vw, 40px); }
-  #about .capability-grid { grid-template-columns: 1fr !important; }
+  #about { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }
+  #about .lower { grid-template-columns: 1fr; gap: var(--leading);
+    margin-top: var(--leading); padding-top: var(--leading); }
 }
 
 /* Review aid: the 28px rhythm drawn as hairlines â€” debug chrome, toggled by
@@ -236,7 +257,11 @@ body[data-baselines]::after {
 /* Header navigation. Match the service-list type size. */
 .mast-brand { display: flex; align-items: center; gap: 14px; }
 .mast-bar a.forecast-link {
-  margin-left: 18px; font: 600 15.5px/1.5 var(--font-body);
+  /* Longhands, not the font shorthand. The size hid there from a font-size
+     scan, which is the same shape of miss as reading a hex and calling it a
+     colour scan. */
+  margin-left: 18px; font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-body); line-height: 1.5;
   color: var(--color-text); letter-spacing: normal; text-transform: none;
 }
 @media (max-width: 620px) { .mast-bar a.forecast-link { margin-left: 0; } }
@@ -247,7 +272,7 @@ body[data-baselines]::after {
   <div class="mast-bar" style="background:var(--color-paper);gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
     <div class="mast-brand">
     <img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" />
-    <p style="margin:0;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:clamp(15px, 1.8vw, 18px);line-height:1.2;letter-spacing:-0.02em;white-space:nowrap;color:var(--color-text)">Silurian Consulting LTD</p>
+    <p style="margin:0;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:var(--wordmark-size);line-height:1.2;letter-spacing:-0.02em;white-space:nowrap;color:var(--color-text)">Silurian Consulting LTD</p>
     </div>
     <nav aria-label="Forecasting tools">
       <a class="forecast-link" href="forecast-risk.html">AI Demand Forecasting</a>
@@ -260,25 +285,16 @@ body[data-baselines]::after {
 
 
 
-  <section class="split" id="about" style="padding-top:var(--edge);padding-bottom:calc(3.25 * var(--leading))">
-    <div class="split-copy">
-      <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
-      <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
-      <p class="note">Behind Silurian are twenty years of experience in regulated manufacturing and pharmaceutical supply chain. Work is taken on directly, not brokered.</p>
-      <div class="capability-grid" style="display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-4);row-gap:var(--half);border-top:2px solid var(--color-divider);margin-top:var(--leading);padding-top:var(--leading)">
-        <ul style="list-style:none;margin:0;padding:0;display:grid;align-content:start;row-gap:var(--half)">
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#1</span><span style="flex:1">Programme and project delivery</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#2</span><span style="flex:1">Supply chain and operations</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">Demand forecasting and inventory diagnostics</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">Supply-chain risk and exception management</span></li>
-        </ul>
-        <ul style="list-style:none;margin:0;padding:0;display:grid;align-content:start;row-gap:var(--half)">
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#5</span><span style="flex:1">Transformation</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#6</span><span style="flex:1">NPI global expansion</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#7</span><span style="flex:1">Capability building</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#8</span><span style="flex:1">Partnered with Regulatory and Quality professionals</span></li>
-        </ul>
-      </div>
+  <section id="about">
+    <h1 class="display">Independent programme and project management.</h1>
+    <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
+    <div class="lower">
+      <p class="note">We bring twenty years of experience in regulated manufacturing and pharmaceutical supply chain: transformation programmes, operating model design, site and tech transfer, global product launches and programme recovery, working across manufacturing sites, external partners and global functions. We are partnered with Regulatory and Quality specialists.</p>
+      <ul class="domains">
+        <li><span class="n">#1</span><div><h2>Transformation programmes</h2><p>Operating model change, site and network reconfiguration.</p></div></li>
+        <li><span class="n">#2</span><div><h2>NPI and global expansion</h2><p>Launch readiness, tech transfer, new market entry.</p></div></li>
+        <li><span class="n">#3</span><div><h2>Supply chain and operations</h2><p>Demand forecasting, inventory diagnostics, risk and exception management.</p></div></li>
+      </ul>
     </div>
   </section>
 

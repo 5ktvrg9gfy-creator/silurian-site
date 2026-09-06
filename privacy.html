@@ -18,7 +18,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: var(--text-body);
   line-height: 1.65;
 }
 header {
@@ -33,13 +33,16 @@ header img { width: 26px; aspect-ratio: 200 / 290; }
 header a { color: var(--color-text); font-weight: var(--font-heading-weight); text-decoration: none; }
 main { max-width: 860px; margin: 0 auto; padding: 72px var(--edge) 96px; }
 h1, h2 { line-height: 1.12; letter-spacing: -0.02em; }
-h1 { margin: 0 0 42px; font-size: clamp(42px, 6vw, 68px); }
-h2 { margin: 40px 0 12px; font-size: 22px; }
-p, ul { max-width: 68ch; }
+h1 { margin: 0 0 42px; font-size: var(--text-display); }
+h2 { margin: 40px 0 12px; font-size: var(--text-subhead); }
+/* 34em, as specified. It was 68ch, which measures within a pixel of the
+   same thing in Archivo; the em form is the one the design names and does
+   not move if the face ever changes. */
+p, ul { max-width: 34em; }
 a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.updated { color: color-mix(in srgb, var(--color-text) 65%, transparent); font-size: 14px; }
+.updated { color: color-mix(in srgb, var(--color-text) 65%, transparent); font-size: var(--text-body); }
 .page-foot { padding-inline: max(var(--edge), calc((100% - 1000px) / 2 + var(--edge))); }
-footer{padding:calc(2 * var(--leading)) 0;font-size:13px;line-height:var(--leading);color:color-mix(in srgb, var(--color-text) 70%, transparent)}
+footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-height:var(--leading);color:color-mix(in srgb, var(--color-text) 70%, transparent)}
 </style>
 </head>
 <body>

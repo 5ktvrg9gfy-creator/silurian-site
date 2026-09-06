@@ -234,6 +234,207 @@ class MarketingSiteTokens(unittest.TestCase):
         self.assertEqual(raw_colours(legal), [])
 
 
+# Type. Every size on the three pages comes from a token, the same way every
+# colour does. There is no allowance file and there will not be one: an
+# allowance file is where a scale goes to die, and this repository already
+# holds that a control people learn to ignore is worse than no control.
+#
+# The scan reads the font shorthand as well as the longhand. That is not
+# thoroughness for its own sake: the header link carried 15.5px inside
+# "font: 600 15.5px/1.5 var(--font-body)" and a font-size scan reported the
+# page clean. It is the same shape of miss as reading a hex and calling it a
+# colour scan.
+#
+# What a legal value looks like: a var() reference, or one of the CSS-wide
+# keywords, which carry no size of their own.
+SIZE_KEYWORDS = frozenset({"inherit", "initial", "unset", "revert", "revert-layer"})
+FONT_SIZE_DECL = re.compile(r"font-size\s*:\s*([^;}\"\']+)")
+FONT_SHORTHAND = re.compile(r"(?<![-\w])font\s*:\s*([^;}\"\']+)")
+VAR_REFERENCE = re.compile(r"var\(\s*--[A-Za-z0-9-]+\s*\)")
+# A number carrying a length or percentage unit. Bare numbers are left alone
+# because an unitless 1.4 in a shorthand is a line height, not a size.
+SIZED_NUMBER = re.compile(r"\d*\.?\d+\s*(?:px|pt|pc|em|rem|ex|ch|cap|vw|vh|vmin|vmax|%)\b")
+
+
+def raw_type_sizes(text: str) -> list[tuple[str, str]]:
+    """Return (where, value) for every size on a page not read from a token."""
+    found: list[tuple[str, str]] = []
+    for value in FONT_SIZE_DECL.findall(text):
+        stripped = value.strip()
+        if stripped.lower() in SIZE_KEYWORDS:
+            continue
+        if VAR_REFERENCE.fullmatch(stripped):
+            continue
+        found.append(("font-size", stripped))
+    for value in FONT_SHORTHAND.findall(text):
+        stripped = value.strip()
+        if stripped.lower() in SIZE_KEYWORDS:
+            continue
+        # Remove what the tokens supply, then look at what is left by hand.
+        remainder = VAR_REFERENCE.sub(" ", stripped)
+        if SIZED_NUMBER.search(remainder):
+            found.append(("font shorthand", stripped))
+    return found
+
+
+class MarketingSiteTypeScale(unittest.TestCase):
+    """Every size comes from tokens.css, as every colour does.
+
+    Enforced only once the rollout was complete, which the design session set
+    as the condition: a control firing on two thirds of a migration is one
+    people learn to step around. The wordmark is not an exception to this. It
+    sits outside the scale in its own token, --wordmark-size, so the rule
+    stays absolute and there is nothing to permit.
+    """
+
+    def test_no_page_carries_a_hand_written_size(self) -> None:
+        for page in marketing_pages():
+            findings = raw_type_sizes(page.read_text(encoding="utf-8"))
+            self.assertEqual(
+                findings,
+                [],
+                f"{page.name} sets type at a hand-written size. Every size on "
+                f"the marketing site comes from a step in {TOKEN_FILE_NAME}. If "
+                "no step fits, that is a decision for the design session, not "
+                "a value typed into a page. Findings: " + str(findings),
+            )
+
+    def test_the_token_file_defines_every_step(self) -> None:
+        tokens = (REPOSITORY / TOKEN_FILE_NAME).read_text(encoding="utf-8")
+        for step in (
+            "--text-poster", "--text-display", "--text-title", "--text-subhead",
+            "--text-lead", "--text-body", "--text-label", "--wordmark-size",
+        ):
+            with self.subTest(step=step):
+                self.assertIn(f"{step}:", tokens)
+
+    def test_a_planted_longhand_size_is_caught(self) -> None:
+        planted = "h1 { font-size: 42px; }"
+        self.assertEqual(raw_type_sizes(planted), [("font-size", "42px")])
+
+    def test_a_size_hidden_in_the_font_shorthand_is_caught(self) -> None:
+        """The miss that made this scan read the shorthand at all."""
+        planted = "a { font: 600 15.5px/1.5 var(--font-body); }"
+        self.assertEqual(
+            raw_type_sizes(planted), [("font shorthand", "600 15.5px/1.5 var(--font-body)")]
+        )
+
+    def test_the_token_forms_are_not_findings(self) -> None:
+        legal = (
+            "h1 { font-size: var(--text-display); }"
+            "p { font-size: var(--text-body); }"
+            "button { font: inherit; }"
+            "b { font: 800 var(--text-lead)/1.4 var(--font-heading); }"
+        )
+        self.assertEqual(raw_type_sizes(legal), [])
+
+    def test_the_scan_reads_the_pages_and_not_nothing(self) -> None:
+        total = sum(
+            len(FONT_SIZE_DECL.findall(page.read_text(encoding="utf-8")))
+            for page in marketing_pages()
+        )
+        self.assertGreater(
+            total, 20, "The pages declare fewer sizes than the site has roles."
+        )
+
+
+# The font face, checked because it is the one declaration on this site that
+# fails silently. A root-relative src plus font-display: swap means a broken
+# path paints a fallback rather than raising anything: the page still renders,
+# still looks deliberate, and only an eye that knows Archivo catches it. That
+# is not hypothetical here. It happened to this project's design mocks and was
+# found by looking, not by any tool.
+FONT_FACE_PATTERN = re.compile(r"@font-face\s*\{[^}]*\}", re.DOTALL)
+FONT_SRC_PATTERN = re.compile(r"""src:\s*url\(\s*["']?([^"')]+)["']?\s*\)""")
+
+
+def font_sources(text: str) -> list[str]:
+    """Every url() inside an @font-face block, in source order."""
+    found: list[str] = []
+    for block in FONT_FACE_PATTERN.findall(text):
+        found.extend(FONT_SRC_PATTERN.findall(block))
+    return found
+
+
+class SelfHostedFontLoads(unittest.TestCase):
+    """The declared font file must exist at the path the site asks for.
+
+    This does not prove the browser loaded it, which needs a browser. It
+    proves the failure that actually occurred: a path that no longer points
+    at a file. Everything downstream of that is invisible by design.
+    """
+
+    def setUp(self) -> None:
+        self.tokens = (REPOSITORY / TOKEN_FILE_NAME).read_text(encoding="utf-8")
+
+    def test_the_token_file_declares_exactly_one_font_source(self) -> None:
+        sources = font_sources(self.tokens)
+        self.assertEqual(
+            len(sources),
+            1,
+            f"Expected one @font-face src in {TOKEN_FILE_NAME}, found {sources}. "
+            "A second source is either a format fallback worth recording or a "
+            "second face nobody decided on.",
+        )
+
+    def test_the_font_url_is_root_relative(self) -> None:
+        source = font_sources(self.tokens)[0]
+        self.assertTrue(
+            source.startswith("/"),
+            f"The font src {source!r} is not root relative. A URL inside a "
+            f"linked stylesheet resolves against the stylesheet, not the page, "
+            f"so a relative form breaks the moment {TOKEN_FILE_NAME} moves, "
+            "and breaks quietly because font-display: swap paints a fallback.",
+        )
+        self.assertFalse(
+            source.startswith("//") or "://" in source,
+            f"The font src {source!r} points off this origin. Archivo is self "
+            "hosted on purpose: no page may send a visitor to a third party "
+            "before it renders.",
+        )
+
+    def test_the_font_file_exists_where_the_stylesheet_asks_for_it(self) -> None:
+        source = font_sources(self.tokens)[0]
+        target = REPOSITORY / source.lstrip("/")
+        self.assertTrue(
+            target.is_file(),
+            f"{TOKEN_FILE_NAME} asks for {source}, which is not a file in this "
+            "repository. The site would paint a fallback face and look "
+            "deliberate while doing it.",
+        )
+        self.assertGreater(
+            target.stat().st_size,
+            10_000,
+            f"{source} exists but is too small to be a variable font file.",
+        )
+
+    def test_a_broken_path_is_caught(self) -> None:
+        """Probe it. A check that cannot fail is decoration."""
+        broken = self.tokens.replace(
+            "/assets/fonts/", "/assets/fonts-moved/"
+        )
+        self.assertNotEqual(broken, self.tokens, "probe planted nothing")
+        source = font_sources(broken)[0]
+        self.assertFalse((REPOSITORY / source.lstrip("/")).is_file())
+
+    def test_a_relative_path_is_caught(self) -> None:
+        """The form that fails only after the file moves, probed now."""
+        relative = self.tokens.replace(
+            'url("/assets/fonts/', 'url("assets/fonts/'
+        )
+        self.assertNotEqual(relative, self.tokens, "probe planted nothing")
+        self.assertFalse(font_sources(relative)[0].startswith("/"))
+
+    def test_a_third_party_source_is_caught(self) -> None:
+        """Archivo came off Google Fonts once. It does not go back quietly."""
+        remote = self.tokens.replace(
+            'url("/assets/fonts/Archivo-Variable.ttf")',
+            'url("https://fonts.gstatic.com/s/archivo/v19/Archivo.ttf")',
+        )
+        self.assertNotEqual(remote, self.tokens, "probe planted nothing")
+        self.assertIn("://", font_sources(remote)[0])
+
+
 class StatusColoursMatchAssay(unittest.TestCase):
     """Hold the one accepted duplicate in the band equal by mechanism.
 
