@@ -43,9 +43,11 @@ The hero was a two-column grid with the headline in the narrow left column and t
 - Subline — 19px, the `lead` step. Weight 800, `line-height: 1.4`, `max-width: 34em`, `margin-top: 20px`.
 - Rule below the subline — `margin-top: 56px`, `padding-top: 40px`, `border-top: 2px solid var(--color-divider)`.
 - Lower grid — `grid-template-columns: minmax(0,4fr) minmax(0,7fr)`, `gap: 56px`. Paragraph left, services right, column tops aligned.
-- Section padding — `72px 64px 80px`.
+- Section padding — `72px 80px`, with horizontal gutter left on the site's `--edge` (`clamp(20px, 5vw, 72px)`) rather than the 64px specified earlier. `.wrap` is shared by the header, contact band and footer, so 64px on this section alone would misalign the headline against the wordmark above it. Content width is therefore 1056px, and the headline still fits on one line with 98px to spare.
 
-**The headline size does not change.** It is 42px live; 40px is the scale step it snaps to. Two earlier drafts of this document were wrong here — the first specified 82px, invented and never derived from the site, the second 51px. Both are repudiated. The gain is the full width, not a larger size.
+**Correction, 6 September 2026.** The claim that the headline size does not change was false. The size inventory read fixed `font-size` values and skipped every `clamp()`, so the headline was never in it. Live it is `clamp(36px, 4vw, 58px)`, which renders 57.6px at 1440px. Moving to the 40px display step is a 30 per cent reduction at desktop, not a 2px snap.
+
+**The 40px step holds anyway.** One line at full width was the point of option 1A and 57.6px cannot do it: the headline needs 1379px against 1056px available. The largest size that still sets on one line is about 44px, with 2px of slack, which is not a real option. So the decision is now made on its merits rather than on continuity: a 40px headline running the full 1056px measure as a single line, above a 19px subline, is the flush-left architectural setting this page is built on. The gain is the full width. The cost is a smaller headline, and it is accepted.
 
 **Why:** the mark already sits in the bar directly above, so a second large instance was redundant. Removing it takes the headline from four lines to two and stops the services list wrapping.
 
@@ -111,13 +113,18 @@ Those are not 16 decisions. They are six roles with two to four arbitrary varian
 | Step | Role | Replaces |
 | --- | --- | --- |
 | 40 | display — the `h1` | 42 |
-| 31 | title — section heads, the closing line | 30, 32 |
+| 56 | poster — the closing line in the accent field | 56 |
+| 31 | title — section heads | 30, 32 |
 | 25 | subhead — the three domain titles | 22, 25, 26 |
 | 19 | lead — the subline, the domain numerals | 17, 19, 20 |
 | 15 | body | 14, 15, 15.5, 16 |
 | 12 | label — uppercase micro-labels, small print | 11, 12, 13 |
 
-Ratios: 15/12 = 1.25, 19/15 = 1.27, 25/19 = 1.32, 31/25 = 1.24, 40/31 = 1.29.
+Ratios: 15/12 = 1.25, 19/15 = 1.27, 25/19 = 1.32, 31/25 = 1.24, 40/31 = 1.29, 56/40 = 1.40.
+
+**Seven steps, not six.** The `poster` step was added on 6 September 2026 after the same `clamp()` blind spot was found in the closing line, which is 56px live. It is display type in the page's one accent field, not a section head, and folding it into the 31px title step would take the page's single loud moment quiet. 56 is a size already in use, so the scale is still extracted rather than imposed.
+
+**No exceptions in the scale.** The uppercase micro-labels go to 12px, not 11px; one pixel on tracked caps is invisible and an exception written in on day one is how the last list of sizes started. `privacy.html` body goes to 15px with the rest. Sustained reading is fixed by leading and measure, not by that pixel: set it `line-height: 1.65`, `max-width: 34em`.
 
 **Suggested implementation:** add the six steps to `tokens.css` as `--text-display` … `--text-label` and replace the raw values page by page. One fluid rule per step then replaces the per-element `clamp()` calls, settling the mobile question in one place.
 
@@ -143,11 +150,25 @@ No illustration, no abstract graphic, no icons.
 - Everything flush left, including button labels.
 - The accent is spent as a mark or a field, never as a status palette.
 
+## Answers to the build response, 6 September 2026
+
+Against `uploads/buildresponse20260906.md`, pull request 86.
+
+1. **Q1, the display step.** Hold 40px. Reasoning recorded in item 1 above, and the false claim it rested on is corrected there.
+2. **Q2, the closing line.** Do not apply the 31px title step. A seventh step, `poster` at 56px, is added and the closing line takes it. See item 4.
+3. **Q3, the two open mappings.** Micro-labels 12px, `privacy.html` body 15px, no exceptions. See item 4.
+4. **Q4, the gutter.** Keep 72px, for the alignment reason given. Item 1 is amended so the site value is what the document specifies.
+5. **Q5, the lower-left paragraph colour.** Leave it on its existing `color-mix` treatment. The token table named the detail lines, not the paragraph, and the two levels should read differently.
+6. **Q6, the detail lines.** Ship as written. James rewrites them in his own words afterwards, and the comma run against sub-items question goes with that pass.
+7. **Q7, a test on the type scale.** Yes, after the rollout is complete and not before.
+8. **Q8, a portrait.** Lower grid, under the paragraph, at the paragraph's column width. Item 5 is unchanged otherwise.
+
+Also accepted: sentence case on the detail lines, removal of the `<span class="line">` breaks, the explicit 800 on the subline, and the double-encoded dash diagnosis (39 sequences, one visible). Cardiff is closed and stays.
+
 ## Still open
 
 1. **The detail lines under #1 and #2** were drafted by Claude and confirmed as plausible by James, not written by him. Worth a final pass in his own words. He supplied them as five separate lines, so they may want breaking out as individual sub-items rather than comma runs.
-2. **Two type scale judgement calls.** 11 → 12 affects uppercase micro-labels, which read larger than their nominal size because they are caps — 11px may have been deliberate; check the kickers and stat labels on `forecast-risk.html`. And 16 → 15 drops `privacy.html` body copy, the one page with sustained reading; consider leaving privacy on the `lead` step.
-3. **Two meta description bugs, not yet confirmed by James.** The description renders as `Silurian Consulting LTD â€” project management…` — the em dash mis-decodes, so either the file is not UTF-8 or the charset declaration is being missed; a plain hyphen sidesteps it. The same description says "Cardiff, Wales" while the registered office is Pontypridd.
+2. **A load check on the font**, per the note below. Not yet built.
 
 ## Worth acting on in the repo
 

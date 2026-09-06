@@ -234,6 +234,103 @@ class MarketingSiteTokens(unittest.TestCase):
         self.assertEqual(raw_colours(legal), [])
 
 
+# The font face, checked because it is the one declaration on this site that
+# fails silently. A root-relative src plus font-display: swap means a broken
+# path paints a fallback rather than raising anything: the page still renders,
+# still looks deliberate, and only an eye that knows Archivo catches it. That
+# is not hypothetical here. It happened to this project's design mocks and was
+# found by looking, not by any tool.
+FONT_FACE_PATTERN = re.compile(r"@font-face\s*\{[^}]*\}", re.DOTALL)
+FONT_SRC_PATTERN = re.compile(r"""src:\s*url\(\s*["']?([^"')]+)["']?\s*\)""")
+
+
+def font_sources(text: str) -> list[str]:
+    """Every url() inside an @font-face block, in source order."""
+    found: list[str] = []
+    for block in FONT_FACE_PATTERN.findall(text):
+        found.extend(FONT_SRC_PATTERN.findall(block))
+    return found
+
+
+class SelfHostedFontLoads(unittest.TestCase):
+    """The declared font file must exist at the path the site asks for.
+
+    This does not prove the browser loaded it, which needs a browser. It
+    proves the failure that actually occurred: a path that no longer points
+    at a file. Everything downstream of that is invisible by design.
+    """
+
+    def setUp(self) -> None:
+        self.tokens = (REPOSITORY / TOKEN_FILE_NAME).read_text(encoding="utf-8")
+
+    def test_the_token_file_declares_exactly_one_font_source(self) -> None:
+        sources = font_sources(self.tokens)
+        self.assertEqual(
+            len(sources),
+            1,
+            f"Expected one @font-face src in {TOKEN_FILE_NAME}, found {sources}. "
+            "A second source is either a format fallback worth recording or a "
+            "second face nobody decided on.",
+        )
+
+    def test_the_font_url_is_root_relative(self) -> None:
+        source = font_sources(self.tokens)[0]
+        self.assertTrue(
+            source.startswith("/"),
+            f"The font src {source!r} is not root relative. A URL inside a "
+            f"linked stylesheet resolves against the stylesheet, not the page, "
+            f"so a relative form breaks the moment {TOKEN_FILE_NAME} moves, "
+            "and breaks quietly because font-display: swap paints a fallback.",
+        )
+        self.assertFalse(
+            source.startswith("//") or "://" in source,
+            f"The font src {source!r} points off this origin. Archivo is self "
+            "hosted on purpose: no page may send a visitor to a third party "
+            "before it renders.",
+        )
+
+    def test_the_font_file_exists_where_the_stylesheet_asks_for_it(self) -> None:
+        source = font_sources(self.tokens)[0]
+        target = REPOSITORY / source.lstrip("/")
+        self.assertTrue(
+            target.is_file(),
+            f"{TOKEN_FILE_NAME} asks for {source}, which is not a file in this "
+            "repository. The site would paint a fallback face and look "
+            "deliberate while doing it.",
+        )
+        self.assertGreater(
+            target.stat().st_size,
+            10_000,
+            f"{source} exists but is too small to be a variable font file.",
+        )
+
+    def test_a_broken_path_is_caught(self) -> None:
+        """Probe it. A check that cannot fail is decoration."""
+        broken = self.tokens.replace(
+            "/assets/fonts/", "/assets/fonts-moved/"
+        )
+        self.assertNotEqual(broken, self.tokens, "probe planted nothing")
+        source = font_sources(broken)[0]
+        self.assertFalse((REPOSITORY / source.lstrip("/")).is_file())
+
+    def test_a_relative_path_is_caught(self) -> None:
+        """The form that fails only after the file moves, probed now."""
+        relative = self.tokens.replace(
+            'url("/assets/fonts/', 'url("assets/fonts/'
+        )
+        self.assertNotEqual(relative, self.tokens, "probe planted nothing")
+        self.assertFalse(font_sources(relative)[0].startswith("/"))
+
+    def test_a_third_party_source_is_caught(self) -> None:
+        """Archivo came off Google Fonts once. It does not go back quietly."""
+        remote = self.tokens.replace(
+            'url("/assets/fonts/Archivo-Variable.ttf")',
+            'url("https://fonts.gstatic.com/s/archivo/v19/Archivo.ttf")',
+        )
+        self.assertNotEqual(remote, self.tokens, "probe planted nothing")
+        self.assertIn("://", font_sources(remote)[0])
+
+
 class StatusColoursMatchAssay(unittest.TestCase):
     """Hold the one accepted duplicate in the band equal by mechanism.
 

@@ -113,11 +113,35 @@
      because they are caps, and 16 to 15 on privacy.html, the one page with
      sustained reading.
 
-     Only --text-display carries a taper. The step is 40px; the clamp is how
-     it reaches about 30px on a phone, and it is written once here rather than
-     per element. The raw-value control pins colours and not type, so nothing
-     stops a stray size: these steps hold by use, not by test. */
+     Seven steps, not six. --text-poster was added on 6 September 2026 after the
+     same clamp() blind spot was found in the closing line, which renders 56px
+     and is display type in the page's one accent field rather than a section
+     head. Folding it into the 31px title step would take the page's single
+     loud moment quiet.
+
+     No exceptions inside the scale, decided rather than defaulted: the
+     uppercase micro-labels go to 12 and not 11, because one pixel on tracked
+     caps is invisible and an exception written in on day one is how the last
+     list of sizes started. privacy.html body goes to 15 with everything else,
+     and its sustained reading is answered by leading and measure, 1.65 and
+     34em, rather than by that pixel.
+
+     Two steps carry a taper, --text-display and --text-poster, and both are
+     written once here rather than per element. The rest are flat. The
+     raw-value control pins colours and not type, so nothing stops a stray
+     size yet: a control follows once the rollout is complete, which the
+     design session set as the condition rather than doing it now.
+
+     Four places do NOT take a step and keep their own clamp, because their
+     rendered maximum is far outside the scale and mapping them would shrink
+     each by 37 to 47 per cent. They are the forecast-risk.html headline at
+     76px, the privacy.html headline at 68px, forecast-risk.html's stat value
+     at 40px, and the header wordmark, whose 15 to 18 taper would grow by four
+     pixels on a phone if flattened to the 19px lead step. These are the same
+     clamp() blind spot that produced the 42px and 56px errors, found a third
+     time, and they are held for a decision rather than applied. */
   --text-display: clamp(30px, 3.6vw, 40px);
+  --text-poster: clamp(34px, 4.2vw, 56px);
   --text-title: 31px;
   --text-subhead: 25px;
   --text-lead: 19px;

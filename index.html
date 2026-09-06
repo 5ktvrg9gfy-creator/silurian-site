@@ -33,24 +33,24 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-headi
    Plain CSS on plain HTML: no JavaScript, no build step. */
 
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+body { margin: 0; font-size: var(--text-body); line-height: 1.55; font-weight: 400; }
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2);
 }
-h1 { font-size: 42px; }
-h2 { font-size: 32px; }
-h3 { font-size: 25px; }
-h4 { font-size: 20px; }
-h5 { font-size: 16px; }
-h6 { font-size: 13px; }
+h1 { font-size: var(--text-display); }
+h2 { font-size: var(--text-title); }
+h3 { font-size: var(--text-subhead); }
+h4 { font-size: var(--text-lead); }
+h5 { font-size: var(--text-body); }
+h6 { font-size: var(--text-label); }
 h6 { letter-spacing: 0.08em; text-transform: uppercase; }
 p { margin: 0 0 var(--space-3); }
 a { color: var(--color-accent); text-underline-offset: 3px; }
 img { display: block; max-width: 100%; }
 figure { margin: 0; }
 figcaption {
-  font-size: 11px; margin-top: var(--space-1);
+  font-size: var(--text-label); margin-top: var(--space-1);
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 :focus { outline: none; }
@@ -62,7 +62,7 @@ figcaption {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   cursor: pointer; text-decoration: none;
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 14px; line-height: 1.2; color: var(--color-text); /* 14px */
+  font-size: var(--text-body); line-height: 1.2; color: var(--color-text);
   background: transparent; border: 1px solid transparent;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
   border-radius: var(--radius-md);
@@ -126,7 +126,7 @@ body { margin: 0; text-wrap: pretty; }
   gap: clamp(20px, 3vw, 40px); flex-wrap: wrap;
   padding-top: var(--half); padding-bottom: var(--half); }
 .mast-bar a:not(.btn) { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--color-text); text-decoration: none; }
 .mast-bar a:not(.btn):hover { text-decoration: underline; text-underline-offset: 5px; }
 .mast-bar a[aria-current='location'] { text-decoration: underline; text-underline-offset: 5px; }
@@ -141,8 +141,8 @@ a.btn { white-space: nowrap; }
 /* â€” hero â€” */
 .display {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: clamp(42px, 6.2vw, 84px);
-  line-height: clamp(44.5px, 6.57vw, 89px); /* law #3: ratio-governed â‰ˆ1.06 â€”
+  font-size: var(--text-display);
+  line-height: 1.06; /* law #3: ratio-governed â‰ˆ1.06 â€”
      Archivo's 800 sits tight and all-cap-height; the display-block lattice
      exemption (no 14px step is both tighter than the old look and clear) */
   letter-spacing: -0.02em; margin: 0;
@@ -210,7 +210,7 @@ a.btn { white-space: nowrap; }
 .close { background: var(--color-accent); color: var(--color-paper); }
 .close .wrap { padding-top: calc(2 * var(--leading)); padding-bottom: calc(2 * var(--leading)); }
 .close h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: clamp(34px, 4.2vw, 56px); line-height: clamp(36px, 4.45vw, 59.4px); /* â‰ˆ1.06 â€”
+  font-size: var(--text-poster); line-height: 1.06; /* â‰ˆ1.06 â€”
      display-grade, so it carries the display-block lattice exemption (the
      rhythm probe excludes .display and .close h3 alike) */
   letter-spacing: -0.015em; margin: 0; margin-left: -0.058em;
@@ -221,12 +221,12 @@ a.btn { white-space: nowrap; }
   width: 40px; height: 40px; padding: 0; flex: none;
   justify-content: center; border-radius: 50%;
   border-color: var(--color-paper); background: var(--color-paper); color: var(--color-accent);
-  font-family: Arial, sans-serif; font-size: 16px; font-weight: 700;
+  font-family: Arial, sans-serif; font-size: var(--text-body); font-weight: 700;
   letter-spacing: -0.04em; text-transform: none;
 }
 .close .contact-badge:hover { background: var(--color-text); border-color: var(--color-text); color: var(--color-paper); }
 .close .email-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
-footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(--leading);
+footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label); line-height: var(--leading);
   color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */ }
 
 /* the feature grid's fixed-max columns (160 + 420 + gaps) crush the copy
@@ -257,7 +257,11 @@ body[data-baselines]::after {
 /* Header navigation. Match the service-list type size. */
 .mast-brand { display: flex; align-items: center; gap: 14px; }
 .mast-bar a.forecast-link {
-  margin-left: 18px; font: 600 15.5px/1.5 var(--font-body);
+  /* Longhands, not the font shorthand. The size hid there from a font-size
+     scan, which is the same shape of miss as reading a hex and calling it a
+     colour scan. */
+  margin-left: 18px; font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-body); line-height: 1.5;
   color: var(--color-text); letter-spacing: normal; text-transform: none;
 }
 @media (max-width: 620px) { .mast-bar a.forecast-link { margin-left: 0; } }
