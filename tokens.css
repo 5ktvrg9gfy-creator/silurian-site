@@ -93,9 +93,37 @@
      2px drawn rule as a brand rule, so the case for a token exists. Two values
      used consistently do not need naming. Revisit if a third weight appears. */
 
-  /* Type. There is no type scale on this site: 24 distinct raw sizes on one page
-     is a list, not a scale, and creating one is design work rather than
-     extraction. Only the family and the display weight are shared values. */
+  /* Type. There was no type scale on this site until 6 September 2026, on the
+     ground that 24 distinct raw sizes on one page is a list rather than a
+     scale, and that creating one is design work rather than extraction. The
+     design session has now made that decision and the six steps below are the
+     result. They are extracted, not invented: every step is a size already in
+     use, nothing moved by more than 2px, and the sizes were already clustering
+     on a ratio of about 1.28 from the 15px body.
+
+     display 40 replaces 42. title 31 replaces 30 and 32. subhead 25 replaces
+     22, 25 and 26. lead 19 replaces 17, 19 and 20. body 15 replaces 14, 15,
+     15.5 and 16. label 12 replaces 11, 12 and 13.
+
+     The pages adopt these one at a time, as they did with the colours. The
+     about section of index.html is first and the rest of the site still
+     carries raw sizes, so do not read a page's silence as adoption. Two
+     mappings are still open and are deliberately not applied anywhere yet:
+     11 to 12 on the uppercase micro-labels, which read larger than nominal
+     because they are caps, and 16 to 15 on privacy.html, the one page with
+     sustained reading.
+
+     Only --text-display carries a taper. The step is 40px; the clamp is how
+     it reaches about 30px on a phone, and it is written once here rather than
+     per element. The raw-value control pins colours and not type, so nothing
+     stops a stray size: these steps hold by use, not by test. */
+  --text-display: clamp(30px, 3.6vw, 40px);
+  --text-title: 31px;
+  --text-subhead: 25px;
+  --text-lead: 19px;
+  --text-body: 15px;
+  --text-label: 12px;
+
   --font-heading: "Archivo", system-ui, sans-serif;
   --font-heading-weight: 800;
   --font-body: "Archivo", system-ui, sans-serif;

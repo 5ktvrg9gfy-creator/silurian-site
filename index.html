@@ -5,7 +5,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Silurian Consulting LTD</title>
-<meta name="description" content="Silurian Consulting LTD â€” project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
+<meta name="description" content="Silurian Consulting LTD, project management and supply chain consulting for regulated manufacturing. Cardiff, Wales." />
 <link rel="icon" href="logo-stone.svg" />
 <link rel="stylesheet" href="tokens.css" />
 <style>
@@ -149,24 +149,40 @@ a.btn { white-space: nowrap; }
   margin-left: -0.058em; /* optical left alignment â€” the deck's measured Archivo 800 value */
   text-box: trim-both cap alphabetic;
 }
-.display .line { display: block; } /* law #1: one sentence per line */
-#about { grid-template-columns: minmax(0, 1fr); }
-#about .display { font-size: clamp(36px, 4vw, 58px); line-height: 1.06; }
-.hero .sub, #about .sub { font-size: 17px; line-height: var(--leading); max-width: var(--measure);
-  margin: calc(1.5 * var(--leading) - 1cap) 0 0;
-  text-box: trim-both cap alphabetic; } /* 1.5 units: clears the display's descenders with cluster-tight air (law #3) */
+#about { padding: 72px 0 80px; }
+/* The headline is uncapped and takes the full content width. It sets on one
+   line at desktop, which needs 958 of the 1056px available, and wraps below
+   about 1090px. No text-wrap: balance: it does nothing to a single line, and
+   once the headline wraps, balancing is what produces the orphaned last line
+   the design session rejected. */
+#about .display { font-size: var(--text-display); line-height: 1.06;
+  letter-spacing: -0.03em; }
+.hero .sub, #about .sub { font-size: var(--text-lead); line-height: 1.4; max-width: 34em;
+  margin: 20px 0 0;
+  text-box: trim-both cap alphabetic; }
 
-/* copy and imagery split. #about runs it as one column: the faceted stone
-   that filled the second column was removed on 6 September 2026 as a repeat
-   of the header mark, and the mark is kept unused at assets/hero-stone.svg.
-   The second column returns with whatever image replaces it. */
-.split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: var(--leading) clamp(24px, 5vw, 96px); align-items: center;
-  padding: calc(2 * var(--leading)) 0 calc(3 * var(--leading)); }
-.split-copy .note { font-size: 15.5px; line-height: var(--leading);
+/* The lower band: the paragraph left, the three domains right, tops aligned.
+   The 2px seam above it is the page rule; the separators inside the list are
+   1px hairlines at the same full ink value, never faded. */
+#about .lower { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 56px; align-items: start;
+  margin-top: 56px; padding-top: 40px; border-top: 2px solid var(--color-divider); }
+#about .note { font-size: var(--text-body); line-height: 1.5;
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
-  margin: calc(var(--leading) - 1cap) 0 0; max-width: 48ch; text-box: trim-both cap alphabetic; }
-.split-copy .note + .note { margin-top: var(--leading); }
+  margin: 0; max-width: 48ch; }
+.domains { list-style: none; margin: 0; padding: 0; }
+.domains li { display: grid; grid-template-columns: 44px 1fr; gap: 14px;
+  padding: 20px 0; }
+.domains li:first-child { padding-top: 0; }
+.domains li:not(:last-child) { border-bottom: 1px solid var(--color-divider); }
+.domains .n { color: var(--color-accent); font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight); font-size: var(--text-lead);
+  line-height: 1.35; }
+.domains h2 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-subhead); line-height: 1.2; letter-spacing: -0.02em;
+  margin: 0; color: var(--color-text); }
+.domains p { font-size: var(--text-body); font-weight: 400; line-height: 1.5;
+  color: var(--color-text-muted); margin: 6px 0 0; }
 
 /* â€” quote (hanging punctuation, the deck's measured Archivo advances) â€” */
 
@@ -212,9 +228,9 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(
    column in the tablet band, so it collapses earlier than the page */
 
 @media (max-width: 720px) {
-      .split { grid-template-columns: 1fr; }
-  #about .display { font-size: clamp(30px, 8.5vw, 40px); }
-  #about .capability-grid { grid-template-columns: 1fr !important; }
+  #about { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }
+  #about .lower { grid-template-columns: 1fr; gap: var(--leading);
+    margin-top: var(--leading); padding-top: var(--leading); }
 }
 
 /* Review aid: the 28px rhythm drawn as hairlines â€” debug chrome, toggled by
@@ -260,25 +276,16 @@ body[data-baselines]::after {
 
 
 
-  <section class="split" id="about" style="padding-top:var(--edge);padding-bottom:calc(3.25 * var(--leading))">
-    <div class="split-copy">
-      <h1 class="display"><span class="line">Independent programme</span> <span class="line">and project management.</span></h1>
-      <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
-      <p class="note">Behind Silurian are twenty years of experience in regulated manufacturing and pharmaceutical supply chain. Work is taken on directly, not brokered.</p>
-      <div class="capability-grid" style="display:grid;grid-template-columns:1fr 1fr;column-gap:var(--space-4);row-gap:var(--half);border-top:2px solid var(--color-divider);margin-top:var(--leading);padding-top:var(--leading)">
-        <ul style="list-style:none;margin:0;padding:0;display:grid;align-content:start;row-gap:var(--half)">
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#1</span><span style="flex:1">Programme and project delivery</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#2</span><span style="flex:1">Supply chain and operations</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#3</span><span style="flex:1">Demand forecasting and inventory diagnostics</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#4</span><span style="flex:1">Supply-chain risk and exception management</span></li>
-        </ul>
-        <ul style="list-style:none;margin:0;padding:0;display:grid;align-content:start;row-gap:var(--half)">
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#5</span><span style="flex:1">Transformation</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#6</span><span style="flex:1">NPI global expansion</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#7</span><span style="flex:1">Capability building</span></li>
-          <li style="display:flex;gap:12px;font-size:15.5px;line-height:var(--leading)"><span style="color:var(--color-accent);font-family:var(--font-heading);font-weight:var(--font-heading-weight);flex:none">#8</span><span style="flex:1">Partnered with Regulatory and Quality professionals</span></li>
-        </ul>
-      </div>
+  <section id="about">
+    <h1 class="display">Independent programme and project management.</h1>
+    <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
+    <div class="lower">
+      <p class="note">You get twenty years of experience in regulated manufacturing and pharmaceutical supply chain, partnered with Regulatory and Quality professionals.</p>
+      <ul class="domains">
+        <li><span class="n">#1</span><div><h2>Transformation programmes</h2><p>Operating model change, site and network reconfiguration.</p></div></li>
+        <li><span class="n">#2</span><div><h2>NPI and global expansion</h2><p>Launch readiness, tech transfer, new market entry.</p></div></li>
+        <li><span class="n">#3</span><div><h2>Supply chain and operations</h2><p>Demand forecasting, inventory diagnostics, risk and exception management.</p></div></li>
+      </ul>
     </div>
   </section>
 
@@ -290,7 +297,7 @@ body[data-baselines]::after {
 
 <section class="close" id="contact">
   <div class="wrap">
-    <h3><span class="line">Tell us what needs to land,</span> <span class="line">and by when.</span></h3>
+    <h3><span class="line">Tell me what needs to land,</span> <span class="line">and by when.</span></h3>
     <div class="row">
       <a class="btn contact-badge email-badge" href="mailto:hello@silurianconsulting.co.uk" aria-label="Email Silurian Consulting"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m4 7 8 6 8-6"/></svg></a>
       <a class="btn contact-badge linkedin-badge" href="https://www.linkedin.com/company/silurian-consulting/" target="_blank" rel="noopener" aria-label="Silurian Consulting on LinkedIn"><span aria-hidden="true">in</span></a>
