@@ -172,6 +172,16 @@ a.btn { white-space: nowrap; }
 #about .lower { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
   gap: 56px; align-items: start;
   margin-top: 56px; padding-top: 40px; border-top: 2px solid var(--color-divider); }
+/* The sub-note sits at full ink against the muted paragraph above it, and
+   carries no rule. A hairline there would land between the domain separators
+   in the right column rather than level with one, and a rule that nearly
+   aligns is worse than no rule. The ink and the space do the separating. */
+/* The paragraph and its sub-note are one grid child. Three children in a
+   two-column grid puts the third back in column one, which silently moved
+   the services list under the paragraph the first time this was built. */
+#about .note-col { min-width: 0; }
+#about .note-direct { font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text); margin: 22px 0 0; max-width: 48ch; }
 #about .note { font-size: var(--text-body); line-height: 1.5;
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
   margin: 0; max-width: 48ch; }
@@ -289,7 +299,10 @@ body[data-baselines]::after {
     <h1 class="display">Independent programme and project management.</h1>
     <p class="sub"><strong>For pharmaceutical and other regulated industries. UK based.</strong></p>
     <div class="lower">
-      <p class="note">We bring twenty years of experience in regulated manufacturing and pharmaceutical supply chain: transformation programmes, operating model design, site and tech transfer, global product launches and programme recovery, working across manufacturing sites, external partners and global functions. We are partnered with Regulatory and Quality specialists.</p>
+      <div class="note-col">
+        <p class="note">We bring twenty years of experience in regulated manufacturing and pharmaceutical supply chain: transformation programmes, operating model design, site and tech transfer, global product launches and programme recovery, working across manufacturing sites, external partners and global functions. We are partnered with Regulatory and Quality specialists.</p>
+        <p class="note-direct">Work is taken directly, not brokered.</p>
+      </div>
       <ul class="domains">
         <li><span class="n">#1</span><div><h2>Transformation programmes</h2><p>Operating model change, site and network reconfiguration.</p></div></li>
         <li><span class="n">#2</span><div><h2>NPI and global expansion</h2><p>Launch readiness, tech transfer, new market entry.</p></div></li>

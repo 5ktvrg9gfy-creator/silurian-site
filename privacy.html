@@ -30,7 +30,11 @@ header {
   background: var(--color-paper);
 }
 header img { width: 26px; aspect-ratio: 200 / 290; }
-header a { color: var(--color-text); font-weight: var(--font-heading-weight); text-decoration: none; }
+/* One link, so the mark and the wordmark both go home. The gap moves onto
+   the anchor because the anchor is now the header's only child. */
+header a { color: var(--color-text); font-weight: var(--font-heading-weight); text-decoration: none;
+  display: flex; align-items: center; gap: 14px; }
+header a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 main { max-width: 860px; margin: 0 auto; padding: 72px var(--edge) 96px; }
 h1, h2 { line-height: 1.12; letter-spacing: -0.02em; }
 h1 { margin: 0 0 42px; font-size: var(--text-display); }
@@ -47,8 +51,7 @@ footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-heigh
 </head>
 <body>
 <header>
-  <img src="logo-stone.svg" alt="" />
-  <a href="index.html">Silurian Consulting LTD</a>
+  <a class="brand-home" href="index.html"><img src="logo-stone.svg" alt="" />Silurian Consulting LTD</a>
 </header>
 <main>
   <h1>Privacy</h1>

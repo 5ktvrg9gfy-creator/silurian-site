@@ -20,9 +20,9 @@ a{color:inherit;text-underline-offset:3px}
 .mast{border-bottom:2px solid var(--color-divider);background:var(--color-paper)}
 .mast .wrap{display:flex;align-items:center;gap:14px;padding-top:12px;padding-bottom:12px}
 .mast img{width:26px;aspect-ratio:200/290}
-.mast .brand-home{display:flex;text-decoration:none}
+.mast .brand-home{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--color-text);margin-right:auto}
 .mast .brand-home:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
-.brand{font-weight:800;font-size:var(--wordmark-size);letter-spacing:-.02em;margin-right:auto}
+.brand{font-weight:800;font-size:var(--wordmark-size);letter-spacing:-.02em}
 .back{font-size:var(--text-body);font-weight:600;text-decoration:none}
 .back:hover{text-decoration:underline}
 .hero{padding:72px 0 56px;border-bottom:2px solid var(--color-divider)}
@@ -113,8 +113,7 @@ footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-heigh
 <body>
 <header class="mast">
   <div class="wrap">
-    <a class="brand-home" href="index.html" aria-label="Silurian Consulting home"><img src="logo-stone.svg" alt="" /></a>
-    <div class="brand">Silurian Consulting LTD</div>
+    <a class="brand-home" href="index.html"><img src="logo-stone.svg" alt="" /><span class="brand">Silurian Consulting LTD</span></a>
     <a class="back" href="index.html">Back to Silurian</a>
   </div>
 </header>
