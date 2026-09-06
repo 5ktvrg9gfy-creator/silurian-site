@@ -157,6 +157,11 @@ a.btn { white-space: nowrap; }
    the design session rejected. */
 #about .display { font-size: var(--text-display); line-height: 1.06;
   letter-spacing: -0.03em; }
+/* The subline carries the display weight, not the browser's bold. <strong>
+   defaults to 700 and the design calls for 800, which Archivo has as a
+   variable axis; without this the difference is one that only a computed
+   style shows. */
+.hero .sub, #about .sub, #about .sub strong { font-weight: var(--font-heading-weight); }
 .hero .sub, #about .sub { font-size: var(--text-lead); line-height: 1.4; max-width: 34em;
   margin: 20px 0 0;
   text-box: trim-both cap alphabetic; }
