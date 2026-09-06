@@ -132,18 +132,25 @@
      size yet: a control follows once the rollout is complete, which the
      design session set as the condition rather than doing it now.
 
-     Four places do NOT take a step and keep their own clamp, because no step
-     fits their rendered range. The forecast-risk.html headline renders 76px
-     and the privacy.html headline 68px, so the 40px display step would cut
-     them by 47 and 41 per cent. The header wordmark tapers 15 to 18, which no
-     step matches: the 19px lead step would grow it four pixels on a phone.
-     forecast-risk.html's stat value is the fourth and it is the mild one:
-     it renders 40px, which is the display step exactly, so that mapping costs
-     nothing at desktop and four pixels on a phone. It is held only because its
-     declared 26px minimum is what the design's table maps, and that reading
-     would take it to 25px. These are the same clamp() blind spot that produced
-     the 42px and 56px errors, found a third time, and they are held for a
-     decision rather than applied. */
+     THE RULE FOR A FLUID SIZE, and it exists because ignoring it cost this
+     project four wrong numbers in two documents: a clamp() is classified by
+     what it renders at desktop, never by the number typed at the small end.
+     The minimum is a mobile floor, not a role. Read a clamp() in a browser
+     before assigning it a step. Under this rule the two secondary page
+     headlines, which rendered 76px and 68px, take the 40px display step with
+     every other page headline, and forecast-risk.html's stat value takes
+     display because it already rendered 40px.
+
+     Poster is spent once per page and only on the closing accent field. A
+     page headline never takes it: setting the secondary pages at 56px while
+     the homepage opens at 40px would make the homepage headline the smallest
+     page opener on the site. A closing field louder than the headline above
+     it is fine, because it is a full-bleed statement rather than an opener.
+
+     A TYPE STEP IS A LAYOUT CHANGE. Moving forecast-risk.html's table from
+     11px to the 12px step pushed it 10px past a 320px viewport and the page
+     scrolled sideways. Nothing in the diff showed it. Roll a type change out
+     with a render check at several widths, never a source read-through. */
   --text-display: clamp(30px, 3.6vw, 40px);
   --text-poster: clamp(34px, 4.2vw, 56px);
   --text-title: 31px;
@@ -151,6 +158,14 @@
   --text-lead: 19px;
   --text-body: 15px;
   --text-label: 12px;
+
+  /* The wordmark is not in the scale and is not an exception to it. It is
+     the mark rather than type, so it carries its own token outside the
+     seven steps: no step matches a 15 to 18 taper, and an eighth step for
+     one element buys nothing. This keeps the scale free of exceptions and
+     leaves the type control nothing to permit, because a token is not a
+     hand-written size. */
+  --wordmark-size: clamp(15px, 1.8vw, 18px);
 
   --font-heading: "Archivo", system-ui, sans-serif;
   --font-heading-weight: 800;
