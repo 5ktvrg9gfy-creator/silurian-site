@@ -35,7 +35,14 @@ h1{font-size:clamp(42px,6vw,76px);max-width:900px}
 .controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;margin-bottom:30px}
 label{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
 select{width:100%;min-height:46px;border:2px solid var(--color-divider);background:var(--color-paper);color:var(--color-text);font:inherit;padding:8px 12px;border-radius:0}
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;border:2px solid var(--color-divider);padding:8px 16px;background:var(--color-accent);font:inherit;font-weight:800;text-decoration:none;cursor:pointer;border-radius:0}
+/* A native control must state its own colour. Without it the platform
+   supplies one: Chromium uses black, which passes for the page ink, and iOS
+   uses the system blue, which is how this shipped unnoticed for a week. The
+   label sits on the accent at 15px bold, which is not large text, so it needs
+   4.5. Deep ink measures 5.52 there; paper is 3.18 and the page ink 3.40, and
+   both would fail at this size. appearance:none stops the platform
+   substituting its own control rendering over the border and background. */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;border:2px solid var(--color-divider);padding:8px 16px;background:var(--color-accent);color:var(--color-charcoal-deep);font:inherit;font-weight:800;text-decoration:none;cursor:pointer;border-radius:0;-webkit-appearance:none;appearance:none}
 .btn:hover{filter:brightness(.96)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid var(--color-divider);border-bottom:2px solid var(--color-divider);margin-bottom:38px}
 .stat{padding:20px 18px 18px 0;min-width:0}

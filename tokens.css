@@ -49,9 +49,13 @@
   /* The one accent. Spent as a mark or a field, never as a status palette. */
   --color-accent: #ec6917;
 
-  /* Approved brand tokens. Both are deliberately unreferenced and not yet
-     applied to any visible element, recorded as approved in PROJECT_HANDOFF.md.
-     They are not dead values: do not remove them as unused. */
+  /* Approved brand tokens. --color-charcoal-deep was applied for the first time
+     on 6 September 2026, as the Run sample analysis label on forecast-risk.html:
+     it is the only ink that reaches 4.5 against the accent at that control's
+     size, measuring 5.52 where paper is 3.18 and the page ink 3.40. Its value
+     also appears in the logo, but as a raw hex in the SVG rather than through
+     this token. --color-neutral-brand remains approved and unapplied, and is
+     not a dead value: do not remove it as unused. */
   --color-charcoal-deep: #1a1918;
   --color-neutral-brand: #cabfad;
 
