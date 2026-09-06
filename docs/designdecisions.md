@@ -83,7 +83,7 @@ The eight-item list flattened three different kinds of thing into one numbered r
 
 > We bring twenty years of experience in regulated manufacturing and pharmaceutical supply chain: transformation programmes, operating model design, site and tech transfer, global product launches and programme recovery, working across manufacturing sites, external partners and global functions. We are partnered with Regulatory and Quality specialists.
 
-349 characters. In the 4fr column it sets in 11 lines and the two lower columns come out level. **That is intended, not a defect to correct.**
+349 characters. In the 4fr column it sets in 7 lines and finishes above the bottom of the services list, so the two columns are deliberately uneven and the list stays the heavier side.
 
 **Closing line:**
 
@@ -91,9 +91,15 @@ The eight-item list flattened three different kinds of thing into one numbered r
 
 Unchanged from live. An earlier draft moved it to first person singular; that was reversed.
 
-**Two things deliberately absent.** "Independent" is not repeated in the paragraph: it leads the headline meaning not brokered, and applying it to the Regulatory and Quality specialists means external, which reads as a stutter. And the old sentence "Work is taken on directly, not brokered" is cut rather than rewritten, because it substantiates a claim the headline already makes and was the only defensive note on the page.
+**Sub-note, under the paragraph:**
 
-**Measure, for any future copy change.** Measured in the render, not estimated. The 4fr paragraph column is 363.6px wide, so at 15px the measure is about 32 characters a line. The services list is 257.1px tall, which is 11 paragraph lines at 23.25px leading. Capacity is therefore about 350 characters before the columns level. To keep the bottom edge uneven, stay under about 280.
+> Work is taken directly, not brokered.
+
+Set at 15px in `--color-text` at full ink, `margin-top: 22px`, against the muted paragraph above it. No rule above it: a hairline there lands between the domain separators in the right column rather than level with one, and a rule that nearly aligns is worse than none. The full ink and the space do the separating.
+
+**One thing deliberately absent.** "Independent" is not repeated in the paragraph: it leads the headline meaning not brokered, and applying it to the Regulatory and Quality specialists means external, which reads as a stutter.
+
+**Measure, for any future copy change.** Measured across the text line boxes, not the grid cell. The 4fr paragraph column is 363.6px wide and at 15px the measure is about 50 characters a line. The services list is 257.1px tall, which is 11 paragraph lines at 23.25px leading, so capacity is roughly 550 characters before the columns level. The current 349 characters plus the sub-note leave the left column about 37px short of the list, which is the intended uneven edge. Do not measure this by taking the height of the paragraph's grid cell: `align-items: stretch` stretches it to the row height and gives a false line count.
 
 **Scope.** `index.html` and the marketing pages. The Assay product pages keep a product voice, "Assay classifies your portfolio", because they are about a product rather than about the firm.
 
@@ -146,10 +152,11 @@ No illustration, no abstract graphic, no icons.
 ## Constraints to hold
 
 - Archivo, self-hosted variable font via `tokens.css`, `--font-heading` at weight 800, `--font-body` at 400. Not Google Fonts.
-- Zero border radius anywhere.
+- Zero border radius anywhere, with one named exception: **the email and LinkedIn contact badges are round.** That was agreed by James before design was involved and is not up for revision. Nothing else on the site carries a radius.
 - Structure is drawn with 2px seams and 1px hairlines and nothing else. Rules are never faded: a hairline still carries `--color-divider` at full value.
 - Everything flush left, including button labels.
-- The accent is spent as a mark or a field, never as a status palette. `forecast-risk.html` currently breaks this, see below.
+- **The accent is spent as a mark or a field, never as a status palette.** `forecast-risk.html` currently breaks this, see below.
+- **The brand block in the header is one link.** The mark and the wordmark sit inside a single `<a>` to `index.html`, so clicking either goes home. On `privacy.html` the wordmark is the link and the mark is not; on `forecast-risk.html` it is the other way round. Both should be the single-link pattern.
 
 ## Closed, do not raise again
 
@@ -162,7 +169,7 @@ No illustration, no abstract graphic, no icons.
 ## Open
 
 1. **`forecast-risk.html`, four issues raised 6 September 2026, to be worked as a separate pass.**
-   - The contact badge on the closing field is `border-radius: 50%`. It is the only round corner on the site and it breaks a stated constraint. Make it a square 40px badge.
+   - The contact badge on the closing field is round. **Not an issue, withdrawn.** The email and LinkedIn badges are the site's one agreed radius exception, predating design involvement. Leave it.
    - The page introduces a red, amber and green status palette plus two chart colours, against the rule that the accent is never a status palette. This is defensible, because risk status is the content of the page rather than decoration, but it must be written down as an exception scoped to this page or it will leak onto the homepage.
    - The 12px label step carries nine roles on that page: kicker, form labels, stat labels, stat notes, panel subtitles, chart legend, table headers, risk pills, footer, and the whole exceptions table at mobile. The page loses its middle register. The panel subtitles and the chart legend are reading text and should be body at 15px; the table should not drop to 12px on a phone.
    - The voice mixes third person, "Silurian turns historical demand into", with first person plural, "We will test its forecasts". Company voice means one pronoun. Pick one.
