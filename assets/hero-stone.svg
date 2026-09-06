@@ -1,0 +1,25 @@
+<!-- The Silurian faceted stone. This stood inline in index.html as the hero
+     mark until 6 September 2026, when it was removed as redundant: the same
+     mark already sits in the header, the footer and the favicon as
+     logo-stone.svg. Kept as an asset on the owner's instruction. No page
+     references this file. Its six fills are raw hex because an SVG loaded
+     through img cannot read a page's custom properties. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 70 220 310" role="img" aria-label="Abstract faceted stone">
+  <defs>
+    <clipPath id="stone"><polygon points="130,180 285,90 300,360 120,360"/></clipPath>
+    <clipPath id="stoneTop"><rect x="100" y="0" width="240" height="225"/></clipPath>
+    <clipPath id="stoneBot"><rect x="100" y="225" width="240" height="200"/></clipPath>
+  </defs>
+  <g clip-path="url(#stone)">
+    <g clip-path="url(#stoneTop)">
+      <polygon points="130,180 285,90 300,360 120,360" fill="#2b2a29"/>
+      <polygon points="130,180 285,90 300,330" fill="#3f3d3b"/>
+      <polygon points="130,180 300,330 300,360 120,360" fill="#1a1918"/>
+      <polygon points="285,90 300,360 300,330" fill="#111010"/>
+    </g>
+    <g clip-path="url(#stoneBot)">
+      <polygon points="130,180 285,90 300,360 120,360" fill="#c15613"/>
+      <polygon points="130,180 285,90 300,330" fill="#ec6917"/>
+    </g>
+  </g>
+</svg>
