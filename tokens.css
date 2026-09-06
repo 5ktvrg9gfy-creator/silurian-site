@@ -132,14 +132,18 @@
      size yet: a control follows once the rollout is complete, which the
      design session set as the condition rather than doing it now.
 
-     Four places do NOT take a step and keep their own clamp, because their
-     rendered maximum is far outside the scale and mapping them would shrink
-     each by 37 to 47 per cent. They are the forecast-risk.html headline at
-     76px, the privacy.html headline at 68px, forecast-risk.html's stat value
-     at 40px, and the header wordmark, whose 15 to 18 taper would grow by four
-     pixels on a phone if flattened to the 19px lead step. These are the same
-     clamp() blind spot that produced the 42px and 56px errors, found a third
-     time, and they are held for a decision rather than applied. */
+     Four places do NOT take a step and keep their own clamp, because no step
+     fits their rendered range. The forecast-risk.html headline renders 76px
+     and the privacy.html headline 68px, so the 40px display step would cut
+     them by 47 and 41 per cent. The header wordmark tapers 15 to 18, which no
+     step matches: the 19px lead step would grow it four pixels on a phone.
+     forecast-risk.html's stat value is the fourth and it is the mild one:
+     it renders 40px, which is the display step exactly, so that mapping costs
+     nothing at desktop and four pixels on a phone. It is held only because its
+     declared 26px minimum is what the design's table maps, and that reading
+     would take it to 25px. These are the same clamp() blind spot that produced
+     the 42px and 56px errors, found a third time, and they are held for a
+     decision rather than applied. */
   --text-display: clamp(30px, 3.6vw, 40px);
   --text-poster: clamp(34px, 4.2vw, 56px);
   --text-title: 31px;
