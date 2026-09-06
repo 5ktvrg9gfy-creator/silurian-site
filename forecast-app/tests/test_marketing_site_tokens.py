@@ -15,6 +15,13 @@ So this file is a known compromise, recorded rather than quiet. Do not delete
 it as misplaced. If the marketing site ever gains its own invoked suite, move
 it there and delete this note with it.
 
+Ownership moved on 6 September 2026. This file belongs to the marketing-site
+session, not to the Assay session it sits beside. It reached that point the
+hard way: removing the homepage's inline mark made the page and this control
+disagree, and the two halves of one atomic change sat on opposite sides of a
+session boundary, so whichever landed first left main red. The directory is
+still Assay's. This file is not.
+
 WHAT IT PINS, AND WHAT IT DOES NOT
 ----------------------------------
 Colours only. Every colour on the three marketing pages comes from
@@ -48,18 +55,16 @@ TOKEN_FILE_NAME = "tokens.css"
 # intended behaviour and not a nuisance: see test_the_page_list_is_pinned.
 EXPECTED_PAGES = ("forecast-risk.html", "index.html", "privacy.html")
 
-# The one exclusion, by explicit path and explicit attribute, never by loose
-# pattern. The logo mark is six raw values held both inline in index.html and
-# in logo-stone.svg, and an external SVG loaded through <img> cannot read the
-# page's custom properties, so those six cannot have one source without
-# changing how the mark is embedded. The count is pinned so a seventh raw
-# colour cannot hide by being written as a fill attribute.
-SVG_FILL_EXCLUSION_PAGE = "index.html"
-SVG_FILL_EXCLUSION_ATTRIBUTE = "fill"
-SVG_FILL_EXCLUSION_COUNT = 6
-SVG_FILL_PATTERN = re.compile(
-    r'\b' + SVG_FILL_EXCLUSION_ATTRIBUTE + r'="#[0-9a-fA-F]{3,8}"'
-)
+# There is no exclusion, and there was one until 6 September 2026. index.html
+# carried the mark inline, six raw fills that an SVG loaded through <img>
+# cannot read from a page's custom properties, so the scan stripped
+# fill="#..." from that page and pinned the count at exactly six. The hero
+# stone was removed as a repeat of the header mark, the page now carries no
+# fill attribute at all, and the exclusion was deleted rather than set to
+# zero: nothing is stripped before the scan runs, so an inline fill on any
+# page is now caught by the raw-colour assertion directly. That is stricter
+# than the rule it replaces. The mark's six values live in logo-stone.svg and
+# in assets/hero-stone.svg, and neither is a page this control reads.
 
 # Status colours, defined in two places on purpose. See the note in
 # tokens.css: the two products deploy separately and cannot share a file
@@ -115,14 +120,6 @@ def marketing_pages() -> tuple[Path, ...]:
     return tuple(REPOSITORY / name for name in roots)
 
 
-def strip_excluded_fills(text: str, page: Path) -> tuple[str, int]:
-    """Remove the logo's SVG fill attributes from the named page only."""
-    if page.name != SVG_FILL_EXCLUSION_PAGE:
-        return text, 0
-    stripped, count = SVG_FILL_PATTERN.subn("", text)
-    return stripped, count
-
-
 def raw_colours(text: str) -> list[tuple[str, str]]:
     """Return (form, matched text) for every raw colour value in text."""
     found: list[tuple[str, str]] = []
@@ -148,8 +145,7 @@ def declared_values(text: str, names: tuple[str, ...]) -> dict[str, list[str]]:
 class MarketingSiteTokens(unittest.TestCase):
     def test_no_page_carries_a_raw_colour_value(self) -> None:
         for page in marketing_pages():
-            text, _ = strip_excluded_fills(page.read_text(encoding="utf-8"), page)
-            findings = raw_colours(text)
+            findings = raw_colours(page.read_text(encoding="utf-8"))
             self.assertEqual(
                 findings,
                 [],
@@ -199,23 +195,17 @@ class MarketingSiteTokens(unittest.TestCase):
             TOKEN_FILE_NAME, [page.name for page in marketing_pages()]
         )
 
-    def test_the_svg_fill_exclusion_is_exact(self) -> None:
-        counts = {}
-        for page in marketing_pages():
-            _, count = strip_excluded_fills(
-                page.read_text(encoding="utf-8"), page
-            )
-            counts[page.name] = count
-        self.assertEqual(
-            counts[SVG_FILL_EXCLUSION_PAGE],
-            SVG_FILL_EXCLUSION_COUNT,
-            "The logo's fill count changed. The exclusion covers exactly the "
-            "six colours of the mark; a seventh raw colour must not enter the "
-            "page as a fill attribute.",
-        )
-        for name, count in counts.items():
-            if name != SVG_FILL_EXCLUSION_PAGE:
-                self.assertEqual(count, 0, f"{name} is not an excluded page")
+    def test_an_inline_svg_fill_is_a_finding(self) -> None:
+        """What the deleted exclusion used to permit must now fail.
+
+        Until 6 September 2026 a fill="#..." on index.html was stripped from
+        the text before the scan saw it, and only a change in their number
+        failed the build. The hero stone that needed that exclusion is gone,
+        so a fill attribute is now an ordinary raw colour on the page.
+        """
+        planted = '<polygon points="0,0 1,1" fill="#ec6917"/>'
+        forms = {form for form, _ in raw_colours(planted)}
+        self.assertIn("hex literal", forms)
 
     def test_every_form_of_raw_colour_is_caught(self) -> None:
         """Probe each form. A pattern that no longer fires is not coverage."""

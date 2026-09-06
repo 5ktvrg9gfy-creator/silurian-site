@@ -150,16 +150,16 @@ a.btn { white-space: nowrap; }
   text-box: trim-both cap alphabetic;
 }
 .display .line { display: block; } /* law #1: one sentence per line */
-#about { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
-#about .rock { background: none; }
+#about { grid-template-columns: minmax(0, 1fr); }
 #about .display { font-size: clamp(36px, 4vw, 58px); line-height: 1.06; }
 .hero .sub, #about .sub { font-size: 17px; line-height: var(--leading); max-width: var(--measure);
   margin: calc(1.5 * var(--leading) - 1cap) 0 0;
   text-box: trim-both cap alphabetic; } /* 1.5 units: clears the display's descenders with cluster-tight air (law #3) */
 
-/* â€” imagery split (grayscale photograph â€” the system prints in black and
-   white; the box pins the bundled asset's 951Ã—665 ratio so swaps
-   cover-crop into the same frame) â€” */
+/* copy and imagery split. #about runs it as one column: the faceted stone
+   that filled the second column was removed on 6 September 2026 as a repeat
+   of the header mark, and the mark is kept unused at assets/hero-stone.svg.
+   The second column returns with whatever image replaces it. */
 .split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: var(--leading) clamp(24px, 5vw, 96px); align-items: center;
   padding: calc(2 * var(--leading)) 0 calc(3 * var(--leading)); }
@@ -167,12 +167,6 @@ a.btn { white-space: nowrap; }
   color: color-mix(in srgb, var(--color-text) 78%, transparent);
   margin: calc(var(--leading) - 1cap) 0 0; max-width: 48ch; text-box: trim-both cap alphabetic; }
 .split-copy .note + .note { margin-top: var(--leading); }
-.split-figure { margin: 0; }
-.split-figure { position: relative; }
-/* the sleeve's treatment: split ground, black and white above, orange duotone below */
-.rock { position: relative; aspect-ratio: 1 / 1; isolation: isolate;
-  background: linear-gradient(to bottom, var(--color-bg) 0 50%, var(--color-accent) 50% 100%); }
-.rock-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* â€” quote (hanging punctuation, the deck's measured Archivo advances) â€” */
 
@@ -219,12 +213,8 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(
 
 @media (max-width: 720px) {
       .split { grid-template-columns: 1fr; }
-  .split-figure { order: -1; }
-  #about { grid-template-columns: 1fr; }
-  #about .split-figure { display: none; }
   #about .display { font-size: clamp(30px, 8.5vw, 40px); }
   #about .capability-grid { grid-template-columns: 1fr !important; }
-  #about .split-figure { transform: none !important; width: 100%; max-width: 320px; margin-inline: auto; }
 }
 
 /* Review aid: the 28px rhythm drawn as hairlines â€” debug chrome, toggled by
@@ -290,29 +280,6 @@ body[data-baselines]::after {
         </ul>
       </div>
     </div>
-    <figure class="split-figure" style="transform:translateY(-18px) scale(1.15);transform-origin:center">
-      <div class="rock">
-        <svg class="rock-art" viewBox="100 70 220 310" role="img" aria-label="Abstract faceted stone">
-          <defs>
-            <clipPath id="stone"><polygon points="130,180 285,90 300,360 120,360"/></clipPath>
-            <clipPath id="stoneTop"><rect x="100" y="0" width="240" height="225"/></clipPath>
-            <clipPath id="stoneBot"><rect x="100" y="225" width="240" height="200"/></clipPath>
-          </defs>
-          <g clip-path="url(#stone)">
-            <g clip-path="url(#stoneTop)">
-              <polygon points="130,180 285,90 300,360 120,360" fill="#2b2a29"/>
-              <polygon points="130,180 285,90 300,330" fill="#3f3d3b"/>
-              <polygon points="130,180 300,330 300,360 120,360" fill="#1a1918"/>
-              <polygon points="285,90 300,360 300,330" fill="#111010"/>
-            </g>
-            <g clip-path="url(#stoneBot)">
-              <polygon points="130,180 285,90 300,360 120,360" fill="#c15613"/>
-              <polygon points="130,180 285,90 300,330" fill="#ec6917"/>
-            </g>
-          </g>
-        </svg>
-      </div>
-    </figure>
   </section>
 
 
