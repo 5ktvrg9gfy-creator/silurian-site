@@ -53,7 +53,12 @@ TOKEN_FILE_NAME = "tokens.css"
 
 # The marketing pages, pinned. A fourth page failing this assertion is the
 # intended behaviour and not a nuisance: see test_the_page_list_is_pinned.
-EXPECTED_PAGES = ("forecast-risk.html", "index.html", "privacy.html")
+EXPECTED_PAGES = (
+    "forecast-risk.html",
+    "forecastability.html",
+    "index.html",
+    "privacy.html",
+)
 
 # There is no exclusion, and there was one until 6 September 2026. index.html
 # carried the mark inline, six raw fills that an SVG loaded through <img>
@@ -176,7 +181,7 @@ class MarketingSiteTokens(unittest.TestCase):
     def test_the_scan_actually_reads_the_pages(self) -> None:
         """A scan that finds nothing because it read nothing is not a pass."""
         pages = marketing_pages()
-        self.assertEqual(len(pages), 3)
+        self.assertEqual(len(pages), len(EXPECTED_PAGES))
         total = 0
         for page in pages:
             text = page.read_text(encoding="utf-8")

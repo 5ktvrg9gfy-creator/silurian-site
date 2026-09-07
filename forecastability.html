@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Not every product can be forecast | Silurian Consulting LTD</title>
+<meta name="description" content="Assay reads a demand extract and tells you which products you can forecast, which you never will, and which you have not got the history to judge." />
+<link rel="icon" href="logo-stone.svg" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+/* Forecastability page. Colour and type come from tokens.css and nothing else:
+   every size is a step token and every colour is a colour token, which is what
+   the two marketing controls check. Layout stays here in literal px, as it does
+   on every other page. There is no spacing scale on this site and this page
+   does not invent one. */
+:root {
+  --edge: clamp(20px, 5vw, 72px);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-body); font-size: var(--text-body); line-height: 1.55; }
+a { color: inherit; text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
+
+/* Masthead, the single-link brand block the other pages carry. */
+.mast { border-bottom: 2px solid var(--color-divider); background: var(--color-paper); }
+.mast .wrap { display: flex; align-items: center; gap: 14px;
+  padding-top: 12px; padding-bottom: 12px; }
+.mast img { width: 26px; aspect-ratio: 200 / 290; }
+.mast .brand-home { display: flex; align-items: center; gap: 14px;
+  text-decoration: none; color: var(--color-text); margin-right: auto; }
+.mast .brand-home:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.brand { font-weight: var(--font-heading-weight); font-size: var(--wordmark-size);
+  letter-spacing: -0.02em; }
+.back { font-size: var(--text-body); font-weight: 600; text-decoration: none; }
+
+main { padding: 72px 0 80px; }
+
+/* Type roles. Every one of these is a step from tokens.css. */
+.kicker { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-label); letter-spacing: 0.12em; text-transform: uppercase;
+  margin: 0; }
+h1 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-display); line-height: 1.06; letter-spacing: -0.03em;
+  max-width: 26ch; margin: 16px 0 0; }
+.standfirst { font-size: var(--text-lead); font-weight: 400; line-height: 1.55;
+  max-width: 62ch; margin: 24px 0 0; }
+h2, h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-subhead); line-height: 1.2; letter-spacing: -0.02em; margin: 0; }
+.lead { font-size: var(--text-lead); font-weight: 400; line-height: 1.55; margin: 16px 0 0; }
+.detail { font-size: var(--text-body); line-height: 1.5; margin: 8px 0 0; }
+
+/* Rules. 2px seams and 1px hairlines, both at full ink, and nothing else. */
+.seam { border: 0; border-top: 2px solid var(--color-divider); margin: 32px 0 0; }
+.hair { border: 0; border-top: 1px solid var(--color-divider); margin: 16px 0 0; }
+.section-seam { border: 0; border-top: 2px solid var(--color-divider); margin: 72px 0 32px; }
+
+/* 2. Intro row. The text track is not pinned to a ch width: doing that stops the
+   figure shrinking and the figure then grows tall enough to leave a void under
+   the text. */
+.intro { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  gap: 72px; align-items: start; margin: 48px 0 72px; }
+.stat-numeral { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-poster); color: var(--color-accent);
+  line-height: 0.95; letter-spacing: -0.02em; margin: 16px 0 0; }
+.stat-claim { font-size: var(--text-lead); font-weight: 400; line-height: 1.4; margin: 16px 0 0; }
+.stat-line { font-size: var(--text-body); line-height: 1.5; margin: 12px 0 0; }
+figcaption { font-size: var(--text-label); line-height: 1.5;
+  color: var(--color-text-muted); margin: 16px 0 0; }
+
+/* 3. Chart. Each column is a flex column so the last connector can stretch. */
+.entry { background: var(--color-charcoal-deep); color: var(--color-text-on-dark);
+  padding: 24px; }
+.entry-title { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-lead); margin: 0; }
+.entry-sub { font-size: var(--text-body); margin: 4px 0 0; }
+.flow { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; }
+.col { display: flex; flex-direction: column; }
+.conn { width: 2px; background: var(--color-divider); margin-left: 32px; height: 24px; flex: none; }
+.conn-entry { height: 32px; }
+/* This one holds the two outcome boxes level whatever sits above them. Nothing
+   may be added inside a column after its outcome box, or that column shortens
+   and the level finish breaks. It happened once, and cost 37px. */
+.conn-fill { flex: 1; min-height: 24px; }
+.col-kicker { margin: 0; }
+.col-clause { font-size: var(--text-body); line-height: 1.4; margin: 8px 0 0; }
+.col-head-seam { border: 0; border-top: 2px solid var(--color-divider); margin: 12px 0 0; }
+.node { border: 2px solid var(--color-divider); background: var(--color-bg); padding: 24px; }
+.node-mid { background: var(--color-surface); padding: 16px 24px; font-size: var(--text-body);
+  line-height: 1.5; }
+.node-title { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-lead); margin: 0; }
+.node-body { font-size: var(--text-body); line-height: 1.5; margin: 8px 0 0; }
+.node-accent { background: var(--color-accent); color: var(--color-paper);
+  border-color: var(--color-accent); }
+.node-accent .hair { border-top-color: var(--color-paper); }
+.familiar { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; margin-top: 16px; }
+.familiar p { font-size: var(--text-body); margin: 0; }
+
+/* 5 to 8. */
+.callback { border: 0; border-top: 2px solid var(--color-divider);
+  padding-top: 24px; margin-top: 32px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: start; }
+.pullout { border-top: 2px solid var(--color-divider); padding-top: 24px; margin-top: 32px; }
+.gets { list-style: none; margin: 24px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 16px; }
+.gets li { font-size: var(--text-lead); line-height: 1.5;
+  padding-top: 16px; border-top: 1px solid var(--color-divider); }
+.bridge { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  gap: 72px; align-items: start; border-top: 2px solid var(--color-divider);
+  padding-top: 24px; margin-top: 72px; }
+.bar { display: flex; height: 28px; margin-top: 16px; }
+.bar-can { background: var(--color-accent); }
+.bar-never { background: var(--color-charcoal-deep); }
+.bar-unknown { border: 1px solid var(--color-divider); }
+.legend { list-style: none; margin: 0; padding: 0; }
+.legend li { display: flex; align-items: baseline; gap: 12px;
+  font-size: var(--text-body); line-height: 1.5;
+  padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--color-divider); }
+.swatch { width: 12px; height: 12px; flex: none; }
+.caption { font-size: var(--text-label); color: var(--color-text-muted); margin: 16px 0 0; }
+
+/* Links. The label must not wrap: if it does, the underline trails off and
+   leaves the arrow floating. */
+.arrow-link { display: inline-flex; align-items: baseline; gap: 12px;
+  white-space: nowrap; text-decoration: none;
+  font-size: var(--text-lead); font-weight: var(--font-heading-weight);
+  border-bottom: 2px solid currentColor; margin-top: 24px; }
+
+/* 9. */
+.close { background: var(--color-accent); color: var(--color-paper);
+  padding: 32px 32px 48px; margin-top: 72px; }
+.close h2 { font-size: var(--text-title); max-width: 34ch; margin: 16px 0 0; }
+.close a { text-decoration: none; border-bottom: 2px solid currentColor; }
+
+footer { padding: 56px 0; font-size: var(--text-label); line-height: 1.6;
+  display: flex; align-items: center; gap: 14px;
+  border-top: 2px solid var(--color-divider); }
+footer img { width: 26px; aspect-ratio: 200 / 290; flex: none; }
+
+@media (max-width: 860px) {
+  .intro, .flow, .familiar, .two-col, .bridge { grid-template-columns: 1fr; gap: 32px; }
+  .conn-fill { flex: none; }
+  main { padding: 48px 0 56px; }
+}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <a class="brand-home" href="index.html"><img src="logo-stone.svg" alt="" /><span class="brand">Silurian Consulting LTD</span></a>
+    <a class="back" href="index.html">Back to Silurian</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 1. Header block -->
+  <p class="kicker">Silurian Assay</p>
+  <h1>Not every product can be forecast.</h1>
+  <p class="standfirst">Assay reads a demand extract and tells you what is wrong with the file, which products you can forecast, which you never will, and which you have not got the history to judge. Minutes rather than hours, and the same method every cycle.</p>
+  <hr class="seam" />
+
+  <!-- 2. Intro row -->
+  <div class="intro">
+    <div>
+      <h2>Before a forecast becomes a plan, somebody has to decide whether to believe it.</h2>
+      <p class="lead">That work happens every cycle. Tidying up the extract, comparing it to last month, working out from memory which lines never behave. It is not in anyone's process document and it has no name, so it gets done differently every time and the reasoning leaves the building with whoever did it.</p>
+      <p class="lead">It is also the cheapest place in the whole chain to catch a problem, because nothing has been bought yet.</p>
+    </div>
+    <figure>
+      <p class="kicker">The largest forecasting contest ever run</p>
+      <hr class="seam" style="margin-top:12px" />
+      <p class="stat-numeral">92.5%</p>
+      <p class="stat-claim">of the teams that entered produced forecasts <strong>less accurate than a basic weighted average</strong>.</p>
+      <hr class="hair" />
+      <p class="stat-line"><strong>Two thirds</strong> were less accurate than repeating last year's pattern.</p>
+      <p class="stat-line"><strong>Half</strong> were less accurate than assuming next month looks like last month.</p>
+      <hr class="seam" style="margin-top:16px" />
+      <p class="stat-line">People who forecast for a living, trying hard, on clean data.</p>
+      <figcaption>Known as M5. Run on open Walmart sales data with a public leaderboard and prize money, and reported in the <em>International Journal of Forecasting</em>, 2022.</figcaption>
+    </figure>
+  </div>
+
+  <!-- 3. Chart -->
+  <div class="entry">
+    <p class="entry-title">A forecast arrives</p>
+    <p class="entry-sub">Yours, or your customer's</p>
+  </div>
+
+  <div class="flow">
+    <div class="col">
+      <div class="conn conn-entry"></div>
+      <div>
+        <p class="kicker col-kicker">The work you do now</p>
+        <p class="col-clause">hours, and an answer nobody can check</p>
+        <hr class="col-head-seam" />
+      </div>
+      <div class="conn"></div>
+      <div class="node">
+        <p class="node-title">Pivot tables, judgement, or both</p>
+        <p class="node-body">Tidy up the extract. Compare it to last month.<br />Work out from memory which lines look wrong.</p>
+        <hr class="hair" />
+        <p class="node-body">Hours of work. A different answer depending on who did it.</p>
+      </div>
+      <div class="conn"></div>
+      <div class="node node-mid">Into the plan</div>
+      <div class="conn"></div>
+      <div class="node node-mid">Agreed, then committed<br />Material bought. Capacity booked.</div>
+      <div class="conn conn-fill"></div>
+      <div class="node">
+        <p class="node-title">Stock carried against products nothing could ever predict.</p>
+        <p class="node-body">Time spent on the wrong products.<br />No way to challenge the forecast you were sent.</p>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="conn conn-entry"></div>
+      <div>
+        <p class="kicker col-kicker">The same work with Assay</p>
+        <p class="col-clause">minutes, and an answer you can show anyone</p>
+        <hr class="col-head-seam" />
+      </div>
+      <div class="conn"></div>
+      <div class="node node-accent">
+        <p class="node-title">Upload the extract</p>
+        <p class="node-body">What is wrong with the file.<br />Which products you can forecast.<br />Which ones you never will.<br />Which ones you have not got the history to judge.</p>
+        <hr class="hair" />
+        <p class="node-body">Minutes. The same method every cycle.</p>
+      </div>
+      <div class="conn"></div>
+      <div class="node node-mid">Into the plan, knowing<br />which numbers to trust</div>
+      <div class="conn"></div>
+      <div class="node node-mid">Agreed, then committed<br />Material bought. Capacity booked.</div>
+      <div class="conn conn-fill"></div>
+      <div class="node node-accent">
+        <p class="node-title">Stock carried for reasons you can explain.</p>
+        <p class="node-body">Time spent where it makes a difference.<br />Evidence to challenge the forecast you were sent.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Does this look familiar -->
+  <div class="familiar">
+    <p>Does this look familiar?</p>
+  </div>
+
+  <!-- 5. Full width callback -->
+  <div class="callback">
+    <h2 style="max-width:52ch">The 92.5 percent were not bad at forecasting. They were forecasting products nothing could predict, because nobody had told them which ones those were.</h2>
+    <p class="lead" style="max-width:62ch">The cost never shows up in the forecast. It shows up later, as stock you cannot sell, service you cannot hold, and an argument with your customer you have no evidence for.</p>
+  </div>
+
+  <!-- 6. Two column argument -->
+  <hr class="section-seam" />
+  <div class="two-col">
+    <div>
+      <h2>Better forecasting is not the answer for every product</h2>
+      <p class="lead">The competition above tells you something the leaderboard does not. The gains available on sparse, irregular products were close to nothing: around three percent at the level individual products are actually planned at, against forty percent higher up the aggregation.</p>
+      <p class="lead">The products that make your forecast look bad are the products where trying harder helps least.</p>
+      <p class="lead">The lesson is not that forecasting is pointless. It is that effort spent on the wrong products produces nothing, and nobody is telling you which products those are.</p>
+    </div>
+    <div>
+      <h2>When the forecast comes from your customer</h2>
+      <p class="lead">Read the supply agreement. Beyond the first few months it almost certainly says the forecast creates no binding obligation and is provided for planning purposes only.</p>
+      <p class="lead">Your customer has told you in writing not to rely on it. You buy material against it anyway.</p>
+      <p class="lead">There is a reason those numbers run high, and it is not dishonesty. A customer who wants capacity held has every reason to ask for more than they need, and it costs them nothing to do it.</p>
+      <p class="lead">So you are committing money against a number that is not binding, produced by someone with a reason to round it up, and checked by nobody.</p>
+    </div>
+  </div>
+  <div class="pullout">
+    <h2>Ask how often those forecasts turned into orders last year. Most companies cannot answer, because nobody has ever counted.</h2>
+  </div>
+
+  <!-- 7. Two column lists -->
+  <hr class="section-seam" />
+  <div class="two-col">
+    <div>
+      <h2>What you get</h2>
+      <ul class="gets">
+        <li>What is wrong with your file, in plain terms, before anything else happens</li>
+        <li>Which products you can forecast, which you never will, and which you have not got the history to judge</li>
+        <li>How much of your volume sits in each group</li>
+        <li>A short list of products to raise with whoever sent you the forecast, with their own history as the evidence</li>
+        <li>A record of the run you can repeat next month and get the same answer</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What it will not tell you</h2>
+      <p class="lead">It will not tell you what stock to hold. It tells you which products need an arrangement with a customer rather than a number, and stops there.</p>
+      <p class="lead">It will not improve a forecast. It tells you where improving one is worth the effort, and where it never will be.</p>
+      <p class="lead">And it will not tell you what you want to hear. Every company selling forecasting software has a reason to say your whole portfolio is forecastable. This is the opposite service.</p>
+    </div>
+  </div>
+
+  <!-- 8. Bridge row -->
+  <div class="bridge">
+    <div>
+      <p class="kicker">What comes back</p>
+      <h2 style="max-width:34ch;margin-top:16px">Your portfolio, split three ways, with the volume in each group.</h2>
+      <p class="lead" style="max-width:52ch">One page you can put in front of a customer, and a record of the run you can repeat next month and get the same answer.</p>
+      <a class="arrow-link" href="forecast-risk.html"><span>See a sample analysis</span><span aria-hidden="true">&#8594;</span></a>
+    </div>
+    <div>
+      <p class="kicker">Percent of volume</p>
+      <hr class="seam" style="margin-top:12px" />
+      <div class="bar">
+        <div class="bar-can" style="flex:55"></div>
+        <div class="bar-never" style="flex:20"></div>
+        <div class="bar-unknown" style="flex:25"></div>
+      </div>
+      <ul class="legend">
+        <li><span class="swatch bar-can"></span><span><strong>55%</strong> can be forecast</span></li>
+        <li><span class="swatch bar-never"></span><span><strong>20%</strong> never will be, and need an arrangement instead</span></li>
+        <li><span class="swatch bar-unknown"></span><span><strong>25%</strong> not enough history to judge</span></li>
+      </ul>
+      <p class="caption">Illustrative split. Every portfolio comes back different.</p>
+    </div>
+  </div>
+
+  <!-- 9. Closing accent field -->
+  <div class="close">
+    <p class="kicker">Next</p>
+    <h2>Send a demand extract and get the assessment back on your own products. Or look at the <a href="forecast-risk.html">sample analysis first. <span aria-hidden="true">&#8594;</span></a></h2>
+  </div>
+
+</main>
+
+<div class="wrap"><footer><img src="logo-stone.svg" alt="" /><span>Silurian Consulting LTD. Registered in England and Wales, company number 17415387. Registered office, 22 Gelliwastad Road, Pontypridd, CF37 2BW. <a href="privacy.html">Privacy</a>.</span></footer></div>
+
+</body>
+</html>
