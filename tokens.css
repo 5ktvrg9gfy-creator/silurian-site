@@ -141,11 +141,25 @@
      every other page headline, and forecast-risk.html's stat value takes
      display because it already rendered 40px.
 
-     Poster is spent once per page and only on the closing accent field. A
-     page headline never takes it: setting the secondary pages at 56px while
-     the homepage opens at 40px would make the homepage headline the smallest
-     page opener on the site. A closing field louder than the headline above
-     it is fine, because it is a full-bleed statement rather than an opener.
+     POSTER IS ONE PER PAGE, ON THE SINGLE LOUDEST ELEMENT, and it is not
+     welded to any component. Settled by the design session on 7 September
+     2026 after three rounds of asking, and both of the readings it rejects
+     are worth knowing. Once per site makes the step unusable the moment a
+     fourth page exists, and a token only one element may ever use is not a
+     scale step, it is that element's private size, which is how the last
+     list of sizes started. Once per closing panel welds a size to a
+     component: on the homepage the loudest thing genuinely is the closing
+     line, so poster lands there, and on forecastability.html the loudest
+     thing is the 92.5% numeral, so poster lands there and that page's
+     closing field takes --text-title instead. Same rule, different element,
+     one poster either way.
+
+     The test for a future page is a copy test, not a type test: if two
+     elements are competing for poster, the page has two climaxes and the
+     copy is the problem. A page headline still never takes poster, and a
+     page may have none, as privacy.html does.
+
+     The count is held by test_a_page_spends_poster_at_most_once.
 
      A TYPE STEP IS A LAYOUT CHANGE. Moving forecast-risk.html's table from
      11px to the 12px step pushed it 10px past a 320px viewport and the page

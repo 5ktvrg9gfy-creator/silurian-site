@@ -258,6 +258,8 @@ FONT_SHORTHAND = re.compile(r"(?<![-\w])font\s*:\s*([^;}\"\']+)")
 VAR_REFERENCE = re.compile(r"var\(\s*--[A-Za-z0-9-]+\s*\)")
 # A number carrying a length or percentage unit. Bare numbers are left alone
 # because an unitless 1.4 in a shorthand is a line height, not a size.
+# One loudest element per page. See the note beside the steps in tokens.css.
+POSTER_USE = re.compile(r"var\(\s*--text-poster\s*\)")
 SIZED_NUMBER = re.compile(r"\d*\.?\d+\s*(?:px|pt|pc|em|rem|ex|ch|cap|vw|vh|vmin|vmax|%)\b")
 
 
@@ -303,6 +305,41 @@ class MarketingSiteTypeScale(unittest.TestCase):
                 "no step fits, that is a decision for the design session, not "
                 "a value typed into a page. Findings: " + str(findings),
             )
+
+    def test_a_page_spends_poster_at_most_once(self) -> None:
+        """One loudest moment per page, and poster is what marks it.
+
+        Settled by the design session on 7 September 2026. Not once per site,
+        which makes the step unusable as soon as a fourth page exists and
+        turns a scale step into one element's private size. Not once per
+        closing panel, which welds a size to a component: the homepage's
+        loudest element is its closing line, forecastability.html's is the
+        92.5% numeral, and both are correct under the same rule.
+
+        What this counts is declarations, not rendered elements. One
+        declaration matching several elements would pass, and on index.html
+        that is the right answer rather than a gap: the closing line is one
+        heading set in two spans, which is one loud moment. A page may spend
+        none, as privacy.html does. Two elements competing for poster is a
+        copy problem and no test can see it.
+        """
+        for page in marketing_pages():
+            uses = len(POSTER_USE.findall(page.read_text(encoding="utf-8")))
+            self.assertLessEqual(
+                uses,
+                1,
+                f"{page.name} spends the poster step {uses} times. A page gets "
+                "one loudest element. If two are competing for it, the page "
+                "has two climaxes and the copy is what needs fixing.",
+            )
+
+    def test_the_poster_count_catches_a_second_use(self) -> None:
+        """Probe it, on the shape that would actually appear."""
+        planted = (
+            "h1 { font-size: var(--text-poster); }"
+            ".close h2 { font-size: var(--text-poster); }"
+        )
+        self.assertEqual(len(POSTER_USE.findall(planted)), 2)
 
     def test_the_token_file_defines_every_step(self) -> None:
         tokens = (REPOSITORY / TOKEN_FILE_NAME).read_text(encoding="utf-8")
