@@ -121,6 +121,24 @@ Every finding is written in the order **what, so what, do this**. What the data 
 
 Absence is a result. An empty state names what was eligible, what was excluded and why, and offers the next action.
 
+**Plain language, everywhere a user can read it.** The test: if a planner would not say it to another planner in the corridor, cut it.
+
+The tell is a vague verb standing in for something concrete. Serve, carry, support, enable, underpin, leverage. "Which products a forecast can serve" means "which products you can forecast". "Knowing what the plan can carry" means "knowing which numbers to trust". The abstraction is always longer and always says less.
+
+Two things follow from it.
+
+**Say what the reader gets, not what the method is.** "Stock sized to what the data supports" describes a method. "Stock carried for reasons you can explain" describes what the reader gets to say when someone asks them why the stock is there.
+
+**Name whose problem it is.** "Insufficient history" is nobody's. "You have not got the history to tell" is theirs, and it points at what to do next.
+
+It applies to everything a user reads: panel headings, findings text, the seven routing decision texts, resolution options, glossary entries, error messages, the readiness sentence and the report. It does not apply to internal names, code identifiers, test names or documentation.
+
+**Plain, not friendly, is the other half of the same rule.** Band 2.7 established the first half: do not soften the register, because the directness is what makes it credible. This is the second half: do not dress it up. Read together they say one thing, which is to use the fewest words that carry the real meaning. Nothing in either licenses the other to be broken.
+
+This is a build rule and not a copy preference because it has already cost something. The second planner did not understand seven terms on the screen, and band 2.10.2 in the product owner's backlog exists to fix them. This rule is what would have prevented them.
+
+Not enforced by a test, deliberately. A banned phrase list would catch the obvious cases and fire on legitimate ones: "carry" appears eleven times in the shipped interface, including the readiness sentence band 2.7 was written to produce, where it is concrete and correct. A control that cries wolf gets ignored, which is worse than none. This one is judgement, and the planner test is what catches it failing.
+
 ---
 
 ## 9. Design system
