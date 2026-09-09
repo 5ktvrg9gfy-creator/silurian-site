@@ -20,6 +20,24 @@ GLOSSARY_VERSION = "1.0"
 
 # group, term, the plain reading. The order is the order a planner meets them.
 ENTRIES: tuple[dict[str, str], ...] = (
+    # Validation verdicts. The first of the seven terms of band 2.10.2: the
+    # planner read ACCEPT beside NOT USABLE DATA and could not tell what had
+    # been accepted or what had not.
+    {
+        "group": "File verdict",
+        "term": "Accept",
+        "plain": "The file could be read and every line in it was assessed. It says nothing about what the assessment then found.",
+    },
+    {
+        "group": "File verdict",
+        "term": "Accept with warnings",
+        "plain": "The file could be read and every line was assessed, with something about the file itself worth knowing before you use the result.",
+    },
+    {
+        "group": "File verdict",
+        "term": "Reject",
+        "plain": "The file could not be assessed as supplied. Nothing was forecast, and the findings name what has to change before it can be.",
+    },
     # Quality bands, defect 4 in the planner test: the operational difference
     # between caveated and not usable was the thing they could not state.
     {
@@ -62,6 +80,12 @@ ENTRIES: tuple[dict[str, str], ...] = (
         "group": "Demand state",
         "term": "Unclassifiable",
         "plain": "Too few periods with demand to say what pattern this line follows. It is a state in its own right, not an error and not a missing value.",
+    },
+    # Forecasting methods named in a routing reason.
+    {
+        "group": "Forecasting method",
+        "term": "Croston family",
+        "plain": "A group of methods built for demand that arrives in gaps. They forecast the size of an order and the wait until the next one separately, rather than averaging the gaps away.",
     },
     # Routing decisions.
     {
