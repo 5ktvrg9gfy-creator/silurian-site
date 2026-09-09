@@ -86,9 +86,9 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("esc(decisionCopy(item.decision))", HTML)
         self.assertIn('data-eligible="${item.forecast_eligible}"', HTML)
 
-    def test_drawer_carries_decision_reason_and_refusal_but_no_action(self):
-        start = HTML.index("function openQualityDrawer(sku,opener){")
-        end = HTML.index("function closeQualityDrawer(){", start)
+    def test_line_detail_carries_decision_reason_and_refusal_but_no_action(self):
+        start = HTML.index("function lineDetailMarkup(sku){")
+        end = HTML.index("function classificationRows(){", start)
         drawer = HTML[start:end]
         self.assertIn("Routing decision", drawer)
         self.assertIn("esc(routing.reason)", drawer)
@@ -108,8 +108,8 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("<th>Do this</th>", HTML)
 
     def test_resolution_picker_is_a_closed_list_that_shows_its_consequence_first(self):
-        start = HTML.index("function openQualityDrawer(sku,opener){")
-        end = HTML.index("function closeQualityDrawer(){", start)
+        start = HTML.index("function lineDetailMarkup(sku){")
+        end = HTML.index("function classificationRows(){", start)
         drawer = HTML[start:end]
         self.assertIn('<select id="resolutionCode" name="code" required>', drawer)
         self.assertIn("routing.refusal.resolution_options.map(option=>`<option value=", drawer)
@@ -129,8 +129,8 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("data-clear-resolution", drawer)
 
     def test_an_unanswered_line_is_never_pre_answered(self):
-        start = HTML.index("function openQualityDrawer(sku,opener){")
-        end = HTML.index("function closeQualityDrawer(){", start)
+        start = HTML.index("function lineDetailMarkup(sku){")
+        end = HTML.index("function classificationRows(){", start)
         drawer = HTML[start:end]
         picker = drawer[drawer.index('<select id="resolutionCode"'):]
         self.assertTrue(picker.startswith('<select id="resolutionCode" name="code" required><option value="">Choose from the list</option>'))
@@ -158,9 +158,9 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertNotIn("qualityRows", renderer)
         self.assertNotIn("routingRows", renderer)
 
-    def test_every_drawer_statement_names_its_stage(self):
-        start = HTML.index("function openQualityDrawer(sku,opener){")
-        end = HTML.index("function closeQualityDrawer(){", start)
+    def test_every_line_detail_statement_names_its_stage(self):
+        start = HTML.index("function lineDetailMarkup(sku){")
+        end = HTML.index("function classificationRows(){", start)
         drawer = HTML[start:end]
         self.assertIn("stageTag('quality')", drawer)
         self.assertIn("stageTag('classification')", drawer)

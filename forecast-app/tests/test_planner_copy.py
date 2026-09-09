@@ -33,7 +33,7 @@ class ReadinessStatementTests(unittest.TestCase):
     def test_one_sentence_reconciles_the_stage_verdicts(self):
         self.assertIn('id="runReadiness"', HTML)
         start = HTML.index("function updateRunReadiness(){")
-        end = HTML.index("const HINT_KEY=", start)
+        end = HTML.index("// Story 2.10.1.", start)
         renderer = HTML[start:end]
         self.assertIn("Your file was accepted and processed.", renderer)
         self.assertIn("accepted with warnings", renderer)
@@ -52,7 +52,7 @@ class ReadinessStatementTests(unittest.TestCase):
         which is defect 1 in a new form rather than a fix for it.
         """
         start = HTML.index("function updateRunReadiness(){")
-        renderer = HTML[start:HTML.index("const HINT_KEY=", start)]
+        renderer = HTML[start:HTML.index("// Story 2.10.1.", start)]
         self.assertIn("portfolio.ineligible_count-portfolio.open_item_count", renderer)
         self.assertIn("commercial>0?", renderer)
 
@@ -71,7 +71,7 @@ class ReadinessStatementTests(unittest.TestCase):
     def test_the_sentence_recomputes_nothing(self):
         """Every figure is read from a stage that owns it."""
         start = HTML.index("function updateRunReadiness(){")
-        end = HTML.index("const HINT_KEY=", start)
+        end = HTML.index("// Story 2.10.1.", start)
         renderer = HTML[start:end]
         for field in ("eligible_count", "sku_count", "open_item_count", "open_volume_share_pct"):
             self.assertIn(f"portfolio.{field}", renderer)
@@ -106,34 +106,83 @@ class ActionTextTests(unittest.TestCase):
         self.assertNotIn("–", actions)
 
 
-class DrawerDiscoverabilityTests(unittest.TestCase):
-    """2.7.3. The drawer has existed since story 2.1 and was not found."""
+class LineDetailInPlaceTests(unittest.TestCase):
+    """2.10.1. The drawer failed two planners, so there is no drawer to find.
 
-    def test_the_row_invites_the_click(self):
-        self.assertIn(".quality-grid tbody tr{cursor:pointer}", HTML)
-        self.assertIn(".quality-grid tbody tr:hover,.quality-grid tbody tr:focus", HTML)
-        self.assertEqual(HTML.count('<td class="row-open" aria-hidden="true">Open</td>'), 3)
-        self.assertEqual(HTML.count('<th><span class="sr-only">Detail</span></th>'), 3)
+    Band 2.10 rules out a third variation of the affordance on the row. The
+    shape chosen is the other one it allows: the history comes to the row.
+    Every grid that lists a line draws that line's demand history on it, and
+    the rest of the detail opens in the table, under the row it describes.
+    """
 
-    def test_the_hint_appears_once_and_retires_itself(self):
-        self.assertIn("Select any line to see its history, findings and options together.", HTML)
-        self.assertIn("function drawerHintMarkup()", HTML)
-        self.assertIn("return drawerHintSeen()?''", HTML)
-        # Opening a line is what dismisses it, so the hint cannot outlive its purpose.
-        drawer = HTML[HTML.index("function openQualityDrawer("):HTML.index("function closeQualityDrawer(")]
-        self.assertIn("retireDrawerHint()", drawer)
-        self.assertIn("data-dismiss-hint", HTML)
+    def test_the_failed_affordance_is_gone_rather_than_varied(self):
+        for artefact in (
+            "drawer-scrim",
+            "quality-drawer",
+            "qualityDrawer",
+            "openQualityDrawer",
+            "drawerHintMarkup",
+            "silurian.drawerHintSeen",
+            "data-dismiss-hint",
+            'class="row-open"',
+            '<span class="sr-only">Detail</span>',
+        ):
+            with self.subTest(artefact=artefact):
+                self.assertNotIn(artefact, HTML)
 
-    def test_the_hint_survives_storage_being_unavailable(self):
-        """A private window still gets a working screen, it just gets the hint again."""
-        self.assertIn("function drawerHintSeen(){try{", HTML)
-        self.assertIn("}catch{return false}}", HTML)
-        self.assertIn("function retireDrawerHint(){try{localStorage.setItem(HINT_KEY,'1')}catch{", HTML)
+    def test_the_history_is_drawn_on_the_row_with_nothing_to_open(self):
+        """What the second planner asked for, visible before any interaction."""
+        self.assertEqual(HTML.count("<th>Demand history</th>"), 4)
+        self.assertEqual(HTML.count("${sparkline(item.sku)}"), 4)
+        renderer = HTML[HTML.index("function sparkline(sku){"):HTML.index("function historyReading(sku){")]
+        self.assertIn("latestHistory?.[sku]", renderer)
+        self.assertIn('class="spark"', renderer)
+        # The picture is never the only reading of the history.
+        self.assertIn('aria-label="${esc(historyReading(sku))}"', renderer)
 
-    def test_the_drawer_is_reachable_from_every_grid_that_lists_a_line(self):
-        for rows in ("qualityRows", "classificationRows", "openItemRows"):
-            with self.subTest(grid=rows):
-                self.assertIn(f"querySelectorAll('#{rows} tr').forEach(row=>", HTML)
+    def test_the_history_reads_as_a_sentence_as_well_as_a_picture(self):
+        renderer = HTML[HTML.index("function historyReading(sku){"):HTML.index("function historyBlock(sku){")]
+        self.assertIn("periods from", renderer)
+        self.assertIn("Highest", renderer)
+        self.assertIn("lowest", renderer)
+
+    def test_the_detail_opens_in_the_table_under_its_own_row(self):
+        renderer = HTML[HTML.index("function detailRow(sku,columns,grid){"):HTML.index("function redrawLineGrids(){")]
+        self.assertIn('<tr class="line-detail" data-detail-for="${esc(sku)}">', renderer)
+        self.assertIn('<td colspan="${columns}">', renderer)
+        self.assertIn("workspaceState.selectedGrid===grid", renderer)
+        self.assertIn(".line-detail>td{", HTML)
+
+    def test_the_detail_carries_the_history_it_was_opened_for(self):
+        detail = HTML[HTML.index("function lineDetailMarkup(sku){"):HTML.index("function detailRow(sku,columns,grid){")]
+        self.assertIn("${historyBlock(sku)}", detail)
+        block = HTML[HTML.index("function historyBlock(sku){"):HTML.index("function initWorkspace(){")]
+        self.assertIn("Demand history", block)
+        # Never zero filled, and the rule is said where the picture is drawn.
+        self.assertIn("Missing periods are not filled with zero.", block)
+
+    def test_one_line_is_open_at_a_time_in_one_grid(self):
+        """Four copies of the detail would be four copies of the resolution form."""
+        renderer = HTML[HTML.index("function toggleLineDetail(sku,grid){"):HTML.index("function redrawLineGrids(){")]
+        self.assertIn("workspaceState.selectedGrid=open?null:grid", renderer)
+        for grid, columns in (("qualityRows", 10), ("classificationRows", 9), ("routingRows", 9), ("openItemRows", 8)):
+            with self.subTest(grid=grid):
+                self.assertIn(f"${{detailRow(item.sku,{columns},'{grid}')}}", HTML)
+
+    def test_every_grid_that_lists_a_line_opens_it_the_same_way(self):
+        for grid in ("qualityRows", "classificationRows", "routingRows", "openItemRows"):
+            with self.subTest(grid=grid):
+                self.assertIn(f"wireLineRows('{grid}')", HTML)
+        self.assertIn("event.key==='Enter'||event.key===' '", HTML)
+        self.assertIn("event.key==='Escape')closeLineDetail()", HTML)
+
+    def test_the_history_never_reaches_the_manifest(self):
+        """It is client data. The bundle holds client data and the manifest does not."""
+        manifest = (APP / "run_manifest.py").read_text(encoding="utf-8")
+        bundle = (APP / "run_bundle.py").read_text(encoding="utf-8")
+        for source in (manifest, bundle):
+            self.assertNotIn("_demand_history", source)
+            self.assertNotIn('"history"', source)
 
 
 class OpenItemsMembershipTests(unittest.TestCase):

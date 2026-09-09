@@ -246,6 +246,32 @@ def _series_from_validation(validation) -> DemandSeries:
     )
 
 
+def _demand_history(validation) -> dict[str, dict[str, list]]:
+    """The demand history each line was assessed on, for the interface only.
+
+    Story 2.10.1. The second planner asked to see the history behind a named
+    line and could not, because no per-line history ever reached the screen.
+    It is client data, so it travels in the response body and never into the
+    run manifest. It is not written to the run bundle either: the bundle's
+    shape is versioned and sealed, and the history proves nothing about a run
+    that the recorded metrics do not already prove.
+
+    Every supplied period is returned as supplied. Nothing is filled, ordered
+    away or corrected here, because the picture on the row has to be the same
+    history the quality stage read.
+    """
+    grouped: dict[str, list[tuple[str, float]]] = {}
+    for row in validation.normalised_rows:
+        if row.get("demand") is None:
+            continue
+        grouped.setdefault(str(row["sku"]), []).append((str(row["date"]), float(row["demand"])))
+    history: dict[str, dict[str, list]] = {}
+    for sku, points in grouped.items():
+        points.sort(key=lambda point: point[0])
+        history[sku] = {"periods": [period for period, _ in points], "demand": [value for _, value in points]}
+    return history
+
+
 def _all_series_from_validation(validation) -> list[DemandSeries]:
     grouped: dict[str, list[dict]] = {}
     for row in validation.normalised_rows:
@@ -477,6 +503,7 @@ async def quality_upload(
         "quality": quality_payload,
         "classification_result": classification_payload,
         "routing_result": routing_payload,
+        "history": _demand_history(validation),
         "manifest": manifest,
         "bundle": bundle,
     }
