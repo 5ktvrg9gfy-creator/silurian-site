@@ -264,20 +264,19 @@ def _action(decision: str, item: dict[str, Any], findings: list[dict[str, Any]],
     non_zero = int(item["non_zero_periods"])
     if decision == "model_eligible":
         return (
-            "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the "
-            "accuracy work in sprint 3."
+            "Nothing to decide. This line goes into the forecast comparison on the history you supplied."
         )
     if decision == "model_eligible_wide_interval":
         return (
-            f"{non_zero} of {present} periods carry demand, so forecast the range rather than the number. "
-            "Size the buffer from the spread and the service level you have promised, and expect the monthly "
-            "figure to be wrong in both directions. Chasing the average here adds work and no accuracy."
+            f"{non_zero} of {present} periods carry demand and the size swings widely, so the forecast number "
+            "comes with a wide range around it. Use that range to review whether your stock buffer is adequate "
+            "for your lead time and service target."
         )
     if decision == "intermittent_methods":
         return (
             f"{non_zero} of {present} periods carried demand, so this is an order-cycle conversation. Ask the customer how "
-            "they actually order, then decide whether a min-max, a call-off schedule or a consignment arrangement fits "
-            "better than a monthly forecast."
+            "they actually order, then look at whether a min-max, a call-off schedule or a consignment arrangement "
+            "matches what they tell you."
         )
     if decision == "policy_only":
         return (
@@ -321,8 +320,8 @@ def _action(decision: str, item: dict[str, Any], findings: list[dict[str, Any]],
     trailing = _metric(findings, DISCONTINUED_CODE, "trailing_periods")
     lead = f"{trailing} periods without demand is a status question for the business" if trailing is not None else "This is a status question for the business"
     return (
-        f"{lead}: ask whether this line is finished. If it is, take it out of the master data and the stock "
-        "holding as well, which is usually where the money is."
+        f"{lead}: ask whether this line is finished. If it is, check what it still holds in master data and in "
+        "stock before anyone acts on the answer."
     )
 
 

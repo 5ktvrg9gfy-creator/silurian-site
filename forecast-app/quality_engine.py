@@ -225,6 +225,16 @@ def _level_shift(rows: list[dict[str, Any]], thresholds: dict[str, Any]) -> tupl
     return str(rows[split]["date"]), ratio
 
 
+def _period_noun(grain: str, count: int) -> str:
+    """Story 2.10.5. A planner says months, not periods.
+
+    The grain is already inferred by this stage, so the finding can use the
+    word the reader would use rather than the word the model uses.
+    """
+    singular = {"month": "month", "week": "week", "day": "day"}.get(grain, "period")
+    return singular if count == 1 else f"{singular}s"
+
+
 def _finding(code: str, sku: str, detail: str, implication: str, action: str, *, periods: Iterable[str] = (), metric: dict[str, Any] | None = None) -> QualityFinding:
     return QualityFinding(code, "sku", detail, implication, action, sku, tuple(periods), metric or {})
 
@@ -294,12 +304,12 @@ def assess_quality(validation: ValidationResult, options: QualityOptions) -> Qua
             findings_by_sku[sku].append(_finding("SUSPECT_ZERO", sku, f"Recorded zero demand appears inside an otherwise continuous series.", "The zero may represent a stockout or missed posting and may understate true demand.", "Check stock availability and source postings for the affected period.", periods=periods, metric={"zero_share_pct": round(zero_share, 4), "adi": round(adi, 6)}))
         outliers = _outlier_periods(values, thresholds)
         if outliers:
+            noun = _period_noun(grain, len(outliers))
             outlier_detail = (
-                "1 period is a robust outlier candidate."
-                if len(outliers) == 1
-                else f"{len(outliers)} periods are robust outlier candidates."
+                f"{len(outliers)} {noun} {'has' if len(outliers) == 1 else 'have'} unusual demand. "
+                "No values have been removed or corrected."
             )
-            findings_by_sku[sku].append(_finding("OUTLIER_CANDIDATE", sku, outlier_detail, "A promotion, tender, stock build or data error may have changed the observed demand.", "Review the affected periods. No values have been removed or corrected.", periods=outliers, metric={"method": "modified_z_with_seasonal_adjustment"}))
+            findings_by_sku[sku].append(_finding("OUTLIER_CANDIDATE", sku, outlier_detail, "A promotion, tender, stock build or data error may have changed the observed demand.", f"Check the {len(outliers)} flagged {noun} with the account owner before changing the forecast.", periods=outliers, metric={"method": "modified_z_with_seasonal_adjustment"}))
         shift = None if metrics_by_sku[sku]["coverage_pct"] < thresholds["sparse_coverage_pct"] else _level_shift(values, thresholds)
         if shift:
             shift_period, ratio = shift

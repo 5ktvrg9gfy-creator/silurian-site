@@ -65,6 +65,29 @@ All seven lines appear on one list, grouped under two headings:
 
 ---
 
+## 2.10.5 Advice Assay can stand behind
+
+**Added by the product owner on 9 September 2026, reviewing the preview of 2.10.2.** The in-place glosses are good. The "Do this" advice is not, and the reason is structural rather than four bad sentences.
+
+**The rule.** Assay reports what the data shows. Where it tells a planner to act, it may only tell them to look at something or ask someone. It may never tell them to change a number, because it does not know their lead time, service target or costs. Anything that fails this test comes out.
+
+**Four specific failures, in the product owner's words:**
+
+- "6 periods are robust outlier candidates" is analyst language. He would understand "Six months have unusual demand and need checking".
+- "Forecast the range rather than the number" leaves him without a number, and he still needs one for the supply plan. The range is for assessing stock risk around that number, not a replacement for it.
+- "Size the buffer from the spread" skips lead time and service target, neither of which Assay has.
+- "Chasing the average here adds work and no accuracy" is a claim about the accuracy of a forecast Assay has not run. It cannot be supported.
+
+**His replacement for the "Do this" block, which passes the rule:**
+
+> Check the six flagged months with the account owner before changing the forecast. Use the forecast range to review whether your stock buffer is adequate for your lead time and service target.
+
+**Scope.** Sweep every other "Do this" and advice string in the app against the rule, not only the ones listed. Report how many were found and how many were changed.
+
+**What works and must not be lost:** "How much order sizes vary when demand does arrive", "A promotion, tender, stock build or data error may have changed the observed demand", and the So what line "Demand is frequent but order size varies materially". The ADI gloss is a definition but a useful one, leave it.
+
+---
+
 ## Standing rules for this band
 
 - **Every story records its own evidence.** CLAUDE.md section 6. Do not carry evidence across from 2.7.

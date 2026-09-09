@@ -20,8 +20,8 @@
     },
     "integrity": {
       "chain_verified": true,
-      "content_fingerprint_sha256": "97bede0b716b1b16de8e4801750d6362ad3a2675613b4b2ba343a078264050d7",
-      "manifest_sha256": "8d0b413b7b3df4a8a6875ff9dbd3bbb5b787cde68cc621e399db73f3a919ba06"
+      "content_fingerprint_sha256": "8212d723a5ebf6aecef4a39c0fb1126f2eef9914a0b34c1fe3b13ce0c25b3107",
+      "manifest_sha256": "8bd753ed2cf6d21191f21fcf6e0d3d733f0de67ff42349e2a61420b2662ca5e9"
     },
     "reproducibility": {
       "deterministic_stages": [
@@ -164,7 +164,7 @@
         },
         "output_ref": {
           "series": 12,
-          "sha256": "56650e2a2b1c806cba6ad8fb2e9af1b7281fbc670f4596c9f35be2b5cf80e16e",
+          "sha256": "e025fbed00fc10b07aa9cbe30a804270a9f73e7b3d8287b074ff5f5c4ab063b6",
           "type": "quality_result"
         },
         "stage": "quality",
@@ -177,7 +177,7 @@
         "engine_version": "1.0.0",
         "input_ref": {
           "series": 12,
-          "sha256": "56650e2a2b1c806cba6ad8fb2e9af1b7281fbc670f4596c9f35be2b5cf80e16e",
+          "sha256": "e025fbed00fc10b07aa9cbe30a804270a9f73e7b3d8287b074ff5f5c4ab063b6",
           "type": "quality_result"
         },
         "options": {
@@ -311,7 +311,7 @@
         },
         "output_ref": {
           "series": 12,
-          "sha256": "1f4f7a9f788fbfb27235445ddd931b9c732bdaf79d1b8b39bde7f30829852f64",
+          "sha256": "b083a84382219906c2416bfb3a4ae72935f2f0d1c87f36afa04b6965b248b696",
           "type": "routing_result"
         },
         "stage": "routing",
@@ -755,9 +755,9 @@
           "band": "caveated",
           "findings": [
             {
-              "action": "Review the affected periods. No values have been removed or corrected.",
+              "action": "Check the 2 flagged months with the account owner before changing the forecast.",
               "code": "OUTLIER_CANDIDATE",
-              "detail": "2 periods are robust outlier candidates.",
+              "detail": "2 months have unusual demand. No values have been removed or corrected.",
               "implication": "A promotion, tender, stock build or data error may have changed the observed demand.",
               "metric": {
                 "method": "modified_z_with_seasonal_adjustment"
@@ -886,9 +886,9 @@
           "sku": "PKG-40005"
         },
         {
-          "action": "Review the affected periods. No values have been removed or corrected.",
+          "action": "Check the 2 flagged months with the account owner before changing the forecast.",
           "code": "OUTLIER_CANDIDATE",
-          "detail": "2 periods are robust outlier candidates.",
+          "detail": "2 months have unusual demand. No values have been removed or corrected.",
           "implication": "A promotion, tender, stock build or data error may have changed the observed demand.",
           "metric": {
             "method": "modified_z_with_seasonal_adjustment"
@@ -1237,9 +1237,9 @@
           "cv_squared_nonzero": 1.177025,
           "findings": [
             {
-              "action": "Review the affected periods. No values have been removed or corrected.",
+              "action": "Check the 2 flagged months with the account owner before changing the forecast.",
               "code": "OUTLIER_CANDIDATE",
-              "detail": "2 periods are robust outlier candidates.",
+              "detail": "2 months have unusual demand. No values have been removed or corrected.",
               "implication": "A promotion, tender, stock build or data error may have changed the observed demand.",
               "metric": {
                 "method": "modified_z_with_seasonal_adjustment"
@@ -1432,7 +1432,7 @@
       "per_sku": {
         "PKG-10432": {
           "abc_volume_class": "A",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [],
           "decided_by": "class table, rule 3",
           "decision": "model_eligible",
@@ -1457,7 +1457,7 @@
         },
         "PKG-10518": {
           "abc_volume_class": "B",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [],
           "decided_by": "class table, rule 3",
           "decision": "model_eligible",
@@ -1482,7 +1482,7 @@
         },
         "PKG-20077": {
           "abc_volume_class": "A",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [],
           "decided_by": "class table, rule 3",
           "decision": "model_eligible",
@@ -1507,7 +1507,7 @@
         },
         "PKG-30219": {
           "abc_volume_class": "C",
-          "action": "11 of 35 periods carried demand, so this is an order-cycle conversation. Ask the customer how they actually order, then decide whether a min-max, a call-off schedule or a consignment arrangement fits better than a monthly forecast.",
+          "action": "11 of 35 periods carried demand, so this is an order-cycle conversation. Ask the customer how they actually order, then look at whether a min-max, a call-off schedule or a consignment arrangement matches what they tell you.",
           "caveat_codes_shown": [],
           "decided_by": "class table, rule 3",
           "decision": "intermittent_methods",
@@ -1612,7 +1612,7 @@
         },
         "PKG-40002": {
           "abc_volume_class": "B",
-          "action": "9 periods without demand is a status question for the business: ask whether this line is finished. If it is, take it out of the master data and the stock holding as well, which is usually where the money is.",
+          "action": "9 periods without demand is a status question for the business: ask whether this line is finished. If it is, check what it still holds in master data and in stock before anyone acts on the answer.",
           "caveat_codes_shown": [
             "SERIES_DISCONTINUED"
           ],
@@ -1654,7 +1654,7 @@
         },
         "PKG-40003": {
           "abc_volume_class": "B",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [
             "GAP_BLOCK"
           ],
@@ -1683,7 +1683,7 @@
         },
         "PKG-40004": {
           "abc_volume_class": "C",
-          "action": "35 of 35 periods carry demand, so forecast the range rather than the number. Size the buffer from the spread and the service level you have promised, and expect the monthly figure to be wrong in both directions. Chasing the average here adds work and no accuracy.",
+          "action": "35 of 35 periods carry demand and the size swings widely, so the forecast number comes with a wide range around it. Use that range to review whether your stock buffer is adequate for your lead time and service target.",
           "caveat_codes_shown": [
             "OUTLIER_CANDIDATE"
           ],
@@ -1712,7 +1712,7 @@
         },
         "PKG-40005": {
           "abc_volume_class": "C",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [
             "SERIES_STALE"
           ],
@@ -1741,7 +1741,7 @@
         },
         "PKG-40006": {
           "abc_volume_class": "C",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [],
           "decided_by": "class table, rule 3",
           "decision": "model_eligible",
@@ -1768,7 +1768,7 @@
         },
         "PKG-40007": {
           "abc_volume_class": "C",
-          "action": "Nothing to decide. This line goes into the forecast comparison, and what it is worth comes from the accuracy work in sprint 3.",
+          "action": "Nothing to decide. This line goes into the forecast comparison on the history you supplied.",
           "caveat_codes_shown": [
             "HISTORY_TOO_SHORT"
           ],
@@ -2060,8 +2060,8 @@
     }
   },
   "integrity": {
-    "bundle_sha256": "42f5839a6b1c05fa72e1f801c8164e8c4942c1f0c9bc23b5f1cd8c6196e57de5",
-    "manifest_sha256": "8d0b413b7b3df4a8a6875ff9dbd3bbb5b787cde68cc621e399db73f3a919ba06",
-    "content_fingerprint_sha256": "97bede0b716b1b16de8e4801750d6362ad3a2675613b4b2ba343a078264050d7"
+    "bundle_sha256": "8ad406df33e6255d12b70a33500d89ea43bc9dbd84e4759e8e2aeb3b951b6273",
+    "manifest_sha256": "8bd753ed2cf6d21191f21fcf6e0d3d733f0de67ff42349e2a61420b2662ca5e9",
+    "content_fingerprint_sha256": "8212d723a5ebf6aecef4a39c0fb1126f2eef9914a0b34c1fe3b13ce0c25b3107"
   }
 }
