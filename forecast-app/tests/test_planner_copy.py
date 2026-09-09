@@ -133,8 +133,8 @@ class LineDetailInPlaceTests(unittest.TestCase):
 
     def test_the_history_is_drawn_on_the_row_with_nothing_to_open(self):
         """What the second planner asked for, visible before any interaction."""
-        self.assertEqual(HTML.count("<th>Demand history</th>"), 4)
-        self.assertEqual(HTML.count("${sparkline(item.sku)}"), 4)
+        self.assertEqual(HTML.count("<th>Demand history</th>"), 5)
+        self.assertEqual(HTML.count("${sparkline(item.sku)}"), 5)
         renderer = HTML[HTML.index("function sparkline(sku){"):HTML.index("function historyReading(sku){")]
         self.assertIn("latestHistory?.[sku]", renderer)
         self.assertIn('class="spark"', renderer)
@@ -166,12 +166,12 @@ class LineDetailInPlaceTests(unittest.TestCase):
         """Four copies of the detail would be four copies of the resolution form."""
         renderer = HTML[HTML.index("function toggleLineDetail(sku,grid){"):HTML.index("function redrawLineGrids(){")]
         self.assertIn("workspaceState.selectedGrid=open?null:grid", renderer)
-        for grid, columns in (("qualityRows", 10), ("classificationRows", 9), ("routingRows", 9), ("openItemRows", 8)):
+        for grid, columns in (("qualityRows", 10), ("classificationRows", 9), ("routingRows", 9), ("openItemRows", 8), ("commercialRows", 6)):
             with self.subTest(grid=grid):
                 self.assertIn(f"${{detailRow(item.sku,{columns},'{grid}')}}", HTML)
 
     def test_every_grid_that_lists_a_line_opens_it_the_same_way(self):
-        for grid in ("qualityRows", "classificationRows", "routingRows", "openItemRows"):
+        for grid in ("qualityRows", "classificationRows", "routingRows", "openItemRows", "commercialRows"):
             with self.subTest(grid=grid):
                 self.assertIn(f"wireLineRows('{grid}')", HTML)
         self.assertIn("event.key==='Enter'||event.key===' '", HTML)
@@ -190,9 +190,15 @@ class OpenItemsMembershipTests(unittest.TestCase):
     """2.7.4. Five lines were open and the reason those five was invisible."""
 
     def test_the_rule_is_stated_where_the_list_is(self):
+        """2.7.4 stated the rule by saying what was absent. 2.10.4 put the
+        absent lines on the same screen, so the rule is now stated by the two
+        headings and by what each section says an answer can and cannot do."""
         renderer = HTML[HTML.index("function renderOpenItems(){"):HTML.index("function renderForecastEmpty(){")]
-        self.assertIn("These lines are waiting on an answer from you.", renderer)
-        self.assertIn("Lines that need a commercial decision rather than a data answer are not listed here.", renderer)
+        self.assertIn("Waiting on an answer from you", renderer)
+        self.assertIn("Need a commercial decision rather than a forecast", renderer)
+        self.assertIn("An answer from you can move one of these to forecastable.", renderer)
+        self.assertIn("No answer moves one of these to forecastable.", renderer)
+        self.assertNotIn("are not listed here", renderer)
 
     def test_a_policy_only_line_is_ineligible_and_carries_no_refusal(self):
         """Which is why it is absent from the list, and why the sentence is needed."""
@@ -278,7 +284,7 @@ class TermsExplainThemselvesTests(unittest.TestCase):
     def test_volume_share_explains_itself_on_every_grid_that_ranks_by_it(self):
         """Term seven, under the column heading that carries the figure."""
         self.assertEqual(HTML.count('<span class="gloss" data-gloss="volume_share"></span>'), 1)
-        self.assertEqual(HTML.count("${gloss('volume share')}"), 3)
+        self.assertEqual(HTML.count("${gloss('volume share')}"), 4)
 
     def test_every_gloss_is_filled_after_every_render(self):
         """An empty placeholder is worse than none, so nothing renders without it."""
@@ -359,6 +365,108 @@ class BandScopeTests(unittest.TestCase):
         ):
             with self.subTest(label=bare):
                 self.assertNotIn(bare, HTML)
+
+
+class OneListTwoSectionsTests(unittest.TestCase):
+    """2.10.4. A product owner decision, not a defect. Two planners reached it.
+
+    All seven lines that are not forecast eligible appear on one screen under
+    two headings. The distinction stays because it is real: an answer from you
+    can move a refused line to forecastable, and nothing moves a policy only
+    line, because no method will predict it.
+    """
+
+    def setUp(self):
+        self.renderer = HTML[HTML.index("function renderOpenItems(){"):HTML.index("function renderForecastEmpty(){")]
+
+    def test_the_panel_itself_stops_describing_only_half_of_what_it_holds(self):
+        """A panel headed "what is waiting on you" would be wrong about the
+        second section, whose lines are waiting on nothing."""
+        heading = panel_heading("openitems")
+        self.assertIn("What needs a decision from you?", heading)
+        self.assertNotIn("What is waiting on you?", HTML)
+        self.assertNotIn("cannot move until you answer something", HTML)
+
+    def test_both_headings_are_present_and_in_the_brief_s_words(self):
+        self.assertIn(">Waiting on an answer from you</h3>", self.renderer)
+        self.assertIn(">Need a commercial decision rather than a forecast</h3>", self.renderer)
+
+    def test_the_second_section_holds_the_lines_that_used_to_be_absent(self):
+        """Policy only lines were ineligible, carried no refusal and were listed nowhere."""
+        selector = HTML[HTML.index("function commercialItems(){"):HTML.index("function commercialVolumeShareFigure(")]
+        self.assertIn("line.decision==='policy_only'", selector)
+        self.assertFalse(DECISIONS["policy_only"])
+        self.assertIn('<tbody id="commercialRows">', self.renderer)
+
+    def test_neither_section_invents_an_order(self):
+        """The routing stage ranked these lines. The panel places them, it does
+        not rank them, which is why there is no comparator anywhere here."""
+        selector = HTML[HTML.index("function commercialItems(){"):HTML.index("function commercialVolumeShareFigure(")]
+        self.assertIn("ranked[line.rank_by_volume]", selector)
+        self.assertNotIn("sort(", selector)
+        self.assertNotIn("volume_share_pct", selector)
+        self.assertIn("portfolio.open_items", self.renderer)
+
+    def test_every_total_belongs_to_a_heading_and_none_is_combined(self):
+        self.assertEqual(self.renderer.count('<td class="open-items-total">'), 2)
+        self.assertIn("${openVolumeShareFigure(portfolio)} percent", self.renderer)
+        self.assertIn("${commercialVolumeShareFigure(portfolio)} percent", self.renderer)
+        self.assertIn("There is no combined figure", self.renderer)
+
+    def test_each_total_is_the_engine_s_own_figure_for_that_section(self):
+        """Neither is re-derived by summing line figures already rounded, which
+        is story 2.7.9 and still holds for both sections."""
+        formatter = HTML[HTML.index("function commercialVolumeShareFigure(portfolio){"):]
+        formatter = formatter[:formatter.index("\n")]
+        self.assertIn("portfolio.volume_share_by_decision_pct.policy_only.toFixed(2)", formatter)
+        self.assertNotIn("reduce(", formatter)
+        self.assertNotIn("open_items", formatter)
+
+    def test_the_distinction_says_what_an_answer_can_and_cannot_do(self):
+        """The reason the two sections are not merged, stated where they are."""
+        self.assertIn("An answer from you can move one of these to forecastable.", self.renderer)
+        self.assertIn("No answer moves one of these to forecastable.", self.renderer)
+        self.assertIn("No method will predict them", self.renderer)
+
+    def test_absence_is_a_result_in_both_sections(self):
+        """CLAUDE.md section 8. An empty section names what was eligible and why."""
+        self.assertIn("Nothing is waiting on you.", self.renderer)
+        self.assertIn("No line here needs a commercial decision.", self.renderer)
+        self.assertIn("No line in this run was refused.", self.renderer)
+
+    def test_a_term_inside_a_row_opens_the_line_rather_than_the_glossary(self):
+        """Found by browser testing on this section, and true of every grid.
+
+        A term inside a line row sent the reader to the glossary panel instead
+        of opening the line, which undoes story 2.10.1 on any cell carrying
+        one. Since 2.10.2 that term already explains itself in place, so the
+        jump costs the reader their place and buys nothing. Outside a row a
+        term still opens the glossary.
+        """
+        self.assertIn("if(!button||button.closest('tr[data-sku]'))return;showWorkspacePanel('glossary')", HTML)
+        wiring = HTML[HTML.index("function wireLineRows(id){"):HTML.index("function wireLineDetail(id){")]
+        self.assertIn("if(event.target!==row)return;", wiring)
+
+    def test_a_term_on_an_orange_field_never_turns_orange(self):
+        """Found by browser testing on this panel.
+
+        A term paints itself accent on hover and focus, and the two labels that
+        use accent as a field then printed accent on accent, so the decision
+        disappeared exactly when the reader pointed at it. Section 9: orange is
+        a mark or a field, never both at once.
+        """
+        self.assertIn(
+            ".decision-label.ineligible .term:hover,.decision-label.ineligible .term:focus,"
+            ".band-label.not_usable .term:hover,.band-label.not_usable .term:focus"
+            "{color:var(--ink-deep);border-bottom-color:var(--ink-deep)}",
+            HTML,
+        )
+
+    def test_a_commercial_line_opens_its_detail_like_any_other(self):
+        """Story 2.10.1 holds on the new section rather than stopping at it."""
+        self.assertIn("${sparkline(item.sku)}", self.renderer)
+        self.assertIn("${detailRow(item.sku,6,'commercialRows')}", self.renderer)
+        self.assertIn("wireLineRows('commercialRows')", self.renderer)
 
 
 class PanelPurposeTests(unittest.TestCase):

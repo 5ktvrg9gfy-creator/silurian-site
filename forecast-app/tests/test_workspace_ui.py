@@ -149,11 +149,11 @@ class WorkspaceUiTests(unittest.TestCase):
         renderer = HTML[start:end]
         self.assertIn("portfolio.open_items", renderer)
         self.assertIn("of your volume", renderer)
-        self.assertIn("waiting on you", renderer)
-        self.assertIn("Every refusal is resolved.", renderer)
-        self.assertIn("The last was resolved at ${esc(timeCopy(portfolio.last_resolved_at))}", renderer)
-        self.assertIn("<th>Rank</th>", renderer)
+        self.assertIn("Nothing is waiting on you.", renderer)
+        self.assertIn("The last refusal was resolved at ${esc(timeCopy(portfolio.last_resolved_at))}", renderer)
+        self.assertEqual(renderer.count("<th>Rank</th>"), 2)
         self.assertIn("<th>Resolution options</th>", renderer)
+        # Neither section orders or totals anything the routing stage owns.
         self.assertNotIn("sort(", renderer)
         self.assertNotIn("qualityRows", renderer)
         self.assertNotIn("routingRows", renderer)

@@ -150,6 +150,14 @@ class TheRoundingSentenceTests(unittest.TestCase):
         start = HTML.index("function renderOpenItems(){")
         self.renderer = HTML[start:HTML.index("function renderForecastEmpty()", start)]
 
+    def test_the_two_totals_are_never_added_into_one(self):
+        """The brief: every total belongs to a heading, and no combined figure."""
+        self.assertIn("There is no combined figure", self.renderer)
+        self.assertNotIn("+portfolio.volume_share_by_decision_pct", HTML)
+        self.assertNotIn("open_volume_share_pct+", HTML)
+        # Each section reads its own engine owned field and formats it once.
+        self.assertEqual(len(re.findall(r"volume_share_by_decision_pct\.policy_only\.toFixed\(", HTML)), 1)
+
     def test_the_panel_says_the_line_figures_may_not_sum_to_the_total(self):
         self.assertIn(
             "Line figures are rounded to two decimal places and may not sum exactly to the total.",
@@ -163,10 +171,13 @@ class TheRoundingSentenceTests(unittest.TestCase):
             with self.subTest(word=word):
                 self.assertNotIn(word, sentence.lower())
 
-    def test_the_foot_total_is_a_table_foot_and_is_labelled(self):
-        self.assertIn("<tfoot>", self.renderer)
-        self.assertIn('scope="row">Total</th>', self.renderer)
-        self.assertIn('scope="row"', self.renderer)
+    def test_every_total_is_a_table_foot_that_names_the_section_it_belongs_to(self):
+        """Story 2.10.4 split the panel in two. A total that did not name its
+        section would be the combined figure that story refuses."""
+        self.assertEqual(self.renderer.count("<tfoot>"), 2)
+        self.assertIn('scope="row">Total waiting on an answer</th>', self.renderer)
+        self.assertIn('scope="row">Total needing a commercial decision</th>', self.renderer)
+        self.assertNotIn('scope="row">Total</th>', self.renderer)
         self.assertLess(self.renderer.index("</tbody>"), self.renderer.index("<tfoot>"))
 
     def test_the_foot_row_carries_the_two_pixel_seam(self):
