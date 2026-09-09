@@ -11,6 +11,7 @@ import re
 import unittest
 from pathlib import Path
 
+from glossary import ENTRIES, by_slug
 from routing_engine import DECISIONS
 
 
@@ -197,6 +198,95 @@ class OpenItemsMembershipTests(unittest.TestCase):
         """Which is why it is absent from the list, and why the sentence is needed."""
         self.assertFalse(DECISIONS["policy_only"])
         self.assertIn('"policy_only": False', ROUTING)
+
+
+class TermsExplainThemselvesTests(unittest.TestCase):
+    """2.10.2. Seven terms were still unread after the glossary shipped.
+
+    The 2.7.5 test proved coverage, not comprehension. A reference a planner
+    does not open is not an explanation, so each of the seven now says what it
+    means where it appears, drawn from the one file that already holds the
+    words. Nothing here is a link and nothing sends the reader to another page.
+    """
+
+    def test_the_gloss_is_a_placeholder_and_never_a_second_copy(self):
+        """One source. The interface carries slugs, the glossary carries words."""
+        renderer = HTML[HTML.index("function gloss(lookup){"):HTML.index("function glossaryMarkup()")]
+        self.assertIn('<span class="gloss" data-gloss="${esc(termSlug(lookup))}"></span>', renderer)
+        self.assertIn("glossary.bySlug[node.dataset.gloss]", renderer)
+        self.assertIn("node.textContent=entry?entry.plain:''", renderer)
+        for entry in ENTRIES:
+            with self.subTest(term=entry["term"]):
+                self.assertNotIn(entry["plain"], HTML)
+
+    def test_the_gloss_is_read_in_place_and_is_not_a_link(self):
+        style = HTML[HTML.index(".gloss{"):HTML.index("}", HTML.index(".gloss{"))]
+        self.assertIn("display:block", style)
+        self.assertIn("text-transform:none", style)
+        renderer = HTML[HTML.index("function gloss(lookup){"):HTML.index("function glossaryMarkup()")]
+        self.assertNotIn("<a ", renderer)
+        self.assertNotIn("showWorkspacePanel", renderer)
+        self.assertNotIn("href", renderer)
+
+    def test_accept_explains_itself_beside_the_band_it_sits_next_to(self):
+        """Term one. The planner read ACCEPT beside NOT USABLE DATA."""
+        self.assertIn('<span id="verdictGloss" class="gloss" data-gloss=""></span>', HTML)
+        self.assertIn("document.getElementById('verdictGloss').dataset.gloss=verdict?termSlug(verdict):''", HTML)
+        defined = by_slug()
+        for verdict in ("accept", "accept_with_warnings", "reject"):
+            with self.subTest(verdict=verdict):
+                self.assertIn(verdict, defined)
+        # A file verdict is defined as one, so it cannot be read as a line verdict.
+        self.assertIn("file could be read", defined["accept"]["plain"])
+
+    def test_the_band_pill_is_left_to_the_story_that_owns_its_scope(self):
+        """Every band is defined for a line and that pill labels the portfolio.
+
+        Attaching the line definition to it would say something false. Saying
+        what that label applies to is story 2.10.3.
+        """
+        self.assertNotIn('id="bandGloss"', HTML)
+        self.assertIn("This line's history", by_slug()["not_usable"]["plain"])
+
+    def test_the_two_decisions_that_failed_explain_themselves_where_they_are(self):
+        """Terms two and six, the two the product sells."""
+        split = HTML[HTML.index("const split=decisions.filter("):HTML.index("const chips=[")]
+        self.assertIn("${gloss(name)}", split)
+        detail = HTML[HTML.index("function lineDetailMarkup(sku){"):HTML.index("function detailRow(")]
+        self.assertIn("${gloss(routing.decision)}", detail)
+        defined = by_slug()
+        self.assertIn("range rather than the single number", defined["model_eligible_wide_interval"]["plain"])
+        self.assertIn("commercial arrangement rather than a number", defined["policy_only"]["plain"])
+
+    def test_adi_and_cv_squared_explain_themselves_beside_their_own_figures(self):
+        """Terms three and four, read next to the number rather than in a list."""
+        detail = HTML[HTML.index("function lineDetailMarkup(sku){"):HTML.index("function detailRow(")]
+        self.assertIn("${gloss('ADI')}", detail)
+        self.assertIn("${gloss('CV squared')}", detail)
+
+    def test_croston_family_is_explained_under_the_reason_that_names_it(self):
+        """Term five. The reason is engine copy pinned by expected_routing.json."""
+        renderer = HTML[HTML.index("function methodGloss(reason){"):HTML.index("function gloss(lookup){")]
+        self.assertIn("/Croston family/.test", renderer)
+        self.assertIn("gloss('Croston family')", renderer)
+        detail = HTML[HTML.index("function lineDetailMarkup(sku){"):HTML.index("function detailRow(")]
+        self.assertIn("${methodGloss(routing.reason)}", detail)
+        self.assertIn("croston_family", by_slug())
+        self.assertIn("Croston family", ROUTING)
+
+    def test_volume_share_explains_itself_on_every_grid_that_ranks_by_it(self):
+        """Term seven, under the column heading that carries the figure."""
+        self.assertEqual(HTML.count('<span class="gloss" data-gloss="volume_share"></span>'), 1)
+        self.assertEqual(HTML.count("${gloss('volume share')}"), 3)
+
+    def test_every_gloss_is_filled_after_every_render(self):
+        """An empty placeholder is worse than none, so nothing renders without it."""
+        for site in ("function renderGlossary(){", "function wireLineRows(id){"):
+            with self.subTest(site=site):
+                block = HTML[HTML.index(site):HTML.index("\n}", HTML.index(site))]
+                self.assertIn("renderGlosses()", block)
+        self.assertIn("renderForecastEmpty();updateRunReadiness();renderGlosses();", HTML)
+        self.assertIn(".gloss:empty{display:none}", HTML)
 
 
 class PanelPurposeTests(unittest.TestCase):
