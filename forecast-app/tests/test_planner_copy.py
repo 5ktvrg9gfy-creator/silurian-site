@@ -239,14 +239,15 @@ class TermsExplainThemselvesTests(unittest.TestCase):
         # A file verdict is defined as one, so it cannot be read as a line verdict.
         self.assertIn("file could be read", defined["accept"]["plain"])
 
-    def test_the_band_pill_is_left_to_the_story_that_owns_its_scope(self):
-        """Every band is defined for a line and that pill labels the portfolio.
+    def test_the_band_pill_never_carries_the_line_definition(self):
+        """2.10.2 deferred this pill to 2.10.3 rather than say something false.
 
-        Attaching the line definition to it would say something false. Saying
-        what that label applies to is story 2.10.3.
+        2.10.3 gave it a definition of its own. What must never come back is the
+        line definition on the portfolio label.
         """
-        self.assertNotIn('id="bandGloss"', HTML)
         self.assertIn("This line's history", by_slug()["not_usable"]["plain"])
+        self.assertIn("document.getElementById('bandGloss').dataset.gloss=band?portfolioBandSlug(band):''", HTML)
+        self.assertNotIn("dataset.gloss=band?termSlug(band)", HTML)
 
     def test_the_two_decisions_that_failed_explain_themselves_where_they_are(self):
         """Terms two and six, the two the product sells."""
@@ -287,6 +288,77 @@ class TermsExplainThemselvesTests(unittest.TestCase):
                 self.assertIn("renderGlosses()", block)
         self.assertIn("renderForecastEmpty();updateRunReadiness();renderGlosses();", HTML)
         self.assertIn(".gloss:empty{display:none}", HTML)
+
+
+class BandScopeTests(unittest.TestCase):
+    """2.10.3. The planner could not tell whether not usable was about the file.
+
+    Story 2.7.1 was accepted on the count and failed on scope. The readiness
+    sentence answers how much is ready. It does not say what the band label is
+    about, and the same three words band one line and the whole portfolio.
+
+    Two things are required and both are tested here: the label says what it
+    applies to, and the label explains itself.
+    """
+
+    def test_a_portfolio_band_says_so_in_the_label(self):
+        renderer = HTML[HTML.index("function portfolioBandLabel(band){"):HTML.index("function updateRunReadiness(){")]
+        self.assertIn("`Portfolio: ${String(band).replaceAll('_',' ')}`", renderer)
+        # The bare label the planner read is gone from every render path.
+        self.assertNotIn("`${band.replaceAll('_',' ')} data`", HTML)
+        self.assertNotIn("${portfolio.band.replace('_',' ')} data quality", HTML)
+
+    def test_one_function_labels_every_portfolio_band_on_every_screen(self):
+        """The pill, the printed report and a reopened bundle cannot disagree."""
+        for site in (
+            "document.getElementById('contextBand').textContent=band?portfolioBandLabel(band):'Not assessed'",
+            "document.getElementById('qualityBand').textContent=portfolioBandLabel(portfolio.band)",
+            "${esc(portfolioBandLabel(quality.portfolio_band))}",
+        ):
+            with self.subTest(site=site):
+                self.assertIn(site, HTML)
+
+    def test_the_pill_explains_itself_and_not_only_its_scope(self):
+        """Both halves. A scoped label a reader still cannot read is half a fix."""
+        self.assertIn('<span id="bandGloss" class="gloss" data-gloss=""></span>', HTML)
+        self.assertIn("document.getElementById('bandGloss').dataset.gloss=band?portfolioBandSlug(band):''", HTML)
+        defined = by_slug()
+        for band in ("portfolio_clean", "portfolio_caveated", "portfolio_not_usable"):
+            with self.subTest(band=band):
+                self.assertIn(band, defined)
+
+    def test_every_portfolio_definition_names_its_scope_before_anything_else(self):
+        """The scope is the sentence the reader needs before the rest means anything."""
+        defined = by_slug()
+        for band in ("portfolio_clean", "portfolio_caveated", "portfolio_not_usable"):
+            with self.subTest(band=band):
+                plain = defined[band]["plain"]
+                self.assertTrue(
+                    plain.startswith("A verdict on the lines taken together, not on the file."),
+                    f"{band} does not open by saying what it applies to",
+                )
+
+    def test_the_printed_report_carries_the_scope_because_paper_cannot_hover(self):
+        self.assertIn('<p id="qualityBandScope" class="gloss" data-gloss=""></p>', HTML)
+        self.assertIn("document.getElementById('qualityBandScope').dataset.gloss=portfolioBandSlug(portfolio.band)", HTML)
+        self.assertLess(HTML.index('id="qualityBandScope"'), HTML.index('id="qualityScope"'))
+
+    def test_a_line_band_says_it_is_about_that_line(self):
+        """The contrast is what makes either label readable, so both are marked."""
+        self.assertIn('data-quality-sort="band">Band, this line</button>', HTML)
+        self.assertEqual(HTML.count("Quality band, this line</button>"), 2)
+        detail = HTML[HTML.index("function lineDetailMarkup(sku){"):HTML.index("function detailRow(")]
+        self.assertIn("""<p class="detail-sub">This line: ${term(item.band.replaceAll('_',' '))}""", detail)
+
+    def test_no_band_label_anywhere_is_left_without_a_scope(self):
+        """A bare band word on a label is the defect. Neither scope may reappear."""
+        for bare in (
+            ">Band</button>",
+            ">Quality band</button>",
+            "data quality`;",
+        ):
+            with self.subTest(label=bare):
+                self.assertNotIn(bare, HTML)
 
 
 class PanelPurposeTests(unittest.TestCase):
