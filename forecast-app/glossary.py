@@ -55,6 +55,25 @@ ENTRIES: tuple[dict[str, str], ...] = (
         "term": "Not usable",
         "plain": "This line's history cannot support a forecast in this run. Something has to change in the data before a number would mean anything.",
     },
+    # Portfolio bands. Story 2.10.3: the same three words label a line and the
+    # whole portfolio, and the planner could not tell which the screen meant.
+    # Each of these names its scope in its first sentence, because that is the
+    # sentence the reader needs before the rest of it means anything.
+    {
+        "group": "Portfolio band",
+        "term": "Portfolio clean",
+        "plain": "A verdict on the lines taken together, not on the file. Nothing was found on any line that should change what you do with this portfolio.",
+    },
+    {
+        "group": "Portfolio band",
+        "term": "Portfolio caveated",
+        "plain": "A verdict on the lines taken together, not on the file. Some of your volume sits on lines carrying a finding, so read the lines before you use the totals.",
+    },
+    {
+        "group": "Portfolio band",
+        "term": "Portfolio not usable",
+        "plain": "A verdict on the lines taken together, not on the file. Enough of your volume sits on lines that cannot support a forecast that the portfolio as a whole is not ready.",
+    },
     # Demand states.
     {
         "group": "Demand state",
