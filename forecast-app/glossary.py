@@ -115,7 +115,7 @@ ENTRIES: tuple[dict[str, str], ...] = (
     {
         "group": "Routing decision",
         "term": "Model eligible wide interval",
-        "plain": "This line can be forecast, but use the range rather than the single number. The range is the useful output.",
+        "plain": "This line can be forecast, and the number comes with a wide range around it. The number is still what you plan from, and the range shows how far it could move.",
     },
     {
         "group": "Routing decision",

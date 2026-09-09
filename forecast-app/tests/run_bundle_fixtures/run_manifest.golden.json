@@ -93,7 +93,7 @@
       },
       "output_ref": {
         "type": "quality_result",
-        "sha256": "56650e2a2b1c806cba6ad8fb2e9af1b7281fbc670f4596c9f35be2b5cf80e16e",
+        "sha256": "e025fbed00fc10b07aa9cbe30a804270a9f73e7b3d8287b074ff5f5c4ab063b6",
         "series": 12
       },
       "options": {
@@ -149,7 +149,7 @@
       "duration_ms": 1000,
       "input_ref": {
         "type": "quality_result",
-        "sha256": "56650e2a2b1c806cba6ad8fb2e9af1b7281fbc670f4596c9f35be2b5cf80e16e",
+        "sha256": "e025fbed00fc10b07aa9cbe30a804270a9f73e7b3d8287b074ff5f5c4ab063b6",
         "series": 12
       },
       "output_ref": {
@@ -220,7 +220,7 @@
       },
       "output_ref": {
         "type": "routing_result",
-        "sha256": "1f4f7a9f788fbfb27235445ddd931b9c732bdaf79d1b8b39bde7f30829852f64",
+        "sha256": "b083a84382219906c2416bfb3a4ae72935f2f0d1c87f36afa04b6965b248b696",
         "series": 12
       },
       "options": {
@@ -308,8 +308,8 @@
     "statement": "Validation, quality, classification and routing are bitwise reproducible."
   },
   "integrity": {
-    "manifest_sha256": "8d0b413b7b3df4a8a6875ff9dbd3bbb5b787cde68cc621e399db73f3a919ba06",
-    "content_fingerprint_sha256": "97bede0b716b1b16de8e4801750d6362ad3a2675613b4b2ba343a078264050d7",
+    "manifest_sha256": "8bd753ed2cf6d21191f21fcf6e0d3d733f0de67ff42349e2a61420b2662ca5e9",
+    "content_fingerprint_sha256": "8212d723a5ebf6aecef4a39c0fb1126f2eef9914a0b34c1fe3b13ce0c25b3107",
     "chain_verified": true
   }
 }

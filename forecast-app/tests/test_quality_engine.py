@@ -152,8 +152,14 @@ class QualityEngineTests(unittest.TestCase):
             for finding in item["findings"]
             if finding["code"] == "OUTLIER_CANDIDATE"
         )
-        self.assertEqual(mixed_detail, "2 periods are robust outlier candidates.")
-        self.assertEqual(shifted_detail, "1 period is a robust outlier candidate.")
+        self.assertEqual(
+            mixed_detail,
+            "2 months have unusual demand. No values have been removed or corrected.",
+        )
+        self.assertEqual(
+            shifted_detail,
+            "1 month has unusual demand. No values have been removed or corrected.",
+        )
 
 
 if __name__ == "__main__":

@@ -84,10 +84,21 @@ class ActionTextTests(unittest.TestCase):
     """2.7.2. The two texts the product sells, and both failed on a planner."""
 
     def test_the_wide_interval_action_names_the_action(self):
-        self.assertIn("forecast the range rather than the number", ROUTING)
-        self.assertIn("Size the buffer from the spread and the service level you have promised", ROUTING)
-        self.assertIn("wrong in both directions", ROUTING)
-        self.assertIn("Chasing the average here adds work and no accuracy.", ROUTING)
+        """Rewritten by story 2.10.5. 2.7.2 named an action Assay cannot stand
+        behind: it removed the number the planner plans from, sized a buffer
+        from a spread without the lead time or service target that sizing
+        needs, and claimed the accuracy of a forecast Assay has not run."""
+        self.assertIn("the size swings widely, so the forecast number", ROUTING)
+        self.assertIn("comes with a wide range around it.", ROUTING)
+        self.assertIn("Use that range to review whether your stock buffer is adequate", ROUTING)
+        self.assertIn("for your lead time and service target.", ROUTING)
+        for withdrawn in (
+            "forecast the range rather than the number",
+            "Size the buffer from the spread",
+            "Chasing the average here adds work and no accuracy",
+        ):
+            with self.subTest(withdrawn=withdrawn):
+                self.assertNotIn(withdrawn, ROUTING)
 
     def test_the_policy_only_action_offers_choices_and_a_first_step(self):
         self.assertIn("no forecasting method will predict this line", ROUTING)
@@ -262,7 +273,7 @@ class TermsExplainThemselvesTests(unittest.TestCase):
         detail = HTML[HTML.index("function lineDetailMarkup(sku){"):HTML.index("function detailRow(")]
         self.assertIn("${gloss(routing.decision)}", detail)
         defined = by_slug()
-        self.assertIn("range rather than the single number", defined["model_eligible_wide_interval"]["plain"])
+        self.assertIn("still what you plan from", defined["model_eligible_wide_interval"]["plain"])
         self.assertIn("commercial arrangement rather than a number", defined["policy_only"]["plain"])
 
     def test_adi_and_cv_squared_explain_themselves_beside_their_own_figures(self):
