@@ -1,11 +1,12 @@
 # Silurian project handoff
 
-Last updated: 6 September 2026
+Last updated: 10 September 2026
 
 This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
 ## Current position
 
+- **Band 2.10 is built, merged and live, 10 September 2026.** Five stories, five pull requests, merged into `main` in order as 95, 96, 97, 98 and 99, final merge commit `ce08c8c`. Production on the Forecast Diagnostic project is built from `ce08c8c`, Ready, served from `lhr1`. The suite is 263 tests and passes on `main`. **Four of the five stories were confirmed on the live site using the sample portfolio. The fifth needed fixture 31, because the sample portfolio provokes no outlier finding and so cannot reach story 2.10.5's copy at all.** That is recorded below as an open product question rather than a defect, with the engine run that evidences it. One control was changed deliberately and declared: the run bundle and run manifest goldens were regenerated because engine copy is engine output. The full record is in the band 2.10 section of this file and in `docs/evidence/`, one file per story.
 - Orphaned last line fixed on the `forecastability.html` closing statement, 7 September 2026: the product owner reported the statement's third line reading as an orphan. Measured on the shipped page at 1440: three lines of 560, 588 and 104px, the last 18 per cent of the longest. Fixed with `text-wrap: balance` on that statement alone, which gives 419, 430 and 403px, the shortest 94 per cent of the longest. Nothing the spec pinned moves: the step, the weight, the 34ch measure and the copy are unchanged. **The site record warns against `text-wrap: balance`, and that warning does not apply here.** It concerns the homepage headline, where the line is single at desktop so balancing does nothing, and where balancing a wrapped headline produced the orphan the design session rejected. On this statement it does the opposite, which was measured rather than assumed. Widening the measure was tried first and fixes 1440 only: at 768 the field is already narrower than the cap, so the orphan survives. At 390 and 320 the wrap is byte for byte what it was before, because balancing does not fire past a few lines. Nothing was made worse. **Raised separately, and accepted by the product owner rather than fixed:** at 320 the arrow of the sample analysis link sits alone on its own line, underlined, cut off from "first.". It is pre-existing and not caused by this change, and it is the same defect the build spec's own link rule prevents for the bridge link with `white-space: nowrap`, which the inline link in this statement does not carry. Reported with a screenshot on 7 September 2026 and accepted as it stands. The fix is a single declaration if it is ever wanted. Closed, not outstanding. The suite is 224 tests and passes.
 - Email badge added to the closing field on `forecastability.html`, 7 September 2026: the field told a reader to send a demand extract and gave them no way to send it, the only clickable thing in it going to the sample analysis instead. The statement drops its first clause and now reads "Get the assessment back on your own products. Or look at the sample analysis first.", and a single `mailto:` link sits below it carrying a 44px round white badge with a 20px envelope stroked in the accent, square caps, beside the label "Send a demand extract". Badge and label are one anchor, so the label is clickable. Address `hello@silurianconsulting.co.uk`. The badge's `border-radius: 50%` is the site's existing agreed exception for email and LinkedIn contact badges and must not be flattened. It is the only rounded corner on the page, confirmed by walking every element's computed style rather than by reading the CSS. One defect was introduced and caught by looking at the render: `.close a` gives every anchor in that field a 2px underline for the sample analysis link, and it outranks a bare `.mail-link`, so the badge arrived underlined against a spec that asks for none. Fixed by matching the specificity. **That is the second specificity defect on this page in one evening, and both looked correct in the source.** Verified against the request's own list: the mailto target, badge and label as one link, the statement no longer containing the word Send, no raw hex, no `rgba()`, no raw `font-size`, and the badge as the only radius. Nothing above the closing field changed, and the four-width render is otherwise unchanged with the chart outcomes still level at 1440. The suite is 224 tests and passes. Production verification outstanding.
 - Forecastability release evidence, 7 September 2026: two merges. Pull request 91, merge `c04ba93f67ad681aecf4971e80c21fafe3acc764`, carried the spec, the page, the header strapline change to AI Forecast Diagnostic and the copy approvals. Pull request 92, merge `a48f6c09459ed6d345ec25cbe693b009755143cd`, carried the poster rule and the top padding fix. Both landed byte identical to the tree the suite passed on, 222 tests and 224 tests respectively. `main` moved under this branch three times during the work, twice from another session adding the plain language rule to `CLAUDE.md` and once from pull request 91's own merge commit. Each time `main` was merged in and the suite re-run before merging, so neither merge landed a tree that had only been tested in isolation. The product owner reviewed the live page and reported one defect, the kicker sitting against the header seam, which is the padding fix in pull request 92. He confirmed everything else on the page as correct. **Which widths and devices he used are not recorded, because he did not state them.** The orange panels carry white text below the normal contrast floor by deliberate decision, and whether that reads acceptably on a real screen is still the one thing on this page nobody has confirmed. Production verification of the padding fix itself is outstanding: it merged after his review, so what he looked at was the page with the defect still in it. Open and unstarted: the four `forecast-risk.html` items the design session scoped as a separate pass, and the two `CLAUDE.md` rules that describe a site that does not exist, zero radius and no status palette. Both are shared-file changes the product owner routes.
@@ -364,6 +365,8 @@ Current result and evidence versions:
 
 For a deployed end-to-end classification check, upload the committed `forecast-app/tests/classification_fixtures/30_classification_portfolio.csv`, set analysis date `2026-08-01`, select monthly frequency and assess data quality. Classification must show 15 lines, 17.7 percent lumpy volume, two unclassifiable lines, 11 populated matrix cells and four disabled empty cells. Selecting A and lumpy must isolate `PKG-50301` at 13.86 percent of volume with caveated quality and `OUTLIER_CANDIDATE`.
 
+For a deployed end-to-end check of the band 2.10 advice copy, upload the same `forecast-app/tests/fixtures/31_routing_portfolio.csv`, leave the analysis date and frequency blank, and open `RTG-60101` in the Data quality grid. It is the erratic line at 11.84 percent of volume, and it is the only place the two rewritten texts appear together. The routing do this must end "Use that range to review whether your stock buffer is adequate for your lead time and service target." The outlier finding must read "6 months have unusual demand. No values have been removed or corrected." with the do this "Check the 6 flagged months with the account owner before changing the forecast." **The sample portfolio cannot be used for this check.** It provokes no outlier finding, which is the open product question recorded in the band 2.10 section.
+
 For a deployed end-to-end routing check, upload the committed `forecast-app/tests/fixtures/31_routing_portfolio.csv` with the same date and frequency and open Routing. The headline must read 65.57 percent of volume forecast eligible and 34.43 percent not. Filtering by refused data quality must leave `RTG-60401`, `RTG-60402` and `RTG-60502`. `RTG-60403` must read discontinued confirm status despite its not usable band, and `RTG-60301` must read policy only with no refusal block.
 
 ## Marketing-site production configuration
@@ -450,7 +453,7 @@ Run the Forecast Diagnostic tests from `forecast-app/`:
 python -m unittest discover -s tests
 ```
 
-The current local suite contains 119 tests. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
+The current local suite contains 263 tests at `ce08c8c`, 10 September 2026. The figure moves with every band, so recount rather than trusting it. There is no GitHub Actions workflow, so the Python suite does not run automatically on pull requests. The visible pull-request checks are Vercel deployment checks and Preview feedback only. A developer must run the suite locally until CI is added.
 
 Focused provenance, bundle, stage-consistency and classification checks:
 
@@ -532,7 +535,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - Story 1.4 exposes deliberate reproduction for validation-only, quality and forecast bundles. Forecast reproduction compares the rerun model series and intervals while retaining Story 1.3 model identity, canary, environment and determinism controls.
 - Story 1.6 repairs the previously recorded Story 1.1 fixture mismatches. Story 2.0 adds workspace contract tests without changing the engine. Story 2.1 classifies the portfolio. Story 2.2 records a routing decision per line and deliberately runs no method; method implementation is sprint 3.
 - Routing resolutions are captured through the interface and recorded as manifest passes, but a superseded line's history is not chained to its successor, and a launch line has no launch route. Both are sprint 3.
-- The resolution form in the SKU drawer inherits the two column grid from the base `form` rule rather than declaring its own layout, and that has now broken twice under small changes: the helper text landed beside the Apply button, and the note label landed in the wrong grid cell once the successor picker appeared. Both were fixed in pull request 52 by spanning the affected rows. Story 5.1 should rebuild that block with its own layout rather than patch it a third time.
+- **The SKU drawer no longer exists.** Story 2.10.1 removed it and the line detail now opens as a row inside the grid it belongs to. The caution below still applies to that detail, and the layout it names is unchanged: the resolution form inherits the two column grid from the base `form` rule rather than declaring its own layout, and that has now broken twice under small changes: the helper text landed beside the Apply button, and the note label landed in the wrong grid cell once the successor picker appeared. Both were fixed in pull request 52 by spanning the affected rows. Story 5.1 should rebuild that block with its own layout rather than patch it a third time.
 - Staleness and discontinuation are measured on the last period present, not the last period with demand, so a line reporting explicit zeros for twelve months is never flagged as discontinued. `RTG-60602` in fixture 31 shows it. This is recorded in the Story 2.2 brief and open questions and needs its own story with a stated precedence against `ZERO_VS_MISSING_AMBIGUOUS`.
 - GitHub `main` has no classic branch protection and no repository ruleset. Pull requests and passing checks are process controls rather than enforced repository controls.
 - No pull-request workflow runs the Python suite. Vercel deployment readiness is not a substitute for automated engine tests.
@@ -545,6 +548,7 @@ Do not treat the handoff update as optional documentation. It is part of the bui
 - Neither is scheduled for deletion. Both are kept deliberately, not by neglect. Bulk branch deletion was considered and declined: nothing is lost, so the tidying is not worth the time.
 - Fixture and expectation bytes are protected by `tests/fixture_hashes.json` and `tests/test_fixture_integrity.py`. Git attributes mark the control directories as `-text`, so Git must not convert CSV or Markdown control bytes, and some CSV fixtures intentionally remain CRLF because line-ending handling is part of their expected validation result. Every JSON control file (`expected_*.json`, the goldens and the schema copies) is pinned to LF, matching the LF copies the specification session holds, so a reissued expectations file hashes the same on both sides. This split is a decision, not a detail: JSON control files are `text eol=lf` so that a line-ending mangle self-corrects on checkout instead of stopping a run on a hash mismatch, while CSV fixtures stay `-text` because on some of them, fixture 01 among others, CRLF is the condition under test and must survive byte for byte. Do not tidy the CSV fixtures into the JSON rule.
 - The access gate is one shared password with no user accounts, so there is no record of who entered it and it cannot be revoked for one person. The fixed one second delay on a wrong attempt is not a rate limit, because real rate limiting needs state shared between serverless instances and this application deliberately has none. A long password is the control. Vercel's own deployment protection is stronger and should replace this if the project moves to a paid plan. See `forecast-app/docs/access-gate.md`.
+- **The sample portfolio demonstrates about a third of what the tool does.** `sample-portfolio.csv`, the only file a first-time visitor has, is four smooth lines with twelve weekly periods. Every line routes `model_eligible`, nothing is refused, nothing is policy only and no outlier is found, so the wide interval, policy only and Croston glosses and the whole of story 2.10.5 are unreachable from it, and the open items panel shows two empty sections rather than seven lines. This is an open product question for the product owner, recorded in the band 2.10 section and in `docs/2.10-open-questions.md` as Q3. It is not a defect and the sample file must not be changed without his decision.
 - Panel render order can break a sentence the suite considers passing. In band 2.7 the readiness sentence rendered truncated in the browser while all tests were green, because the quality panel renders before routing and routing owns the counts the sentence states. `test_routing_refreshes_the_sentence_because_routing_owns_the_counts` pins that one ordering; nothing generalises it. Any story that composes text across stages needs a browser check before acceptance, because a green suite does not prove the screen.
 
 ## Band 2.7, say it to a planner
@@ -579,11 +583,116 @@ Verification, all local:
 
 Not done, and needed before this band is accepted: the second planner test. Band 2.7 is built, not accepted.
 
+## Band 2.10, second toughest
+
+Built from `docs/briefs/band-2.10.md` between 9 and 10 September 2026. Four stories were re-takes of work that passed its test and failed its purpose, after a second planner run on 6 September produced the same confusions band 2.7 existed to remove. A fifth was added by the product owner on 9 September reviewing the 2.10.2 preview. Band 2.7 stays accepted; this is not a reopening of it.
+
+### Merge evidence
+
+| Story | Pull request | Merge commit | Suite on `main` after it |
+|---|---|---|---|
+| baseline | | `24f200b` | 224 |
+| 2.10.1 | 95 | `33b20ca` | 228 |
+| 2.10.2 | 96 | `2ae8a8d` | 237 |
+| 2.10.3 | 97 | `3646803` | 244 |
+| 2.10.4 | 98 | `0f732f4` | 256 |
+| 2.10.5 | 99 | `ce08c8c` | 263 |
+
+Merged in that order on 10 September, never rebased, so each story keeps its own branch and its own merge commit and stays separable in the history. `main` was checked out and the full suite re-run after every single merge before the next one started; the counts above are those runs. Because each pull request was stacked on the one before, 96 through 99 were retargeted to `main` immediately before merging. **Without that retarget, merging 96 would have merged into the 2.10.1 branch rather than into `main`**, which is worth knowing before any future stack is merged here.
+
+### What each story changed
+
+| Story | Change | The failure it answers |
+|---|---|---|
+| 2.10.1 | Demand history drawn on every line row, and the detail opens as a row inside the table. The side panel, its scrim, the Open cell and the first-use hint are removed | Two planners failed to find the drawer, and the second was looking for demand history the tool did not have anywhere |
+| 2.10.2 | Each of seven terms renders its plain definition where it appears, filled at render time from the one glossary payload | The 2.7.5 glossary passed a test that proved coverage rather than comprehension |
+| 2.10.3 | Every portfolio band reads `Portfolio: not usable` through one labelling function and carries a definition of its own; every line-scoped band label is marked as line scoped | A reader could not tell whether not usable described the file or the lines |
+| 2.10.4 | All seven ineligible lines on one panel under two headings, each with its own engine-owned total and no combined figure | Policy only lines were listed nowhere, and the panel stated the rule by naming their absence |
+| 2.10.5 | 134 advice strings swept against the product owner's rule; the seven that failed rewritten | Advice Assay cannot stand behind, because it does not hold the reader's lead time, service target or costs |
+
+### The rule story 2.10.5 introduced
+
+> Assay reports what the data shows. Where it tells a planner to act, it may only tell them to look at something or ask someone. It may never tell them to change a number, because it does not know their lead time, service target or costs.
+
+It is a control rather than a proofread. `forecast-app/tests/test_advice_rule.py` reads every action out of real engine output and refuses a sizing imperative and a claim about forecast accuracy. It is deliberately narrow, because `CLAUDE.md` section 8 warns that a control which fires on legitimate copy gets ignored, and one of its tests asserts that the product owner's own replacement text passes, so a future tightening that would refuse the sentence the story exists to keep fails immediately.
+
+### The control change, declared
+
+Story 2.10.5 regenerated `tests/run_bundle_fixtures/run_bundle.golden.json` and `run_manifest.golden.json` and re-recorded their two hashes in `tests/fixture_hashes.json`. It was unavoidable: advice strings are engine output, the bundle records engine output verbatim and the manifest carries a digest of each stage payload, so there is nowhere else the strings live. Both files were regenerated by `tests/generate_run_bundle_goldens.py` and never edited by hand. No `expected_*.json`, no fixture CSV and no schema shape changed, so no version bump was due.
+
+**The product owner ruled on the principle on 10 September: input fixtures belong to the planning session, goldens of engine output belong to whoever changes the engine, otherwise the engine can never change. The control's job is to stop a silent change, and this one was declared.**
+
+He accepted it on proof rather than on assertion. `forecast-app/tools/verify_golden_copy_only.py` takes a baseline git ref, reads the committed goldens out of it and refuses anything it cannot account for. Six checks: shape by leaf path, so nothing added, removed, resized or reordered; every non-string leaf compared by type rather than by field name, which is what answers no numeric value, no count, no share and no flag; every differing string bucketed by field name against a declared list, so a changed reason, code, band or decision fails even though it is a string; every digest recomputed from the new content with the application's own integrity functions; the per SKU decision tuple and the classification result compared independently of the leaf walk, as a second differently shaped route to the same answer; and the recorded source block, so a copy change cannot stand in for a changed fixture. Result: 13 `action` and 3 `detail` strings changed in the bundle, no copy change at all in the manifest, hashes in both, nothing else. Seven defects were then planted in the new golden one at a time and every one was refused by the check meant to catch it, so the proof is not a control that passes on nothing.
+
+Run it with `PYTHONPATH=. python tools/verify_golden_copy_only.py <baseline-ref>` from `forecast-app/`.
+
+### Deployment evidence
+
+Production on the Forecast Diagnostic Vercel project is built from `ce08c8c`, Ready, region `lhr1`, confirmed by the product owner on 10 September 2026. **The build session could not run the Production check itself**: this environment's egress policy denies outbound HTTPS to the site, logged as `connect_rejected` for the host, and the same wall blocked an earlier attempt to read the region from the response headers. Everything recorded here about the live site is the product owner's observation, not the build session's.
+
+Confirmed live, on the sample portfolio:
+
+1. **2.10.1.** A Demand history column with a chart on every row, no Open cell, and the detail opening inside the table.
+2. **2.10.2.** A plain sentence under the `ACCEPT` pill, under each card in Split by reason, and under the ADI and CV squared figures.
+3. **2.10.3.** The band pill reading `PORTFOLIO: CAVEATED` rather than a bare band word, and the grid column reading `Band, this line`.
+4. **2.10.4.** The Open items panel headed "What needs a decision from you?" with two sections and two separate totals.
+
+Confirmed live, but only with fixture 31:
+
+5. **2.10.5.** `RTG-60101` at 11.84 percent of volume, the erratic line, showing both rewritten texts together.
+
+**Why the fifth needed a different file is the finding below, and it is the reason this is recorded as four plus one rather than as five.** What was seen for 2.10.4 on the sample was the two empty states, not the populated panel; the populated version was seen on fixture 31 in the same session.
+
+### Open product question: the sample portfolio cannot demonstrate the tool
+
+Found while answering the product owner's question about which sample file has an outlier line. **Evidence is a build-session run of the real engines over the committed `forecast-app/sample-portfolio.csv`, at the server default analysis date with no frequency chosen, which is exactly what a visitor gets.**
+
+| | |
+|---|---|
+| Lines | 4, weekly, 12 periods each |
+| Bands | 4 caveated, 0 clean, 0 not usable |
+| Decisions | 4 `model_eligible`, nothing else |
+| Finding codes present | `HISTORY_TOO_SHORT`, `LEVEL_SHIFT` only |
+| Waiting on an answer | 0 |
+| Policy only | 0 |
+| Outlier findings | **0** |
+
+So a first-time visitor using the sample sees the sparklines and the in-place detail, the ACCEPT and volume share glosses, and the portfolio band label. They cannot see the wide interval or policy only glosses, because neither decision occurs; they cannot see the Croston gloss, because no line is intermittent; the open items panel shows two empty sections; and story 2.10.5's copy is unreachable, because nothing is flagged as an outlier. Every committed file that does provoke an outlier finding is a test fixture: fixtures 31 and 30, `20_portfolio_mixed.csv` and `22_outliers_and_shift.csv`.
+
+This is an open product question, not a defect, and **the sample file must not be changed without the product owner's decision.** It is recorded as Q3 in `docs/2.10-open-questions.md`. The build session's recommendation there is a new sample built to fixture 31's shape with commercially plausible SKU names, sized to land `caveated` rather than `not usable`, because fixture 31's own SKU codes read as test data and a sample that returns `not usable` is a strong first impression that is the product owner's call to make.
+
+### Verification
+
+- 263 tests pass on `main` at `ce08c8c`, up from 224 at the baseline. New modules: `tests/test_advice_rule.py` (7). New classes in `tests/test_planner_copy.py`: `LineDetailInPlaceTests` (8), `TermsExplainThemselvesTests` (9), `BandScopeTests` (7), `OneListTwoSectionsTests` (11).
+- Every new control was proved able to fail before it was accepted, and the probes are listed per story in `docs/evidence/`. One of them, a first attempt at reinstating a sizing imperative, changed nothing and the control correctly stayed green; that is recorded in the 2.10.5 evidence because a fail-proof which silently tests nothing is the failure mode the exercise exists to catch.
+- The four controls that matter most re-run clean on `main` specifically: fixture integrity, the committed credential scan, the new advice rule, and the six cross-stage consistency tests.
+- Every story was driven in Chromium against fixture 31 before it was pushed, and the rendered text is quoted in each evidence file.
+
+### Defects found by browser testing rather than by the suite
+
+Recorded because all three were invisible to a green suite, which is the same lesson as the band 2.7 render-order note in Known limitations.
+
+1. A term inside a line row navigated to the Glossary panel instead of opening the line, which undid story 2.10.1 on any cell carrying a term. Since 2.10.2 the term already explains itself in place, so inside a row the jump costs the reader their place and buys nothing. Fixed in 2.10.4 with a test; outside a row a term still opens the glossary.
+2. Enter on a control inside a row would have opened and closed the line in one press, because the row handled the key and then received the click it produced. Fixed in 2.10.4.
+3. A term on an orange field turned orange on hover and focus, so the decision label disappeared exactly when the reader pointed at it. It hit `decision-label ineligible` and `band-label not_usable`, the two labels that use the accent as a field. Fixed in 2.10.4 against `CLAUDE.md` section 9: orange is a mark or a field, never both at once.
+
+A fourth was a build-session error rather than a product defect. Story 2.10.4 was committed with a red suite because its evidence file was written after the suite was run, and the evidence named a routing field as a three part dotted path, which the committed credential scan reads as a fully qualified BigQuery table with a literal project. The scanner was right to be strict, so the prose changed rather than the pattern, and the fix landed on the branch where the defect was introduced. **The lesson is that evidence files are scanned like any other tracked file, so the suite must be run after the evidence is written, not before.**
+
+### Band acceptance
+
+Band 2.10 is built, merged and live. **It is not accepted.** The brief's acceptance is a third planner, on the same protocol as the first two, against the criteria as written, and that test cannot be run from a build session. Three of the five stories carry acceptance criteria that only a first-time reader can settle: 2.10.1 that they open the detail for a named product within a minute without being told the feature exists, 2.10.2 that they read each of the seven terms in place and can say what it means in their own words, and 2.10.3 that they can say unprompted whether the label describes the file or the lines.
+
 ## Next starting point
 
-Sprint 2 is closed. Criterion 16 passed on 2 September 2026 and the record is in `docs/planner-test-findings.md`. Band 2.7 is the remediation it earned, and its own acceptance is the same test run again: a second planner, who has not seen the tool, taken through `docs/planner-test-pack.md`. The bar is that they can state what the run concluded, what is waiting on them, and what to do about one refused line and one policy-only line, without asking a question. That test cannot be run from a build session, and until it is run band 2.7 is built but not accepted. If it finds a twelfth item, the band is not finished. Story 2.2's Production check is complete and passed on 2 September 2026. Story 2.3's Production check is partly done: the resolution picker passed, and three items remain to be checked against Production and recorded here, namely the open items list count, the do this text and the resolution effects. Story 2.6, the staleness gap, and sprint 3 forecasting methods are now unblocked and start once band 2.7 is accepted by a second planner; `docs/2.2-open-questions.md` Q10 describes the staleness story, which measures discontinuation on the last period with demand rather than the last period present.
+**Band 2.10 is live at `ce08c8c` and awaiting a third planner test.** That test is the band's acceptance and cannot be run from a build session. Use `docs/planner-test-pack.md`, the same protocol as the first two runs, with someone who has not seen the screens. The bar is the criteria in `docs/briefs/band-2.10.md`, unsoftened. **Give them fixture 31 rather than the sample portfolio**, for the reason recorded in the band 2.10 section: the sample provokes no refusal, no policy only line and no outlier, so it cannot exercise most of what the band changed. If the test finds a twelfth item, the band is not finished.
 
-Superseded note, kept for the record: the previous starting point read "Do not begin Story 2.2 until cold-start handover pull request 44 is merged and Production is green. The local handover work is complete at commit `727ce83`: `CLAUDE.md` was followed, 86 tests passed, fixture 30 passed against Production, fixture hashes were pinned, the guard was proved by a deliberate one-byte failure, both surviving UI defects gained regression coverage, and the missing-information record was added. After merge and Production confirmation, Story 2.2 can start from current `main`. Its three product decisions remain pending: whether not-usable quality forces refusal, whether an override exists and is recorded, and whether fixture 31 is required for refusal paths. The current recommendation is refusal, no override until sprint 3, and a new fixture 31. Preserve Story 2.1 classifications as evidence and implications only until the routing contract is approved.
+Band 2.7 remains built rather than accepted for the same reason, and the second planner run on 6 September is what produced band 2.10.
+
+Two product decisions are waiting, both the product owner's and neither blocking: the sample portfolio question, Q3 in `docs/2.10-open-questions.md`, and the three advice strings that pass the 2.10.5 rule and still read badly, Q1 in the same file. Q2 records that the demand history is not written to the run bundle, so a reopened run draws no sparkline and says so in place.
+
+Story 2.6, the staleness gap, and sprint 3 forecasting methods remain unblocked and start once the planner test is done; `docs/2.2-open-questions.md` Q10 describes the staleness story, which measures discontinuation on the last period with demand rather than the last period present. Story 2.3's Production check is still partly done: the resolution picker passed, and three items remain to be checked against Production and recorded here, namely the open items list count, the do this text and the resolution effects. **Note that the do this text changed in story 2.10.5**, so that check must be made against the current wording rather than the wording in the 2.3 record.
+
+Superseded note, kept for the record: the previous starting point read "Sprint 2 is closed. Criterion 16 passed on 2 September 2026 and the record is in `docs/planner-test-findings.md`. Band 2.7 is the remediation it earned, and its own acceptance is the same test run again: a second planner, who has not seen the tool, taken through `docs/planner-test-pack.md`. The bar is that they can state what the run concluded, what is waiting on them, and what to do about one refused line and one policy-only line, without asking a question. That test cannot be run from a build session, and until it is run band 2.7 is built but not accepted. If it finds a twelfth item, the band is not finished. Story 2.2's Production check is complete and passed on 2 September 2026."
 
 ## End-of-build handoff checklist
 
