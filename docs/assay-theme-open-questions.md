@@ -565,7 +565,7 @@ announcing itself on the one screen where a user most needs to notice it.
 
 ---
 
-## Q15. Buttons and inputs are permitted 4px and did not get it
+## Q15. ANSWERED. Buttons and inputs are permitted 4px and did not get it
 
 **What it blocks.** Nothing. Pass 2 shipped without it because its scope said
 cards and "and nothing else".
@@ -574,9 +574,10 @@ cards and "and nothing else".
 2's scope names "the radius and the one elevation step on cards". So the app
 now has thirteen 4px cards containing 0px buttons and 0px inputs.
 
-**Recommended default.** Apply 4px to buttons and inputs. A softened card full
-of hard-cornered controls reads as unfinished rather than as a decision, and
-the permission is already in 9a so it is not a new one. It is one rule.
+**Answer, 16 September 2026.** Applied, ruling 11, for that reason. Five
+button and input rules take 4px. Five button elements that are not button
+shapes stay at 0px and are listed in the evidence: the tabs, the sort buttons,
+the matrix cells, the run pills and the inline glossary terms.
 
 **Cost if wrong.** Cosmetic, and one line either way.
 
@@ -623,39 +624,92 @@ panel.
 
 ---
 
-## Q18. The widest grid overflows the page instead of scrolling itself
+## Q18. CORRECTED AND CLOSED. The page scrolls sideways, and it is not the grid
 
-**What it blocks.** Nothing in the theme. It is a pre-existing defect the
-changeset explicitly warns about, found by measuring pass 2 at six widths.
+**This question was raised with the wrong diagnosis and the wrong
+recommendation, both mine.** The product owner ruled a band on it. The
+correction is below, before the band is spent.
 
-**The measurement.** `table.quality-grid` has an intrinsic width of 937px and
-no scroll wrapper, so below about 940px the **page** scrolls sideways rather
-than the table.
+### What I said, and why it was wrong
 
-| Width | Overflow, pass 2 | Overflow, merged `main` |
-| --- | --- | --- |
-| 1440, 1100, 900, 768 | 0 | 0 |
-| 390 | 20px | 14px |
-| 320 | 80px | 90px |
+I said `table.quality-grid` is 937px wide with no scroll wrapper, so the page
+scrolls instead of the table, and recommended a band applying the app's
+`.table-wrap` pattern to the four grids.
 
-**It is not pass 2's.** The same element overflows by a similar amount on
-merged `main`. Pass 2 moved it a few pixels in each direction, because the
-12px label step changes where the header wraps.
+**Three of the five grids already carry `.table-wrap`**, including the quality
+grid I named. The probe that produced the claim sorted elements by how far
+past the viewport their right edge sat and reported the top four. Every one of
+those was **inside** a scroll container, where a child's rectangle extends past
+its parent by design and the parent clips it. A wide element inside an
+`overflow:auto` wrapper is the wrapper working, not a defect, and my probe
+could not tell the difference.
 
-**The changeset already calls this out**, about its own mock: "The column
-minimums total 620px, which overflows the content column at normal widths. The
-rows must sit in a single `overflow-x:auto` wrapper inside the card, each row
-carrying `min-width:620px`, so the **table** scrolls and not the page. This was
-a real defect in the mock; do not reintroduce it by dropping the wrapper."
+### What actually causes it
 
-Assay has the defect the changeset is warning against, and has had it since
-before the theme.
+Found by hiding each child in turn and watching `scrollWidth`, which is a test
+rather than a reading:
 
-**Recommended default.** Fix it in a small band of its own, not in a theme
-pass. The app has a `.table-wrap` with `overflow:auto` already, used on the
-back-test table, so the pattern exists and the four grids do not use it. This
-is a layout change rather than a restyle and deserves its own evidence.
+```
+main.wrap < section.portfolio < section#workspace < section#panel-quality
+  < section#qualityReport < div#qualityManifestFooter.report-footer
+```
 
-**Cost if wrong.** A planner on a laptop at a narrow window scrolls the whole
-page sideways to read a column, and the run context bar and the tabs go with
-it.
+**The run footer.** It prints `Run run_<32 hex> - Manifest <64 hex>`, and a
+64 character hash has no break opportunity, so at narrow widths it cannot wrap
+and pushes the document instead.
+
+The landing page measures 320 against 320, no overflow. The overflow appears
+only once a run has produced a manifest hash to print.
+
+### The fix is one line, using a pattern already in the app
+
+`.provenance-grid strong` already carries `word-break:break-word` for exactly
+this reason, on exactly these values. `.report-footer` does not.
+
+```css
+.report-footer{ ... ;word-break:break-word}
+```
+
+Measured, on the current tree, in this order:
+
+| Tree | Page overflow at 320px |
+| --- | --- |
+| Without the fix | 90px |
+| With the one line | **0px** |
+| Reverted again, to prove the measurement | 84px |
+
+The two readings without the fix differ because the run id printed beside the
+hash is a different length on each run. Both are the same defect.
+
+The footer still reads correctly with the fix: the run id and the manifest
+hash wrap across lines instead of pushing the page.
+
+### What this means for the ruling
+
+**It is not a band.** The ruling was "its own band, not a theme pass, use the
+`.table-wrap` pattern the app already has rather than inventing one", and that
+was reasoned from my wrong diagnosis. The real fix is one CSS declaration
+using the pattern the app already has in the provenance grid, which is the
+same instinct applied to the right element.
+
+**The intent behind the ruling is unchanged and is correct**: a planner
+opening this on a phone is realistic, and a page that scrolls sideways taking
+the run context bar and the tabs with it is the first thing they would say
+about it. That still needs fixing before the third planner test.
+
+**Answer, 16 September 2026.** Folded into the rulings 10 and 11 pull request
+and closed there. The product owner withdrew the band: it was proved three
+ways including a revert, it is the pattern the app already uses on exactly
+these values, and a one line fix does not need a band.
+
+**Applied**: `word-break:break-word` on `.report-footer`, with a comment
+saying why, so the next reader does not take it for tidying.
+
+### Not caused by the theme, and pass 2 did not move it much
+
+Pre-existing. The footer has printed an unbreakable hash since the manifest
+existed. Pass 2 moved the number by a few pixels because the 12px label step
+changes where other things wrap, not because it touched the footer.
+
+**The grid is fine.** It is wide, it sits in a wrapper, and it scrolls itself,
+which is what the changeset asks for.

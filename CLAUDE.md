@@ -163,6 +163,10 @@ The reasoning is the changeset's and worth keeping: the site is a poster, read o
 In Assay, and in Assay only:
 
 - **4px on cards, buttons and inputs. 3px on badges. Never higher than 4px.** The bound is the load bearing half. A future screen wanting a larger radius is a new decision and belongs in a new changeset.
+
+  **A card is a bounded surface holding one kind of output.** Amended by the product owner on 16 September 2026, correcting his own earlier ruling. The first version named the eight workspace panels as cards, before it was known they have no fill, no border and no bounded surface at all. **An unbounded panel is not a card however much it looks like a section.** A radius on nothing and a shadow around nothing buy nothing, so the eight stay flat.
+
+  **Correct the definition rather than invent a fill.** The two fills available are both wrong: `--surface` merges a panel with the tables inside it, and `--paper` is lighter than the page, which breaks the panels-darker-than-the-page rule above. A third value picked to make a rule fit is how the palette grew last time.
 - **One card elevation step, the values in the approved changeset, and no second step.** A second card elevation is a new decision. **The sticky run context bar is outside this rule and keeps its own shadow.** Its shadow marks where a bar scrolling over content ends, which is a different job from lifting a card off the page, so it is not the second step and removing it would be a regression bought to satisfy a rule written about cards. Ruled by the product owner on 16 September 2026, closing Q8.
 - **1px rules inside the app**, in three categories. The rule was corrected twice on 16 September 2026, both times because a seam count showed it was wrong, and both corrections are kept because the reasoning is what stops the next one.
 
