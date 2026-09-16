@@ -247,6 +247,66 @@ Overall: pass / fail / could not complete
 
 ---
 
+## Recorded runs
+
+The block above stays blank so the check can be run again. Each run that is
+actually carried out is recorded here.
+
+### 20 September 2026: pass
+
+Run by the product owner on Production.
+
+```
+Date and time        : 20 September 2026
+Phone and version    : iPhone 17 Pro Max
+Browser              : Brave
+Address used         : assay.silurianconsulting.co.uk
+Built from commit    : 48e5b2c
+
+Check 1  blue text           : pass
+Check 2  blocks as cards     : pass
+Check 3  buttons and boxes   : pass
+Check 4  validation bar      : pass
+Check 5  provenance bar      : pass
+Check 6  heading band        : pass
+Check 7  page stays still    : pass
+Check 7  table scrolls       : pass
+Check 8  bottom line wraps   : pass
+Check 9  anything else       : pass, nothing reported
+
+Overall: pass
+```
+
+**This covers band 2.9, theme pass 1 and theme pass 2 in one pass**, which is
+what the whole of `48e5b2c` contains. All three are verified in Production on
+this result.
+
+**Check 1 holds for iOS generally, not only for Brave.** Brave on iOS uses
+WebKit, the same engine as Safari, so a control that paints its own label
+correctly there paints it correctly in Safari too. That matters because check
+1 exists for a defect that only appears on WebKit: a control that was never
+told what colour its writing should be takes the platform default, and on iOS
+that default is bright blue. Band 2.9 fixed it on 16 September 2026 and it
+had never been looked at on a device until this run. **It is the one result on this
+list that could not be got any other way.**
+
+### The limits of that pass, restated so nobody reads it as more
+
+The document names these already. They are repeated beside the result so the
+pass and its bounds travel together.
+
+- **The validation bar was only seen amber.** It can be amber for a warning,
+  red for a rejected file and green for a clean one. The app's own sample file
+  produces amber, so **red and green are still unchecked on a phone**.
+- **A third state marker was not reached at all.** The quality exception bar
+  appears only on a file with a serious problem in it, and the app does not
+  offer such a file to download. Checks 4 and 5 covered two of the three.
+- **This is how the app looks, not what it says or works out.** The numbers,
+  the wording and the decisions are covered elsewhere.
+- **One phone is one phone.** A pass on an iPhone says nothing about Android.
+
+---
+
 ## What this check does not cover, and why
 
 Written down so nobody later reads a pass here as more than it is.
