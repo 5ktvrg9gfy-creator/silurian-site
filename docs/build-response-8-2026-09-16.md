@@ -124,3 +124,59 @@ reach either, the network policy here refusing `vercel.app` and the site
 itself. The measurements above are Chromium against a local server. Edge is
 Chromium too, so a check on the PC would be the same engine; the iPhone is the
 one that would cover WebKit.
+
+---
+
+# Answers from the design session, 16 September 2026
+
+All four closed the same day. Recorded here rather than in the conversation
+that carried them, because the conversation is not in the repository.
+
+**1. Both substitutions accepted, and no new token.** `--color-text-muted` on
+the label is right. The hairline stays `var(--color-divider)` at full ink. The
+design session's reasoning, kept because it is the part that stops the question
+being reopened: `tokens.css` records that this system does not fade its rules,
+and inventing a faded value for a masthead divider would break that for the
+smallest possible reason. **The subordination is carried by the 1px weight
+against the header's 2px close, not by lightening the colour.**
+
+**One conditional action is outstanding.** If the rule reads heavy in place,
+the design session will look at the divider's height rather than its value.
+Nobody has seen it in place yet, so this is live rather than closed.
+
+**2. The wordmark does not move.** The 19px was an error: it came from the
+Assay dashboard's scale and should not have been in a site changeset. "Not to
+change" is the instruction that holds. `clamp(15px, 1.8vw, 18px)` at -0.02em
+stays, and leaving it alone was right.
+
+**3. Site masthead only, as applied.** Assay's header is out of scope and
+stays untouched. "The site masthead / app header lockup" was drafting, not two
+targets.
+
+**4. Sentence case at 15px confirmed.** It is a navigation link, and 12px
+uppercase would have made a second strapline out of it.
+
+**On the preferred route**, the design session accepts that the alternative
+was the real specification and should have been written as the only one once
+the strapline was fixed in place.
+
+## One thing in the reply that has not arrived here
+
+The design session says the constraint about the deleted ramp is now written
+into `design-decisions.md` above the token table, naming the commit and both
+dates. **That amendment is not in this repository.** `docs/designdecisions.md`
+on `main` at the time of writing contains no mention of the neutral ramp,
+`styles.css` or `f2f2ca6`, checked by reading the file rather than by assuming.
+
+The copy the design session amended is therefore the copy in the design
+project, which no build session reads. **A control that lives where the people
+it is meant to catch do not look is the same shape of failure as the ramp
+itself**: the residue of an abandoned approach surviving in documentation. The
+file is the design session's, not this session's, so it is not edited here.
+**What is needed is the amended `docs/designdecisions.md` routed into this
+repository the way the last version was**, through the product owner, and
+committed.
+
+Until then the constraint exists in two other places that builders do read:
+`docs/build-response-6-2026-09-07.md`, which is where the deletion was first
+reported, and this file.
