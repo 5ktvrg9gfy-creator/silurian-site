@@ -16,7 +16,10 @@ section 9a. Every answer is kept below with its original question as written,
 because the next reader needs to know each was argued for and granted rather
 than assumed.
 
-**Q3 to Q7 are still open. Q3 is the one the theme build needs.**
+**Q3 was answered on 16 September 2026** with three rulings and a two pass
+split. Q4 to Q7 are still open. **Q10 and Q11 are new and come out of building
+pass 1.** Q10 is the one that needs an answer, because pass 1 ships a token
+value the product owner has not approved.
 
 ---
 
@@ -336,3 +339,106 @@ restyle of Assay.
 **Cost if wrong.** Low now, higher later. The site's half of the rule is the
 half with no test, and section 9 says a rule with no test behind it deserves
 more care rather than less.
+
+---
+
+## Q10. The changeset's row rule is invisible on Assay's panels
+
+**What it blocks.** Nothing, because pass 1 ships a derived value rather than
+waiting. It needs confirming or overruling, and it is the one thing in pass 1
+that was not built as specified.
+
+**The problem.** The changeset sets `--row-rule: #eeebe9` and puts cards on
+white. Assay's tables sit on `--surface` `#eae9e9`, because section 9 puts
+panels **darker** than the page, which the changeset's own note calls out as
+inverting the usual expectation.
+
+So the value lands on the wrong side of its ground:
+
+| Row rule | Against | Ratio | Side |
+| --- | --- | --- | --- |
+| `#eeebe9`, the changeset value | its white card in the mock | 1.19:1 | darker than the ground |
+| `#eeebe9`, the changeset value | Assay's `--surface` `#eae9e9` | 1.02:1 | **lighter than the ground** |
+| `#aaaaaa`, what Assay has today | `--surface` | 1.92:1 | darker |
+| `#dcd9d7`, shipped in pass 1 | `--surface` | 1.16:1 | darker |
+
+Built and looked at rather than argued from the numbers alone. With `#eeebe9`
+the row division is not faint, it is **gone**: the only horizontal line left
+in a row is the sparkline's own baseline, which is not a row division and
+reads as one. A three way crop of the same four rows is in the pull request.
+
+**What was done and why it was not left alone.** `#dcd9d7` holds the
+changeset's own relationship, a rule just over 1.1:1 and darker than its
+ground, against Assay's surface instead of the mock's white card. It is
+derived, not chosen, and it is not an approved value. It is flagged in a
+comment beside the token, in the pull request and here.
+
+Shipping `#eeebe9` would have removed the row divisions from the four densest
+screens in the product, which is the opposite of what the changeset argues
+for. Reverting to `#aaaaaa` would have meant the product owner looked at pass
+1 and saw no table change at all, which was the point of the pass.
+
+**Recommended default.** Keep `#dcd9d7`. If a different value is wanted, it is
+one line.
+
+**The wider point, worth more than the value.** Every colour in the changeset
+was chosen against a white card ground. Assay's panels are darker by standing
+rule. `--card-border` `#e3dfdd`, `--row-hover` `#f7f6f6` and `--slate-tint`
+`#e8eaed` are all lighter than `#eae9e9`, so each one lands on the wrong side
+of its ground in the same way `--row-rule` did. `--row-hover` survives because
+a hover **should** be lighter than the row it lifts. `--slate-tint` as a table
+header fill will not: a header fill lighter than the table it heads inverts
+the relationship the mock intends. **Check that before pass 2 rather than
+during it.**
+
+**Cost if wrong.** Low for the value. Higher for the wider point, because it
+affects every remaining colour in the theme.
+
+---
+
+## Q11. Pass 1 or pass 2 for the table header fill
+
+**What it blocks.** Nothing. Pass 1 was built on the conservative reading.
+
+**The problem.** The two pass split puts "the table treatment on all four
+grids" in pass 1 and "`--slate-tint` under ruling 1" in pass 2.
+`--slate-tint` **is** the table header fill, so the two lists overlap.
+
+**What was done.** The explicit pass 2 listing was followed. Pass 1 ships the
+row rule and the row hover and no header fill, and ruling 1 is held complete
+for pass 2: the token, the note recording it as the only member of the slate
+family adopted, and the line in section 9a permitting it by name.
+
+That reading also makes the passes coherent in their own right. Pass 1 only
+takes weight away, quietening rules and borders. Pass 2 adds: the header fill,
+the radius, the elevation and the type. The header fill and the 11px/700
+header type are one treatment in the changeset, and pass 1 excludes type
+changes, so splitting them would have shipped half of it.
+
+**Recommended default.** Leave it as built. If the header fill was wanted in
+pass 1, it is one rule and one token.
+
+**Cost if wrong.** One round trip.
+
+---
+
+## Q12. The invented tokens are not only the slate family
+
+**What it blocks.** Nothing. Recorded so section 9 and the code do not drift
+apart.
+
+**The problem.** Section 9 says tokens are lifted from the marketing site and
+not invented. Ruling 1 grants `--slate-tint` an exception by name. But
+`--row-rule`, `--row-hover`, `--control-border` and `--accent-pressed` are
+inventions too, adopted in pass 1, and no ruling covers them.
+
+**What was done.** Section 9a gains one line permitting the app only token
+additions as a category, naming the four adopted in pass 1 and recording
+`--slate-tint` as ruled in and arriving in pass 2. That extends ruling 1's
+reasoning to its siblings rather than leaving four tokens in breach of section
+9 with nothing written down.
+
+**Recommended default.** Keep it. The alternative is four separate rulings for
+four tokens that exist for the same reason.
+
+**Cost if wrong.** Low, and it is a documentation line rather than code.
