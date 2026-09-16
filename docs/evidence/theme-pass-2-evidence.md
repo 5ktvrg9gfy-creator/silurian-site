@@ -273,3 +273,121 @@ all eleven screens is unchanged. 278 tests pass, unchanged.
 **This closes the theme.** Band 2.9, both theme passes and rulings 1 to 14 are
 merged. The one thing outstanding is the phone check, which is
 `docs/production-smoke-test.md` and cannot be run from a build session.
+
+---
+
+## 12. Addendum: rulings 17 and 18, the last two
+
+### Ruling 17, the header underline is gone
+
+The fill seats the header now, and two devices doing one job is how a palette
+grows.
+
+**Deleting the declaration was not enough.** `.quality-grid th` carried
+`border-bottom:2px solid var(--text)`. Removing it let the global
+`th,td{border-bottom:1px solid #aaa}` rule take over, so the header kept a
+hairline underline in a grey that matches no row rule on the page. **That is
+the underline back silently**, which is the one thing the ruling said not to
+do, arrived at by accident rather than by choice.
+
+Caught by reading the computed style back out of the browser rather than by
+reading the stylesheet. The absence is now declared, `border-bottom:0`, in the
+same spirit as band 2.9.3: say what the element does rather than let a cascade
+decide it.
+
+**Asked and answered: does the header now float?** No. It reads seated. The
+header fill and the first row ground differ by **1.20:1**, the same step that
+makes the header read as a band at all, and at 2x the boundary is a clean
+tonal edge with no line in it. Nothing needs putting back.
+
+```
+header bottom border : 0px
+header fill          : rgb(212, 214, 217)
+first row ground     : rgb(234, 233, 233)
+step across the seam : 1.20:1
+```
+
+### Ruling 18, the date range takes body size
+
+The 36px step is for a single number that is the point of the card. A date
+range is context.
+
+**Body size was picked, 15px at weight 700, not label size**, and the reason
+is worth keeping: the label above it is 12px bold uppercase, so a value at
+label size would have read as a second label rather than as a value. Body size
+keeps it a value and makes it plainly subordinate.
+
+| Cell | Size | Why |
+| --- | --- | --- |
+| SKUs analysed | 36px / 800 | a single number, the point of the card |
+| Periods covered | **15px / 700** | a date range, context |
+| Clean volume | 36px / 800 | a single number, the point of the card |
+
+Targeted by `#qualityPeriods`, so the classification summary keeps the figure
+size on all three of its cells, which are all single numbers.
+
+**One consequence, stated rather than left to be found:** the three values no
+longer share a baseline, because a smaller value in a top-aligned cell stops
+higher than a 36px one. The row still reads and the raggedness is the
+hierarchy being visible. A shared baseline is a separate decision and not a
+one line one.
+
+### Checks
+
+```
+rendered text, 11 screens -> IDENTICAL to the unmodified app
+page overflow at 320 and 390 -> 0px
+every radius on a control    -> 0px, 3px or 4px
+278 tests pass, unchanged
+```
+
+**This is the last change in the theme.** Band 2.9, both passes and rulings 1
+to 18 are done. The phone check is the only thing outstanding.
+
+---
+
+## 13. Addendum: Q6 and Q7, the last two, folded in rather than given a band
+
+### Q6, the abandoned palette in the chart JavaScript
+
+Twelve literals replaced: `#ee7623` to `var(--accent)` four times, `#68615e`
+to `var(--muted)` six times, `#201e1d` to `var(--text)` twice.
+
+**`var()` resolves in an SVG presentation attribute, and that was checked in a
+browser before it was written**, because a presentation attribute is not a
+style rule and the two do not always behave alike. A three element test page
+confirmed `stroke` and `fill` both resolve.
+
+Then both charts were rendered from a real run of the single file diagnostic
+and every colour read back out of the DOM:
+
+| Was | Is | Where |
+| --- | --- | --- |
+| `#ee7623` | `rgb(236, 105, 23)` | forecast path, area fill, inventory path, period label |
+| `#68615e` | `rgb(102, 97, 95)` | axis labels, handover divider |
+| `#201e1d` | `rgb(63, 61, 59)` | history path, healthy inventory markers |
+
+No abandoned value survives anywhere in the file.
+
+**Two literals in those charts are not part of this and were left.** The
+gridline stroke `#d6d2d0` and the planning adjustment line `#2674a6` are
+current values written as literals rather than abandoned ones, and neither has
+a token. The `--warn` and `--bad` values also appear as literals in the
+inventory chart's thresholds, which now sits oddly beside a `var()` in the
+same ternary. **That is a tidiness question about literals, not a live defect
+about the wrong palette**, and it was not in the ruling. Stated so the
+inconsistency is a known one.
+
+### Q7, five dead tokens
+
+`--accent-600`, `--neutral-brand`, `--radius-sm`, `--radius-md` and
+`--radius-lg` deleted. The palette is now **seventeen tokens and every one is
+referenced**, checked by counting `var()` uses for each.
+
+### The theme is closed
+
+Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 18 are done. All
+nineteen questions are closed. 278 tests pass.
+
+**The phone check is the only thing outstanding**, and it cannot be run from a
+build session.
