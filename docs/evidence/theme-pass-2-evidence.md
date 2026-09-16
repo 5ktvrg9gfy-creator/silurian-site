@@ -343,3 +343,51 @@ every radius on a control    -> 0px, 3px or 4px
 
 **This is the last change in the theme.** Band 2.9, both passes and rulings 1
 to 18 are done. The phone check is the only thing outstanding.
+
+---
+
+## 13. Addendum: Q6 and Q7, the last two, folded in rather than given a band
+
+### Q6, the abandoned palette in the chart JavaScript
+
+Twelve literals replaced: `#ee7623` to `var(--accent)` four times, `#68615e`
+to `var(--muted)` six times, `#201e1d` to `var(--text)` twice.
+
+**`var()` resolves in an SVG presentation attribute, and that was checked in a
+browser before it was written**, because a presentation attribute is not a
+style rule and the two do not always behave alike. A three element test page
+confirmed `stroke` and `fill` both resolve.
+
+Then both charts were rendered from a real run of the single file diagnostic
+and every colour read back out of the DOM:
+
+| Was | Is | Where |
+| --- | --- | --- |
+| `#ee7623` | `rgb(236, 105, 23)` | forecast path, area fill, inventory path, period label |
+| `#68615e` | `rgb(102, 97, 95)` | axis labels, handover divider |
+| `#201e1d` | `rgb(63, 61, 59)` | history path, healthy inventory markers |
+
+No abandoned value survives anywhere in the file.
+
+**Two literals in those charts are not part of this and were left.** The
+gridline stroke `#d6d2d0` and the planning adjustment line `#2674a6` are
+current values written as literals rather than abandoned ones, and neither has
+a token. The `--warn` and `--bad` values also appear as literals in the
+inventory chart's thresholds, which now sits oddly beside a `var()` in the
+same ternary. **That is a tidiness question about literals, not a live defect
+about the wrong palette**, and it was not in the ruling. Stated so the
+inconsistency is a known one.
+
+### Q7, five dead tokens
+
+`--accent-600`, `--neutral-brand`, `--radius-sm`, `--radius-md` and
+`--radius-lg` deleted. The palette is now **seventeen tokens and every one is
+referenced**, checked by counting `var()` uses for each.
+
+### The theme is closed
+
+Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 18 are done. All
+nineteen questions are closed. 278 tests pass.
+
+**The phone check is the only thing outstanding**, and it cannot be run from a
+build session.

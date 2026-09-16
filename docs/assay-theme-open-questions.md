@@ -24,11 +24,13 @@ app never took the changeset's white label and band 2.9 had already settled on
 `--ink-deep`, and Q11 because the header fill shipped in pass 2 and the split
 was not disputed.
 
-**Two are genuinely still OPEN and neither was fixed by the theme: Q6 and
-Q7.** Q6 is the one that matters, because it is a live defect rather than a
-tidiness question: twelve raw hex literals of the abandoned palette still draw
-the two charts on the single file diagnostic screen, so that screen renders
-the old accent beside the current one.
+**Q6 and Q7 were the last two open, and both were fixed on 16 September 2026**
+rather than given a band, closing the file. Q6 was the one that mattered: it
+was a live defect, not a tidiness question, and the single file diagnostic
+screen was rendering the abandoned orange beside the current one.
+
+**Nothing in this file is open.** Thirteen answered or corrected by a ruling,
+three moot, two fixed.
 
 ---
 
@@ -189,7 +191,7 @@ theme is applied as written it would undo it.
 
 ---
 
-## Q6. OPEN. The abandoned palette is still painting two charts
+## Q6. FIXED. The abandoned palette is still painting two charts
 
 **What it blocks.** Nothing. This is a finding, not a question, and it is
 recorded here because fixing it was out of band 2.9's scope.
@@ -215,6 +217,29 @@ forecast area fill, the inventory line and a period label. The old ink
 muted `#68615e` draws the axis labels and the handover divider. So that
 screen renders the abandoned accent next to the live one.
 
+**Fixed, 16 September 2026**, folded into the rulings 17 and 18 pull request
+rather than given a band. Twelve literals replaced: `#ee7623` becomes
+`var(--accent)` four times, `#68615e` becomes `var(--muted)` six times, and
+`#201e1d` becomes `var(--text)` twice.
+
+**`var()` resolves in an SVG presentation attribute, and that was checked in a
+browser before it was written** rather than assumed, because a presentation
+attribute is not a style rule and the two do not always behave alike. Both
+charts were then rendered from a real run and every colour read back: the
+accent is `rgb(236, 105, 23)`, muted is `rgb(102, 97, 95)` and ink is
+`rgb(63, 61, 59)`, which are the current values. No abandoned value survives
+anywhere in the file.
+
+**Two literals in those charts are not part of this and were left.** The
+gridline stroke `#d6d2d0` and the planning adjustment line `#2674a6` are not
+abandoned values, they are current values written as literals, and neither has
+a token. The `--warn` and `--bad` values also appear as literals in the
+inventory chart's thresholds, which sits oddly beside a `var()` in the same
+ternary. That is a tidiness question about literals rather than a live defect
+about the wrong palette, and it was not in the ruling.
+
+**The original recommendation is kept below as it was written.**
+
 **Recommended default.** Fix it in the theme band, which is touching colour
 anyway, by replacing the twelve literals with `var(--accent)`, `var(--text)`
 and `var(--muted)`. It was left out of band 2.9 because the band named the `:root`
@@ -226,10 +251,15 @@ remembers why.
 
 ---
 
-## Q7. OPEN. Five tokens are declared and never used
+## Q7. FIXED. Five tokens are declared and never used
 
 **What it blocks.** Nothing. Noted so the next reader does not have to work it
 out again.
+
+**Fixed, 16 September 2026.** All five deleted. The palette is now seventeen
+tokens, every one of them referenced.
+
+**The original question is kept below as it was written.**
 
 `--accent-600`, `--neutral-brand`, `--radius-sm`, `--radius-md` and
 `--radius-lg` are declared in the consolidated `:root` and referenced nowhere.
