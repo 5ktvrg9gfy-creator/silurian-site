@@ -342,7 +342,7 @@ more care rather than less.
 
 ---
 
-## Q10. The changeset's row rule is invisible on Assay's panels
+## Q10. ANSWERED. The changeset's row rule is invisible on Assay's panels
 
 **What it blocks.** Nothing, because pass 1 ships a derived value rather than
 waiting. It needs confirming or overruling, and it is the one thing in pass 1
@@ -378,8 +378,11 @@ screens in the product, which is the opposite of what the changeset argues
 for. Reverting to `#aaaaaa` would have meant the product owner looked at pass
 1 and saw no table change at all, which was the point of the pass.
 
-**Recommended default.** Keep `#dcd9d7`. If a different value is wanted, it is
-one line.
+**Answer, 16 September 2026.** `#dcd9d7` approved. The product owner ruled
+that deriving by holding the changeset's own relationship against Assay's
+ground is the correct method, and that copying a value picked against white
+onto a darker panel is not. The principle is now in section 9a with
+`--row-rule` as the worked example.
 
 **The wider point, worth more than the value.** Every colour in the changeset
 was chosen against a white card ground. Assay's panels are darker by standing
@@ -422,7 +425,7 @@ pass 1, it is one rule and one token.
 
 ---
 
-## Q12. The invented tokens are not only the slate family
+## Q12. ANSWERED. The invented tokens are not only the slate family
 
 **What it blocks.** Nothing. Recorded so section 9 and the code do not drift
 apart.
@@ -438,7 +441,124 @@ additions as a category, naming the four adopted in pass 1 and recording
 reasoning to its siblings rather than leaving four tokens in breach of section
 9 with nothing written down.
 
-**Recommended default.** Keep it. The alternative is four separate rulings for
-four tokens that exist for the same reason.
+**Answer, 16 September 2026.** Kept, and explicitly not trimmed. The product
+owner ruled that naming all five and ruling the other five slate members out
+fills a gap in ruling 1 rather than exceeding it: `--row-rule`, `--row-hover`,
+`--control-border` and `--accent-pressed` are inventions exactly as
+`--slate-tint` is, and ruling 1 granted one by name and left four unnamed.
 
 **Cost if wrong.** Low, and it is a documentation line rather than code.
+
+---
+
+## Q13. --slate-tint, re-derived. Answer needed before pass 2
+
+**What it blocks.** The table header fill, which is the first item in pass 2.
+Ruling 2 says report the derived value and the reasoning before applying it,
+so nothing has been applied. A preview was rendered and reverted.
+
+**Why it needed re-deriving.** `#e8eaed` measures **1.005:1** against
+`--surface`. That is worse than the row rule was. It is not a faint fill, it
+is the same lightness as the table it heads, so there would be no header band
+at all.
+
+**The derivation, by the section 9a method.**
+
+| Step | Value |
+| --- | --- |
+| The changeset's fill against its white card | `#e8eaed` is 1.205:1 and **darker** |
+| Its deliberate cool cast, held | blue over red `+5`, chroma 5 |
+| The same ratio solved against `--surface` `#eae9e9` | target luminance 0.6689 |
+| Neutral at that luminance, plus the cast | **`#d4d6d9`** |
+| What it actually measures | 1.202:1 against `--surface`, cast `+5` |
+
+**Checked against everything it sits beside.**
+
+| Against | Ratio | Note |
+| --- | --- | --- |
+| `--surface` `#eae9e9`, the table it heads | 1.20:1 | reads as a band |
+| `--bg` `#f3f2f2`, the page behind the panel | 1.30:1 | |
+| `--row-rule` `#dcd9d7` | 1.04:1 | fill darker than rule, the same order as the mock's 1.016:1 |
+| `--text` `#3f3d3b`, the header label | 7.43:1 | well over the floor at 11px bold |
+
+**It works, and it was looked at rather than argued from the numbers.** The
+preview render is in the report: the header reads as a distinct band, the
+label holds, and the cool cast is subtle but present against the warm body.
+
+**One thing it breaks, and the fix by the same method.** `.sort-button:hover`
+is `#dedcdc`, which today darkens from `--surface` by 1.127:1. Against the new
+fill it is 1.07:1 and **lighter**, so the sort hover would almost vanish and
+would be on the wrong side of its ground, which is the Q10 mistake again.
+Re-derived by the same three steps: **`#c8cacd`**, 1.128:1 darker than the
+fill, header label at 6.58:1.
+
+**The finding worth more than either value.** In the changeset `--slate-tint`
+has **three jobs**: table header fill, chart gridlines, and hovers. Those sit
+on three different grounds. Re-derived against `--surface` it is right for the
+header fill and wrong for a gridline on `--paper` `#fff`, where the original
+`#e8eaed` is correct as drawn. **One token cannot do all three in Assay.**
+Ruling 1 says keep the name so the code and the design document agree, so the
+recommendation is to keep the name and narrow the job.
+
+**Recommended default.** Adopt `--slate-tint: #d4d6d9` for the table header
+fill only, take `#c8cacd` for the sort hover, and record in section 9a that
+the gridline and hover uses in the changeset are not this token's job. If a
+gridline value is wanted later it is a separate derivation against `--paper`,
+and it is not needed until something draws gridlines.
+
+**Cost if wrong.** Low for either value, one line each. Higher for the three
+jobs point: leaving one token doing three jobs on three grounds is how the
+next invisible fill happens.
+
+---
+
+## Q14. Four heavy seams, and one of them carries state
+
+**What it blocks.** Ruling 4. The product owner asked what each of the four
+selectors dropping from 4px or 5px marks, and is not ruling on them by rule.
+
+**The four, and a fifth at 3px.**
+
+| Selector | Now | What it marks |
+| --- | --- | --- |
+| `.validation-panel` | 5px | The validation result. **This one carries state**, see below |
+| `.bundle-view` | 5px | A recorded run reopened from a bundle. It marks a change of mode: you are reading a run off a file rather than one you just did |
+| `.bundle-centre` | 4px | The portable run record block on Provenance, where you keep, reopen or reproduce a run. It divides the readout from the tools |
+| `.provenance` | 4px | The provenance panel, what produced this result |
+| `.chart-card` | 3px | The two charts on the single file screen. Listed because it is also above 2px |
+
+**`.validation-panel` is not decoration and dropping it to 1px costs
+something specific.**
+
+```
+.validation-panel{border-top:5px solid var(--text)}
+.validation-panel.reject{border-color:var(--bad)}
+.validation-panel.accept_with_warnings{border-color:var(--warn)}
+.validation-panel.accept{border-color:var(--good)}
+```
+
+The border **is** the verdict. It is red on a reject, amber on accept with
+warnings, green on accept. At 5px it is the first thing you see on the panel.
+At 1px it is a hairline, and the verdict then rests on the badge text alone.
+
+Section 9 says state is encoded twice on every row, colour and words, so that
+removing colour entirely leaves the screen fully readable. Dropping this to
+1px does not break that rule, because the words are still there. It weakens
+the colour half to the point where it stops doing work, on the one panel whose
+job is to say whether the file can be used at all.
+
+**Two more carry state the same way and are outside ruling 3's categories**,
+because they are left borders rather than top: `.quality-exception` at 4px
+`--warn`, and `.bundle-warning` at 5px `--warn`. Neither is touched by ruling
+3 as written. Listed so nobody assumes they were covered.
+
+**Recommended default.** Drop `.bundle-centre`, `.provenance`, `.bundle-view`
+and `.chart-card` to 1px as ruling 3 says. **Hold `.validation-panel` at its
+current weight** and record it in section 9a as a marker that carries state
+rather than divides a block, which puts it outside category A for the same
+reason the page header is. A hairline that changes colour is a rule with a
+tint, not a verdict.
+
+**Cost if wrong.** For the four, low and visible: they are dividers and the
+screen still reads. For `.validation-panel`, the reject verdict stops
+announcing itself on the one screen where a user most needs to notice it.
