@@ -7,11 +7,38 @@ Raised by the build session, 16 September 2026, against the changeset
 The brief has no band number yet. It needs one before it can be recorded.
 
 **Band 2.9 is not blocked by any of this and has been built.** See
-`docs/evidence/2.9-evidence.md`. Everything below is the theme half.
+`docs/evidence/2.9-evidence.md`.
+
+**Q1 and Q2 were answered the same day.** The product owner amended
+`CLAUDE.md` section 9 rather than overruling the objection, and the amendment
+is recorded there as section 9a. The answers are kept below rather than
+deleted, because the next reader needs to know the exception was argued for
+and granted rather than assumed. Q3 to Q7 are still open, and Q8 and Q9 are
+new, raised by the amendment itself.
 
 ---
 
-## Q1. The 4px radius contradicts a standing rule and the test that holds it
+## Q1. ANSWERED. The 4px radius contradicts a standing rule and the test that holds it
+
+**Answer, 16 September 2026.** The product owner amended section 9. Zero
+radius remains the rule for the marketing site, and Assay is now a documented
+exception at 4px on cards, buttons and inputs, 3px on badges, never higher
+than 4px. The rule was amended first and the tests were changed afterwards,
+in that order, which is the only order that makes the amendment mean
+anything.
+
+`*{border-radius:0!important}` has been removed from the Assay page and the
+gate screen, because it was the specific mechanism making 4px impossible. The
+two string assertions that held it are replaced by
+`test_no_radius_exceeds_the_assay_bound`, which holds the 4px ceiling instead
+of one pinned value. Removing the reset changed nothing that renders: all 1174
+control readings across ten screens compute the same radius, colour, fill,
+appearance and border colour as before, and every radius on the page is still
+`0px`.
+
+**The original question is kept below as it was written.**
+
+---
 
 **What it blocks.** The whole theme. Radius is the changeset's defining
 instruction and the first line of its "What the app releases" table.
@@ -41,7 +68,19 @@ maybe twenty minutes. Nothing else in the theme depends on it.
 
 ---
 
-## Q2. Shadows and the 1px card border contradict the same section
+## Q2. ANSWERED. Shadows and the 1px card border contradict the same section
+
+**Answer, 16 September 2026.** Granted in the same amendment. Section 9a now
+allows one shadow step in Assay, at the values in the approved changeset and
+with no second step, and 1px rules inside the app with the 2px ink rule
+retained on the page header only.
+
+No test holds either half yet, and Q8 below explains why the shadow half
+cannot be tested until somebody decides what to do about the sticky header.
+
+**The original question is kept below as it was written.**
+
+---
 
 **What it blocks.** The card treatment, which is most of the remaining theme.
 
@@ -184,3 +223,68 @@ They were carried forward by band 2.9 rather than pruned, because pruning them
 was not what the band asked for. The three radius tokens in particular are
 worth a decision alongside Q1, since they are all zero and the theme would
 make them non-zero.
+
+---
+
+## Q8. The app already has a shadow, and the rule now says there is only one
+
+**What it blocks.** Writing a test for the shadow half of section 9a, and
+building the card treatment.
+
+**The problem.** Section 9a, as amended, allows "one shadow step, the values
+in the approved changeset, and no second step". The changeset's value is
+`0 1px 2px rgba(26,33,41,0.06), 0 2px 8px rgba(26,33,41,0.04)`, on cards.
+
+Assay already carries a different one:
+
+```
+.workspace-sticky{position:sticky;top:0;z-index:40;box-shadow:0 4px 10px rgb(26 25 24 / 10%)}
+```
+
+That is the sticky run context bar, and its shadow is doing a different job:
+it separates a bar that scrolls over content from the content passing under
+it. It is not a card elevation. So either it is the second step the rule
+forbids, or it is not a step at all and the rule means card elevation only.
+
+**Recommended default.** Read the rule as card elevation only, and keep the
+sticky shadow as the separate thing it is, but say so in section 9a rather
+than leaving it to be worked out again. A sticky bar with no shadow has
+nothing to mark where it ends, and removing it would be a real regression to
+buy a rule that was written about cards.
+
+**Cost if wrong.** Low either way, but the test cannot be written until it is
+decided, and an untested half of a rule is how the first one drifted.
+
+---
+
+## Q9. Nothing enforces zero radius on the marketing site, and three badges already break it
+
+**What it blocks.** Nothing. It is a gap that the amendment made visible.
+
+**The problem.** Section 9 said "zero radius everywhere" and named
+`test_workspace_uses_approved_visual_tokens` as enforcing it. That test only
+ever read the Assay page. So the marketing site half was never enforced, and
+splitting the rule in two has not removed any control, it has only made the
+gap easy to see.
+
+The site also carries three circular badges:
+
+```
+index.html:232          border-radius: 50%
+forecast-risk.html:99   border-radius: 50%
+forecastability.html:162 border-radius: 50%
+```
+
+All three are contact or mail badges and all three predate this file. They are
+an unrecorded exception to "zero radius everywhere", and a scan written to the
+letter of the rule would fail on shipped, approved pages.
+
+**Recommended default.** Add a marketing site radius scan that permits `50%`
+on a badge and nothing else, and record the circle exception in section 9. I
+have not done it here, because writing a control that fires on three shipped
+pages is not a thing to do without being asked, and because the brief was a
+restyle of Assay.
+
+**Cost if wrong.** Low now, higher later. The site's half of the rule is the
+half with no test, and section 9 says a rule with no test behind it deserves
+more care rather than less.

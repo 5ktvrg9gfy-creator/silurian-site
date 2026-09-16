@@ -163,7 +163,7 @@ _PAGE = """<!doctype html>
 <style>
 @font-face{font-family:Archivo;src:url('/workspace-assets/Archivo-Variable.ttf') format('truetype');font-weight:100 900;font-display:swap}
 :root{--bg:#f3f2f2;--surface:#eae9e9;--text:#3f3d3b;--ink-deep:#1a1918;--accent:#ec6917;--hair:#b7b4b4}
-*{box-sizing:border-box;border-radius:0!important}
+*{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 Archivo,system-ui,sans-serif;font-feature-settings:"tnum" 1}
 main{width:min(380px,100%);background:var(--surface);border-top:4px solid var(--accent);padding:28px}
 .gate-brand{display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:2px solid var(--text)}
@@ -171,7 +171,7 @@ main{width:min(380px,100%);background:var(--surface);border-top:4px solid var(--
 .gate-word{font-size:18px;font-weight:800;letter-spacing:-.02em}
 .gate-line{margin:18px 0 22px;color:var(--text)}
 label{display:block;margin-bottom:6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-input,button{width:100%;min-height:44px;border:2px solid var(--text);padding:8px 10px;font:inherit}
+input,button{width:100%;min-height:44px;border:2px solid var(--text);border-radius:0;padding:8px 10px;font:inherit}
 input{background:#fff;color:var(--text)}
 button{margin-top:14px;border-color:var(--accent);background:var(--accent);color:var(--ink-deep);font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
 button:hover{background:#c15613;border-color:#c15613;color:#fff}

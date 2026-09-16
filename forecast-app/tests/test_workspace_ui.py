@@ -1,8 +1,44 @@
+import re
 import unittest
 from pathlib import Path
 
 
 HTML = (Path(__file__).parents[1] / "static" / "index.html").read_text(encoding="utf-8")
+
+# CLAUDE.md section 9a. Assay is a documented exception to the site's zero
+# radius rule: 4px on cards, buttons and inputs, 3px on badges, and never
+# higher than 4px. The bound is the load bearing half, because it is the half
+# that stops the exception widening into a generic dashboard one screen at a
+# time, so the bound is what this scan holds.
+#
+# Until 16 September 2026 the rule was zero radius everywhere and the page
+# carried `*{border-radius:0!important}`, which this file asserted as a
+# literal string. The product owner amended section 9 first; the assertion was
+# replaced afterwards, and never the other way round.
+RADIUS_BOUND_PX = 4.0
+RADIUS_DECLARATION = re.compile(r"border-radius\s*:\s*([^;}\n]+)")
+
+
+def radius_findings(text: str) -> list[str]:
+    """Every border-radius declaration that breaks the 4px bound.
+
+    A declaration can carry up to four lengths, so each is read separately.
+    Anything that is not a plain px length under the bound is a finding,
+    which catches a percentage, a rem, a calc() and a bare number alike:
+    the rule is a px bound and a value the scan cannot measure is not
+    evidence that the bound holds.
+    """
+    findings = []
+    for match in RADIUS_DECLARATION.finditer(text):
+        raw = match.group(1).replace("!important", "").strip()
+        for length in raw.split():
+            if length in ("0", "0px"):
+                continue
+            size = re.fullmatch(r"(\d+(?:\.\d+)?)px", length)
+            if size is None or float(size.group(1)) > RADIUS_BOUND_PX:
+                findings.append(raw)
+                break
+    return findings
 
 
 class WorkspaceUiTests(unittest.TestCase):
@@ -46,9 +82,51 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("--ink-deep:#1a1918", HTML)
         self.assertIn("--accent:#ec6917", HTML)
         self.assertIn("font-family:Archivo", HTML)
-        self.assertIn("*{border-radius:0!important}", HTML)
         self.assertNotIn("Arial", HTML)
         self.assertNotIn("Consolas,monospace", HTML)
+
+    def test_no_radius_exceeds_the_assay_bound(self):
+        """Section 9a. 4px is the ceiling, not a suggestion."""
+        self.assertEqual(
+            radius_findings(HTML),
+            [],
+            "A border-radius above the 4px bound is in the Assay page. "
+            "Section 9a of CLAUDE.md allows 4px on cards, buttons and inputs "
+            "and 3px on badges, and nothing higher. A larger radius is a new "
+            "decision and belongs in a new changeset, not in this diff.",
+        )
+
+    def test_the_radius_scan_reads_the_page_and_not_nothing(self):
+        """A scan that finds nothing because it read nothing is not a pass."""
+        self.assertGreater(
+            len(RADIUS_DECLARATION.findall(HTML)),
+            0,
+            "The radius scan found no declaration at all to read. Every "
+            "control declares its own radius, so zero declarations means the "
+            "scan is looking at the wrong thing.",
+        )
+
+    def test_a_radius_above_the_bound_is_caught(self):
+        """Probe it in every form a radius can take. A control that cannot
+        fail is decoration, and the forms below are the ones a restyle
+        actually reaches for."""
+        for planted in ("8px", "50%", "0.5rem", "6px 6px 0 0", "4.5px"):
+            with self.subTest(radius=planted):
+                self.assertNotEqual(
+                    radius_findings(f"button{{border-radius:{planted}}}"),
+                    [],
+                    f"{planted} broke the bound and the scan did not say so.",
+                )
+
+    def test_the_permitted_radii_are_not_findings(self):
+        """The bound must not fire on what section 9a actually allows."""
+        for allowed in ("0", "0px", "3px", "4px", "4px 4px 0 0", "0!important"):
+            with self.subTest(radius=allowed):
+                self.assertEqual(
+                    radius_findings(f".card{{border-radius:{allowed}}}"),
+                    [],
+                    f"{allowed} is permitted by section 9a and was reported.",
+                )
 
     def test_forecast_empty_state_is_derived_from_routing_then_quality_result(self):
         self.assertIn("routed?routed.filter(item=>!item.forecast_eligible):all.filter(item=>item.band==='not_usable')", HTML)

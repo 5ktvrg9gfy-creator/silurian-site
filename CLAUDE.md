@@ -148,11 +148,27 @@ Tokens are lifted from `index.html` on the marketing site. Do not re-derive or i
 - Charcoal `#3f3d3b`, main orange `#ec6917`, dark orange `#c15613`, warm neutral `#cabfad`, deepest ink `#1a1918`.
 - Page ground `#f3f2f2`, surface `#eae9e9`. Panels sit **darker** than the page, which inverts the usual expectation.
 - **Archivo only**, weight 800 for display, `font-feature-settings: "tnum" 1` for figures. There is no mono in the system.
-- **Zero radius everywhere.** Structure is drawn with 2px solid rules on seams and 1px hairlines inside tables, not floated on shadows. This is the single biggest difference from a generic dashboard.
+- **Zero radius on the marketing site.** Structure is drawn with 2px solid rules on seams and 1px hairlines inside tables, not floated on shadows. This is the single biggest difference from a generic dashboard. Assay is a documented exception, below.
 - Orange is spent as a mark or a field, never as a status palette. State is encoded twice on every row, colour and words, so removing colour entirely leaves the screen fully readable.
 - No dark mode. The system is print derived and commits to paper. Paint every colour explicitly.
 
-The tokens, the Archivo rule and the zero radius rule are enforced by `test_workspace_uses_approved_visual_tokens`. The rest of this section is advisory.
+The tokens and the Archivo rule are enforced by `test_workspace_uses_approved_visual_tokens`. The radius bound below is enforced by `test_no_radius_exceeds_the_assay_bound`. The rest of this section is advisory.
+
+### 9a. Assay is a documented exception
+
+Amended by the product owner on 16 September 2026, approving the changeset "Assay app theme and dashboard shell". Before this, the rule was zero radius everywhere and Assay was held to it by test. **This is a decision, not drift.** Do not "fix" Assay back towards the site's rules, and do not propagate Assay's rules back to the site.
+
+The reasoning is the changeset's and worth keeping: the site is a poster, read once at arm's length and meant to persuade. The app is a tool, read daily at close range and meant to be scanned and clicked. The site's 2px rules and hard edges give the marketing pages their authority, and applied to a dense table they fight the reader, because every row division shouts at the volume of the section containing it.
+
+In Assay, and in Assay only:
+
+- **4px on cards, buttons and inputs. 3px on badges. Never higher than 4px.** The bound is the load bearing half. A future screen wanting a larger radius is a new decision and belongs in a new changeset.
+- **One shadow step, the values in the approved changeset, and no second step.** A second elevation is a new decision.
+- **1px rules inside the app.** The 2px ink rule is retained on the page header only, as the tie back to the site.
+
+Everything else in section 9 applies to Assay unchanged: the tokens, Archivo only, panels darker than the page, orange as a mark or a field and never a status palette, no dark mode, and every colour painted explicitly.
+
+**What the test holds and what it does not.** `test_no_radius_exceeds_the_assay_bound` holds the 4px bound and nothing else. It cannot tell a card from a badge, so 3px on badges is advisory. Nothing enforces zero radius on the marketing site and nothing did before this amendment either, because the named test only ever read the Assay page. The site also carries three circular badges at `border-radius: 50%`, which predate this file. Both gaps are recorded in `docs/assay-theme-open-questions.md`.
 
 ---
 
@@ -173,6 +189,21 @@ He is not a developer and does not want to be one. Two rules carried over from t
 **Explain an unfamiliar technical step plainly, before doing it.** One or two sentences on what it does and why, in the language of the problem rather than the language of the tool.
 
 **Give one direct recommendation, not a menu.** When there is a decision to make, say what you would do and why, then let him overturn it. A list of options with balanced trade-offs and no recommendation reads as evasion and costs him a round trip. This applies to merges especially: say merge or do not merge, and give the reason.
+
+### 11a. The six-line format
+
+Every build reports back in six lines, in this order. Written down on 16 September 2026 at the product owner's instruction, because until then it lived only in his messages.
+
+1. **Built.** What shipped, and where: the branch and the pull request.
+2. **Not built.** Anything the brief asked for that is not in the diff, and why in one clause.
+3. **Tests.** The suite count before and after, and the named controls the brief listed.
+4. **Checked.** The specific things the brief said must not break, each with its result.
+5. **Evidence.** Where the evidence file is, what was actually run, and what was not run.
+6. **Questions.** The open questions file and how many questions are waiting.
+
+Six lines, always. A line with nothing to report says so rather than being dropped, because a missing line reads as an oversight and a line saying "none" reads as an answer. Detail goes underneath, and the direct recommendation goes last, as above.
+
+**Line 5 is the one that rots.** Never claim a check that did not run. Section 13 says this already and this line is where it gets broken, because the honest version is longer than the flattering one.
 
 ---
 
