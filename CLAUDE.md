@@ -166,7 +166,11 @@ In Assay, and in Assay only:
 - **One card elevation step, the values in the approved changeset, and no second step.** A second card elevation is a new decision. **The sticky run context bar is outside this rule and keeps its own shadow.** Its shadow marks where a bar scrolling over content ends, which is a different job from lifting a card off the page, so it is not the second step and removing it would be a regression bought to satisfy a rule written about cards. Ruled by the product owner on 16 September 2026, closing Q8.
 - **1px rules inside the app.** The 2px ink rule is retained on the page header only, as the tie back to the site.
 
-Everything else in section 9 applies to Assay unchanged: the tokens, Archivo only, panels darker than the page, orange as a mark or a field and never a status palette, no dark mode, and every colour painted explicitly.
+Everything else in section 9 applies to Assay unchanged: Archivo only, panels darker than the page, orange as a mark or a field and never a status palette, no dark mode, and every colour painted explicitly.
+
+**App only tokens, permitted by name.** Section 9 says tokens are lifted from the marketing site and not invented. Assay may add tokens for surfaces the site has no equivalent for, and only these, each named here because a category with no list is not a rule: `--row-rule`, `--row-hover`, `--control-border` and `--accent-pressed`, adopted in theme pass 1, and `--slate-tint`, ruled in on 16 September 2026 and arriving in pass 2. A table header needs a fill the site has no value for, because the site has no tables. **The rest of the changeset's slate family is ruled out**: `--slate`, `--slate-mid`, `--slate-soft` and `--slate-text` paint a sidebar that does not exist, and `--slate-deep` would move every heading and figure off `--ink-deep` to a cooler value nobody asked for. A sixth token is a new decision.
+
+**Every colour in the changeset was picked against a white card, and Assay's panels are darker.** A value that sits just under its ground on white can sit just over `--surface` here, which turns a rule into nothing. This was not theory: the changeset's row rule measured 1.02:1 against `--surface` and lighter than it, and the row divisions disappeared. Check which side of its ground a borrowed value lands on before adopting it.
 
 **What the tests hold and what they do not.**
 
