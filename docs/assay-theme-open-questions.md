@@ -624,7 +624,7 @@ panel.
 
 ---
 
-## Q18. CORRECTED. The page scrolls sideways, and it is not the grid
+## Q18. CORRECTED AND CLOSED. The page scrolls sideways, and it is not the grid
 
 **This question was raised with the wrong diagnosis and the wrong
 recommendation, both mine.** The product owner ruled a band on it. The
@@ -697,10 +697,13 @@ opening this on a phone is realistic, and a page that scrolls sideways taking
 the run context bar and the tabs with it is the first thing they would say
 about it. That still needs fixing before the third planner test.
 
-**Recommended default.** Fold the one line into the open rulings 10 and 11
-pull request, or take it as a one line pull request of its own. Not a band.
-**I have not applied it**, because the product owner ruled the shape of this
-work and the shape is what changed.
+**Answer, 16 September 2026.** Folded into the rulings 10 and 11 pull request
+and closed there. The product owner withdrew the band: it was proved three
+ways including a revert, it is the pattern the app already uses on exactly
+these values, and a one line fix does not need a band.
+
+**Applied**: `word-break:break-word` on `.report-footer`, with a comment
+saying why, so the next reader does not take it for tidying.
 
 ### Not caused by the theme, and pass 2 did not move it much
 
