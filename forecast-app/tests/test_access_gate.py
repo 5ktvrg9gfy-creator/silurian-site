@@ -19,6 +19,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from tests.test_workspace_ui import RADIUS_DECLARATION, radius_findings
+
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
 import os
@@ -268,9 +270,28 @@ class GateScreenTests(unittest.TestCase):
         self.assertIn("--ink-deep:#1a1918", self.page)
         self.assertIn("--accent:#ec6917", self.page)
         self.assertIn("font:15px/1.5 Archivo", self.page)
-        self.assertIn("border-radius:0!important", self.page)
         self.assertNotIn("Arial", self.page)
         self.assertNotIn("monospace", self.page)
+
+    def test_the_gate_controls_declare_their_own_radius_within_the_bound(self):
+        """Section 9a, and the same defect band 2.9.3 fixed in the app.
+
+        The gate screen carried `*{border-radius:0!important}` until the rule
+        was amended. Removing it is only safe because the two controls now
+        declare a radius themselves; without that, iOS rounds them and nobody
+        sees it from a desktop."""
+        self.assertIn("border-radius:0", self.page)
+        self.assertEqual(
+            radius_findings(self.page),
+            [],
+            "A border-radius above the 4px bound is on the gate screen.",
+        )
+        self.assertGreater(
+            len(RADIUS_DECLARATION.findall(self.page)),
+            0,
+            "The gate screen declares no radius at all, so the two controls "
+            "are taking whatever the platform gives them.",
+        )
 
     def test_the_screen_is_one_field_one_button_a_wordmark_and_one_line(self):
         self.assertEqual(self.page.count("<input"), 1)
