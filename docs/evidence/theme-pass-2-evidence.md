@@ -236,3 +236,40 @@ they were left. Q19.
 The rendered text of all eleven screens is still identical to the unmodified
 app. 278 tests pass, unchanged, and the radius bound control accepts 4px
 because 4px is the bound.
+
+---
+
+## 11. Addendum: ruling 14, the badges
+
+Q19 answered. 3px on all six, which section 9a already permitted.
+
+`.run-pill` keeps one declaration rather than gaining an override: it already
+declared its own radius, so that declaration changed from `0` to `3px`. The
+other five declared none and take one shared rule.
+
+| Badge | Radius | Readings |
+| --- | --- | --- |
+| `.decision-label.ineligible` | 3px | 256 |
+| `.band-label.not_usable` | 3px | 96 |
+| `.run-pill` | 3px | 24 |
+| `.ai-chip` | 3px | 8 |
+| `.validation-badge` | 3px | 8 |
+| `.stage-tag` | 3px | 5 |
+
+**`.stage-tag` was checked separately and not assumed.** A first pass over the
+eight tabs found zero of them, because it renders only inside an open line
+detail. Opening one found five, all at 3px. A badge that reports zero readings
+is not a badge that passed.
+
+**`.run-pill` is a badge although two of its three instances are `<button>`
+elements.** The product owner's words: a status pill is a badge whatever tag
+it is written as. That is ruling 3's principle a third time, the marker
+following the job rather than the element, and it is now in section 9a beside
+the list.
+
+Every radius computed page-wide is `0px`, `3px` or `4px`. The rendered text of
+all eleven screens is unchanged. 278 tests pass, unchanged.
+
+**This closes the theme.** Band 2.9, both theme passes and rulings 1 to 14 are
+merged. The one thing outstanding is the phone check, which is
+`docs/production-smoke-test.md` and cannot be run from a build session.

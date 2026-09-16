@@ -689,6 +689,8 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 ## Next starting point
 
+**The theme is closed. The Production check is the only thing outstanding, and it cannot be run from a build session.** Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 14 are all merged. Nothing else is waiting on a builder.
+
 **The Production check is the next thing, and it cannot be run from a build session.** `docs/production-smoke-test.md` is the checklist, written for someone with a phone and no context: numbered steps, what to look at, what a problem looks like, and a results block to fill in and commit. It covers band 2.9 and both theme passes in one pass, which is what the product owner asked for rather than three separate checks. **The build session that wrote it could not run it**: `assay.silurianconsulting.co.uk` is refused by that environment's network policy, the proxy gateway answering 403 to CONNECT, so no request reaches Production or a Preview at all. Nothing in this repository claims a Production check that ran.
 
 The checklist names its own limits. The validation bar can be amber, red or green and the app's own sample file produces amber only, so two of the three colours are unreachable from the phone test. A third state marker appears only on a file the app does not offer for download and is unreachable too.
