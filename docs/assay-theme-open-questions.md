@@ -565,7 +565,7 @@ announcing itself on the one screen where a user most needs to notice it.
 
 ---
 
-## Q15. Buttons and inputs are permitted 4px and did not get it
+## Q15. ANSWERED. Buttons and inputs are permitted 4px and did not get it
 
 **What it blocks.** Nothing. Pass 2 shipped without it because its scope said
 cards and "and nothing else".
@@ -574,9 +574,10 @@ cards and "and nothing else".
 2's scope names "the radius and the one elevation step on cards". So the app
 now has thirteen 4px cards containing 0px buttons and 0px inputs.
 
-**Recommended default.** Apply 4px to buttons and inputs. A softened card full
-of hard-cornered controls reads as unfinished rather than as a decision, and
-the permission is already in 9a so it is not a new one. It is one rule.
+**Answer, 16 September 2026.** Applied, ruling 11, for that reason. Five
+button and input rules take 4px. Five button elements that are not button
+shapes stay at 0px and are listed in the evidence: the tabs, the sort buttons,
+the matrix cells, the run pills and the inline glossary terms.
 
 **Cost if wrong.** Cosmetic, and one line either way.
 
@@ -659,3 +660,27 @@ is a layout change rather than a restyle and deserves its own evidence.
 **Cost if wrong.** A planner on a laptop at a narrow window scrolls the whole
 page sideways to read a column, and the run context bar and the tabs go with
 it.
+
+---
+
+## Q19. The badges are still square inside 4px cards
+
+**What it blocks.** Nothing. It is the same question ruling 11 answered, one
+step along.
+
+**The problem.** Section 9a permits **3px on badges**. Ruling 11 named buttons
+and inputs, so the badges were left at 0px: `.validation-badge`, `.ai-chip`,
+`.stage-tag`, `.band-label.not_usable`, `.decision-label.ineligible` and
+`.run-pill`. They now sit inside cards at 4px and beside buttons at 4px.
+
+**Recommended default.** Apply 3px, for the reason ruling 11 gives about
+buttons: a hard corner beside a softened one reads as unfinished rather than
+as a decision, and 9a already permits the value. It is one rule.
+
+`.run-pill` is the one to think about rather than batch. It is pill shaped and
+badge sized, and two of its three instances are buttons, so it could as easily
+take the 4px button radius. **I would give it 3px with the badges**, because
+what it is on screen is a status pill, and ruling 3 established that the
+marker follows the job rather than the element.
+
+**Cost if wrong.** Cosmetic, one line, and visible immediately.

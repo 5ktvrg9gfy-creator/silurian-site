@@ -181,3 +181,54 @@ Out of pass 2's scope. Q18, with a recommendation.
   one.
 - **No iOS check, no Preview, no Production check.** Chromium on Linux at six
   widths.
+
+---
+
+## 10. Addendum: rulings 10 and 11, the theme's last two edits
+
+### Ruling 10, the workspace panels stay flat and the definition is corrected
+
+The product owner amended his own ruling 2 rather than have a fill invented
+for eight panels that have none. Section 9a now reads: **a card is a bounded
+surface holding one kind of output, and an unbounded panel is not a card
+however much it looks like a section.** The reason the alternative was refused
+is recorded with it: a third value picked to make a rule fit is how the
+palette grew last time.
+
+Nothing changed in the app for this. The eight panels were already flat.
+
+### Ruling 11, 4px on buttons and inputs
+
+Q15 answered. Section 9a already permitted it, and hard corners inside
+softened cards read as unfinished rather than as a decision.
+
+Five rules changed. Read back out of the browser:
+
+| Element | Radius | Readings |
+| --- | --- | --- |
+| `button`, no class, the action buttons | 4px | 49 |
+| `input`, `select`, `textarea` | 4px | 155 |
+| `.filter-chip` | 4px | 18 |
+| `.quality-search` | 4px | 4 |
+| `.detail-close`, `.download-record`, `.download-manifest` | 4px | 3 |
+
+**Five left at 0px and listed**, because each is a button element that is not a
+button shape:
+
+| Left flat | Why |
+| --- | --- |
+| `.workspace-tab` | A tab. It sits flush on the tab strip's rule, and a radius opens a gap at the bottom corners and rounds the ends of the selected tab's accent underline |
+| `.sort-button` | Fills its `th`. A radius inside a table header cell would round a corner of the header fill, not of a control |
+| `.matrix-cell` | A cell in the classification grid. Rounding cells breaks a grid |
+| `.run-pill` | A pill, which is badge shaped. Section 9a puts badges at 3px, and ruling 11 is about buttons and inputs |
+| `.term` | An inline glossary control with `border:0` and a dotted underline. A radius is meaningless on it |
+
+**Badges were not touched, and that is the next small question.** Section 9a
+permits 3px on badges. `.validation-badge`, `.ai-chip`, `.stage-tag`,
+`.band-label.not_usable`, `.decision-label.ineligible` and `.run-pill` are all
+at 0px inside cards that are now 4px. Ruling 11 named buttons and inputs, so
+they were left. Q19.
+
+The rendered text of all eleven screens is still identical to the unmodified
+app. 278 tests pass, unchanged, and the radius bound control accepts 4px
+because 4px is the bound.
