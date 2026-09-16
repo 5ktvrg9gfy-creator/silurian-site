@@ -273,3 +273,73 @@ all eleven screens is unchanged. 278 tests pass, unchanged.
 **This closes the theme.** Band 2.9, both theme passes and rulings 1 to 14 are
 merged. The one thing outstanding is the phone check, which is
 `docs/production-smoke-test.md` and cannot be run from a build session.
+
+---
+
+## 12. Addendum: rulings 17 and 18, the last two
+
+### Ruling 17, the header underline is gone
+
+The fill seats the header now, and two devices doing one job is how a palette
+grows.
+
+**Deleting the declaration was not enough.** `.quality-grid th` carried
+`border-bottom:2px solid var(--text)`. Removing it let the global
+`th,td{border-bottom:1px solid #aaa}` rule take over, so the header kept a
+hairline underline in a grey that matches no row rule on the page. **That is
+the underline back silently**, which is the one thing the ruling said not to
+do, arrived at by accident rather than by choice.
+
+Caught by reading the computed style back out of the browser rather than by
+reading the stylesheet. The absence is now declared, `border-bottom:0`, in the
+same spirit as band 2.9.3: say what the element does rather than let a cascade
+decide it.
+
+**Asked and answered: does the header now float?** No. It reads seated. The
+header fill and the first row ground differ by **1.20:1**, the same step that
+makes the header read as a band at all, and at 2x the boundary is a clean
+tonal edge with no line in it. Nothing needs putting back.
+
+```
+header bottom border : 0px
+header fill          : rgb(212, 214, 217)
+first row ground     : rgb(234, 233, 233)
+step across the seam : 1.20:1
+```
+
+### Ruling 18, the date range takes body size
+
+The 36px step is for a single number that is the point of the card. A date
+range is context.
+
+**Body size was picked, 15px at weight 700, not label size**, and the reason
+is worth keeping: the label above it is 12px bold uppercase, so a value at
+label size would have read as a second label rather than as a value. Body size
+keeps it a value and makes it plainly subordinate.
+
+| Cell | Size | Why |
+| --- | --- | --- |
+| SKUs analysed | 36px / 800 | a single number, the point of the card |
+| Periods covered | **15px / 700** | a date range, context |
+| Clean volume | 36px / 800 | a single number, the point of the card |
+
+Targeted by `#qualityPeriods`, so the classification summary keeps the figure
+size on all three of its cells, which are all single numbers.
+
+**One consequence, stated rather than left to be found:** the three values no
+longer share a baseline, because a smaller value in a top-aligned cell stops
+higher than a 36px one. The row still reads and the raggedness is the
+hierarchy being visible. A shared baseline is a separate decision and not a
+one line one.
+
+### Checks
+
+```
+rendered text, 11 screens -> IDENTICAL to the unmodified app
+page overflow at 320 and 390 -> 0px
+every radius on a control    -> 0px, 3px or 4px
+278 tests pass, unchanged
+```
+
+**This is the last change in the theme.** Band 2.9, both passes and rulings 1
+to 18 are done. The phone check is the only thing outstanding.

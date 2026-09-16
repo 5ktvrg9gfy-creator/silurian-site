@@ -689,7 +689,7 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 ## Next starting point
 
-**The theme is closed. The Production check is the only thing outstanding, and it cannot be run from a build session.** Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 16 are all merged. Nothing else is waiting on a builder.
+**The theme is closed. The Production check is the only thing outstanding, and it cannot be run from a build session.** Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 18 are all merged. Nothing else is waiting on a builder. **Of the nineteen questions raised against the theme, thirteen were answered by a ruling, three are moot, and two are still open.** Every heading in `docs/assay-theme-open-questions.md` carries its own status. **Q6 is the open one that matters and it is a live defect, not a tidiness question**: twelve raw hex literals of the abandoned Claude Design palette still draw the two charts on the single file diagnostic screen, so that screen renders the old accent `#ee7623` beside the current `#ec6917`. Band 2.9 removed the dead `:root` block but the story named the block, not the charts, and no later band picked it up. Q7 is five tokens declared and never used, which is tidiness.
 
 **Two rules came out of the band rather than out of the product, and both are in `CLAUDE.md` section 13.** A check that reports zero observations has not passed, it has not run, which came from `.stage-tag` returning zero across eight tabs and reading as a clean result. And a correction to the record stays on the record: Q19 was deleted by accident while Q18 was being corrected and the loss shipped before it was caught, so the note saying what happened stays in the questions file and is not tidied away.
 

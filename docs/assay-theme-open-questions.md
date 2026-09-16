@@ -16,10 +16,19 @@ section 9a. Every answer is kept below with its original question as written,
 because the next reader needs to know each was argued for and granted rather
 than assumed.
 
-**Q3 was answered on 16 September 2026** with three rulings and a two pass
-split. Q4 to Q7 are still open. **Q10 and Q11 are new and come out of building
-pass 1.** Q10 is the one that needs an answer, because pass 1 ships a token
-value the product owner has not approved.
+**Status of all nineteen, as at the close of the theme on 16 September 2026.**
+Every heading carries its own status. Thirteen are ANSWERED or CORRECTED by a
+ruling. Three are MOOT, which means nobody ruled on them and the thing they
+asked about did not happen: Q4 because no nav items were added, Q5 because the
+app never took the changeset's white label and band 2.9 had already settled on
+`--ink-deep`, and Q11 because the header fill shipped in pass 2 and the split
+was not disputed.
+
+**Two are genuinely still OPEN and neither was fixed by the theme: Q6 and
+Q7.** Q6 is the one that matters, because it is a live defect rather than a
+tidiness question: twelve raw hex literals of the abandoned palette still draw
+the two charts on the single file diagnostic screen, so that screen renders
+the old accent beside the current one.
 
 ---
 
@@ -107,7 +116,7 @@ applying a mock.
 
 ---
 
-## Q3. "Styling only, same screens, same words" removes most of the changeset
+## Q3. ANSWERED. "Styling only, same screens, same words" removes most of the changeset
 
 **What it blocks.** Knowing what is actually left to build.
 
@@ -139,7 +148,7 @@ a restyle that has to be redone once the real rules arrive.
 
 ---
 
-## Q4. The brief contradicts itself on whether the theme adds controls
+## Q4. MOOT. The brief contradicts itself on whether the theme adds controls
 
 **What it blocks.** Nothing on its own. It needs a one line answer.
 
@@ -156,7 +165,7 @@ with the correction and with the rest of the brief.
 
 ---
 
-## Q5. The primary button label in the changeset fails contrast
+## Q5. MOOT IN THE APP, STILL WRONG IN THE CHANGESET. The primary button label fails contrast
 
 **What it blocks.** Nothing yet. It is a defect in the changeset to fix before
 the theme is applied.
@@ -180,7 +189,7 @@ theme is applied as written it would undo it.
 
 ---
 
-## Q6. The abandoned palette is still painting two charts
+## Q6. OPEN. The abandoned palette is still painting two charts
 
 **What it blocks.** Nothing. This is a finding, not a question, and it is
 recorded here because fixing it was out of band 2.9's scope.
@@ -217,7 +226,7 @@ remembers why.
 
 ---
 
-## Q7. Four tokens are declared and never used
+## Q7. OPEN. Five tokens are declared and never used
 
 **What it blocks.** Nothing. Noted so the next reader does not have to work it
 out again.
@@ -399,7 +408,7 @@ affects every remaining colour in the theme.
 
 ---
 
-## Q11. Pass 1 or pass 2 for the table header fill
+## Q11. MOOT. Pass 1 or pass 2 for the table header fill
 
 **What it blocks.** Nothing. Pass 1 was built on the conservative reading.
 
@@ -583,7 +592,7 @@ the matrix cells, the run pills and the inline glossary terms.
 
 ---
 
-## Q16. The table header underline is doing less work than it was
+## Q16. ANSWERED. The table header underline is doing less work than it was
 
 **What it blocks.** Nothing.
 
@@ -594,15 +603,31 @@ header now has `--slate-tint` behind it, which already separates it from the
 body, so the 2px ink line underneath is a second separator doing the same job
 at the heaviest weight on the panel.
 
-**Recommended default.** Drop it to 1px, or remove it and let the fill do the
-work. I would remove it: two separators for one boundary is the thing the
-changeset's whole argument is against.
+**Answer, 16 September 2026.** Ruling 17: removed. The product owner's
+reason, which is the better statement of it: two devices doing one job is how
+a palette grows.
+
+**Removing the declaration was not enough, and this is the part worth
+reading.** `.quality-grid th` had `border-bottom:2px solid var(--text)`.
+Deleting it did not leave the header bare: the global `th,td{border-bottom:1px
+solid #aaa}` rule took over, so the header kept a hairline underline in a
+grey that matches no row rule on the page. **That is the underline back
+silently, which is exactly what the ruling warned against, arrived at by
+accident rather than by choice.** Caught by reading the computed style back
+out of the browser rather than the stylesheet. The absence is now declared,
+`border-bottom:0`, in the same spirit as band 2.9.3: say what the element
+does rather than let a cascade decide.
+
+**It reads seated, not floating.** The header fill and the first row ground
+differ by 1.20:1, which is the same step that makes the header read as a band
+in the first place, and at 2x the boundary is a clean tonal edge with no line
+in it. Nothing needs putting back.
 
 **Cost if wrong.** Low, and visible immediately.
 
 ---
 
-## Q17. One summary figure is a date range, not a numeral
+## Q17. ANSWERED. One summary figure is a date range, not a numeral
 
 **What it blocks.** Nothing.
 
@@ -615,9 +640,25 @@ At 36px/800 it nearly fills its cell. It fits at all six widths tested and is
 not clipped, but it is now the widest thing on the panel, and a longer range
 or a daily grain would be tighter.
 
-**Recommended default.** Leave it and watch it. The alternative is a smaller
-size for that one cell, which puts two figure sizes in one strip and makes the
-date look like the less important number, which it is not.
+**Answer, 16 September 2026.** Ruling 18, which overturned the recommendation
+and was right to. **The 36px step is for a single number that is the point of
+the card. A date range is context, not a finding, so it does not get it.**
+
+**Body size was picked, 15px at weight 700**, not label size. Label size is
+12px bold uppercase, and the label above it is 12px bold uppercase, so the
+value would have read as a second label rather than as a value. Body size
+keeps it a value and makes it plainly subordinate to the two numbers beside
+it.
+
+Targeted by `#qualityPeriods`, so the classification summary, whose three
+values are all single numbers, keeps the figure size. The strip now reads as
+two findings and one piece of context, which is what it is.
+
+**One consequence, stated rather than left to be found:** the three values no
+longer share a baseline, because a smaller value in a top-aligned cell stops
+higher than a 36px one. The row still reads, and the raggedness is the
+hierarchy being visible. If it grates, a shared baseline is a separate
+decision and not a one line one.
 
 **Cost if wrong.** A clipped or wrapped date range at a narrow width on one
 panel.
