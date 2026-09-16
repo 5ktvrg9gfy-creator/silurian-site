@@ -251,3 +251,7 @@ Six lines, always. A line with nothing to report says so rather than being dropp
 ## 13. Documentation rule
 
 Every build must leave enough committed evidence for a new developer or AI system to continue without the previous conversation. Record decisions, limitations, configuration names, test evidence and the exact next starting point. Never claim a Preview or Production check that did not run.
+
+**A check that reports zero observations has not passed, it has not run.** `.stage-tag` returned zero across all eight tabs during the theme band, which read as a clean result and was an empty one: it renders only inside an open line detail, and opening one found five. This is the same family as a control that shares the defect's blind spot, so the first question of any check is whether it saw anything at all, and the count belongs in the evidence beside the result.
+
+**A correction to the record stays on the record.** Q19 was deleted by accident while Q18 was being corrected in place, and the loss shipped before it was caught. The note in `docs/assay-theme-open-questions.md` saying what happened and how it was found stays there and is not tidied away later. Ruled by the product owner on 16 September 2026: a question that disappeared and was noticed is evidence the method works, and one that disappeared quietly would be the opposite.

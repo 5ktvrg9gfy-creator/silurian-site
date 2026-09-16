@@ -689,7 +689,9 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 ## Next starting point
 
-**The theme is closed. The Production check is the only thing outstanding, and it cannot be run from a build session.** Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 14 are all merged. Nothing else is waiting on a builder.
+**The theme is closed. The Production check is the only thing outstanding, and it cannot be run from a build session.** Band 2.9, theme pass 1, theme pass 2 and rulings 1 to 16 are all merged. Nothing else is waiting on a builder.
+
+**Two rules came out of the band rather than out of the product, and both are in `CLAUDE.md` section 13.** A check that reports zero observations has not passed, it has not run, which came from `.stage-tag` returning zero across eight tabs and reading as a clean result. And a correction to the record stays on the record: Q19 was deleted by accident while Q18 was being corrected and the loss shipped before it was caught, so the note saying what happened stays in the questions file and is not tidied away.
 
 **The Production check is the next thing, and it cannot be run from a build session.** `docs/production-smoke-test.md` is the checklist, written for someone with a phone and no context: numbered steps, what to look at, what a problem looks like, and a results block to fill in and commit. It covers band 2.9 and both theme passes in one pass, which is what the product owner asked for rather than three separate checks. **The build session that wrote it could not run it**: `assay.silurianconsulting.co.uk` is refused by that environment's network policy, the proxy gateway answering 403 to CONNECT, so no request reaches Production or a Preview at all. Nothing in this repository claims a Production check that ran.
 

@@ -725,6 +725,10 @@ question is reproduced below from `ad01c65`, unedited, and the answer follows.
 Said plainly rather than quietly re-added, because a question that disappears
 from the record is worse than one nobody answers.
 
+**This note stays.** Ruled by the product owner on 16 September 2026: do not
+tidy it away in a later pass. It is recorded in `CLAUDE.md` section 13 as a
+standing rule, not just here.
+
 **What it blocks.** Nothing. It is the same question ruling 11 answered, one
 step along.
 
