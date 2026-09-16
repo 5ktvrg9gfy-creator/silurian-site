@@ -163,12 +163,18 @@ The reasoning is the changeset's and worth keeping: the site is a poster, read o
 In Assay, and in Assay only:
 
 - **4px on cards, buttons and inputs. 3px on badges. Never higher than 4px.** The bound is the load bearing half. A future screen wanting a larger radius is a new decision and belongs in a new changeset.
-- **One shadow step, the values in the approved changeset, and no second step.** A second elevation is a new decision.
+- **One card elevation step, the values in the approved changeset, and no second step.** A second card elevation is a new decision. **The sticky run context bar is outside this rule and keeps its own shadow.** Its shadow marks where a bar scrolling over content ends, which is a different job from lifting a card off the page, so it is not the second step and removing it would be a regression bought to satisfy a rule written about cards. Ruled by the product owner on 16 September 2026, closing Q8.
 - **1px rules inside the app.** The 2px ink rule is retained on the page header only, as the tie back to the site.
 
 Everything else in section 9 applies to Assay unchanged: the tokens, Archivo only, panels darker than the page, orange as a mark or a field and never a status palette, no dark mode, and every colour painted explicitly.
 
-**What the test holds and what it does not.** `test_no_radius_exceeds_the_assay_bound` holds the 4px bound and nothing else. It cannot tell a card from a badge, so 3px on badges is advisory. Nothing enforces zero radius on the marketing site and nothing did before this amendment either, because the named test only ever read the Assay page. The site also carries three circular badges at `border-radius: 50%`, which predate this file. Both gaps are recorded in `docs/assay-theme-open-questions.md`.
+**What the tests hold and what they do not.**
+
+`test_no_radius_exceeds_the_assay_bound` holds the 4px bound and nothing else. It cannot tell a card from a badge, so 3px on badges is advisory.
+
+`test_no_shadow_beyond_one_card_step_and_the_sticky_bar` holds both halves of the shadow rule: no value other than the approved card elevation and the sticky bar's own, and at most one distinct card elevation. It cannot tell a card from anything else, so it would not catch the card elevation being reused on something that is not a card, and it permits the sticky bar's value by name rather than by where it is applied.
+
+**The marketing site.** Nothing enforces zero radius there, and nothing did before this amendment either, because the named test only ever read the Assay page. Writing that scan is the site session's work and not an app band's. When it is written, the **three circular contact badges** in `index.html`, `forecast-risk.html` and `forecastability.html` are the documented exception to zero radius, and the scan must allow them by name rather than failing on them. Ruled by the product owner on 16 September 2026, closing Q9. Recorded in full in `docs/assay-theme-open-questions.md`.
 
 ---
 

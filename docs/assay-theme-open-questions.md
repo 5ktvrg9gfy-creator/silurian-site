@@ -9,12 +9,14 @@ The brief has no band number yet. It needs one before it can be recorded.
 **Band 2.9 is not blocked by any of this and has been built.** See
 `docs/evidence/2.9-evidence.md`.
 
-**Q1 and Q2 were answered the same day.** The product owner amended
-`CLAUDE.md` section 9 rather than overruling the objection, and the amendment
-is recorded there as section 9a. The answers are kept below rather than
-deleted, because the next reader needs to know the exception was argued for
-and granted rather than assumed. Q3 to Q7 are still open, and Q8 and Q9 are
-new, raised by the amendment itself.
+**Q1, Q2, Q8 and Q9 are answered.** All four on 16 September 2026. The
+product owner amended `CLAUDE.md` section 9 rather than overruling the first
+objection, and the amendment plus the two later rulings are recorded there as
+section 9a. Every answer is kept below with its original question as written,
+because the next reader needs to know each was argued for and granted rather
+than assumed.
+
+**Q3 to Q7 are still open. Q3 is the one the theme build needs.**
 
 ---
 
@@ -226,7 +228,31 @@ make them non-zero.
 
 ---
 
-## Q8. The app already has a shadow, and the rule now says there is only one
+## Q8. ANSWERED. The app already has a shadow, and the rule now says there is only one
+
+**Answer, 16 September 2026.** The recommended default was taken. Section 9a
+now reads "one card elevation step", and the sticky run context bar is outside
+that rule and keeps its own shadow, because marking where a bar scrolling over
+content ends is a different job from lifting a card off the page.
+
+The shadow half of section 9a is now testable and is tested.
+`test_no_shadow_beyond_one_card_step_and_the_sticky_bar` permits exactly two
+values and nothing else. `test_there_is_no_second_card_elevation_step` counts
+the distinct non-sticky values and allows one, so two selectors sharing a
+value are one step and two different values are two.
+
+Proved able to fail against the real page three ways: a second elevation on a
+real panel, the approved elevation alongside a plausible second one, and the
+sticky bar's own shadow removed. The page was restored after each.
+
+**What the test cannot do.** It reads declarations, not what they are applied
+to, so it would not catch the card elevation being spent on something that is
+not a card, and it permits the sticky bar's value by name rather than by where
+it sits. Recorded in section 9a rather than left to be discovered.
+
+**The original question is kept below as it was written.**
+
+---
 
 **What it blocks.** Writing a test for the shadow half of section 9a, and
 building the card treatment.
@@ -257,7 +283,29 @@ decided, and an untested half of a rule is how the first one drifted.
 
 ---
 
-## Q9. Nothing enforces zero radius on the marketing site, and three badges already break it
+## Q9. ANSWERED. Nothing enforces zero radius on the marketing site, and three badges already break it
+
+**Answer, 16 September 2026.** Recorded, and stopped there. Writing the scan
+is the site session's work and not an app band's, and the product owner does
+not want a control written against three shipped pages inside a band about the
+app.
+
+**Two things are settled for whoever writes it.** The three circular contact
+badges in `index.html`, `forecast-risk.html` and `forecastability.html` are the
+**documented exception** to zero radius on the marketing site. The scan must
+**allow them by name** rather than failing on them. A control that fires on
+approved, shipped pages gets an exclusion bolted on in a hurry, and an
+exclusion added under pressure is how the Assay page ended up with an
+exemption that had to be deleted on 6 September.
+
+Recorded in `CLAUDE.md` section 9a so it does not live only here.
+
+**No scan was written. The marketing site half of the radius rule is still
+enforced by nobody.**
+
+**The original question is kept below as it was written.**
+
+---
 
 **What it blocks.** Nothing. It is a gap that the amendment made visible.
 

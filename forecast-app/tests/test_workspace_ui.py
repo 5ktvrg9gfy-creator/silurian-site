@@ -41,6 +41,54 @@ def radius_findings(text: str) -> list[str]:
     return findings
 
 
+# CLAUDE.md section 9a. One card elevation step, at the approved changeset's
+# values, and no second step.
+#
+# The sticky run context bar is outside that rule and keeps its own shadow.
+# Its job is to mark where a bar scrolling over content ends, which is not the
+# job of lifting a card off the page, so it is not the second step. The
+# product owner ruled on 16 September 2026, closing Q8, and the alternative
+# was removing a shadow that does real work to satisfy a rule written about
+# cards.
+#
+# Both values are permitted by name. That is the honest limit of this scan:
+# it reads declarations, not what they are applied to, so it cannot catch the
+# card elevation being spent on something that is not a card.
+CARD_ELEVATION = "0 1px 2px rgba(26,33,41,0.06), 0 2px 8px rgba(26,33,41,0.04)"
+STICKY_BAR = "0 4px 10px rgb(26 25 24 / 10%)"
+SHADOW_DECLARATION = re.compile(r"box-shadow\s*:\s*([^;}\n]+)")
+
+
+def normalise_shadow(value: str) -> str:
+    """One spelling for one shadow, so spacing is not a way past the rule."""
+    value = value.replace("!important", "")
+    value = re.sub(r"\s+", " ", value).strip().lower()
+    return re.sub(r",\s*", ",", value)
+
+
+def shadow_findings(text: str) -> list[str]:
+    """Every shadow that is neither of the two permitted values."""
+    permitted = {normalise_shadow(CARD_ELEVATION), normalise_shadow(STICKY_BAR)}
+    return sorted(
+        {
+            normalise_shadow(match)
+            for match in SHADOW_DECLARATION.findall(text)
+            if normalise_shadow(match) not in permitted
+        }
+    )
+
+
+def card_elevation_steps(text: str) -> list[str]:
+    """Distinct shadows that are not the sticky bar's, which is the count the
+    "no second step" half of the rule is about. Two selectors sharing one value
+    are still one step; two different values are two steps, and the second is a
+    new decision."""
+    return sorted(
+        {normalise_shadow(match) for match in SHADOW_DECLARATION.findall(text)}
+        - {normalise_shadow(STICKY_BAR)}
+    )
+
+
 class WorkspaceUiTests(unittest.TestCase):
     def test_each_output_is_an_independent_panel(self):
         for name in ("validation", "quality", "classification", "routing", "openitems", "forecast", "provenance"):
@@ -127,6 +175,87 @@ class WorkspaceUiTests(unittest.TestCase):
                     [],
                     f"{allowed} is permitted by section 9a and was reported.",
                 )
+
+    def test_no_shadow_beyond_one_card_step_and_the_sticky_bar(self):
+        """Section 9a. Two values are permitted and nothing else is."""
+        self.assertEqual(
+            shadow_findings(HTML),
+            [],
+            "A box-shadow that is neither the approved card elevation nor the "
+            "sticky run context bar's is in the Assay page. Section 9a allows "
+            "one card elevation step at the changeset's values, plus the "
+            "sticky bar's own shadow. A different shadow is a new decision "
+            "and belongs in a new changeset.",
+        )
+
+    def test_there_is_no_second_card_elevation_step(self):
+        """Section 9a. One step, and the second is a new decision."""
+        steps = card_elevation_steps(HTML)
+        self.assertLessEqual(
+            len(steps),
+            1,
+            f"Assay declares {len(steps)} card elevations and section 9a "
+            f"allows one: {steps}. Two selectors sharing one value are one "
+            "step. Two different values are two, and the second one needs "
+            "approving before it ships.",
+        )
+
+    def test_the_shadow_scan_reads_the_page_and_not_nothing(self):
+        """A scan that finds nothing because it read nothing is not a pass."""
+        self.assertGreater(
+            len(SHADOW_DECLARATION.findall(HTML)),
+            0,
+            "The shadow scan found no declaration at all. The sticky run "
+            "context bar carries one, so zero means the scan is looking at "
+            "the wrong thing.",
+        )
+
+    def test_a_second_or_wrong_shadow_is_caught(self):
+        """Probe it. A control that cannot fail is decoration."""
+        planted = {
+            "a second elevation": "0 8px 24px rgba(0,0,0,.2)",
+            "a near miss on the approved value": "0 1px 2px rgba(26,33,41,0.08)",
+            "an inset": "inset 0 1px 2px rgba(26,33,41,0.06)",
+            "a bare drop shadow": "0 2px 4px #000",
+        }
+        for name, value in planted.items():
+            with self.subTest(shadow=name):
+                self.assertNotEqual(
+                    shadow_findings(f".card{{box-shadow:{value}}}"),
+                    [],
+                    f"{name} broke the rule and the scan did not say so.",
+                )
+        self.assertEqual(
+            len(card_elevation_steps(
+                f".a{{box-shadow:{CARD_ELEVATION}}}"
+                f".b{{box-shadow:0 8px 24px rgba(0,0,0,.2)}}"
+            )),
+            2,
+            "Two different elevations must count as two steps.",
+        )
+
+    def test_the_permitted_shadows_are_not_findings(self):
+        """The rule must not fire on what section 9a actually allows, and
+        spacing must not be a way past it."""
+        for allowed in (
+            CARD_ELEVATION,
+            STICKY_BAR,
+            "0 1px 2px rgba(26, 33, 41, 0.06), 0 2px 8px rgba(26, 33, 41, 0.04)",
+            f"{STICKY_BAR}!important",
+        ):
+            with self.subTest(shadow=allowed):
+                self.assertEqual(
+                    shadow_findings(f".card{{box-shadow:{allowed}}}"),
+                    [],
+                    f"{allowed} is permitted by section 9a and was reported.",
+                )
+        self.assertEqual(
+            len(card_elevation_steps(
+                f".a{{box-shadow:{CARD_ELEVATION}}}.b{{box-shadow:{CARD_ELEVATION}}}"
+            )),
+            1,
+            "Two selectors sharing one elevation are one step, not two.",
+        )
 
     def test_forecast_empty_state_is_derived_from_routing_then_quality_result(self):
         self.assertIn("routed?routed.filter(item=>!item.forecast_eligible):all.filter(item=>item.band==='not_usable')", HTML)
