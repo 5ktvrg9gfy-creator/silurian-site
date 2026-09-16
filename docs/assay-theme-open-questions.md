@@ -451,7 +451,7 @@ fills a gap in ruling 1 rather than exceeding it: `--row-rule`, `--row-hover`,
 
 ---
 
-## Q13. --slate-tint, re-derived. Answer needed before pass 2
+## Q13. ANSWERED. --slate-tint, re-derived. Answer needed before pass 2
 
 **What it blocks.** The table header fill, which is the first item in pass 2.
 Ruling 2 says report the derived value and the reasoning before applying it,
@@ -512,7 +512,7 @@ next invisible fill happens.
 
 ---
 
-## Q14. Four heavy seams, and one of them carries state
+## Q14. ANSWERED. Four heavy seams, and one of them carries state
 
 **What it blocks.** Ruling 4. The product owner asked what each of the four
 selectors dropping from 4px or 5px marks, and is not ruling on them by rule.
@@ -562,3 +562,100 @@ tint, not a verdict.
 **Cost if wrong.** For the four, low and visible: they are dividers and the
 screen still reads. For `.validation-panel`, the reject verdict stops
 announcing itself on the one screen where a user most needs to notice it.
+
+---
+
+## Q15. Buttons and inputs are permitted 4px and did not get it
+
+**What it blocks.** Nothing. Pass 2 shipped without it because its scope said
+cards and "and nothing else".
+
+**The problem.** Section 9a permits **4px on cards, buttons and inputs**. Pass
+2's scope names "the radius and the one elevation step on cards". So the app
+now has thirteen 4px cards containing 0px buttons and 0px inputs.
+
+**Recommended default.** Apply 4px to buttons and inputs. A softened card full
+of hard-cornered controls reads as unfinished rather than as a decision, and
+the permission is already in 9a so it is not a new one. It is one rule.
+
+**Cost if wrong.** Cosmetic, and one line either way.
+
+---
+
+## Q16. The table header underline is doing less work than it was
+
+**What it blocks.** Nothing.
+
+**The problem.** `.quality-grid th` carries `border-bottom:2px solid
+var(--text)`. It was excluded from the seam rule as a rule inside a table
+rather than between blocks, which was right when the header had no fill. The
+header now has `--slate-tint` behind it, which already separates it from the
+body, so the 2px ink line underneath is a second separator doing the same job
+at the heaviest weight on the panel.
+
+**Recommended default.** Drop it to 1px, or remove it and let the fill do the
+work. I would remove it: two separators for one boundary is the thing the
+changeset's whole argument is against.
+
+**Cost if wrong.** Low, and visible immediately.
+
+---
+
+## Q17. One summary figure is a date range, not a numeral
+
+**What it blocks.** Nothing.
+
+**The problem.** The changeset's 36px figure size was specified for three
+metric cards holding short numerals: 1,284, 55%, 31.4%. Assay's equivalent
+strip holds "SKUs analysed", "Periods covered" and "Clean volume", and the
+middle one is a date range: **"2026-01 to 2026-03"**.
+
+At 36px/800 it nearly fills its cell. It fits at all six widths tested and is
+not clipped, but it is now the widest thing on the panel, and a longer range
+or a daily grain would be tighter.
+
+**Recommended default.** Leave it and watch it. The alternative is a smaller
+size for that one cell, which puts two figure sizes in one strip and makes the
+date look like the less important number, which it is not.
+
+**Cost if wrong.** A clipped or wrapped date range at a narrow width on one
+panel.
+
+---
+
+## Q18. The widest grid overflows the page instead of scrolling itself
+
+**What it blocks.** Nothing in the theme. It is a pre-existing defect the
+changeset explicitly warns about, found by measuring pass 2 at six widths.
+
+**The measurement.** `table.quality-grid` has an intrinsic width of 937px and
+no scroll wrapper, so below about 940px the **page** scrolls sideways rather
+than the table.
+
+| Width | Overflow, pass 2 | Overflow, merged `main` |
+| --- | --- | --- |
+| 1440, 1100, 900, 768 | 0 | 0 |
+| 390 | 20px | 14px |
+| 320 | 80px | 90px |
+
+**It is not pass 2's.** The same element overflows by a similar amount on
+merged `main`. Pass 2 moved it a few pixels in each direction, because the
+12px label step changes where the header wraps.
+
+**The changeset already calls this out**, about its own mock: "The column
+minimums total 620px, which overflows the content column at normal widths. The
+rows must sit in a single `overflow-x:auto` wrapper inside the card, each row
+carrying `min-width:620px`, so the **table** scrolls and not the page. This was
+a real defect in the mock; do not reintroduce it by dropping the wrapper."
+
+Assay has the defect the changeset is warning against, and has had it since
+before the theme.
+
+**Recommended default.** Fix it in a small band of its own, not in a theme
+pass. The app has a `.table-wrap` with `overflow:auto` already, used on the
+back-test table, so the pattern exists and the four grids do not use it. This
+is a layout change rather than a restyle and deserves its own evidence.
+
+**Cost if wrong.** A planner on a laptop at a narrow window scrolls the whole
+page sideways to read a column, and the run context bar and the tabs go with
+it.

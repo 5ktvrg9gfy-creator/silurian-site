@@ -78,6 +78,74 @@ def shadow_findings(text: str) -> list[str]:
     )
 
 
+# CLAUDE.md section 9a, the third seam category. A border whose colour changes
+# with state is a state marker, not a divider. It is outside the seam rule
+# entirely, at whatever weight it already carries.
+#
+# This exists because the seam rule would have thinned all three to 1px, by
+# correct application of a rule that had not thought about them. Section 9
+# wants state encoded twice, colour and words. A state marker thinned to a
+# hairline leaves the words carrying it alone, which is one and a half.
+#
+# Pinned on both halves the product owner named: the width, and the fact that
+# the colour varies by state.
+#
+# `.bundle-warning` is the honest exception. It is held by name at 5px and its
+# colour does not vary: it is always `--warn`, so it is a fixed status marker
+# rather than a varying one. Pinning it to a status token rather than to a set
+# of states is the difference, and it is stated rather than smoothed over.
+STATE_MARKERS = {
+    # At rest this one is ink, because before a verdict arrives there is no
+    # verdict to paint. The status colour arrives with the verdict class. So a
+    # state marker's colour is carried by its variants OR by its own rule, and
+    # requiring both would be wrong: the first version of this test did, and
+    # it failed on the real page, which is what a probe is for.
+    ".validation-panel": {
+        "edge": "border-top",
+        "width": "5px",
+        "rest": "--text",
+        "states": {"reject": "--bad", "accept_with_warnings": "--warn", "accept": "--good"},
+    },
+    ".quality-exception": {
+        "edge": "border-left",
+        "width": "4px",
+        "rest": "--warn",
+        "states": {"not_usable": "--bad"},
+    },
+    ".bundle-warning": {
+        "edge": "border-left",
+        "width": "5px",
+        "rest": "--warn",
+        "states": {},
+    },
+}
+STATUS_TOKENS = ("--good", "--warn", "--bad")
+
+
+def marker_edge(text: str, selector: str) -> str | None:
+    """The width and colour the marker declares on its own rule."""
+    match = re.search(
+        re.escape(selector) + r"\{([^{}]*)\}", text
+    )
+    if match is None:
+        return None
+    edge = re.search(
+        r"border-(?:top|left)\s*:\s*(\d+px)\s+solid\s+var\((--[a-z-]+)\)",
+        match.group(1),
+    )
+    return None if edge is None else f"{edge.group(1)}|{edge.group(2)}"
+
+
+def marker_state_colours(text: str, selector: str) -> dict[str, str]:
+    """Every state variant of a marker, and the token each one paints with."""
+    found = {}
+    for state, token in re.findall(
+        re.escape(selector) + r"\.([a-z_]+)\{border-color\s*:\s*var\((--[a-z-]+)\)\}", text
+    ):
+        found[state] = token
+    return found
+
+
 def card_elevation_steps(text: str) -> list[str]:
     """Distinct shadows that are not the sticky bar's, which is the count the
     "no second step" half of the rule is about. Two selectors sharing one value
@@ -255,6 +323,88 @@ class WorkspaceUiTests(unittest.TestCase):
             )),
             1,
             "Two selectors sharing one elevation are one step, not two.",
+        )
+
+    def test_state_markers_keep_their_width(self):
+        """Section 9a. The seam rule does not reach a state marker."""
+        for selector, spec in STATE_MARKERS.items():
+            with self.subTest(marker=selector):
+                edge = marker_edge(HTML, selector)
+                self.assertIsNotNone(
+                    edge, f"{selector} declares no marker edge at all."
+                )
+                width, token = edge.split("|")
+                self.assertEqual(
+                    width,
+                    spec["width"],
+                    f"{selector} is a state marker and its border is now "
+                    f"{width}, not {spec['width']}. Section 9a puts it outside "
+                    "the seam rule at whatever weight it already carries. A "
+                    "hairline that changes colour is a rule with a tint, not a "
+                    "verdict. If the weight should change, change section 9a "
+                    "first.",
+                )
+                self.assertEqual(
+                    token,
+                    spec["rest"],
+                    f"{selector}'s resting colour moved from {spec['rest']} to "
+                    f"{token}.",
+                )
+                carries_status = token in STATUS_TOKENS or any(
+                    value in STATUS_TOKENS
+                    for value in marker_state_colours(HTML, selector).values()
+                )
+                self.assertTrue(
+                    carries_status,
+                    f"{selector} paints no status colour, at rest or in any "
+                    "state variant. A marker that never carries a status "
+                    "colour is a divider, and the seam rule reaches a divider.",
+                )
+
+    def test_the_varying_state_markers_still_vary(self):
+        """The other half of the rule: the colour changes with the state."""
+        for selector, spec in STATE_MARKERS.items():
+            if not spec["states"]:
+                continue
+            with self.subTest(marker=selector):
+                self.assertEqual(
+                    marker_state_colours(HTML, selector),
+                    spec["states"],
+                    f"{selector}'s state colours have moved. The border is "
+                    "what says which verdict this is, so losing a variant "
+                    "leaves the words carrying the state alone.",
+                )
+
+    def test_the_fixed_status_marker_is_recorded_as_fixed(self):
+        """`.bundle-warning` is held by name and does not vary. Recorded so
+        nobody 'fixes' it by adding variants nobody asked for, and so the
+        difference between the three is not smoothed over."""
+        self.assertEqual(marker_state_colours(HTML, ".bundle-warning"), {})
+        self.assertEqual(marker_edge(HTML, ".bundle-warning"), "5px|--warn")
+
+    def test_a_thinned_state_marker_is_caught(self):
+        """Probe it as the next theme band would break it: by applying the
+        seam rule correctly to something the seam rule does not cover."""
+        for selector, spec in STATE_MARKERS.items():
+            with self.subTest(marker=selector):
+                thinned = HTML.replace(
+                    f"{spec['edge']}:{spec['width']} solid var(",
+                    f"{spec['edge']}:1px solid var(",
+                )
+                self.assertNotEqual(thinned, HTML, "probe planted nothing")
+                self.assertNotEqual(
+                    marker_edge(thinned, selector),
+                    marker_edge(HTML, selector),
+                    f"{selector} was thinned to 1px and the scan did not see it.",
+                )
+
+    def test_a_dropped_state_variant_is_caught(self):
+        """Losing a verdict colour must fail, not pass quietly."""
+        dropped = HTML.replace(".validation-panel.reject{border-color:var(--bad)}", "")
+        self.assertNotEqual(dropped, HTML, "probe planted nothing")
+        self.assertNotEqual(
+            marker_state_colours(dropped, ".validation-panel"),
+            STATE_MARKERS[".validation-panel"]["states"],
         )
 
     def test_forecast_empty_state_is_derived_from_routing_then_quality_result(self):
