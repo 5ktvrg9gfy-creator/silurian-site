@@ -252,12 +252,18 @@ Overall: pass / fail / could not complete
 The block above stays blank so the check can be run again. Each run that is
 actually carried out is recorded here.
 
-### 20 September 2026: pass
+### 16 September 2026: pass
 
 Run by the product owner on Production.
 
+**This run was first recorded as 20 September 2026 and the date was wrong.**
+Corrected on the product owner's ruling, 16 September 2026, because every
+commit in the repository including this record's own is dated 16 September.
+The date is the only thing corrected. The result, the device, the browser,
+the address and the commit are as they were recorded.
+
 ```
-Date and time        : 20 September 2026
+Date and time        : 16 September 2026
 Phone and version    : iPhone 17 Pro Max
 Browser              : Brave
 Address used         : assay.silurianconsulting.co.uk
