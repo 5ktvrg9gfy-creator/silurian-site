@@ -713,3 +713,47 @@ changes where other things wrap, not because it touched the footer.
 
 **The grid is fine.** It is wide, it sits in a wrapper, and it scrolls itself,
 which is what the changeset asks for.
+
+---
+
+## Q19. ANSWERED. The badges are still square inside 4px cards
+
+**Restored on 16 September 2026 after the build session deleted it by
+accident.** Correcting Q18 in place used a slice that kept everything before
+Q18 and replaced everything after it, and Q19 sat after it. The original
+question is reproduced below from `ad01c65`, unedited, and the answer follows.
+Said plainly rather than quietly re-added, because a question that disappears
+from the record is worse than one nobody answers.
+
+**What it blocks.** Nothing. It is the same question ruling 11 answered, one
+step along.
+
+**The problem.** Section 9a permits **3px on badges**. Ruling 11 named buttons
+and inputs, so the badges were left at 0px: `.validation-badge`, `.ai-chip`,
+`.stage-tag`, `.band-label.not_usable`, `.decision-label.ineligible` and
+`.run-pill`. They now sit inside cards at 4px and beside buttons at 4px.
+
+**Recommended default.** Apply 3px, for the reason ruling 11 gives about
+buttons: a hard corner beside a softened one reads as unfinished rather than
+as a decision, and 9a already permits the value. It is one rule.
+
+`.run-pill` is the one to think about rather than batch. It is pill shaped and
+badge sized, and two of its three instances are buttons, so it could as easily
+take the 4px button radius. **I would give it 3px with the badges**, because
+what it is on screen is a status pill, and ruling 3 established that the
+marker follows the job rather than the element.
+
+**Cost if wrong.** Cosmetic, one line, and visible immediately.
+
+### Answer, 16 September 2026
+
+Ruling 14: 3px on all six, `.run-pill` included, on the reasoning above. The
+product owner put it as **a status pill is a badge whatever tag it is written
+as**, which is ruling 3's principle again: the marker follows the job, not the
+element.
+
+Applied and read back out of the browser. `.stage-tag` renders only inside an
+open line detail, so it was checked there separately rather than assumed from
+the other five. Every radius computed page-wide is now `0px`, `3px` or `4px`,
+and nothing exceeds the bound. The six are named in section 9a, because a
+category with no list is not a rule.

@@ -162,7 +162,7 @@ The reasoning is the changeset's and worth keeping: the site is a poster, read o
 
 In Assay, and in Assay only:
 
-- **4px on cards, buttons and inputs. 3px on badges. Never higher than 4px.** The bound is the load bearing half. A future screen wanting a larger radius is a new decision and belongs in a new changeset.
+- **4px on cards, buttons and inputs. 3px on badges. Never higher than 4px.** The six badges, named because a category with no list is not a rule: `.validation-badge`, `.ai-chip`, `.stage-tag`, `.band-label.not_usable`, `.decision-label.ineligible` and `.run-pill`. **`.run-pill` is a badge although two of its three instances are `<button>` elements**, because a status pill is a badge whatever tag it is written as. That is ruling 3's principle again: the marker follows the job, not the element. The bound is the load bearing half. A future screen wanting a larger radius is a new decision and belongs in a new changeset.
 
   **A card is a bounded surface holding one kind of output.** Amended by the product owner on 16 September 2026, correcting his own earlier ruling. The first version named the eight workspace panels as cards, before it was known they have no fill, no border and no bounded surface at all. **An unbounded panel is not a card however much it looks like a section.** A radius on nothing and a shadow around nothing buy nothing, so the eight stay flat.
 
