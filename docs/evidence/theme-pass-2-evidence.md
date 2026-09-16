@@ -160,17 +160,21 @@ sections, 7 rows on each of two visits, totals 25.39 percent and 9.04 percent.
 | 390 | 20px | 14px |
 | 320 | 80px | 90px |
 
-**The overflow is pre-existing and is not pass 2's.** The overflowing element
-is the same on both: `table.quality-grid`, which has an intrinsic width of
-937px and no scroll wrapper, so the page scrolls instead of the table. Pass 2
-moved it by a few pixels in each direction, because the 12px label step
-changes the header's intrinsic width and therefore where it wraps.
+**The overflow is pre-existing and is not pass 2's.** That much held up.
 
-**The changeset warns about exactly this defect and Assay already has it**:
-"the rows must sit in a single `overflow-x:auto` wrapper inside the card, each
-row carrying `min-width:620px`, so the table scrolls and not the page. This
-was a real defect in the mock; do not reintroduce it by dropping the wrapper."
-Out of pass 2's scope. Q18, with a recommendation.
+**The cause named here was wrong and is corrected in Q18.** This section
+originally blamed `table.quality-grid` for having no scroll wrapper. It has
+one, and so do three of the five grids. The real cause is the run footer,
+which prints a 64 character manifest hash with no break opportunity, found by
+hiding each child in turn and watching `scrollWidth` rather than by sorting
+elements by how far past the viewport they sit. A wide element inside an
+`overflow:auto` wrapper is the wrapper working, and the first probe could not
+tell that from a defect.
+
+The fix is one declaration, `word-break:break-word` on `.report-footer`, which
+is the pattern `.provenance-grid strong` already uses on the same kind of
+value. Measured: 90px of overflow without it, 0px with it, 84px again after
+reverting. Q18 carries the full correction.
 
 ## 9. What pass 2 did not do
 
