@@ -282,15 +282,33 @@ body[data-baselines]::after {
   font-size: var(--text-label); line-height: 1.2; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--color-text-muted);
 }
+/* Pipe between the brand block and the nav. Decorative, so it is hidden from
+   a screen reader, which would otherwise read it out as "vertical line". It
+   goes when the bar wraps: a separator left dangling at the end of the brand
+   line separates nothing. */
+.mast-sep {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-body); line-height: 1.5;
+  color: color-mix(in srgb, var(--color-divider) 45%, transparent);
+}
+/* 519px is measured, not chosen. With the pipe in the bar the nav sits on
+   the brand's line down to 520px and wraps below it, so the pipe is present
+   exactly where there are two things on one line for it to separate. The
+   value depends on the width of the two strings either side of it, so it is
+   remeasured if either changes. */
+@media (max-width: 519px) { .mast-sep { display: none; } }
 .mast-bar a.forecast-link {
   /* Longhands, not the font shorthand. The size hid there from a font-size
      scan, which is the same shape of miss as reading a hex and calling it a
      colour scan. */
-  margin-left: 18px; font-family: var(--font-body); font-weight: 600;
+  /* No margin-left. The air either side of the pipe is the bar's own 14px
+     gap, so it is equal on both sides. The 18px this carried until the pipe
+     arrived, and the media query that zeroed it on a wrapped bar, are both
+     gone rather than left as rules that no longer do anything. */
+  font-family: var(--font-body); font-weight: 600;
   font-size: var(--text-body); line-height: 1.5;
   color: var(--color-text); letter-spacing: normal; text-transform: none;
 }
-@media (max-width: 620px) { .mast-bar a.forecast-link { margin-left: 0; } }
 </style>
 </head>
 <body>
@@ -303,6 +321,7 @@ body[data-baselines]::after {
       <p class="mast-subline">Project &amp; Programme Delivery</p>
     </div>
     </div>
+    <span class="mast-sep" aria-hidden="true">|</span>
     <nav aria-label="Forecasting tools">
       <a class="forecast-link" href="forecastability.html">AI Forecast Diagnostic</a>
     </nav>
