@@ -47,6 +47,14 @@ trip and no time.
 
 ## Q2. The radius scan reads CSS, not a rendered page
 
+**CLOSED 17 September 2026. Keep it static**, ruled by the product owner:
+a rendered scan needs a browser in the test environment to catch a defect that
+enters when somebody writes a declaration, which is what the static scan reads.
+The limit is now stated plainly in the test's own docstring, in his words: a
+radius arriving from a browser default rather than from a declaration is
+invisible to this scan. The two explicit zeroes on `forecast-risk.html` are
+recorded in the same place as the reason that limit has not bitten.
+
 Raised 17 September 2026 by the radius scan story, which asked for a test that
 fails when any **element** carries a non-zero radius.
 
@@ -76,8 +84,13 @@ elements found, all approved. It is in
 
 ## Q3. CLAUDE.md 9a says three contact badges. There are four.
 
+**CLOSED 17 September 2026, amended.** Ruled by the product owner: count rules,
+not badges, because the scan reads rules. Section 9a now says three rules and
+four rendered elements, because the homepage rule dresses the email and
+LinkedIn badges together, and names all three selectors.
+
 Raised 17 September 2026 by the same story. **Not a defect, a counting
-ambiguity**, and it needs one word from the product owner rather than a
+ambiguity**, and it needed one word from the product owner rather than a
 change to anything built.
 
 Section 9a names "the three circular contact badges in index.html,
@@ -94,20 +107,55 @@ both the email badge and the LinkedIn badge.
   the site, getting four, and reading the rule as already broken. That is a
   wasted hour, not a defect.
 
-## Q4. --radius-md is a scale with one step
+## Q4. A size setting called --radius-md, with one size in it
 
-Raised 17 September 2026 by the same story, and deliberately not acted on.
+Raised 17 September 2026 by the radius scan story and deliberately not acted
+on. Restated in full on the product owner's instruction, because the first
+version named the thing without explaining it.
 
-`index.html` declares `--radius-md: 0px` and uses it once, on `.btn`. The name
-implies a small and a large that do not exist, and the token lives on the
-homepage rather than in `tokens.css` where the site's tokens live.
+**What it is.** A named setting written once near the top of `index.html`:
 
-- **What it blocks.** Nothing. It resolves, it is square, and both controls
-  pass on it.
-- **Recommended default.** Leave it. The story said do not change any rendered
-  value, and moving or renaming a token that resolves to zero is a change to
-  the site made inside a control story, which is the shape of edit this
-  repository has a rule against. If it is ever tidied it belongs in its own
-  change, with the sixteen screenshot hashes to prove nothing moved.
-- **Cost if wrong.** None either way. Recorded only so the next reader knows it
-  was seen and left alone on purpose rather than missed.
+```
+--radius-md: 0px;
+```
+
+Corner rounding, in other words, set to none. One rule on the homepage reads
+that setting instead of writing the number itself:
+
+```
+.btn { ... border-radius: var(--radius-md); }
+```
+
+So the homepage's buttons are square, and they are square by pointing at a
+setting rather than by saying zero.
+
+**What is odd about it.** Two things, neither of them a fault.
+
+The name says `md`, for medium. A medium implies a small and a large, which is
+how these settings are normally written: a set of three or four rounding
+values, and each element picks one. There is no small and no large. It is a
+scale with one step, and the name describes a scale that was never built.
+
+It also sits in the wrong file. The site's settings live in `tokens.css`, which
+every page loads. This one lives in `index.html`, so only the homepage can see
+it. Any other page writing `var(--radius-md)` would get nothing, and an unknown
+setting in CSS makes the whole line vanish with no error. That is the exact
+defect `test_no_page_uses_an_undeclared_var` was built for in PR 120, and that
+control does cover this: it is declared and used on the same page, so it passes
+honestly rather than by luck.
+
+- **What it blocks.** Nothing. It resolves, it renders square, and both
+  controls pass on it.
+- **Recommended default.** Leave it exactly as it is. The story said do not
+  change any rendered value, and renaming or moving a setting inside a story
+  about building a control is the shape of edit this repository has a rule
+  against. There is also nothing to gain: the site is square, so a rounding
+  scale has nothing to hold.
+- **If you would rather it were tidied**, the honest version is to delete the
+  setting and write `border-radius: 0` on `.btn` directly, matching what
+  `forecast-risk.html` already does on the same class. That is one line in one
+  file, it removes a name that describes something imaginary, and it wants its
+  own change with the sixteen screenshot hashes to prove nothing moved. It is
+  not urgent and I would not spend a round trip on it.
+- **Cost if wrong.** None either way. Recorded so the next reader knows it was
+  seen and left alone on purpose rather than missed.

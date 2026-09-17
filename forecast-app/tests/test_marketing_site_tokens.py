@@ -928,7 +928,7 @@ def non_zero_radius_selectors(page: Path) -> set:
 
 
 class MarketingSiteKeepsZeroRadius(unittest.TestCase):
-    """Nothing on the four site pages is rounded but the three badges.
+    """Nothing on the four site pages is rounded but the three badge rules.
 
     Section 9 of CLAUDE.md draws structure with 2px rules and hard edges and
     calls zero radius the single biggest difference from a generic dashboard.
@@ -943,11 +943,24 @@ class MarketingSiteKeepsZeroRadius(unittest.TestCase):
     It does not resolve the cascade, so it cannot tell that one rounded
     declaration is overridden by a later square one. Again it reports.
 
-    It reads no user agent stylesheet. A control that a browser rounds by
-    default would not be seen here. Checked once against headless Chromium
-    when this was built and there were none, because forecast-risk.html sets
-    an explicit zero on `select` and on `.btn`. Those two zeroes are load
-    bearing and should not be tidied away as redundant.
+    **A radius arriving from a browser default rather than from a declaration
+    is invisible to this scan.** It reads no user agent stylesheet, so a form
+    control the browser rounds for you is not something it can report.
+
+    That limit is accepted rather than worked around. Ruled static by the
+    product owner on 17 September 2026, closing Q2: a rendered scan would put
+    a browser in the test environment to catch a defect that enters when
+    somebody writes a declaration, which is the thing a declaration scan
+    already reads.
+
+    It is also the reason `forecast-risk.html` sets an explicit
+    `border-radius: 0` on `select` and on `.btn`. A form control takes its
+    radius from the browser's own stylesheet, and those two zeroes are what
+    overrule it. Headless Chromium found no user agent radius anywhere on the
+    site when this was built, and that is why. **They look redundant on a site
+    that is square by default and they are load bearing. Do not tidy them
+    away.** If they were ever deleted this scan would see the deletion, which
+    is the half of the problem it can cover.
 
     It reads the four pages and their linked stylesheets. An SVG with round
     corners drawn into its own geometry is not a CSS radius and is not in
