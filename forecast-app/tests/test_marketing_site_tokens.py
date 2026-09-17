@@ -42,6 +42,7 @@ written into `ctx.strokeStyle` is a raw colour in the file like any other.
 import re
 import unittest
 from pathlib import Path
+from typing import NamedTuple
 
 
 REPOSITORY = Path(__file__).parents[2]
@@ -731,6 +732,359 @@ class StatusColoursMatchAssay(unittest.TestCase):
                 declared_values(moved_assay, (assay_name,))[assay_name][0].lower(),
             )
 
+
+# ---------------------------------------------------------------------------
+# Zero radius on the marketing site.
+# ---------------------------------------------------------------------------
+# CLAUDE.md section 9 has said "zero radius everywhere" since the design
+# system was written down, and section 9a records that on this site nothing
+# ever enforced it: the test named against the rule only ever read the Assay
+# page. This is the scan that was missing, and it is the site's first, so it
+# was written expecting to find something.
+#
+# It found nothing beyond the three approved badges. That result is reported
+# rather than assumed: see test_the_scan_finds_all_three_approved_badges,
+# which fails if the scan stops finding them, because a radius scan that
+# reads nothing reports nothing and passes.
+#
+# ALLOWED BY SELECTOR, NEVER BY VALUE. The three badges are the documented
+# exception, ruled by the product owner on 16 September 2026. A scan that
+# waved through 50% because 50% is what a badge uses would wave through the
+# next element somebody rounds, which is the whole reason the rule exists.
+#
+# Three selectors, four elements. The homepage rule dresses both the email
+# badge and the LinkedIn badge, so the rendered count is two there and one
+# each on the other two pages. CLAUDE.md 9a says "the three circular contact
+# badges", counting rules rather than elements. Recorded here because the two
+# counts disagree and the next reader should not have to rediscover which is
+# meant.
+APPROVED_ROUND_SELECTORS: frozenset = frozenset({
+    ("index.html", ".close .contact-badge"),
+    ("forecast-risk.html", ".close .contact-badge"),
+    ("forecastability.html", ".mail-badge"),
+})
+
+STYLE_BLOCK = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL)
+# A rule is a prelude and a body with no braces in either. Applied to nested
+# CSS this matches the INNER rule and skips the @media wrapper, because the
+# wrapper's body contains braces. That is the behaviour wanted: a radius
+# inside a media query is attributed to the selector that carries it.
+CSS_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}", re.DOTALL)
+INLINE_STYLE = re.compile(
+    r"""<([a-zA-Z][\w-]*)[^>]*\sstyle=["']([^"']*)["']"""
+)
+# Longhands and vendor prefixes included. A scan for "border-radius" alone
+# misses border-top-left-radius, which rounds one corner just as visibly.
+RADIUS_DECL = re.compile(
+    r"(?<![-\w])"
+    r"((?:-(?:webkit|moz|ms|o)-)?border(?:-(?:top|bottom)-(?:left|right))?-radius)"
+    r"\s*:\s*([^;}]+)",
+    re.IGNORECASE,
+)
+# The script door, the same one the token scan above had to close. Nothing on
+# the site sets a radius from JavaScript today, so any hit at all is a
+# finding rather than a value to classify.
+SCRIPTED_RADIUS = re.compile(
+    r"[Bb]order[A-Za-z]*Radius"
+    r"|['\"]border(?:-(?:top|bottom)-(?:left|right))?-radius['\"]"
+)
+CUSTOM_PROPERTY_VALUE = re.compile(r"(--[A-Za-z0-9_-]+)\s*:\s*([^;}]+)")
+VAR_CALL = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*\)")
+ZERO_COMPONENT = re.compile(r"^0(?:[a-z]+|%)?$", re.IGNORECASE)
+
+
+class RadiusDeclaration(NamedTuple):
+    page: str
+    origin: str
+    selector: str
+    prop: str
+    written: str
+    resolved: str
+
+    def describe(self) -> str:
+        through = (
+            f" resolving to {self.resolved}"
+            if self.resolved != self.written
+            else ""
+        )
+        return (
+            f"{self.page}: {self.selector} {{ {self.prop}: {self.written} }}"
+            f"{through}, in {self.origin}"
+        )
+
+
+def css_sources(page: Path) -> list:
+    """Every stylesheet the page can see, with where each came from.
+
+    The chain is read out of the page's own <link> tags, the same way the
+    custom property scan above reads it, rather than assuming tokens.css.
+    """
+    text = without_comments(page.read_text(encoding="utf-8"))
+    sources = [(page.name, "\n".join(STYLE_BLOCK.findall(text)))]
+    for href in STYLESHEET_LINK.findall(text):
+        if "://" in href:
+            continue  # off-origin, and no page here loads one
+        sheet = REPOSITORY / href.lstrip("/")
+        if sheet.is_file():
+            sources.append((href, without_comments(sheet.read_text(encoding="utf-8"))))
+    return sources
+
+
+def css_rules(css: str) -> list:
+    """(selector, body) for every rule, whitespace in the selector collapsed."""
+    return [
+        (" ".join(selector.split()), body)
+        for selector, body in CSS_RULE.findall(css)
+    ]
+
+
+def declared_custom_property_values(page: Path) -> dict:
+    """Every custom property the page can see, name to the set of its values.
+
+    A set rather than a value because a name declared twice with different
+    values cannot be resolved to one thing. Those are left unresolved on
+    purpose, so they fail the zero test loudly instead of being guessed at.
+    """
+    values: dict = {}
+    for _, css in css_sources(page):
+        for name, value in CUSTOM_PROPERTY_VALUE.findall(css):
+            values.setdefault(name, set()).add(value.strip())
+    return values
+
+
+def resolve_value(value: str, properties: dict) -> str:
+    """Substitute var(--name) with its declared value, a few levels deep.
+
+    index.html writes `border-radius: var(--radius-md)` and declares
+    --radius-md as 0px, so the rendered radius is zero and the declaration is
+    not a finding. A scan reading the literal text would have called that a
+    fourth rounded element and sent the product owner after a defect that is
+    not there.
+
+    A name with no declaration, with more than one distinct declaration, or
+    written with a fallback is left exactly as it stands. It then fails the
+    zero test with the unresolved text in the message, which is the right way
+    round: a radius nobody can resolve is a finding, not a pass.
+    """
+    for _ in range(4):
+        replaced = False
+
+        def swap(match):
+            nonlocal replaced
+            candidates = properties.get(match.group(1), set())
+            if len(candidates) != 1:
+                return match.group(0)
+            replaced = True
+            return next(iter(candidates))
+
+        value = VAR_CALL.sub(swap, value)
+        if not replaced:
+            break
+    return value.strip()
+
+
+def is_zero_radius(value: str) -> bool:
+    """True only when every component of the value is a zero length.
+
+    `0`, `0px`, `0 0 0 0` and `0px / 0px` are zero. `50%` is not. Anything
+    this cannot read as a list of zeroes, calc() included, is reported rather
+    than waved through.
+    """
+    parts = value.replace("/", " ").split()
+    return bool(parts) and all(ZERO_COMPONENT.match(part) for part in parts)
+
+
+def radius_declarations(page: Path) -> list:
+    """Every radius this page declares, from its chain and from its markup."""
+    properties = declared_custom_property_values(page)
+    found = []
+    for origin, css in css_sources(page):
+        for selector, body in css_rules(css):
+            for prop, written in RADIUS_DECL.findall(body):
+                found.append(RadiusDeclaration(
+                    page.name, origin, selector, prop,
+                    written.strip(), resolve_value(written, properties),
+                ))
+    # An inline style has no selector, so it can never be on the approved
+    # list. That is correct rather than awkward: the exception is three named
+    # rules, and a radius written onto an element is exactly the accidental
+    # pill this control exists to catch.
+    markup = without_comments(page.read_text(encoding="utf-8"))
+    for tag, style in INLINE_STYLE.findall(markup):
+        for prop, written in RADIUS_DECL.findall(style):
+            found.append(RadiusDeclaration(
+                page.name, page.name, f"inline style on <{tag}>", prop,
+                written.strip(), resolve_value(written, properties),
+            ))
+    return found
+
+
+def non_zero_radius_selectors(page: Path) -> set:
+    return {
+        (declaration.page, declaration.selector)
+        for declaration in radius_declarations(page)
+        if not is_zero_radius(declaration.resolved)
+    }
+
+
+class MarketingSiteKeepsZeroRadius(unittest.TestCase):
+    """Nothing on the four site pages is rounded but the three badges.
+
+    Section 9 of CLAUDE.md draws structure with 2px rules and hard edges and
+    calls zero radius the single biggest difference from a generic dashboard.
+    Section 9a records that Assay is now a documented exception to it and
+    that the site is not, and hands this scan to the site session.
+
+    Four limits, stated rather than left to be found.
+
+    It reads declarations, not rendered elements. A rule that never matches
+    anything still counts, which errs towards reporting.
+
+    It does not resolve the cascade, so it cannot tell that one rounded
+    declaration is overridden by a later square one. Again it reports.
+
+    It reads no user agent stylesheet. A control that a browser rounds by
+    default would not be seen here. Checked once against headless Chromium
+    when this was built and there were none, because forecast-risk.html sets
+    an explicit zero on `select` and on `.btn`. Those two zeroes are load
+    bearing and should not be tidied away as redundant.
+
+    It reads the four pages and their linked stylesheets. An SVG with round
+    corners drawn into its own geometry is not a CSS radius and is not in
+    scope here.
+    """
+
+    def test_no_page_carries_a_non_zero_radius(self) -> None:
+        offenders = []
+        for page in marketing_pages():
+            for declaration in radius_declarations(page):
+                if is_zero_radius(declaration.resolved):
+                    continue
+                if (declaration.page, declaration.selector) in APPROVED_ROUND_SELECTORS:
+                    continue
+                offenders.append(declaration.describe())
+        self.assertEqual(
+            offenders, [],
+            "The site is zero radius apart from the three approved contact "
+            "badges, which are allowed by selector and not by value. Found: "
+            + "; ".join(offenders)
+            + ". If this is a decision rather than an accident it belongs in "
+            "CLAUDE.md section 9 as a named exception, and in this list by "
+            "selector, before the test is changed.",
+        )
+
+    def test_the_scan_reads_every_page_and_its_chain(self) -> None:
+        """Anti-vacuous, part one: prove it read something on each page.
+
+        A scan that parses nothing finds nothing and passes. That has already
+        happened once on this project, when an Assay badge check returned
+        zero readings across eight tabs and was read as clean.
+
+        The two anchors are structural rather than a count. Every page styles
+        `body` in its own <style> block, and every page's chain reaches
+        tokens.css, where `:root` carries the tokens. Break the rule parser
+        and both disappear at once.
+
+        A count floor was written first and thrown away. It would have had to
+        sit under privacy.html at 16 rules, and a threshold chosen to clear
+        the shortest page is tuned to pass rather than measured. The per-page
+        counts are recorded in the evidence file, where a number belongs.
+        """
+        for page in marketing_pages():
+            by_origin = {
+                origin: {selector for selector, _ in css_rules(css)}
+                for origin, css in css_sources(page)
+            }
+            self.assertIn(
+                "tokens.css", by_origin,
+                f"{page.name} did not resolve its stylesheet chain, so "
+                "whatever this scan reported about it was read off half a "
+                "page.",
+            )
+            self.assertIn(
+                ":root", by_origin["tokens.css"],
+                f"{page.name} reached tokens.css and parsed no :root out of "
+                "it, so the rule parser is broken rather than the page clean.",
+            )
+            self.assertIn(
+                "body", by_origin[page.name],
+                f"{page.name} parsed no body rule out of its own <style>, so "
+                "this scan did not read the page it reports on.",
+            )
+
+    def test_the_scan_finds_all_three_approved_badges(self) -> None:
+        """Anti-vacuous, part two, and the one that matters.
+
+        The exception list is not evidence that the badges are there. This
+        holds the list against what the scan actually finds, so the list
+        cannot quietly describe rules that no longer exist, and the scan
+        cannot quietly stop reading.
+        """
+        found = set()
+        for page in marketing_pages():
+            found |= non_zero_radius_selectors(page)
+        self.assertEqual(
+            found, set(APPROVED_ROUND_SELECTORS),
+            "The rounded elements the scan finds no longer match the three "
+            "approved badges. If a badge was removed, remove it from "
+            "APPROVED_ROUND_SELECTORS in the same change; if something else "
+            "is rounded, that is a finding for the product owner.",
+        )
+
+    def test_no_page_sets_a_radius_from_script(self) -> None:
+        """The door the token scan above had to close separately."""
+        for page in marketing_pages():
+            text = page.read_text(encoding="utf-8")
+            for block in SCRIPT_BLOCK.findall(text):
+                self.assertIsNone(
+                    SCRIPTED_RADIUS.search(block),
+                    f"{page.name} sets a border radius from JavaScript. No "
+                    "page did when this control was written, so there is no "
+                    "approved form of it. A radius applied at runtime is "
+                    "invisible to every static scan on this site.",
+                )
+
+    def test_a_planted_radius_is_caught(self) -> None:
+        """Probe the classifier on the shape an accident actually takes."""
+        self.assertTrue(is_zero_radius("0"))
+        self.assertTrue(is_zero_radius("0px"))
+        self.assertTrue(is_zero_radius("0 0 0 0"))
+        self.assertFalse(is_zero_radius("4px"))
+        self.assertFalse(is_zero_radius("50%"))
+        self.assertFalse(is_zero_radius("0 0 0 3px"))
+        self.assertFalse(is_zero_radius(""))
+
+    def test_the_exception_is_by_name_and_not_by_value(self) -> None:
+        """A pill is a pill wherever it lands.
+
+        50% on an approved badge passes. The same value on anything else is a
+        finding, which is the difference between allowing a selector and
+        allowing a number.
+        """
+        self.assertIn(("index.html", ".close .contact-badge"), APPROVED_ROUND_SELECTORS)
+        self.assertNotIn(("index.html", ".btn"), APPROVED_ROUND_SELECTORS)
+        self.assertNotIn(("privacy.html", ".close .contact-badge"), APPROVED_ROUND_SELECTORS)
+
+    def test_a_radius_written_through_a_token_is_read_through_it(self) -> None:
+        """index.html's .btn is the case a literal scan would get wrong.
+
+        It is written as var(--radius-md) and --radius-md is 0px, so it is
+        square. Pinned because deleting the resolution step would turn a
+        clean page into a false finding and send someone after nothing.
+        """
+        homepage = REPOSITORY / "index.html"
+        values = declared_custom_property_values(homepage)
+        self.assertEqual(values.get("--radius-md"), {"0px"})
+        through_token = [
+            declaration for declaration in radius_declarations(homepage)
+            if "var(" in declaration.written
+        ]
+        self.assertTrue(through_token, "nothing on the homepage uses a token radius")
+        for declaration in through_token:
+            self.assertTrue(
+                is_zero_radius(declaration.resolved),
+                f"{declaration.describe()} did not resolve to zero",
+            )
 
 if __name__ == "__main__":
     unittest.main()
