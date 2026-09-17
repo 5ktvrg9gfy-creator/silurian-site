@@ -278,6 +278,13 @@ VAR_USE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*([,)])")
 STYLESHEET_LINK = re.compile(
     r"""<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']"""
 )
+# The other door. A canvas cannot use var(), so forecast-risk.html reads its
+# chart colours by naming them as strings and asking getComputedStyle for the
+# value. Rename one of those tokens and getPropertyValue returns an empty
+# string: the chart paints with nothing, silently, exactly as an undefined
+# var() does. Same defect, same silence, and a var() scan cannot see it.
+SCRIPT_BLOCK = re.compile(r"<script[^>]*>(.*?)</script>", re.DOTALL)
+SCRIPTED_PROPERTY = re.compile(r"""['"](--[A-Za-z0-9_-]+)['"]""")
 
 
 def without_comments(text: str) -> str:
@@ -323,6 +330,14 @@ def used_custom_properties(text: str) -> set[str]:
     }
 
 
+def scripted_custom_properties(text: str) -> set[str]:
+    """Every custom property named as a string literal inside a <script>."""
+    found: set[str] = set()
+    for block in SCRIPT_BLOCK.findall(text):
+        found |= set(SCRIPTED_PROPERTY.findall(block))
+    return found
+
+
 class MarketingSiteVariablesResolve(unittest.TestCase):
     """No page may name a custom property nothing in its chain declares.
 
@@ -332,11 +347,15 @@ class MarketingSiteVariablesResolve(unittest.TestCase):
     declared even though it only applies at some widths. Catching that needs
     a browser and the failure it would catch is a different one.
 
-    It reads var() and not JavaScript. `forecast-risk.html` reads seven token
-    names as strings through getComputedStyle, which is the same defect class
-    through a different door and is NOT covered here. Raised in
-    docs/marketing-site-open-questions.md rather than folded in, because the
-    story asked for var().
+    It reads both doors since 17 September 2026. `var()` in CSS and inline
+    styles, and custom properties named as string literals inside a <script>,
+    which is how `forecast-risk.html` paints its chart because a canvas cannot
+    use var(). Both are held against the same declared set.
+
+    It does not strip JavaScript comments, so a commented-out token read still
+    counts as a read. That produces a loud failure rather than a silent one,
+    which is the right way round for a control to be wrong, and stripping
+    comments from JavaScript reliably is more machinery than the risk earns.
 
     It proves a name is declared somewhere in the chain, not that the value is
     sensible. A token declared as garbage still passes.
@@ -357,6 +376,40 @@ class MarketingSiteVariablesResolve(unittest.TestCase):
                 "error, and the page renders as though the line was never "
                 "written.",
             )
+
+    def test_no_page_reads_an_undeclared_token_from_script(self) -> None:
+        """The door a var() scan cannot see.
+
+        forecast-risk.html names seven tokens as strings to paint its chart.
+        getPropertyValue on a name nothing declares returns an empty string,
+        so the chart draws with nothing and reports no error.
+        """
+        for page in marketing_pages():
+            declared, chain = declared_custom_properties(page)
+            read = scripted_custom_properties(page.read_text(encoding="utf-8"))
+            missing = sorted(read - declared)
+            self.assertEqual(
+                missing,
+                [],
+                f"{page.name} reads {missing} from script and nothing in its "
+                f"chain ({', '.join(chain)}) declares them. "
+                "getPropertyValue returns an empty string for a name that does "
+                "not exist, so whatever it paints is painted with nothing and "
+                "no error is raised.",
+            )
+
+    def test_the_script_scan_finds_the_chart_tokens(self) -> None:
+        """Anti-vacuous: the seven are real and the scan sees them."""
+        chart = REPOSITORY / "forecast-risk.html"
+        read = scripted_custom_properties(chart.read_text(encoding="utf-8"))
+        self.assertEqual(len(read), 7, f"Expected seven, found {sorted(read)}")
+        self.assertIn("--color-chart-series", read)
+
+    def test_a_renamed_chart_token_is_caught(self) -> None:
+        """Probe the comparison, on the shape a rename actually takes."""
+        declared = {"--color-chart-grid", "--color-text"}
+        read = {"--color-chart-grid", "--color-chart-series"}
+        self.assertEqual(sorted(read - declared), ["--color-chart-series"])
 
     def test_a_planted_undeclared_var_is_caught(self) -> None:
         """The shape the story was written about."""

@@ -7,6 +7,8 @@ the cost if wrong.
 
 ## Q1. Token names read from JavaScript are not covered by the var() control
 
+**CLOSED 17 September 2026, built.** The recommendation below was taken the same day, in the next story rather than later, on the product owner's instruction: a gap that specific is the one a future change walks into. `test_no_page_reads_an_undeclared_token_from_script` now holds the seven names against the same declared set as the `var()` scan. Proved by renaming `--color-chart-grid` in `tokens.css`, the one of the seven read only from script, and watching that test and only that test fail. The question is kept rather than deleted, because the reasoning is the useful part.
+
 `test_no_page_uses_an_undeclared_var` was added on 17 September 2026 and closes
 the var() half of the defect class. It does not close the other half.
 
@@ -35,6 +37,8 @@ added today reads `var(` and will not see it.
   on a client-facing page with nothing to catch it, which is the exact shape of
   the defect this story was written about.
 
-**Not built today because the story asked for `var()` and `CLAUDE.md` section 4
-rule 3 says a brief that names one thing wants one thing.** Raised rather than
-folded in.
+**Not built in the story that raised it, because that story asked for `var()`
+and `CLAUDE.md` section 4 rule 3 says a brief that names one thing wants one
+thing.** Raised rather than folded in, then built as its own story the same
+day. That is the sequence the rule is for: the scope discipline cost one round
+trip and no time.
