@@ -258,6 +258,147 @@ FONT_SHORTHAND = re.compile(r"(?<![-\w])font\s*:\s*([^;}\"\']+)")
 VAR_REFERENCE = re.compile(r"var\(\s*--[A-Za-z0-9-]+\s*\)")
 # A number carrying a length or percentage unit. Bare numbers are left alone
 # because an unitless 1.4 in a shorthand is a line height, not a size.
+# A var() pointing at nothing. This is the defect class the site could not
+# catch until 17 September 2026, and the reason it needs a test rather than a
+# note is the failure mode: an undefined custom property makes the whole
+# declaration invalid at computed-value time. Not a console error, not a
+# fallback to something sensible, and nothing in the diff to see. The
+# declaration simply does not happen and the page renders as though it was
+# never written. --space-1 through --space-4 sat in index.html and nowhere
+# else for two weeks, so any other page naming var(--space-4) would have got
+# silence. It never bit, which is luck rather than a control.
+#
+# Comments are stripped before the declaration scan so prose naming a token
+# cannot be mistaken for declaring one.
+CSS_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+CUSTOM_PROPERTY_DECL = re.compile(r"(--[A-Za-z0-9_-]+)\s*:")
+# The character after the name says whether a fallback follows.
+VAR_USE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*([,)])")
+STYLESHEET_LINK = re.compile(
+    r"""<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']"""
+)
+
+
+def without_comments(text: str) -> str:
+    return HTML_COMMENT.sub(" ", CSS_COMMENT.sub(" ", text))
+
+
+def declared_custom_properties(page: Path) -> tuple[set[str], list[str]]:
+    """Every custom property the page could see, and the chain it came from.
+
+    The chain is read out of the page's own <link> tags rather than assumed to
+    be tokens.css, because the point of this control is to follow what the
+    page actually loads.
+    """
+    text = page.read_text(encoding="utf-8")
+    chain = [page.name]
+    declared = set(CUSTOM_PROPERTY_DECL.findall(without_comments(text)))
+    for href in STYLESHEET_LINK.findall(text):
+        if "://" in href:
+            continue  # off-origin, and no page here loads one
+        sheet = REPOSITORY / href.lstrip("/")
+        if sheet.is_file():
+            chain.append(href)
+            declared |= set(
+                CUSTOM_PROPERTY_DECL.findall(
+                    without_comments(sheet.read_text(encoding="utf-8"))
+                )
+            )
+    return declared, chain
+
+
+def used_custom_properties(text: str) -> set[str]:
+    """Every var() reference with no fallback.
+
+    A var() carrying a fallback is not a finding: an undeclared name there
+    resolves to the fallback, which is the defined behaviour rather than a
+    silent failure. No page uses that form today; the exclusion is probed
+    below so it is not untested logic.
+    """
+    return {
+        name
+        for name, following in VAR_USE.findall(text)
+        if following == ")"
+    }
+
+
+class MarketingSiteVariablesResolve(unittest.TestCase):
+    """No page may name a custom property nothing in its chain declares.
+
+    Three limits, stated rather than left to be discovered.
+
+    It is a static scan, so a declaration inside a media query counts as
+    declared even though it only applies at some widths. Catching that needs
+    a browser and the failure it would catch is a different one.
+
+    It reads var() and not JavaScript. `forecast-risk.html` reads seven token
+    names as strings through getComputedStyle, which is the same defect class
+    through a different door and is NOT covered here. Raised in
+    docs/marketing-site-open-questions.md rather than folded in, because the
+    story asked for var().
+
+    It proves a name is declared somewhere in the chain, not that the value is
+    sensible. A token declared as garbage still passes.
+    """
+
+    def test_no_page_uses_an_undeclared_var(self) -> None:
+        for page in marketing_pages():
+            declared, chain = declared_custom_properties(page)
+            used = used_custom_properties(page.read_text(encoding="utf-8"))
+            missing = sorted(used - declared)
+            self.assertEqual(
+                missing,
+                [],
+                f"{page.name} uses {missing} and nothing in its chain "
+                f"({', '.join(chain)}) declares them. An undefined custom "
+                "property makes the whole declaration invalid at "
+                "computed-value time: it fails silently, with no console "
+                "error, and the page renders as though the line was never "
+                "written.",
+            )
+
+    def test_a_planted_undeclared_var_is_caught(self) -> None:
+        """The shape the story was written about."""
+        planted = ".a { padding: var(--space-4); }"
+        self.assertEqual(used_custom_properties(planted), {"--space-4"})
+        self.assertNotIn("--space-4", set())
+
+    def test_a_var_with_a_fallback_is_not_a_finding(self) -> None:
+        """Probe the exclusion, so it is not untested logic."""
+        self.assertEqual(used_custom_properties(".a { gap: var(--nope, 8px); }"), set())
+        self.assertEqual(used_custom_properties(".a { gap: var(--yes); }"), {"--yes"})
+
+    def test_a_token_named_only_in_a_comment_does_not_count_as_declared(self) -> None:
+        """Prose about a token is not a declaration of it."""
+        self.assertEqual(
+            set(CUSTOM_PROPERTY_DECL.findall(without_comments("/* --ghost: 4px; */"))),
+            set(),
+        )
+        self.assertEqual(
+            set(CUSTOM_PROPERTY_DECL.findall(without_comments(":root{--real:4px}"))),
+            {"--real"},
+        )
+
+    def test_every_page_reaches_the_token_file_through_its_own_link(self) -> None:
+        """The chain is followed, not assumed."""
+        for page in marketing_pages():
+            _, chain = declared_custom_properties(page)
+            self.assertIn(
+                TOKEN_FILE_NAME,
+                chain,
+                f"{page.name} does not link {TOKEN_FILE_NAME}, so every token "
+                "it names resolves to nothing.",
+            )
+
+    def test_the_scan_finds_the_variables_the_site_actually_uses(self) -> None:
+        """A scan that passes because it read nothing is not a pass."""
+        total = set()
+        for page in marketing_pages():
+            total |= used_custom_properties(page.read_text(encoding="utf-8"))
+        self.assertGreater(len(total), 15, f"Only found {sorted(total)}")
+
+
 # One loudest element per page. See the note beside the steps in tokens.css.
 POSTER_USE = re.compile(r"var\(\s*--text-poster\s*\)")
 SIZED_NUMBER = re.compile(r"\d*\.?\d+\s*(?:px|pt|pc|em|rem|ex|ch|cap|vw|vh|vmin|vmax|%)\b")

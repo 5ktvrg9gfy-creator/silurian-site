@@ -181,6 +181,23 @@
      hand-written size. */
   --wordmark-size: clamp(15px, 1.8vw, 18px);
 
+  /* Spacing. Moved here from index.html on 17 September 2026, where the four
+     of them were declared and nowhere else. Any other page naming
+     var(--space-4) got nothing: an undefined custom property makes the
+     declaration invalid at computed-value time, so it fails silently, with
+     no error in the console and nothing in the diff to see. It had not bitten
+     yet, and a note is not a control, so test_no_page_uses_an_undeclared_var
+     now catches the whole class rather than this one instance.
+
+     The values are unchanged and carry their original .0 so a reader can see
+     nothing was retuned in the move. There is still no spacing scale on this
+     site: four steps that stop at 16px are a handful of values with a shared
+     prefix, and pages continue to use literal px for layout. */
+  --space-1: 4.0px;
+  --space-2: 8.0px;
+  --space-3: 12.0px;
+  --space-4: 16.0px;
+
   --font-heading: "Archivo", system-ui, sans-serif;
   --font-heading-weight: 800;
   --font-body: "Archivo", system-ui, sans-serif;
