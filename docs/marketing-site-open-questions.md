@@ -109,6 +109,18 @@ both the email badge and the LinkedIn badge.
 
 ## Q4. A size setting called --radius-md, with one size in it
 
+**CLOSED 17 September 2026. Leave it**, ruled by the product owner: the setting
+resolves, the page renders square, and both controls pass on it honestly rather
+than by luck. Renaming a setting inside a story about building a control is the
+edit this repository has a rule against, and not making it was the right call.
+
+One line is now recorded beside the declaration in `index.html` itself, which
+is where somebody would go looking for the missing small and large: a single
+step with nothing above or below it, declared and read on that page only, and
+correct as it stands. **`index.html` is in the diff for that comment and
+nothing else.** Sixteen full-page screenshot hashes, four pages at 1440, 768,
+390 and 320px, are byte identical before and after.
+
 Raised 17 September 2026 by the radius scan story and deliberately not acted
 on. Restated in full on the product owner's instruction, because the first
 version named the thing without explaining it.
