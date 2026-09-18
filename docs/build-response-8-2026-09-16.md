@@ -152,6 +152,11 @@ against the header's 2px close, not by lightening the colour.**
 the design session will look at the divider's height rather than its value.
 Nobody has seen it in place yet, so this is live rather than closed.
 
+> **Closed 18 September 2026.** The product owner looked at the masthead on a
+> laptop. The rule reads right, so the condition is not met, the divider's
+> height is not looked at, and the 1px value stands as built. This was the last
+> open item from the masthead round.
+
 **2. The wordmark does not move.** The 19px was an error: it came from the
 Assay dashboard's scale and should not have been in a site changeset. "Not to
 change" is the instruction that holds. `clamp(15px, 1.8vw, 18px)` at -0.02em
