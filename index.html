@@ -341,20 +341,19 @@ body[data-baselines]::after {
    a masthead that differs between pages is how this site came to run three
    palettes. */
 .mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
-/* 804px is measured, not chosen, and it moved from 521px when the nav gained
-   its second link. The old number was the width at which the subline broke to
-   two lines inside a squeezed column, which is what failed first when the
-   lockup was three strings and one link. That is not what fails first any
-   more: with two service links in the nav the pair stops fitting on one line
-   at 804px, while the subline still holds its single line far below that. A
-   border-left between two links that have wrapped draws a vertical rule at the
-   start of a line rather than between two labels, so the nav drops to its own
-   row here and both hairlines go with it. Measured in headless Chromium with
-   the fonts loaded, stepping 1300px down to 300px with this query neutralised,
-   on both pages carrying this lockup: index.html and delivery.html both fail
-   at 804px and both hold at 805px. Remeasured if any string in the lockup
-   changes, the nav labels included. */
-@media (max-width: 804px) {
+/* 716px is measured, not chosen, against the nav labels this lockup carries
+   now: "Project Management" and "AI Forecast Diagnostic". What fails first is
+   those two links ceasing to fit on one line. It is not the subline, which
+   holds its single line far below this width. A border-left between two links
+   that have wrapped draws a vertical rule at the start of a line rather than
+   between two labels, so the nav drops to its own row here and both hairlines
+   go with it. Measured in headless Chromium with the fonts loaded, stepping
+   1300px down to 300px with this query neutralised, on both pages carrying
+   this lockup: index.html and delivery.html both fail at 716px and both hold
+   at 717px. The number tracks the label strings and has already moved twice,
+   so remeasure it whenever any string in the lockup changes, the nav labels
+   included. */
+@media (max-width: 716px) {
   .mast-brand { grid-template-columns: auto 1fr; }
   .mast-rule { display: none; }
   .mast-brand .mast-nav {

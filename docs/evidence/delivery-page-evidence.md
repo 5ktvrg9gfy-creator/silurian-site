@@ -95,3 +95,33 @@ evidence, and there is none yet.
 The one route to `delivery.html` is the masthead nav on `index.html`. Confirmed
 by grep across every page: two matches in markup, the link on `index.html` and
 the self-link on `delivery.html`, and nothing else.
+
+## Correction, 18 September 2026: the breakpoint is 716px, not 804px
+
+The 804px recorded above was correct when it was measured and is no longer the
+value in the code. The nav label "Programme and Project Delivery" was shortened
+to "Project Management" after this evidence was written, which moved what fails
+first, so the breakpoint was remeasured and both pages now carry 716px.
+
+This section is appended rather than edited into the text above, because the
+804px measurement was not wrong: it was right about a lockup that has since
+changed. Overwriting it would hide that the number tracks the label strings,
+which is the thing a reader needs to know before changing a label again.
+
+Same method as above: breakpoint media query neutralised in temporary copies,
+headless Chromium 1194, Archivo loaded and awaited, viewport stepped 1300px down
+to 300px in 1px steps. Both pages fail at 716px and both hold at 717px,
+identically, and the failure is still the two nav links ceasing to fit on one
+line rather than the subline wrapping.
+
+Verified on the committed files with the new query live, 30 observations across
+the two pages, all holding: at 1400, 1000, 805, 804, 760, 718 and 717px the
+`.mast-rule` renders at 1px and the nav `border-left` at 1px solid
+`rgb(63, 61, 59)` with `padding-left` 16px, nav on one line; at 716, 715, 600,
+521, 480, 400, 360 and 320px both compute away together, `display: none` and
+`0px`, with no horizontal overflow at any width. The 804px and 760px readings
+are the point of the change: those widths now keep the desktop lockup, where the
+old value sent them to the stacked form about 88px early.
+
+The breakpoint has moved twice on this branch, 521px to 804px to 716px, each
+time because a string in the lockup changed. Remeasure it whenever one does.
