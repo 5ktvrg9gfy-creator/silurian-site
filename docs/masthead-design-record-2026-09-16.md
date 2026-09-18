@@ -238,6 +238,21 @@ own 4px bound, and its rules do not come back to the site.
 > `50%` on anything else fails the build. Nothing enforced zero radius on the
 > site before that date, including when this was written.
 
+> **Count corrected again 18 September 2026.** Four rules, six rendered
+> elements. The note above was right when it was written, and the site has
+> since gained a fifth page. `delivery.html` reuses the homepage's closing
+> field, so it carries a fourth `.close .contact-badge` rule dressing a fifth
+> and a sixth badge. The product owner ruled the reuse on 18 September 2026,
+> `CLAUDE.md` section 9a was amended before the scan's allow list was widened,
+> which is the order that test's own failure message demands, and the six is
+> measured rather than counted by hand: 2 rounded elements on `index.html`, 2
+> on `delivery.html`, 1 on `forecast-risk.html`, 1 on `forecastability.html`
+> and 0 on `privacy.html`, every element on every page read through
+> `getComputedStyle` with all four corners checked.
+>
+> The note above is left standing rather than edited. It is itself the record
+> of a correction, and a correction to the record stays on the record.
+
 ## 8. Where this lives in the repository
 
 | What | Where |

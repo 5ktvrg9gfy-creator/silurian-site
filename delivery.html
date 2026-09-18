@@ -94,26 +94,13 @@ a.btn { white-space: nowrap; }
   font-size: var(--wordmark-size); line-height: 1.2; letter-spacing: -0.02em;
   white-space: nowrap; color: var(--color-text);
 }
-/* The route home, on the wordmark rather than wrapped around the mark and the
-   wordmark together as privacy.html and forecastability.html do it. Those two
-   mastheads are flex rows, where one anchor can hold both children. This one
-   is a grid and the mark and the wordmark are separately placed cells, so an
-   anchor around the pair would become the grid item and both placements would
-   be lost. The mark stays decorative, which it already was: alt="". No weight
-   or size change, so the mark is still one string at one weight. */
-/* The anchor has to be transparent, not just uncoloured. `.mast-bar
-   a:not(.btn)` above is the NAV LINK rule and it catches every anchor in the
-   bar, this one included, which is how the mark came to render at the 12px
-   label step, tracked +0.06em and uppercased, while index.html's plain <p>
-   kept the wordmark step. Three properties, not one: inheriting the colour
-   alone left the mark a different size and a different case from the same
-   mark one page away. text-transform is set to none rather than inherited
-   because there is nothing above it to inherit. */
-.mast-brand .wordmark a {
-  color: inherit; text-decoration: none;
-  font-family: inherit; font-weight: inherit; font-size: inherit;
-  letter-spacing: inherit; text-transform: none;
-}
+/* No anchor on the wordmark. The route home was the builder's own addition
+   rather than the changeset's and the product owner removed it on 18 September
+   2026. It is worth knowing why the rule that dressed it is gone too: any
+   anchor placed in this bar is caught by `.mast-bar a:not(.btn)`, the nav link
+   rule, which renders it at the 12px label step, tracked and uppercased. That
+   is what happened to the mark here, and a future anchor in this lockup needs
+   the same five properties overridden, not just colour. */
 .mast-brand .mast-subline {
   margin: var(--space-1) 0 0; font-family: var(--font-body); font-weight: 600;
   font-size: var(--text-label); line-height: 1.2; letter-spacing: 0.08em;
@@ -289,7 +276,7 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
   <div class="mast-bar" style="background:var(--color-paper);gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
     <div class="mast-brand">
       <img class="mast-mark" src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290" />
-      <p class="wordmark"><a href="index.html">Silurian PM</a></p>
+      <p class="wordmark">Silurian PM</p>
       <p class="mast-subline">Project &amp; Programme Delivery</p>
       <span class="mast-rule" aria-hidden="true"></span>
       <nav class="mast-nav" aria-label="Services">
