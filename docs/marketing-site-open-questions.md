@@ -346,8 +346,8 @@ form, dated blockquote beside each, no body edit. Section 6's ramp bullet is
 marked closed by pull request 125. Section 7's radius paragraph is marked three
 rules and four rendered elements, with a line saying the rule is now enforced
 by `MarketingSiteKeepsZeroRadius` and was not enforced by anything when that
-paragraph was written. **The divider height bullet is left alone**, because it
-is genuinely open and nobody has seen the rule in place.
+paragraph was written. **The divider height bullet was left alone**, because it
+was genuinely open and nobody had seen the rule in place. **It closed later the same day**: the product owner looked at the masthead on a laptop, the rule reads right, so the condition is not met and the 1px value stands. Noted in four places, the two in the masthead record, the one in `docs/build-response-8-2026-09-16.md` and the masthead entry in `PROJECT_HANDOFF.md`.
 
 Raised 18 September 2026 while committing that record. Neither was noted at the
 time, because the previous ruling named one note and adding uninstructed notes

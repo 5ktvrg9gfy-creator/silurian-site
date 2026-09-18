@@ -125,6 +125,11 @@ Two further objections, recorded because they outlive this round:
 - **Conditional, with the design session.** If the rule reads heavy in place,
   the divider's height gets looked at rather than its value. Nobody has seen
   it in place yet.
+
+> **Closed 18 September 2026.** The product owner has looked at the masthead on
+> a laptop and the rule reads right. The condition was "if the rule reads heavy
+> in place", and it does not, so the divider's height is not looked at and the
+> 1px value stands as built. Nothing goes back to the design session.
 - **With the design session.** The amendment writing the deleted ramp
   constraint into `design-decisions.md` has not reached this repository.
   `docs/designdecisions.md` on `main` mentions neither the ramp, nor
@@ -140,8 +145,9 @@ Two further objections, recorded because they outlive this round:
 > is a working copy, and an amendment that has not reached `main` has not
 > happened.
 >
-> The bullet above it, the conditional on the divider's height, is still open.
-> Nobody has seen the rule in place.
+> The bullet above it, the conditional on the divider's height, was still open
+> when this note was written. It closed later the same day, and its own note
+> above says so.
 
 ## 7. What a site changeset has to satisfy, so the next one is not caught out
 
@@ -254,3 +260,14 @@ environment refuses both `vercel.app` and the site itself.
 The thing to look at is the rule. It should span both lines of the lockup
 rather than float between them, and it should be gone on a phone, where the
 label drops to its own row.
+
+> **Checked 18 September 2026.** The product owner looked at the masthead on a
+> laptop and on a phone. The rule reads right and nothing else moved. That is
+> the check this section asked for, and it also closes the conditional in
+> section 6.
+>
+> It remains true that no build session has seen it. The network policy in this
+> environment still refuses both `vercel.app` and the site itself, so every
+> measurement in this file is headless Chromium against a local server and every
+> live confirmation in `PROJECT_HANDOFF.md` is the product owner's, on his own
+> devices, attributed to him.
