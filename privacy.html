@@ -32,7 +32,14 @@ header {
 header img { width: 26px; aspect-ratio: 200 / 290; }
 /* One link, so the mark and the wordmark both go home. The gap moves onto
    the anchor because the anchor is now the header's only child. */
+/* The mark carries the wordmark step and its tracking, as it does on every
+   other page. Without these two it took the body size, because this header has
+   no .brand span to hang them on the way forecastability.html and
+   forecast-risk.html do, so the mark read smaller here than the same mark
+   everywhere else. Pre-existing, found on 18 September 2026 when the wordmark
+   was compared across all five pages. */
 header a { color: var(--color-text); font-weight: var(--font-heading-weight); text-decoration: none;
+  font-size: var(--wordmark-size); letter-spacing: -0.02em;
   display: flex; align-items: center; gap: 14px; }
 header a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 main { max-width: 860px; margin: 0 auto; padding: 72px var(--edge) 96px; }
@@ -51,7 +58,7 @@ footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-heigh
 </head>
 <body>
 <header>
-  <a class="brand-home" href="index.html"><img src="logo-stone.svg" alt="" />Silurian</a>
+  <a class="brand-home" href="index.html"><img src="logo-stone.svg" alt="" />Silurian PM</a>
 </header>
 <main>
   <h1>Privacy</h1>

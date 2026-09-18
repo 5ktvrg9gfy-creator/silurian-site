@@ -15,7 +15,10 @@
 
 
   /* A single step, with no small and no large above or below it. Declared
-     and read on this page only, and correct as it stands. Ruled by the
+     and read on this page and on delivery.html, the two pages carrying a
+     closing field, and correct as it stands. It said "this page only" until
+     18 September 2026, which the delivery page's closing field made untrue.
+     Still not in tokens.css, and that placement was ruled by the
      product owner on 17 September 2026, closing Q4 in
      docs/marketing-site-open-questions.md: it resolves, the page renders
      square, and both token controls pass on it honestly rather than by
@@ -321,19 +324,51 @@ body[data-baselines]::after {
   color: var(--color-text-muted); letter-spacing: normal; text-transform: none;
 }
 .mast-bar a.forecast-link:hover { color: var(--color-text); }
-/* 521px is measured, not chosen. The grid does not overflow at any width,
-   because auto columns compress by wrapping their text, so the old flex wrap
-   point no longer means anything: what fails first is the subline breaking to
-   two lines inside a squeezed column. It holds one line down to 522px. Below
-   that the label drops to its own row and the rule goes with it, because an
-   edge dividing nothing is not a division. Remeasured if any of the three
-   strings in the lockup changes. */
-@media (max-width: 521px) {
+/* The nav holds the two service lines, so this masthead now carries a second
+   hairline. It is drawn as a border on the second link rather than as an
+   element: .mast-rule divides two blocks that are not siblings, where these
+   two links already are, and a span between them would be a third child
+   doing what a border does. Same 1px solid var(--color-divider) as every
+   other hairline on the site, never faded. var(--space-4) either side, which
+   is the 16px .mast-rule takes from the row's column gap plus its own
+   margins, so the two hairlines in this lockup are spaced alike. */
+.mast-brand .mast-nav { display: flex; flex-wrap: wrap; }
+.mast-nav a.forecast-link:first-child { padding-right: var(--space-4); }
+.mast-nav a.forecast-link + a.forecast-link {
+  border-left: 1px solid var(--color-divider); padding-left: var(--space-4);
+}
+/* The current page reads at full ink. The underline it also carries comes
+   from .mast-bar a[aria-current='location'] above, which already sets the
+   5px offset. Written on both pages that carry this lockup so the block stays
+   one thing: index.html has no current link, so here it matches nothing, and
+   a masthead that differs between pages is how this site came to run three
+   palettes. */
+.mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
+/* 716px is measured, not chosen, against the nav labels this lockup carries
+   now: "Project Management" and "AI Forecast Diagnostic". What fails first is
+   those two links ceasing to fit on one line. It is not the subline, which
+   holds its single line far below this width. A border-left between two links
+   that have wrapped draws a vertical rule at the start of a line rather than
+   between two labels, so the nav drops to its own row here and both hairlines
+   go with it. Measured in headless Chromium with the fonts loaded, stepping
+   1300px down to 300px with this query neutralised, on both pages carrying
+   this lockup: index.html and delivery.html both fail at 716px and both hold
+   at 717px. The number tracks the label strings and has already moved twice,
+   so remeasure it whenever any string in the lockup changes, the nav labels
+   included. */
+@media (max-width: 716px) {
   .mast-brand { grid-template-columns: auto 1fr; }
   .mast-rule { display: none; }
   .mast-brand .mast-nav {
     grid-column: 1 / -1; grid-row: 3; margin-top: var(--space-2);
+    column-gap: var(--space-4); row-gap: var(--space-1);
   }
+  /* The second hairline goes with the first. Below this width the nav is its
+     own row and the two links can wrap onto two lines, where a border-left
+     would draw a vertical rule at the start of a line rather than between two
+     labels. The gap above carries the air the paddings were holding. */
+  .mast-nav a.forecast-link:first-child { padding-right: 0; }
+  .mast-nav a.forecast-link + a.forecast-link { border-left: 0; padding-left: 0; }
 }
 </style>
 </head>
@@ -342,10 +377,11 @@ body[data-baselines]::after {
   <div class="mast-bar" style="background:var(--color-paper);gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
     <div class="mast-brand">
       <img class="mast-mark" src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290" />
-      <p class="wordmark">Silurian</p>
+      <p class="wordmark">Silurian PM</p>
       <p class="mast-subline">Project &amp; Programme Delivery</p>
       <span class="mast-rule" aria-hidden="true"></span>
-      <nav class="mast-nav" aria-label="Forecasting tools">
+      <nav class="mast-nav" aria-label="Services">
+        <a class="forecast-link" href="delivery.html">Project Management</a>
         <a class="forecast-link" href="forecastability.html">AI Forecast Diagnostic</a>
       </nav>
     </div>
