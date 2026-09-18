@@ -171,3 +171,59 @@ honestly rather than by luck.
   not urgent and I would not spend a round trip on it.
 - **Cost if wrong.** None either way. Recorded so the next reader knows it was
   seen and left alone on purpose rather than missed.
+
+## Q5. The brief named a section that does not say what the brief says
+
+Raised 18 September 2026 by the designdecisions story. **Nothing is blocked
+and the work was done. Flagged because guessing which document was meant
+would have been the wrong move.**
+
+The brief said: "Section 7 of the masthead record warns that `--space-1` to
+`--space-4` live only in `index.html`."
+
+The masthead record is `docs/build-response-8-2026-09-16.md`. Read through:
+
+- It has six numbered sections, then an unnumbered seventh, "One thing in the
+  reply that has not arrived here". That seventh section is about the deleted
+  ramp, not about spacing.
+- The only stale spacing claim in the file is in **section 4**, and it reads
+  "`var(--space-4)` exists and was used. 16px, declared in `index.html`". It is
+  a statement rather than a warning, and it names one token rather than four.
+- No file in `docs/` warns that `--space-1` to `--space-4` live only in
+  `index.html`. Checked by grep across every token name.
+
+So the instruction was acted on in both halves. The false claim is corrected
+where it actually sits, section 4, with a dated note rather than a rewrite. And
+it is not carried across: the new text in `docs/designdecisions.md` states the
+current truth, that the four are in `tokens.css` since pull request 120.
+
+- **What it blocks.** Nothing.
+- **Recommended default.** Treat this question as closed unless the product
+  owner had a different document in mind, in which case name it and it is a
+  two-minute change.
+- **Cost if wrong.** Low, and bounded. If some other file does carry that
+  warning, it is still false and still uncorrected, and the grep above says
+  there is no such file in `docs/`.
+
+## Q6. Two dead token names were added to the list beyond the five given
+
+Raised 18 September 2026 by the same story, and **the addition is in the diff
+rather than held**, so this is a question about whether to keep it.
+
+The brief named five dead tokens: the four `--color-neutral-*` steps and
+`--color-accent-700`. `--space-6` and `--space-8` are dead in exactly the same
+way, from the same deleted file, at 24px and 32px. `tokens.css` declares
+`--space-1` through `--space-4` and stops.
+
+They are in the new section, in their own paragraph, labelled as an addition
+beyond the list and marked strike-if-unwanted, so removing them is deleting one
+paragraph.
+
+- **What it blocks.** Nothing today. No built page names either.
+- **Recommended default.** Keep them. `docs/forecastability-page-spec.md` names
+  one or the other in fifteen places, so the trap is set and already has a
+  specification standing in it. A dead-token list that is missing two dead
+  tokens teaches a reader that the list is complete when it is not, which is
+  worse than no list.
+- **Cost if wrong.** None. It is one paragraph of prose in a handoff document
+  and nothing is built from it.

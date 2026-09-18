@@ -110,6 +110,14 @@ it was.** If 19px is wanted, it is a change to `--wordmark-size` in
 
 **`var(--space-4)` exists and was used.** 16px, declared in `index.html`.
 
+> **Corrected 18 September 2026.** That last clause was true when it was
+> written and is not true now. Pull request 120 moved `--space-1` through
+> `--space-4` into `tokens.css` on 17 September 2026 with their values
+> unchanged, so every page can see them and none of them is declared in
+> `index.html` any more. The sentence is left standing rather than rewritten,
+> because this file is a dated record of what was measured on 16 September and
+> editing that away would lose the reason the move was needed.
+
 ## 5. One thing the product owner should know before deciding
 
 The pipe he asked for this evening is now a 1px rule. It is the same job done
@@ -180,3 +188,12 @@ committed.
 Until then the constraint exists in two other places that builders do read:
 `docs/build-response-6-2026-09-07.md`, which is where the deletion was first
 reported, and this file.
+
+> **Closed 18 September 2026.** The product owner routed it, and the three
+> constraints are now in `docs/designdecisions.md` on `main`: that the file is
+> the source and any design-project copy is a working copy, the dead ramp with
+> the commit and the date, and a pointer to `tokens.css` instead of a second
+> copy of the token list. He instructed this session to write them into that
+> document directly, which is a named exception to the verbatim rule and is
+> recorded as one in `docs/marketing-site.md`. The section above is left
+> standing because the two misses are the argument for the constraint.
