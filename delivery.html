@@ -21,6 +21,14 @@
   --edge: clamp(20px, 5vw, 72px);
   --leading: 28px;
   --half: 14px;
+  /* Read once, by .btn below. A single step with no small and no large either
+     side of it, and zero, because the site is square. It is declared here and
+     on index.html, the two pages carrying a closing field, rather than in
+     tokens.css: that placement was ruled on 17 September 2026, closing Q4 in
+     docs/marketing-site-open-questions.md, and this page follows it rather
+     than reopening it. The badges below are rounded by their own rule, which
+     is the documented exception, not by this. */
+  --radius-md: 0px;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -38,6 +46,19 @@ img { display: block; max-width: 100%; }
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 ::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+/* Buttons. The closing field's two contact badges are the only .btn on this
+   page, carried from index.html so the two fields cannot drift apart. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-body); line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn svg { display: block; }
+a.btn { white-space: nowrap; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 </style>
 <style>
@@ -171,6 +192,39 @@ img { display: block; max-width: 100%; }
 .gets li { font-size: var(--text-lead); line-height: 1.5;
   padding-top: 16px; border-top: 1px solid var(--color-divider); }
 
+/* The closing accent field, index.html's rules carried here unchanged. This is
+   the accent's one field moment on the page, the only place orange is spent as
+   a fill rather than as a mark. Copy on the red is display grade only, which is
+   why the headline takes the poster step and why nothing small sits on the
+   field except the two badges, and those are controls rather than copy. The
+   headline is index.html's, verbatim and reused on the product owner's
+   instruction of 18 September 2026, rather than a second line written for this
+   page. */
+.close { background: var(--color-accent); color: var(--color-paper); }
+.close .wrap { padding-top: calc(2 * var(--leading)); padding-bottom: calc(2 * var(--leading)); }
+.close h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-poster); line-height: 1.06; /* display grade, so it
+     carries the display-block lattice exemption */
+  letter-spacing: -0.015em; margin: 0; margin-left: -0.058em;
+  text-box: trim-both cap alphabetic; }
+.close h3 .line { display: block; }
+.close .row { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: calc(1.5 * var(--leading)); }
+/* The only rounded thing on this page, and a documented exception rather than
+   drift: CLAUDE.md section 9a names this selector, and the scan allows it by
+   selector and never by value. The Arial fallback on the "in" glyph is
+   index.html's and is carried rather than corrected, because the two badges
+   should render identically and changing the site's one non-Archivo string is
+   a separate decision. */
+.close .contact-badge {
+  width: 40px; height: 40px; padding: 0; flex: none;
+  justify-content: center; border-radius: 50%;
+  border-color: var(--color-paper); background: var(--color-paper); color: var(--color-accent);
+  font-family: Arial, sans-serif; font-size: var(--text-body); font-weight: 700;
+  letter-spacing: -0.04em; text-transform: none;
+}
+.close .contact-badge:hover { background: var(--color-text); border-color: var(--color-text); color: var(--color-paper); }
+.close .email-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
 footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
   line-height: var(--leading);
   color: color-mix(in srgb, var(--color-text) 70%, transparent); }
@@ -261,6 +315,16 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
     </div>
   </section>
 </div>
+
+<section class="close" id="contact">
+  <div class="wrap">
+    <h3><span class="line">Tell us what needs to land,</span> <span class="line">and by when.</span></h3>
+    <div class="row">
+      <a class="btn contact-badge email-badge" href="mailto:hello@silurianconsulting.co.uk" aria-label="Email Silurian Consulting"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m4 7 8 6 8-6"/></svg></a>
+      <a class="btn contact-badge linkedin-badge" href="https://www.linkedin.com/company/silurian-consulting/" target="_blank" rel="noopener" aria-label="Silurian Consulting on LinkedIn"><span aria-hidden="true">in</span></a>
+    </div>
+  </div>
+</section>
 
 <div class="wrap">
   <footer style="display:flex;align-items:center;gap:14px"><img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" /><span style="display:block">Silurian Consulting LTD. Registered in England and Wales, company number 17415387. Registered office, 22 Gelliwastad Road, Pontypridd, CF37 2BW. <a href="privacy.html">Privacy</a>.</span></footer>

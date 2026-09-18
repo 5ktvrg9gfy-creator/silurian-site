@@ -743,24 +743,28 @@ class StatusColoursMatchAssay(unittest.TestCase):
 # page. This is the scan that was missing, and it is the site's first, so it
 # was written expecting to find something.
 #
-# It found nothing beyond the three approved badges. That result is reported
+# It found nothing beyond the approved badges. That result is reported
 # rather than assumed: see test_the_scan_finds_all_three_approved_badges,
 # which fails if the scan stops finding them, because a radius scan that
 # reads nothing reports nothing and passes.
 #
-# ALLOWED BY SELECTOR, NEVER BY VALUE. The three badges are the documented
+# ALLOWED BY SELECTOR, NEVER BY VALUE. The badges are the documented
 # exception, ruled by the product owner on 16 September 2026. A scan that
 # waved through 50% because 50% is what a badge uses would wave through the
 # next element somebody rounds, which is the whole reason the rule exists.
 #
-# Three selectors, four elements. The homepage rule dresses both the email
-# badge and the LinkedIn badge, so the rendered count is two there and one
-# each on the other two pages. CLAUDE.md 9a says "the three circular contact
-# badges", counting rules rather than elements. Recorded here because the two
-# counts disagree and the next reader should not have to rediscover which is
-# meant.
+# Four selectors, six elements. The homepage rule and the delivery page rule
+# each dress both an email badge and a LinkedIn badge, so the rendered count is
+# two on each of those and one each on the other two pages. CLAUDE.md 9a counts
+# rules rather than elements. Recorded here because the two counts disagree and
+# the next reader should not have to rediscover which is meant.
+#
+# delivery.html joined on 18 September 2026, when the product owner ruled that
+# the delivery page reuses the homepage's closing field. It was three selectors
+# and four elements before that.
 APPROVED_ROUND_SELECTORS: frozenset = frozenset({
     ("index.html", ".close .contact-badge"),
+    ("delivery.html", ".close .contact-badge"),
     ("forecast-risk.html", ".close .contact-badge"),
     ("forecastability.html", ".mail-badge"),
 })
@@ -929,7 +933,7 @@ def non_zero_radius_selectors(page: Path) -> set:
 
 
 class MarketingSiteKeepsZeroRadius(unittest.TestCase):
-    """Nothing on the four site pages is rounded but the three badge rules.
+    """Nothing on the five site pages is rounded but the four badge rules.
 
     Section 9 of CLAUDE.md draws structure with 2px rules and hard edges and
     calls zero radius the single biggest difference from a generic dashboard.
@@ -963,7 +967,7 @@ class MarketingSiteKeepsZeroRadius(unittest.TestCase):
     away.** If they were ever deleted this scan would see the deletion, which
     is the half of the problem it can cover.
 
-    It reads the four pages and their linked stylesheets. An SVG with round
+    It reads the five pages and their linked stylesheets. An SVG with round
     corners drawn into its own geometry is not a CSS radius and is not in
     scope here.
     """
@@ -979,7 +983,7 @@ class MarketingSiteKeepsZeroRadius(unittest.TestCase):
                 offenders.append(declaration.describe())
         self.assertEqual(
             offenders, [],
-            "The site is zero radius apart from the three approved contact "
+            "The site is zero radius apart from the four approved contact "
             "badges, which are allowed by selector and not by value. Found: "
             + "; ".join(offenders)
             + ". If this is a decision rather than an accident it belongs in "
@@ -1039,7 +1043,7 @@ class MarketingSiteKeepsZeroRadius(unittest.TestCase):
             found |= non_zero_radius_selectors(page)
         self.assertEqual(
             found, set(APPROVED_ROUND_SELECTORS),
-            "The rounded elements the scan finds no longer match the three "
+            "The rounded elements the scan finds no longer match the "
             "approved badges. If a badge was removed, remove it from "
             "APPROVED_ROUND_SELECTORS in the same change; if something else "
             "is rounded, that is a finding for the product owner.",

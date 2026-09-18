@@ -125,3 +125,74 @@ old value sent them to the stacked form about 88px early.
 
 The breakpoint has moved twice on this branch, 521px to 804px to 716px, each
 time because a string in the lockup changed. Remeasure it whenever one does.
+
+## Addition, 18 September 2026: the closing accent field on delivery.html
+
+The product owner found the orange contact band missing from `delivery.html` in
+the Preview and asked what had hidden it. Nothing had. It was never built: the
+changeset's verbatim copy ends at "Assignments are built around clear outcomes",
+with no closing-field headline, and this evidence file's own "Not built" note
+recorded the absence too quietly to be read as deliberate. Investigated and
+reported before anything was changed, which is what the record should show.
+
+Findings from that investigation, each held:
+
+- `#contact`, `.close`, `.contact-badge` and the closing line appeared zero
+  times in `delivery.html` in all three commits on this branch. Nothing deleted
+  it.
+- Nothing hid it on `index.html` at any width. Read at 1400, 1200, 900, 760,
+  717, 716, 600, 480, 360 and 320px: `display: block`, `visibility: visible`,
+  `opacity: 1`, background `rgb(236, 105, 23)`, both badges present at every one.
+- The 716px breakpoint commit touched nothing outside the masthead. With CSS
+  comments stripped, both files hold the same non-comment line count before and
+  after, 254 on `index.html` and 188 on `delivery.html`, and exactly one line
+  differs per page, the `@media` prelude. Every other change in that commit was
+  comment prose.
+
+He then ruled that the delivery page reuses the homepage's closing field and its
+headline verbatim, rather than taking a second line written for it.
+
+## What the addition required beyond the markup
+
+The field is `index.html`'s rules carried across unchanged, plus the `.btn` base
+the badges are built on and the `--radius-md` token that `.btn` reads. Two
+controls had to move with it, and both are recorded rather than quietly widened.
+
+`APPROVED_ROUND_SELECTORS` in `tests/test_marketing_site_tokens.py` gained
+`("delivery.html", ".close .contact-badge")`. That list is asserted as an exact
+set, so a fourth rounded rule fails the suite until it is added, which is the
+behaviour the test wants. CLAUDE.md section 9a was amended first, as that test's
+own message instructs: the documented exception is now four rules and six
+rendered elements, was three and four.
+
+The six is measured, not counted by hand. Every element on every page read
+through `getComputedStyle` with all four corners checked: `index.html` 64
+elements read and 2 rounded, `delivery.html` 90 and 2, `forecast-risk.html` 173
+and 1, `forecastability.html` 174 and 1, `privacy.html` 41 and 0.
+
+**The widened list was proved still able to fail.** `border-radius: 6px` planted
+on `.gets li` in `delivery.html` failed two tests, naming the page, the selector
+and the value, and the exact-set test named `('delivery.html', '.gets li')` as
+the item it did not expect. So the new entry permits the badge selector and not
+the page. Reverted, and the 40 site tests pass again.
+
+A stale comment was corrected in passing. `index.html`'s `--radius-md` comment
+said the token was "declared and read on this page only", which the delivery
+page's closing field made untrue the moment it was added. It now names both
+pages and records what it used to say.
+
+## Rendered verification of the field
+
+`delivery.html` and `index.html` read at 1400, 1200, 760, 716, 480 and 320px.
+Every measured property matches between the two pages at every width: background
+`rgb(236, 105, 23)`, section height 292, 282, 253, 253, 253 and 289px
+respectively, headline computing 56px at 1400px and tapering to 34px through the
+poster clamp, headline text "Tell us what needs to land, and by when." reversed
+to white, two badges at 40x40 with a 50% radius, and the same two `aria-label`
+values and hrefs. Body child order is identical on both, `header`, `div`,
+`section#contact`, `div`. The footer's top equals the field's bottom at every
+width on both pages, so the field seats against the footer with no gap and no
+overlap.
+
+Poster is spent once on `delivery.html`, on this headline, which is the page's
+loudest element and the same placement `index.html` uses.
