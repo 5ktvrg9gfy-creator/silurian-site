@@ -22,17 +22,19 @@ Route an amendment through the product owner and commit it here. Until it is on 
 
 This is history that `tokens.css` cannot express. A file cannot record the names it does not contain, so the record goes here.
 
-**These five do not exist:**
+**These seven do not exist:**
 
-`--color-neutral-300`, `--color-neutral-500`, `--color-neutral-800`, `--color-neutral-900`, `--color-accent-700`
+`--color-neutral-300`, `--color-neutral-500`, `--color-neutral-800`, `--color-neutral-900`, `--color-accent-700`, `--space-6`, `--space-8`
 
 They lived in `styles.css`, deleted on 4 September 2026 in commit `f2f2ca6`, "S1.6: retire the Claude Design export residue". The same commit deleted `ds-styles.css`, a byte-for-byte duplicate of it, so a specification naming either file is naming a file that is gone. **Anything naming these tokens is written against a file that is gone.**
+
+The two spacing names are the same death in the same commit: `--space-6` was 24px and `--space-8` was 32px, and `tokens.css` declares `--space-1` through `--space-4` and stops. They are in the list rather than in a footnote because a dead-token list that is missing two dead tokens teaches a reader that the list is complete when it is not. Ruled into the list by the product owner on 18 September 2026.
 
 The failure is silent, which is why it needs writing down. An undefined custom property does not fall back and does not raise an error. The whole declaration is dropped at computed-value time and the page renders as though the line was never written, so a page built against these names looks like a design decision rather than a fault.
 
 **`--color-neutral-brand` is the warm brand neutral `#cabfad`.** It is not a step in a scale. There is no scale. The `300`, `500`, `800` and `900` above are not neighbours of it and never were.
 
-**Two more names are dead, and they were not in the product owner's list.** They are added here because the same trap is set for them: `--space-6` and `--space-8` were in the deleted `styles.css` at 24px and 32px, and `tokens.css` declares `--space-1` through `--space-4` and stops. This is not theoretical. `docs/forecastability-page-spec.md` names one or the other in fifteen places. Strike this paragraph if the list was meant to be exactly five.
+**This is not theoretical, and the finding is open.** `docs/forecastability-page-spec.md` names these seven dead tokens on 27 lines, 35 times, and opens by saying every colour, font and spacing value comes from `styles.css`. Whether that specification is still the specification is an open question for the product owner, recorded as Q7 in `docs/marketing-site-open-questions.md`. **It is recorded and not fixed**, deliberately, because editing a specification nobody has confirmed is still live would be the second copy problem again in a new place.
 
 **The spacing tokens are in `tokens.css`, not in `index.html`.** Earlier records say they are declared on the homepage only. That was true until 17 September 2026 and is not true now: pull request 120 moved `--space-1` through `--space-4` into `tokens.css` with their values unchanged, and every page can see them. Do not carry the old warning forward.
 

@@ -174,9 +174,35 @@ honestly rather than by luck.
 
 ## Q5. The brief named a section that does not say what the brief says
 
-Raised 18 September 2026 by the designdecisions story. **Nothing is blocked
-and the work was done. Flagged because guessing which document was meant
-would have been the wrong move.**
+**ANSWERED 18 September 2026, and now BLOCKED on a file this session cannot
+reach.** The product owner's answer: the citation was his error, not a gap in
+the search. The spacing warning is real and quoted accurately, but it is in a
+routed summary titled **"Silurian site: masthead design round"**, sent to the
+planning session as a file and never committed. Grepping `docs/` could not have
+found it.
+
+**His ruling: commit that summary to `docs/` as its own file, body unedited,
+with a dated note beside it saying its spacing section was true on 16 September
+2026 and was superseded by pull request 120.**
+
+**That is not done, because this session does not have the file.** It is not in
+the repository tracked, untracked or ignored, it is not in any branch's history,
+and the string "masthead design round" appears nowhere in the tree. It exists in
+a chat this session cannot see.
+
+**What is needed: the file itself, routed into this repository the way
+`docs/designdecisions.md` was.** Paste it or attach it and committing it with
+the dated note is a few minutes.
+
+**What will not be done instead:** reconstructing it from the quotation in the
+brief, or from memory. A routed summary written by the session that did not
+write it, presented as the original, is a fabricated record. This repository
+exists partly to stop exactly that, and the finding underneath this ruling, a
+document that controls how the next change is written living outside the
+repository, would be made worse by inventing a second version of it.
+
+Raised 18 September 2026 by the designdecisions story. **Flagged because
+guessing which document was meant would have been the wrong move.**
 
 The brief said: "Section 7 of the masthead record warns that `--space-1` to
 `--space-4` live only in `index.html`."
@@ -207,8 +233,22 @@ current truth, that the four are in `tokens.css` since pull request 120.
 
 ## Q6. Two dead token names were added to the list beyond the five given
 
-Raised 18 September 2026 by the same story, and **the addition is in the diff
-rather than held**, so this is a question about whether to keep it.
+**CLOSED 18 September 2026. Keep them, and fold them into the list**, ruled by
+the product owner: same commit, same file, and a specification naming one of
+them is a trap already set. The severable paragraph is gone and
+`docs/designdecisions.md` now reads "These seven do not exist", with one
+paragraph under it explaining that the two spacing names are the same death in
+the same commit.
+
+**One number in the paragraph that was folded away was wrong and is corrected
+rather than carried over.** It said the forecastability spec names one or the
+other in fifteen places. Counted properly: 13 lines and 17 occurrences for the
+two spacing names, and 27 lines and 35 occurrences across all seven dead
+tokens. The estimate came from eyeballing a grep listing, where one line can
+carry two names. The document now carries the counted figures.
+
+Raised 18 September 2026 by the same story, and **the addition was in the diff
+rather than held**, so this was a question about whether to keep it.
 
 The brief named five dead tokens: the four `--color-neutral-*` steps and
 `--color-accent-700`. `--space-6` and `--space-8` are dead in exactly the same
@@ -227,3 +267,48 @@ paragraph.
   worse than no list.
 - **Cost if wrong.** None. It is one paragraph of prose in a handoff document
   and nothing is built from it.
+
+## Q7. Is docs/forecastability-page-spec.md still the spec?
+
+Raised 18 September 2026 on the product owner's instruction. **Recorded, not
+fixed.** He wants to know whether that specification is still live before
+anyone edits it.
+
+The specification is written against the deleted `styles.css`. Its second line
+says "Every colour, font and spacing value comes from `styles.css` tokens", and
+it names the seven dead tokens on **27 lines, 35 times**:
+
+| Dead token | Occurrences |
+| --- | --- |
+| `--space-6` | 11 |
+| `--color-neutral-300` | 6 |
+| `--space-8` | 6 |
+| `--color-neutral-800` | 5 |
+| `--color-neutral-900` | 3 |
+| `--color-accent-700` | 3 |
+| `--color-neutral-500` | 1 |
+
+It also writes `#ec6917` eight times and `#ffffff` three times as literals,
+against the rule that no hex appears in a design document.
+
+**The page it specifies was built and shipped and is fine.**
+`forecastability.html` names none of the seven, carries no raw colour, and
+passes every control. The build session re-expressed the specification against
+`tokens.css` at the time, which `docs/build-response-6-2026-09-07.md` and
+`docs/build-response-7-2026-09-07.md` record in full. So this is a stale
+document, not a broken page.
+
+- **What it blocks.** Nothing today. It blocks the next person who opens that
+  file to change the page, which is the whole point of recording it.
+- **Recommended default.** Answer the status question first, before any edit.
+  If it is still the specification, it wants the same treatment
+  `docs/designdecisions.md` just had, which is one pass re-expressing the dead
+  names against `tokens.css`. If it is a historical record of what was
+  specified on 7 September, it wants one dated note at the top saying so and
+  nothing else. **Those are opposite edits**, which is why guessing is worse
+  than asking.
+- **Cost if wrong.** Moderate, and it is the cost this story exists to stop. A
+  page built from it without checking gets the silent failure described in
+  `docs/designdecisions.md`: undefined custom properties, declarations dropped
+  at computed-value time, no error, and a page that looks like a design
+  decision rather than a fault.
