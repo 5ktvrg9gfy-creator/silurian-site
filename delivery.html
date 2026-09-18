@@ -170,8 +170,17 @@ a.btn { white-space: nowrap; }
 /* Body copy at full ink on a 48ch measure, index.html's .note-direct
    treatment. The muted variant is for a sub-note beside primary copy, and on
    this page the paragraphs under the lead are the primary copy. */
+/* The section seam under the lead, index.html's values: 56px of air, the 2px
+   ink rule that draws every section division on this site, then 40px to the
+   first line. The rule is the page grammar rather than decoration, which is why
+   it takes the seam weight and not the 1px hairline the lists inside use. */
+#delivery .intro { margin-top: 56px; padding-top: 40px;
+  border-top: 2px solid var(--color-divider); }
 #delivery .intro p { font-size: var(--text-body); line-height: 1.5;
   color: var(--color-text); max-width: 48ch; margin: 22px 0 0; }
+/* The seam's own padding is the gap above the first line, so the paragraph adds
+   nothing on top of it. index.html does the same thing with .note at margin 0. */
+#delivery .intro p:first-child { margin-top: 0; }
 #delivery h2 { margin: 56px 0 var(--space-4); }
 #delivery .approach p { font-size: var(--text-body); line-height: 1.5;
   color: var(--color-text); max-width: 48ch; margin: 0 0 var(--space-3); }
@@ -243,6 +252,8 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
 
 @media (max-width: 720px) {
   #delivery { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }
+  /* The seam closes up with the section, as index.html's does. */
+  #delivery .intro { margin-top: var(--leading); padding-top: var(--leading); }
 }
 
 /* 716px is measured, not chosen, against the nav labels this lockup carries

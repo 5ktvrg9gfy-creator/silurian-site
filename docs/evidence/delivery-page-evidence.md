@@ -241,3 +241,20 @@ After the fix, all five pages agree at every width tested, 1400, 1200, 900, 716,
 480 and 320px: 18px, 18px, 16.2px, 15px, 15px, 15px as the clamp tapers, weight
 800, `-0.02em` throughout, `text-transform: none` everywhere, and no horizontal
 overflow on any page at any of those widths. Suite 294 tests, OK.
+
+## Addition, 18 September 2026: the section seam under the lead
+
+The delivery page had no rule under its lead line, where `index.html` draws the
+2px ink seam above its lower band. Spotted by the product owner in the Preview.
+Added with `index.html`'s values rather than values chosen by eye: 56px of air,
+`2px solid var(--color-divider)`, then 40px to the first line, collapsing to
+`var(--leading)` on both sides below 720px as `index.html`'s does. The first
+paragraph's top margin is zeroed so the seam's own padding is the whole gap,
+which is how `index.html` seats `.note` at margin 0.
+
+Verified against `index.html` at 1200, 900, 760, 720, 480 and 320px. Every
+measured property matches at every width: border `2px solid rgb(63, 61, 59)`,
+margin-top and padding-top 56/40px above 720px and 28/28px below it, measured
+gaps of 56px from lead to rule and 42px from rule to first line above the
+breakpoint, 28px and 30px below it. The 42 and 30 carry the border's own 2px.
+The rule spans the content column, 1080px at a 1200px viewport. Suite 294, OK.
