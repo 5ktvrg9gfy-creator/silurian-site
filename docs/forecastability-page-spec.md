@@ -1,5 +1,32 @@
 # Forecastability page: build spec
 
+> **Historical record, not a live specification. Ruled by the product owner on
+> 18 September 2026, closing Q7 in `docs/marketing-site-open-questions.md`.**
+>
+> This describes design intent from a moment that has passed. It is not how the
+> page is built.
+>
+> It is written against `styles.css`, which was deleted on 4 September 2026 in
+> commit `f2f2ca6`, three days before this was written. It names seven tokens
+> that do not exist, on 27 lines and 35 times: `--color-neutral-300`,
+> `--color-neutral-500`, `--color-neutral-800`, `--color-neutral-900`,
+> `--color-accent-700`, `--space-6` and `--space-8`. It also writes `#ec6917`
+> eight times and `#ffffff` three times as literals, against the rule that no
+> hex appears in a design document.
+>
+> **The page it describes is correct and always was.** `forecastability.html`
+> names none of the seven, carries no raw colour and passes every control,
+> because the build session re-expressed this specification against
+> `tokens.css` before building it. The refusal to build from it as written, and
+> the re-expression, are recorded in `docs/build-response-6-2026-09-07.md` and
+> `docs/build-response-7-2026-09-07.md`.
+>
+> **It has deliberately not been repaired.** If a future change needs a
+> specification for that page, it gets written fresh from the page as built,
+> not repaired from a document that has drifted for two weeks. The live token
+> lists are in `tokens.css`, and `docs/designdecisions.md` carries the dead
+> names and why they fail silently.
+
 Reference implementation: `Forecast Flow.dc.html`. Live page it links to: `forecast-risk.html`.
 
 Design system: Modernist. Every colour, font and spacing value comes from `styles.css` tokens except the two exceptions listed under Colour.

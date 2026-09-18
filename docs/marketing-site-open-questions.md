@@ -174,9 +174,25 @@ honestly rather than by luck.
 
 ## Q5. The brief named a section that does not say what the brief says
 
-**ANSWERED 18 September 2026, and now BLOCKED on a file this session cannot
-reach.** The product owner's answer: the citation was his error, not a gap in
-the search. The spacing warning is real and quoted accurately, but it is in a
+**CLOSED 18 September 2026, committed.** The file was attached and is now
+`docs/masthead-design-record-2026-09-16.md`, body unedited, sha256
+`55d7722b6300eb7715d22154acd371c4a0386c0980202ca2921b134b9e753e6c` as routed,
+with a dated blockquote beside its spacing paragraph saying it was true on
+16 September and superseded by pull request 120.
+
+**The citation was right and this session's reading of it was incomplete.**
+Section 7 exists, it is titled "What a site changeset has to satisfy, so the
+next one is not caught out", and its spacing paragraph says exactly what the
+brief quoted. The search that missed it was correct in scope and wrong in
+assumption: it covered `docs/`, and the document was not in `docs/`, which is
+the finding rather than the miss.
+
+The rest of this entry stands as the record of the block and how it was
+resolved.
+
+**ANSWERED 18 September 2026, and BLOCKED at the time on a file this session
+could not reach.** The product owner's answer: the citation was his error in
+placing it, not a gap in the search. The spacing warning is real and quoted accurately, but it is in a
 routed summary titled **"Silurian site: masthead design round"**, sent to the
 planning session as a file and never committed. Grepping `docs/` could not have
 found it.
@@ -270,9 +286,19 @@ paragraph.
 
 ## Q7. Is docs/forecastability-page-spec.md still the spec?
 
+**CLOSED 18 September 2026. It is a historical record, not a live
+specification**, ruled by the product owner. The page it describes was
+re-expressed against `tokens.css` at build time, names none of the seven dead
+tokens and passes every control, so the document records design intent from a
+moment that has passed rather than how the page is built.
+
+**One dated note at the top and nothing else.** It is not re-expressed. His
+reasoning, kept because it is the part that stops this being reopened: if a
+future change needs a specification for that page, it gets written fresh from
+the page as built, not repaired from a document that has drifted for two weeks.
+
 Raised 18 September 2026 on the product owner's instruction. **Recorded, not
-fixed.** He wants to know whether that specification is still live before
-anyone edits it.
+fixed**, because the answer decided which of two opposite edits it wanted.
 
 The specification is written against the deleted `styles.css`. Its second line
 says "Every colour, font and spacing value comes from `styles.css` tokens", and
@@ -312,3 +338,41 @@ document, not a broken page.
   `docs/designdecisions.md`: undefined custom properties, declarations dropped
   at computed-value time, no error, and a page that looks like a design
   decision rather than a fault.
+
+## Q8. Two more stale statements in the masthead record, not noted
+
+Raised 18 September 2026 while committing that record. **Nothing is blocked.
+Neither was noted, because the ruling named one note about the spacing section
+and adding two more uninstructed notes to a routed document is not this
+session's call.**
+
+`docs/masthead-design-record-2026-09-16.md` is a dated record and most of it
+has aged correctly. Two statements have not.
+
+1. **Section 6, "Still open", first bullet.** It says the ramp amendment has
+   not reached this repository and `docs/designdecisions.md` mentions neither
+   the ramp, nor `styles.css`, nor `f2f2ca6`. That was true on 16 September and
+   was closed by pull request 125 on 18 September, which put all three in that
+   file. A reader working through section 6 today is told an item is open that
+   is closed.
+
+2. **Section 7, the radius paragraph.** It says zero radius on the marketing
+   site "with the three circular contact badges as the documented exception".
+   Three CSS rules carry a radius and four elements render rounded, because the
+   homepage rule dresses the email and LinkedIn badges together. `CLAUDE.md`
+   section 9a now carries the corrected count, ruled on 17 September. This is
+   the smaller of the two: somebody counting badges on the site gets four and
+   reads the rule as already broken.
+
+Section 6's second bullet, the conditional on the divider's height, is still
+genuinely open and wants no note.
+
+- **What it blocks.** Nothing. Both are documentation drift in a dated record.
+- **Recommended default.** One dated blockquote beside each, in the same form
+  as the spacing note, and no edit to either body. Two blockquotes, five
+  minutes. The alternative is to leave them, on the grounds that a dated record
+  is allowed to be dated, which is defensible for section 6 and weaker for
+  section 7, because section 7 opens by saying it is the section to read before
+  writing the next change.
+- **Cost if wrong.** Low both ways. Left alone, the next person writing a site
+  changeset reads a badge count that is one out and an open item that is shut.
