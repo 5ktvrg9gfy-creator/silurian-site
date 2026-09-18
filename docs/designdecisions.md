@@ -1,6 +1,6 @@
 # Silurian site, agreed design changes
 
-Handoff notes for Claude Code. Rewritten 6 September 2026 after two build responses, and amended 18 September 2026 by the product owner to add the three sections below on where this document lives and which tokens are dead. This supersedes every earlier version: where an earlier draft said something different, this document is right and the earlier one is not. Superseded reasoning has been removed rather than kept, so nothing here is a record of what was once considered.
+Handoff notes for Claude Code. Rewritten 6 September 2026 after two build responses, and amended 18 September 2026 by the product owner to add the four sections below: where this document lives, which tokens are dead, what to substitute for a dead ramp step, and where the live lists are. This supersedes every earlier version: where an earlier draft said something different, this document is right and the earlier one is not. Superseded reasoning has been removed rather than kept, so nothing here is a record of what was once considered.
 
 **Baseline:** the live deployment at https://www.silurianconsulting.co.uk/, not any file in the design project.
 **Reference mocks:** `Hero Layout Options.dc.html` for the layout, `Hero Paragraph Check.dc.html` for the hero band at the real 1056px content width.
@@ -37,6 +37,27 @@ The failure is silent, which is why it needs writing down. An undefined custom p
 **This is not theoretical, and the finding is open.** `docs/forecastability-page-spec.md` names these seven dead tokens on 27 lines, 35 times, and opens by saying every colour, font and spacing value comes from `styles.css`. Whether that specification is still the specification is an open question for the product owner, recorded as Q7 in `docs/marketing-site-open-questions.md`. **It is recorded and not fixed**, deliberately, because editing a specification nobody has confirmed is still live would be the second copy problem again in a new place.
 
 **The spacing tokens are in `tokens.css`, not in `index.html`.** Earlier records say they are declared on the homepage only. That was true until 17 September 2026 and is not true now: pull request 120 moved `--space-1` through `--space-4` into `tokens.css` with their values unchanged, and every page can see them. Do not carry the old warning forward.
+
+## Substituting a dead ramp step
+
+Verified at `f2f2ca6~1`: the ramp ran 100 to 900, nine steps, and `--color-neutral-700` was `#605d5d`. The names above are the ones seen in the wild, not the whole ramp, which is why this is a table of roles rather than a longer list of names.
+
+By role, so this covers any numbered step:
+
+```
+  A muted or secondary text step (e.g. --color-neutral-700)
+    -> --color-text-muted
+  A rule, border or divider step (e.g. --color-neutral-300)
+    -> --color-divider
+  A tinted fill or hover step (e.g. --color-neutral-100)
+    -> --color-surface
+  A deep step for text on a tinted fill (e.g. --color-neutral-900)
+    -> --color-text
+```
+
+Report the substitution in the build response rather than applying it silently.
+
+`--color-divider` is darker than a 300 would be, and that is correct. This system does not fade its rules. A lighter hairline would need a new token, which is a product owner decision, not a build one. Subordination is carried by 1px weight against the header's 2px close, not by lightening the value.
 
 ## Where the live lists are
 
