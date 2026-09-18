@@ -55,6 +55,7 @@ TOKEN_FILE_NAME = "tokens.css"
 # The marketing pages, pinned. A fourth page failing this assertion is the
 # intended behaviour and not a nuisance: see test_the_page_list_is_pinned.
 EXPECTED_PAGES = (
+    "delivery.html",
     "forecast-risk.html",
     "forecastability.html",
     "index.html",

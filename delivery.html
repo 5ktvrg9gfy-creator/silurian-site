@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Programme and Project Delivery | Silurian Consulting LTD</title>
+<meta name="description" content="We lead complex, cross-functional delivery for pharmaceutical and other regulated organisations. Independent project and programme leadership, UK based." />
+<link rel="icon" href="logo-stone.svg" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+/* Delivery page. Colour, type and the font come from tokens.css and nowhere
+   else, as on every other page. Layout stays here.
+
+   Nothing on this page is a new treatment. The masthead lockup is index.html's
+   rules verbatim, the numbered list is index.html's .domains, and the hairline
+   list is forecastability.html's .gets copied in as its own block rather than
+   promoted to a shared stylesheet. Two lists and a lockup that already exist,
+   which is why this page carries no radius, no shadow and no second palette. */
+
+:root {
+  --edge: clamp(20px, 5vw, 72px);
+  --leading: 28px;
+  --half: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-body); font-size: var(--text-body); line-height: 1.55;
+  font-weight: 400; text-wrap: pretty; }
+h1, h2, h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2); }
+h1 { font-size: var(--text-display); }
+h2 { font-size: var(--text-title); }
+h3 { font-size: var(--text-subhead); }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
+</style>
+<style>
+/* Masthead. index.html's lockup rules, carried here unchanged so the two
+   pages cannot drift apart: three pages running three names for the same role
+   is what tokens.css was created to stop, and a masthead copied by eye is the
+   same failure one level up. */
+.mast { --gutter: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge))); }
+.mast-bar { padding-inline: var(--gutter);
+  background: var(--color-accent); display: flex; align-items: center;
+  gap: clamp(20px, 3vw, 40px); flex-wrap: wrap;
+  padding-top: var(--half); padding-bottom: var(--half); }
+.mast-bar a:not(.btn) { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-text); text-decoration: none; }
+.mast-bar a:not(.btn):hover { text-decoration: underline; text-underline-offset: 5px; }
+.mast-bar a[aria-current='location'] { text-decoration: underline; text-underline-offset: 5px; }
+
+/* The lockup is a grid, not a row of flex items, because the nav label has to
+   sit on the wordmark's baseline and the rule has to span both lines. */
+.mast-brand {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  column-gap: 14px;
+}
+.mast-mark { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+.mast-brand .wordmark { grid-column: 2; grid-row: 1; align-self: baseline; }
+.mast-brand .mast-subline { grid-column: 2; grid-row: 2; }
+.mast-rule { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
+.mast-brand .mast-nav { grid-column: 4; grid-row: 1; align-self: baseline; }
+.mast-brand .wordmark {
+  margin: 0; font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--wordmark-size); line-height: 1.2; letter-spacing: -0.02em;
+  white-space: nowrap; color: var(--color-text);
+}
+/* The route home, on the wordmark rather than wrapped around the mark and the
+   wordmark together as privacy.html and forecastability.html do it. Those two
+   mastheads are flex rows, where one anchor can hold both children. This one
+   is a grid and the mark and the wordmark are separately placed cells, so an
+   anchor around the pair would become the grid item and both placements would
+   be lost. The mark stays decorative, which it already was: alt="". No weight
+   or size change, so the mark is still one string at one weight. */
+.mast-brand .wordmark a { color: inherit; text-decoration: none; }
+.mast-brand .mast-subline {
+  margin: var(--space-1) 0 0; font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-label); line-height: 1.2; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--color-text-muted);
+}
+/* The divider between the lockup and the nav. 1px solid var(--color-divider),
+   the site's own hairline, never faded. var(--space-4) either side, of which
+   the row's column gap supplies 14. */
+.mast-rule {
+  width: 1px; background: var(--color-divider);
+  margin-inline: calc(var(--space-4) - 14px);
+}
+.mast-bar a.forecast-link {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text-muted); letter-spacing: normal; text-transform: none;
+}
+.mast-bar a.forecast-link:hover { color: var(--color-text); }
+/* The nav holds the two service lines, so this masthead now carries a second
+   hairline. It is drawn as a border on the second link rather than as an
+   element: .mast-rule divides two blocks that are not siblings, where these
+   two links already are, and a span between them would be a third child
+   doing what a border does. Same 1px solid var(--color-divider) as every
+   other hairline on the site, never faded. var(--space-4) either side, which
+   is the 16px .mast-rule takes from the row's column gap plus its own
+   margins, so the two hairlines in this lockup are spaced alike. */
+.mast-brand .mast-nav { display: flex; flex-wrap: wrap; }
+.mast-nav a.forecast-link:first-child { padding-right: var(--space-4); }
+.mast-nav a.forecast-link + a.forecast-link {
+  border-left: 1px solid var(--color-divider); padding-left: var(--space-4);
+}
+/* The current page reads at full ink. The underline it also carries comes
+   from .mast-bar a[aria-current='location'] above, which already sets the
+   5px offset. Written on both pages that carry this lockup so the block stays
+   one thing: index.html has no current link, so there it matches nothing, and
+   a masthead that differs between pages is how this site came to run three
+   palettes. */
+.mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
+</style>
+<style>
+/* This page's own sections. */
+#delivery { padding: 72px 0 80px; }
+#delivery .display {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-display); line-height: 1.06; letter-spacing: -0.03em;
+  margin: 0; margin-left: -0.058em; /* optical left alignment, the deck's measured Archivo 800 value */
+  text-box: trim-both cap alphabetic;
+}
+/* The lead carries the display weight, not the browser's bold: <strong>
+   defaults to 700 and the design calls for 800. */
+#delivery .sub, #delivery .sub strong { font-weight: var(--font-heading-weight); }
+#delivery .sub { font-size: var(--text-lead); line-height: 1.4; max-width: 34em;
+  margin: 20px 0 0; text-box: trim-both cap alphabetic; }
+/* Body copy at full ink on a 48ch measure, index.html's .note-direct
+   treatment. The muted variant is for a sub-note beside primary copy, and on
+   this page the paragraphs under the lead are the primary copy. */
+#delivery .intro p { font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text); max-width: 48ch; margin: 22px 0 0; }
+#delivery h2 { margin: 56px 0 var(--space-4); }
+#delivery .approach p { font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text); max-width: 48ch; margin: 0 0 var(--space-3); }
+#delivery .approach p:last-child { margin-bottom: 0; }
+
+/* The numbered list, index.html's .domains. The marker is the accent's mark
+   moment on this page: it is spent as a mark, never as a status. The
+   separators are 1px hairlines at full ink. Item headings are h3 rather than
+   index.html's h2, because here the section head above them is the h2 and a
+   list item cannot outrank the section holding it. Same values either way. */
+.domains { list-style: none; margin: 0; padding: 0; }
+.domains li { display: grid; grid-template-columns: 44px 1fr; gap: 14px;
+  padding: 20px 0; }
+.domains li:first-child { padding-top: 0; }
+.domains li:not(:last-child) { border-bottom: 1px solid var(--color-divider); }
+.domains .n { color: var(--color-accent); font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight); font-size: var(--text-lead);
+  line-height: 1.35; }
+.domains h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-subhead); line-height: 1.2; letter-spacing: -0.02em;
+  margin: 0; color: var(--color-text); }
+.domains p { font-size: var(--text-body); font-weight: 400; line-height: 1.5;
+  color: var(--color-text-muted); margin: 6px 0 0; }
+
+/* The hairline list, forecastability.html's .gets, copied verbatim as this
+   page's own rule rather than promoted to a shared stylesheet. A top rule per
+   item and no bullet mark: the rule is the mark. */
+.gets { list-style: none; margin: 24px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 16px; }
+.gets li { font-size: var(--text-lead); line-height: 1.5;
+  padding-top: 16px; border-top: 1px solid var(--color-divider); }
+
+footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
+  line-height: var(--leading);
+  color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+
+@media (max-width: 720px) {
+  #delivery { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }
+}
+
+/* 804px is measured, not chosen, and it moved from 521px when the nav gained
+   its second link. The old number was the width at which the subline broke to
+   two lines inside a squeezed column, which is what failed first when the
+   lockup was three strings and one link. That is not what fails first any
+   more: with two service links in the nav the pair stops fitting on one line
+   at 804px, while the subline still holds its single line far below that. A
+   border-left between two links that have wrapped draws a vertical rule at the
+   start of a line rather than between two labels, so the nav drops to its own
+   row here and both hairlines go with it. Measured in headless Chromium with
+   the fonts loaded, stepping 1300px down to 300px with this query neutralised,
+   on both pages carrying this lockup: index.html and delivery.html both fail
+   at 804px and both hold at 805px. Remeasured if any string in the lockup
+   changes, the nav labels included. */
+@media (max-width: 804px) {
+  .mast-brand { grid-template-columns: auto 1fr; }
+  .mast-rule { display: none; }
+  .mast-brand .mast-nav {
+    grid-column: 1 / -1; grid-row: 3; margin-top: var(--space-2);
+    column-gap: var(--space-4); row-gap: var(--space-1);
+  }
+  /* The second hairline goes with the first. Below this width the nav is its
+     own row and the two links can wrap onto two lines, where a border-left
+     would draw a vertical rule at the start of a line rather than between two
+     labels. The gap above carries the air the paddings were holding. */
+  .mast-nav a.forecast-link:first-child { padding-right: 0; }
+  .mast-nav a.forecast-link + a.forecast-link { border-left: 0; padding-left: 0; }
+}
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="mast-bar" style="background:var(--color-paper);gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
+    <div class="mast-brand">
+      <img class="mast-mark" src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290" />
+      <p class="wordmark"><a href="index.html">Silurian PM</a></p>
+      <p class="mast-subline">Project &amp; Programme Delivery</p>
+      <span class="mast-rule" aria-hidden="true"></span>
+      <nav class="mast-nav" aria-label="Services">
+        <a class="forecast-link" href="delivery.html" aria-current="location">Programme and Project Delivery</a>
+        <a class="forecast-link" href="forecastability.html">AI Forecast Diagnostic</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section id="delivery">
+    <h1 class="display">Programme and Project Delivery</h1>
+    <p class="sub"><strong>Delivery leadership for complex, cross-functional change</strong></p>
+    <div class="intro">
+      <p>Silurian Consulting provides independent project and programme leadership for pharmaceutical and other regulated organisations.</p>
+      <p>We take on complex delivery where success depends on coordinating multiple functions, sites, external partners, systems or markets. This includes establishing control from the outset, recovering work that has lost direction, and leading critical projects through implementation.</p>
+    </div>
+
+    <h2>Where we add value</h2>
+    <ul class="domains">
+      <li><span class="n">#1</span><div><h3>Mobilising delivery</h3><p>Turning an objective into a structured and deliverable plan, with clear scope, milestones, responsibilities, dependencies and decision points.</p></div></li>
+      <li><span class="n">#2</span><div><h3>Establishing control</h3><p>Creating proportionate governance, reporting and escalation so that risks are visible, decisions are made at the right level and stakeholders have a reliable view of progress.</p></div></li>
+      <li><span class="n">#3</span><div><h3>Leading execution</h3><p>Coordinating cross-functional teams across supply chain, manufacturing, quality, regulatory, commercial, finance, technology and external partners.</p></div></li>
+      <li><span class="n">#4</span><div><h3>Recovering challenged projects</h3><p>Identifying what is preventing delivery, resetting priorities and accountabilities, and creating a credible route to completion.</p></div></li>
+      <li><span class="n">#5</span><div><h3>Managing implementation</h3><p>Taking projects through readiness, go-live, cutover, stabilisation and handover while protecting operational and supply continuity.</p></div></li>
+    </ul>
+
+    <h2>Typical assignments</h2>
+    <ul class="gets">
+      <li>Business and supply chain transformation</li>
+      <li>New product introduction and global expansion</li>
+      <li>Site and technology transfer</li>
+      <li>Operating-model and organisational change</li>
+      <li>Systems and process implementation</li>
+      <li>Post-acquisition integration</li>
+      <li>Programme review and recovery</li>
+      <li>Portfolio prioritisation and governance</li>
+      <li>Artwork and labelling programmes, including major rebranding and regulatory safety updates</li>
+    </ul>
+
+    <h2>A practical delivery approach</h2>
+    <div class="approach">
+      <p>Our approach is structured but proportionate. We establish the controls needed to deliver the work without creating unnecessary process or reporting.</p>
+      <p>Assignments are built around clear outcomes, defined responsibilities and transparent evidence of progress.</p>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <footer style="display:flex;align-items:center;gap:14px"><img src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290;flex:none" /><span style="display:block">Silurian Consulting LTD. Registered in England and Wales, company number 17415387. Registered office, 22 Gelliwastad Road, Pontypridd, CF37 2BW. <a href="privacy.html">Privacy</a>.</span></footer>
+</div>
+</body>
+</html>
