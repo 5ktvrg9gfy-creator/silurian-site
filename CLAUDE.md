@@ -37,7 +37,7 @@ Stop and report a contradiction rather than choosing the convenient source.
 
 This repository contains two separately deployed products:
 
-- The root is the static Silurian marketing site.
+- The root is the static Silurian marketing site. **Before writing a site changeset, read section 7 of `docs/masthead-design-record-2026-09-16.md`.** It is the shortest complete statement of what a site change has to satisfy: every colour token that exists, every type step, the raw colour rule, the poster rule, the dash rule and the radius rule, each with the reason it is there. Pointed at from here rather than copied, because a second copy of a list is how the dead neutral ramp survived deletion by two weeks.
 - `forecast-app/` is the Forecast Diagnostic FastAPI application.
 
 Both deploy from `main` through separate Vercel projects. A pull request can therefore show two Vercel checks. Confirm the check for the component changed.

@@ -8,6 +8,10 @@ It has two parts. Section one is intent as stated by the product owner, which is
 
 The site itself is `index.html` and `privacy.html` at the repository root. Process for changing it stays in `MAINTENANCE.md`, and release evidence stays in `PROJECT_HANDOFF.md`.
 
+**Before writing a site changeset, read section 7 of `docs/masthead-design-record-2026-09-16.md`.** It is titled "What a site changeset has to satisfy, so the next one is not caught out" and it is the shortest complete statement of exactly that: the fifteen colour tokens, the eight type steps, the raw colour rule, the poster rule, the dash rule and the radius rule, each with the reason it exists. **This is a pointer and not a copy.** The lists live in that file and in `tokens.css`, and duplicating them here is the defect that kept the dead neutral ramp alive for two weeks after the file holding it was deleted.
+
+**That document spent two days outside this repository**, routed to the planning session as a file and never committed, which is why the ramp was missed twice. It was committed on 18 September 2026. A brief nobody can open is not a brief, so it is pointed at from the two places a session actually starts, here and `CLAUDE.md` section 3.
+
 ## 1. Intent, as stated by the product owner
 
 - **The site is an identity page for the limited company.** It exists so the company can be found and verified. It is not intended to grow into an elaborate sales site, and a change that pushes it that way should be questioned before it is built.
