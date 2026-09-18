@@ -341,10 +341,17 @@ document, not a broken page.
 
 ## Q8. Two more stale statements in the masthead record, not noted
 
-Raised 18 September 2026 while committing that record. **Nothing is blocked.
-Neither was noted, because the ruling named one note about the spacing section
-and adding two more uninstructed notes to a routed document is not this
-session's call.**
+**CLOSED 18 September 2026. Both noted**, ruled by the product owner: same
+form, dated blockquote beside each, no body edit. Section 6's ramp bullet is
+marked closed by pull request 125. Section 7's radius paragraph is marked three
+rules and four rendered elements, with a line saying the rule is now enforced
+by `MarketingSiteKeepsZeroRadius` and was not enforced by anything when that
+paragraph was written. **The divider height bullet is left alone**, because it
+is genuinely open and nobody has seen the rule in place.
+
+Raised 18 September 2026 while committing that record. Neither was noted at the
+time, because the previous ruling named one note and adding uninstructed notes
+to a routed document is not this session's call.
 
 `docs/masthead-design-record-2026-09-16.md` is a dated record and most of it
 has aged correctly. Two statements have not.

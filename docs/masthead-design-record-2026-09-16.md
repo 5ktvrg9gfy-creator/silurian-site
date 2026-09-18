@@ -132,6 +132,17 @@ Two further objections, recorded because they outlive this round:
   that was amended is the one in the design project, which no build session
   reads. It needs routing in the way the last version was.
 
+> **Closed 18 September 2026.** The product owner routed it and pull request
+> 125 committed it. `docs/designdecisions.md` now carries all three: the ramp
+> with its commit and date, `styles.css`, and `f2f2ca6`. It also carries the
+> constraint this bullet is really about, under "This file is the source": the
+> document in this repository is the document, any copy in the design project
+> is a working copy, and an amendment that has not reached `main` has not
+> happened.
+>
+> The bullet above it, the conditional on the divider's height, is still open.
+> Nobody has seen the rule in place.
+
 ## 7. What a site changeset has to satisfy, so the next one is not caught out
 
 This is the section to read before writing the next change. The ramp was
@@ -207,6 +218,19 @@ owner's, enforced on the product by `test_production_copy_scope_check`.
 **Zero radius on the marketing site**, with the three circular contact badges
 as the documented exception. Assay is a separate documented exception with its
 own 4px bound, and its rules do not come back to the site.
+
+> **Count corrected 17 September 2026.** Three rules, four rendered elements.
+> The homepage rule dresses the email badge and the LinkedIn badge together, so
+> counting badges on the site gives four and reading this line gives three.
+> `CLAUDE.md` section 9a carries the corrected wording, which counts rules
+> because the scan reads rules: `.close .contact-badge` on `index.html` and on
+> `forecast-risk.html`, and `.mail-badge` on `forecastability.html`.
+>
+> The rule itself is now enforced rather than advisory.
+> `MarketingSiteKeepsZeroRadius` was built on 17 September, the site's first
+> radius scan, and it allows those three **by selector and never by value**, so
+> `50%` on anything else fails the build. Nothing enforced zero radius on the
+> site before that date, including when this was written.
 
 ## 8. Where this lives in the repository
 
