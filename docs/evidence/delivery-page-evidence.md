@@ -258,3 +258,58 @@ margin-top and padding-top 56/40px above 720px and 28/28px below it, measured
 gaps of 56px from lead to rule and 42px from rule to first line above the
 breakpoint, 28px and 30px below it. The 42 and 30 carry the border's own 2px.
 The rule spans the content column, 1080px at a 1200px viewport. Suite 294, OK.
+
+## Correction, 18 September 2026: the page needed a route home and had none
+
+Removing the wordmark anchor left `delivery.html` with no way back to the
+homepage. The builder flagged the consequence in writing and shipped it anyway,
+because the ruling had been sought on a narrow question, whether the wordmark
+should be a link, when the question that mattered was whether the page needs a
+route home. It does. The product owner said so plainly.
+
+Two routes now, which is what the site's other secondary pages carry:
+
+- The mark is wrapped in an anchor to `index.html` with
+  `aria-label="Silurian PM home"`. The anchor takes the mark's grid placement,
+  because a wrapper that did not would become an unplaced grid item and push the
+  wordmark out of column 2.
+- A "Back to Silurian" link at the right of the bar, the same string and place
+  `forecastability.html` and `forecast-risk.html` use.
+
+Two things were nearly wrong and are worth recording.
+
+**Specificity.** Written `.mast-bar a.back` rather than `.mast-bar .back`. The
+nav link rule is `.mast-bar a:not(.btn)`, which is one element more specific than
+two classes and would have won, rendering the link uppercase at the 12px label
+step. That is the identical trap that produced the uppercase wordmark earlier the
+same day, hit twice now and commented at both sites.
+
+**The wrapped state was looked at, not reasoned about.** With `margin-left: auto`
+the link floated right on an orphan line between 851px and 717px, where the bar
+wraps but the lockup has not yet collapsed. A screenshot showed it reading as a
+stray rather than a second row. `justify-content: space-between` on the bar gives
+the same desktop result and starts a wrapped line at the left edge, in line with
+the mark. Screenshots taken at 1200, 850, 716, 480 and 320px before the value was
+accepted.
+
+## Verification
+
+The mark renders identically on all five pages at 1200px: 18px, weight 800,
+`-0.36px`, `text-transform: none`.
+
+Routes to `index.html` per page: `index.html` 0 because it is the homepage,
+`delivery.html` 2, `privacy.html` 1, `forecastability.html` 2,
+`forecast-risk.html` 2.
+
+The mark link is the first Tab stop on `delivery.html` and takes a visible 2px
+`rgb(236, 105, 23)` focus outline. The back link computes 15px, no uppercase,
+`rgb(102, 97, 95)`, which is the muted ink the nav links use.
+
+**The breakpoint was remeasured rather than assumed**, because a new flex sibling
+in the bar could have changed when the lockup runs out of room. Same method, query
+neutralised and the viewport stepped 1300px down to 300px in 1px steps: both pages
+still fail at 716px and hold at 717px. The bar wraps the back link instead of
+squeezing the lockup, so the value stands and no comment was touched.
+
+No horizontal overflow at 1400, 1200, 850, 800, 717, 716, 600, 480 or 320px.
+Suite 294 tests, OK.
