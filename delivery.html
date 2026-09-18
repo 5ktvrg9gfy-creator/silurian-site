@@ -101,7 +101,19 @@ a.btn { white-space: nowrap; }
    anchor around the pair would become the grid item and both placements would
    be lost. The mark stays decorative, which it already was: alt="". No weight
    or size change, so the mark is still one string at one weight. */
-.mast-brand .wordmark a { color: inherit; text-decoration: none; }
+/* The anchor has to be transparent, not just uncoloured. `.mast-bar
+   a:not(.btn)` above is the NAV LINK rule and it catches every anchor in the
+   bar, this one included, which is how the mark came to render at the 12px
+   label step, tracked +0.06em and uppercased, while index.html's plain <p>
+   kept the wordmark step. Three properties, not one: inheriting the colour
+   alone left the mark a different size and a different case from the same
+   mark one page away. text-transform is set to none rather than inherited
+   because there is nothing above it to inherit. */
+.mast-brand .wordmark a {
+  color: inherit; text-decoration: none;
+  font-family: inherit; font-weight: inherit; font-size: inherit;
+  letter-spacing: inherit; text-transform: none;
+}
 .mast-brand .mast-subline {
   margin: var(--space-1) 0 0; font-family: var(--font-body); font-weight: 600;
   font-size: var(--text-label); line-height: 1.2; letter-spacing: 0.08em;

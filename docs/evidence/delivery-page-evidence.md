@@ -196,3 +196,48 @@ overlap.
 
 Poster is spent once on `delivery.html`, on this headline, which is the page's
 loudest element and the same placement `index.html` uses.
+
+## Correction, 18 September 2026: the wordmark did not match across pages
+
+The product owner compared the Preview's mastheads and found "Silurian PM"
+rendering differently on `index.html` and `delivery.html`. He was right, and the
+cause was the home link added to the delivery page's wordmark.
+
+`.mast-bar a:not(.btn)` is the nav link rule. It catches every anchor in the bar,
+and the wordmark anchor was one, so the mark inherited the nav link treatment:
+the 12px label step instead of the 18px wordmark step, `+0.06em` tracking
+instead of `-0.02em`, and `text-transform: uppercase`. The override written with
+it set colour and text-decoration only, which fixed the two properties that were
+easy to see and left the three that changed the mark's size and case.
+
+Measured on the element the text actually renders in, which matters here: a
+first attempt read the anchor on `forecastability.html` and `forecast-risk.html`
+rather than the `.brand` span inside it, and reported two false differences. The
+probe now walks to the text node's parent.
+
+State before the fix, at 1200px:
+
+| page | renders in | size | weight | tracking | transform |
+|---|---|---|---|---|---|
+| `index.html` | `p.wordmark` | 18px | 800 | -0.36px | none |
+| `delivery.html` | `a` | 12px | 800 | +0.72px | uppercase |
+| `privacy.html` | `a.brand-home` | 15px | 800 | normal | none |
+| `forecastability.html` | `span.brand` | 18px | 800 | -0.36px | none |
+| `forecast-risk.html` | `span.brand` | 18px | 800 | -0.36px | none |
+
+Two pages were wrong, not one, and only one of them was this branch's doing.
+`privacy.html` has carried its mark at the body size since before this work: its
+header has no `.brand` span to hang the wordmark step on, the way the two Assay
+pages do, so the text took `body`'s size and no tracking. Found by comparing all
+five pages rather than the two in the screenshots, which is the reason to
+measure the whole set rather than the reported pair.
+
+Both fixed. `delivery.html`'s wordmark anchor now inherits font-family, weight,
+size and tracking and sets `text-transform: none`, so it is transparent to the
+nav link rule rather than merely recoloured. `privacy.html`'s header anchor now
+carries `var(--wordmark-size)` and `-0.02em`.
+
+After the fix, all five pages agree at every width tested, 1400, 1200, 900, 716,
+480 and 320px: 18px, 18px, 16.2px, 15px, 15px, 15px as the clamp tapers, weight
+800, `-0.02em` throughout, `text-transform: none` everywhere, and no horizontal
+overflow on any page at any of those widths. Suite 294 tests, OK.
