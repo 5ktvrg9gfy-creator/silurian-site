@@ -1,10 +1,48 @@
 # Silurian site, agreed design changes
 
-Handoff notes for Claude Code. Rewritten 6 September 2026 after two build responses. This supersedes every earlier version: where an earlier draft said something different, this document is right and the earlier one is not. Superseded reasoning has been removed rather than kept, so nothing here is a record of what was once considered.
+Handoff notes for Claude Code. Rewritten 6 September 2026 after two build responses, and amended 18 September 2026 by the product owner to add the three sections below on where this document lives and which tokens are dead. This supersedes every earlier version: where an earlier draft said something different, this document is right and the earlier one is not. Superseded reasoning has been removed rather than kept, so nothing here is a record of what was once considered.
 
 **Baseline:** the live deployment at https://www.silurianconsulting.co.uk/, not any file in the design project.
 **Reference mocks:** `Hero Layout Options.dc.html` for the layout, `Hero Paragraph Check.dc.html` for the hero band at the real 1056px content width.
 **Scope:** `index.html` in full, plus `forecast-risk.html` and `privacy.html` for the type scale. The Assay product at `forecast-app/static/` is out of scope, it deploys separately and has its own tokens.
+
+---
+
+## This file is the source
+
+**`docs/designdecisions.md` in the site repository is the document. Any copy in the design project is a working copy.** An amendment that has not reached this file has not happened.
+
+No build session reads the design project, and it cannot: the two sessions cannot see each other's chat and the product owner routes every message himself. So an amendment made only in the working copy changes nothing about what gets built, however clearly it is written and however many times it is restated.
+
+**This is not hypothetical. The dead ramp below was missed twice for exactly this reason.** It was first reported in `docs/build-response-6-2026-09-07.md`. The design session then amended its own copy and said so. On 16 September 2026 the constraint was still absent from this file, which `docs/build-response-8-2026-09-16.md` records after reading the file rather than assuming. A constraint that lives where the people it is meant to catch do not look is the same failure as the residue it warns about.
+
+Route an amendment through the product owner and commit it here. Until it is on `main`, it has not happened.
+
+## The tokens that do not exist
+
+This is history that `tokens.css` cannot express. A file cannot record the names it does not contain, so the record goes here.
+
+**These five do not exist:**
+
+`--color-neutral-300`, `--color-neutral-500`, `--color-neutral-800`, `--color-neutral-900`, `--color-accent-700`
+
+They lived in `styles.css`, deleted on 4 September 2026 in commit `f2f2ca6`, "S1.6: retire the Claude Design export residue". The same commit deleted `ds-styles.css`, a byte-for-byte duplicate of it, so a specification naming either file is naming a file that is gone. **Anything naming these tokens is written against a file that is gone.**
+
+The failure is silent, which is why it needs writing down. An undefined custom property does not fall back and does not raise an error. The whole declaration is dropped at computed-value time and the page renders as though the line was never written, so a page built against these names looks like a design decision rather than a fault.
+
+**`--color-neutral-brand` is the warm brand neutral `#cabfad`.** It is not a step in a scale. There is no scale. The `300`, `500`, `800` and `900` above are not neighbours of it and never were.
+
+**Two more names are dead, and they were not in the product owner's list.** They are added here because the same trap is set for them: `--space-6` and `--space-8` were in the deleted `styles.css` at 24px and 32px, and `tokens.css` declares `--space-1` through `--space-4` and stops. This is not theoretical. `docs/forecastability-page-spec.md` names one or the other in fifteen places. Strike this paragraph if the list was meant to be exactly five.
+
+**The spacing tokens are in `tokens.css`, not in `index.html`.** Earlier records say they are declared on the homepage only. That was true until 17 September 2026 and is not true now: pull request 120 moved `--space-1` through `--space-4` into `tokens.css` with their values unchanged, and every page can see them. Do not carry the old warning forward.
+
+## Where the live lists are
+
+**`tokens.css` holds every colour, type and spacing token.** One file at the repository root, linked by every page, carrying its own comments on why each value is what it is. Read it rather than a summary of it.
+
+**This document does not carry a copy of that list, deliberately.** A second copy of a list is the same defect as a second copy of a document, and the section above exists because of one. A pasted list is correct on the day it is pasted and wrong on the day somebody changes a token, and nothing tells a reader which of those days they are on.
+
+The role table below is a map and not an inventory. It names roles and points at tokens, which is short enough to stay true.
 
 **Every colour comes from `tokens.css`. No hex values appear in this document by design.** Earlier drafts quoted hexes from a stale local file and were wrong on the accent, the ink and the muted text. Use the token names.
 
