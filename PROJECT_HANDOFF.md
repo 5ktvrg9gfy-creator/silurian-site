@@ -754,7 +754,7 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 **Production, Assay: checked by James on 19 September 2026.** `https://assay.silurianconsulting.co.uk/` loads and is correct, no changes needed. The `silurian-forecast-diagnostic` project built from an unchanged `forecast-app/`, and this check confirms it. **Checked by James at a browser, not by this session**, which could not reach the domain at all.
 
-**No deployment check was or could be run from the build session.** Its egress proxy answers 403 to CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and `assay.silurianconsulting.co.uk` alike, confirmed on curl and on the fetch tool. Every rendered figure in the evidence file is from a local build of the same commit, and the only production evidence on this work is the product owner's own check above.
+**No deployment check was or could be run from the build session.** Its egress proxy answers 403 to CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and `assay.silurianconsulting.co.uk` alike, confirmed on curl and on the fetch tool. Every rendered figure in the evidence file is from a local build of the same commit, and both pieces of production evidence on this work are James's own checks above: the marketing site at `/forecast-risk.html` and Assay at its own domain, each opened by him at a browser.
 
 **Two claims were reported as settled fact and were false**, both corrected on the record beside the originals in `docs/marketing-site-open-questions.md`, and both worth carrying forward as a pattern rather than as two incidents:
 

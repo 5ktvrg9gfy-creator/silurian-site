@@ -646,10 +646,11 @@ existed only in `3c01034`, the third pass, which reached production solely
 through this merge, so a correct masthead there cannot be served by any earlier
 deployment. It confirms production is on `29aa1fe`.
 
-**Production, Assay: not checked.** `https://assay.silurianconsulting.co.uk/`
-has not been opened since the merge. The `silurian-forecast-diagnostic` project
-built from an unchanged `forecast-app/` and nothing is expected to have moved,
-but this line records that as unchecked rather than as a pass.
+**Production, Assay: checked by James on 19 September 2026.**
+`https://assay.silurianconsulting.co.uk/` loads and is correct, no changes
+needed. The `silurian-forecast-diagnostic` project built from an unchanged
+`forecast-app/`, and this check confirms it. **Checked by James at a browser,
+not by this session**, which could not reach the domain at all.
 
 **The build session could not check either.** Its egress proxy answered 403 to
 CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and
