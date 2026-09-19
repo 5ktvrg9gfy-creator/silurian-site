@@ -746,7 +746,26 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 ## Next starting point
 
-**Marketing site, 19 September 2026, third pass on branch `claude/awesome-faraday-70irmq`, so pull request 134 updates. Not merged, not deployed by this session.**
+**Pull request 134 is merged and the marketing site is live. Merge commit `29aa1fe` on `main`, 19 September 2026 at 11:34 UTC**, a two-parent merge commit matching the method every pull request from 128 to 133 used. Branch `claude/awesome-faraday-70irmq` was kept rather than deleted, on the product owner's instruction; the repository does not auto-delete merged branches.
+
+**What the merge contains**: three passes on the masthead. The delivery page rebuilt to its changeset's structure, the wordmark "Silurian PM" on every page that has one, the two-link nav with its hairline separator, the nav centred against the lockup, the back link reading "Home", and `forecastability.html` and `forecast-risk.html` both moved onto the shared lockup. **All four lockup pages now carry the same masthead block** and `privacy.html` keeps its small brand line.
+
+**Production, marketing site: confirmed by the product owner on 19 September 2026.** He opened `/forecast-risk.html` on `https://www.silurianconsulting.co.uk/` and reported the masthead correct. **That page is the right probe and the reason it is the right one matters**: its masthead only ever existed in `3c01034`, the third pass, which reached production solely through this merge. A correct masthead there cannot come from any earlier deployment, so it confirms production is serving `29aa1fe` rather than something older that happens to look similar.
+
+**Production, Assay: checked by James on 19 September 2026.** `https://assay.silurianconsulting.co.uk/` loads and is correct, no changes needed. The `silurian-forecast-diagnostic` project built from an unchanged `forecast-app/`, and this check confirms it. **Checked by James at a browser, not by this session**, which could not reach the domain at all.
+
+**No deployment check was or could be run from the build session.** Its egress proxy answers 403 to CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and `assay.silurianconsulting.co.uk` alike, confirmed on curl and on the fetch tool. Every rendered figure in the evidence file is from a local build of the same commit, and both pieces of production evidence on this work are James's own checks above: the marketing site at `/forecast-risk.html` and Assay at its own domain, each opened by him at a browser.
+
+**Two claims were reported as settled fact and were false**, both corrected on the record beside the originals in `docs/marketing-site-open-questions.md`, and both worth carrying forward as a pattern rather than as two incidents:
+
+1. **Q9 said moving `forecastability.html` onto the lockup changes its top "from paper to orange".** It does not. `.mast-bar` declares `background: var(--color-accent)` and every page overrides that inline with `--color-paper`. Written from a stylesheet rule rather than a rendered page, and the product owner ruled the change partly on it.
+2. **Q11 said the footer carried a placeholder company number and no registered office.** Both halves false. Company number 17415387 and the registered office at 22 Gelliwastad Road, Pontypridd, CF37 2BW are real and already live. Taken from the brief of 18 September and written down without being checked or put to the person who would know.
+
+**The rule both of them earn: read the render, not the rule, and never assert a compliance finding without checking it with whoever owns the fact.** Section 13 already says a check that reports zero observations has not run. This is the neighbouring failure, which is a claim that was never a check at all.
+
+**Still open on the marketing site**, none of it blocking: the four `forecast-risk.html` content and type issues in `docs/designdecisions.md`, which are the status palette needing to be scoped in writing, the 12px label step carrying nine roles, the mixed third and first person voice, and the borrowed credibility on TimesFM; and `forecastability.html`'s own copy, which needs James's words. `docs/change-wordmark-silurian-pm.md` still reads "permanently out of scope" for two pages that are now both in scope, left as a dated record with the correction in the questions file.
+
+**Marketing site, 19 September 2026, third pass on branch `claude/awesome-faraday-70irmq`. Merged and live. Superseded as a status by the section above it; kept because it records what the pass contained.**
 
 **The masthead unification is complete.** `forecast-risk.html` carries the same lockup as `index.html`, `delivery.html` and `forecastability.html`: "Silurian PM", the "Project & Programme Delivery" subline, the two-link nav with `aria-label="Services"`, the hairline, the nav centred against the lockup, the back link reading "Home", and the focus ring. **Neither nav link is current on that page**, because it is neither destination: it is the sample analysis `forecastability.html` links to twice. `privacy.html` keeps its small brand line and was not touched.
 
@@ -766,7 +785,7 @@ Tests **294 before, 294 after, OK both times**. Overflow 0px across 30 page-widt
 
 **Still open on the marketing site**: the four `forecast-risk.html` content and type issues in `docs/designdecisions.md`, and `forecastability.html`'s own copy, which needs James's words. `docs/change-wordmark-silurian-pm.md` still reads "permanently out of scope" for two pages that are now both in scope; it was left as a dated record with the correction in the questions file.
 
-**Marketing site, 19 September 2026, second pass on the same branch `claude/awesome-faraday-70irmq`, so pull request 134 updates. Not merged, not deployed by this session.** Two changes ruled by the product owner after the first pass.
+**Marketing site, 19 September 2026, second pass on the same branch `claude/awesome-faraday-70irmq`. Merged and live, in the same pull request as the third pass.** Two changes ruled by the product owner after the first pass.
 
 **`forecastability.html` is on the shared lockup.** Same masthead as `index.html` and `delivery.html`: the mark, "Silurian PM", the "Project & Programme Delivery" subline, the hairline, the two-link nav labelled "Project Management" and "AI Forecast Diagnostic" with `aria-label="Services"`, `aria-current="location"` on its own link, and the nav centred against the lockup. `delivery.html`'s masthead style block was taken whole rather than retyped, plus its wrap query, which lives in that page's third style block and was missed on the first attempt. `--half: 14px` added to that page's `:root`, same name and value as the other two, which is what `test_no_page_uses_an_undeclared_var` exists to force.
 
