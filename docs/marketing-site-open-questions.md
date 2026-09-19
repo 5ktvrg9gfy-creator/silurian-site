@@ -383,3 +383,104 @@ genuinely open and wants no note.
   writing the next change.
 - **Cost if wrong.** Low both ways. Left alone, the next person writing a site
   changeset reads a badge count that is one out and an open item that is shut.
+
+---
+
+## Q9. The brief's page list and the repository's page list disagree
+
+Raised 19 September 2026, applying the delivery page, wordmark and masthead
+nav brief of 18 September, revised 19 September.
+
+Changeset 1 says it touches "every page's masthead lockup. Currently
+index.html and forecastability.html." The verify list then asks that "all
+three pages' mastheads read 'Silurian PM' with the subline unchanged", and
+changeset 3 asks for the two nav links, the hairline, `aria-label="Services"`
+and `aria-current="location"` on `forecastability.html`.
+
+**`forecastability.html` does not carry that lockup and never has.** It
+carries the older single-link masthead: `.mast .wrap` as a flex row on
+`--color-paper` with a 2px bottom seam, holding `.brand-home` and a "Back to
+Silurian" link. There is no `.mast-bar` accent band, no `.mast-brand` grid, no
+subline, no `.mast-rule` and no `.mast-nav`. `forecast-risk.html` carries the
+same older masthead. So the lockup is on `index.html` and `delivery.html`, and
+the brief's "currently index.html and forecastability.html" names one page
+that has it and one that does not.
+
+What was done, and what was not:
+
+- **Done.** The wordmark string on `forecastability.html` is now "Silurian
+  PM". That is one text node, needs no rule, and is what changeset 1 and
+  changeset 3's branding paragraph both ask for by name.
+- **Not done.** The nav, the hairline, the `aria-label`, the `aria-current`
+  and the vertical centring on `forecastability.html`. There is nothing there
+  to centre or to put a hairline into.
+
+- **What it blocks.** Five of the brief's verify lines on one page, and the
+  question of whether the site has one masthead or two.
+- **Recommended default.** Give `forecastability.html` and `forecast-risk.html`
+  the `index.html` lockup in a changeset of their own, and treat it as the
+  masthead unification it is rather than as a nav tweak. It is not a small
+  change: those two pages' mastheads sit on `--color-paper` with a 2px seam
+  and the lockup sits on `--color-accent`, so adopting it changes the top of
+  both pages from paper to orange, and both carry a "Back to Silurian" link
+  that the lockup has no slot for. `delivery.html` solved that second part on
+  18 September by keeping `.back` at the right of the bar, which is the
+  pattern to copy. The brief's own constraint is why this was not done in this
+  pass: "if the work appears to need a treatment the site does not have, stop
+  and ask."
+- **Cost if wrong.** Low now, higher later. Today the site has two mastheads
+  and one wordmark, which reads as two generations of page rather than as a
+  fault. Building the lockup into those pages under this brief, without the
+  ground and back-link decisions being made, is how a third masthead gets
+  created.
+
+## Q10. Does the wordmark rename reach forecast-risk.html?
+
+Raised 19 September 2026, same brief.
+
+`docs/change-wordmark-silurian-pm.md`, committed 18 September, says the rename
+is "index.html and privacy.html only. Not forecast-risk.html or
+forecastability.html. Those two stay branded as Assay and are permanently out
+of scope for this rename."
+
+The 19 September brief reverses half of that. It names `forecastability.html`
+in changeset 1, and changeset 3 says "the masthead wordmark is 'Silurian PM'
+on every page including forecastability.html. Never swapped per page", with
+"one wordmark, every page" in the rejected list. It does not mention
+`forecast-risk.html` anywhere.
+
+So `forecast-risk.html` is the one page whose masthead still reads "Silurian".
+It was left that way in this pass: the brief's verify line counts three pages,
+and the standing rule is not to widen a story beyond what it names.
+
+- **What it blocks.** Nothing functional. One page out of five reads a
+  different mark.
+- **Recommended default.** Rename it too, in the same one-line change, when
+  Q9 is answered. "Never swapped per page" is the rule the brief states, and a
+  fifth page quietly exempt from it is the same shape of defect as the
+  neutral ramp: a rule that is true everywhere somebody looked.
+- **Cost if wrong.** One line to revert either way. The real cost is leaving
+  the committed changeset doc saying "permanently out of scope" while the
+  brief says the opposite, because the next session reads the doc.
+
+## Q11. The footer's company details are a placeholder and UK law wants real ones
+
+Raised 19 September 2026, carried from the brief's own out-of-scope note and
+recorded here so it survives the conversation.
+
+Every page's footer carries "Silurian Consulting LTD. Registered in England
+and Wales, company number 17415387. Registered office, 22 Gelliwastad Road,
+Pontypridd, CF37 2BW." The brief states the company number came from the old
+template and is a placeholder, and that the site needs the full registered
+name, the company number and a registered office address that are real.
+
+Untouched in this pass, deliberately. The brief says do not invent them and
+this session cannot verify them.
+
+- **What it blocks.** Nothing on the build. It is a compliance item.
+- **Recommended default.** James supplies the registered name, number and
+  office from the incorporation documents, and they go in as one change across
+  all five footers plus `privacy.html`'s body if it repeats them.
+- **Cost if wrong.** A wrong company number on a live trading site is a
+  statutory disclosure failure, not a typo. It is the highest-consequence
+  open item on this list and the cheapest to close.

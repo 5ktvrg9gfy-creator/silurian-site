@@ -4,18 +4,19 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Programme and Project Delivery | Silurian Consulting LTD</title>
-<meta name="description" content="We lead complex, cross-functional delivery for pharmaceutical and other regulated organisations. Independent project and programme leadership, UK based." />
+<meta name="description" content="Silurian Consulting provides independent project and programme leadership for pharmaceutical and other regulated organisations." />
 <link rel="icon" href="logo-stone.svg" />
 <link rel="stylesheet" href="tokens.css" />
 <style>
 /* Delivery page. Colour, type and the font come from tokens.css and nowhere
    else, as on every other page. Layout stays here.
 
-   Nothing on this page is a new treatment. The masthead lockup is index.html's
-   rules verbatim, the numbered list is index.html's .domains, and the hairline
-   list is forecastability.html's .gets copied in as its own block rather than
-   promoted to a shared stylesheet. Two lists and a lockup that already exist,
-   which is why this page carries no radius, no shadow and no second palette. */
+   Nothing on this page is a new treatment. The masthead lockup, the two-part
+   #about shape, the 4fr/7fr band and the numbered .domains list are all
+   index.html's rules carried here, and the hairline-per-item list is the same
+   mark the site draws on every other list it has. Patterns that already
+   exist, which is why this page carries no radius, no shadow, no new token
+   and no second palette. */
 
 :root {
   --edge: clamp(20px, 5vw, 72px);
@@ -59,6 +60,18 @@ img { display: block; max-width: 100%; }
 }
 .btn svg { display: block; }
 a.btn { white-space: nowrap; }
+/* Display type: the design system's Archivo at standard width. Both selectors
+   below out-specify this, index.html included, so it is carried for the same
+   reason the rest of the lockup is: the two pages read from one set of rules. */
+.display, .close h3 { letter-spacing: -0.025em; }
+.display {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-display);
+  line-height: 1.06;
+  letter-spacing: -0.02em; margin: 0;
+  margin-left: -0.058em; /* optical left alignment, the deck's measured Archivo 800 value */
+  text-box: trim-both cap alphabetic;
+}
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 </style>
 <style>
@@ -95,7 +108,13 @@ a.btn { white-space: nowrap; }
 .mast-brand .wordmark { grid-column: 2; grid-row: 1; align-self: baseline; }
 .mast-brand .mast-subline { grid-column: 2; grid-row: 2; }
 .mast-rule { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
-.mast-brand .mast-nav { grid-column: 4; grid-row: 1; align-self: baseline; }
+/* The nav spans both lockup rows and is centred against the pair, not aligned
+   to the wordmark's baseline. The lockup is a two-line block and the nav is
+   one line, so centring is what reads as level against it; baseline alignment
+   tied the nav to the first line and left it sitting high over a block twice
+   its height. The drift against the wordmark's own baseline is about 7px at
+   desktop and is intended. Ruled 19 September 2026. */
+.mast-brand .mast-nav { grid-column: 4; grid-row: 1 / 3; align-self: center; }
 .mast-brand .wordmark {
   margin: 0; font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: var(--wordmark-size); line-height: 1.2; letter-spacing: -0.02em;
@@ -146,13 +165,13 @@ a.btn { white-space: nowrap; }
    element: .mast-rule divides two blocks that are not siblings, where these
    two links already are, and a span between them would be a third child
    doing what a border does. Same 1px solid var(--color-divider) as every
-   other hairline on the site, never faded. var(--space-4) either side, which
-   is the 16px .mast-rule takes from the row's column gap plus its own
-   margins, so the two hairlines in this lockup are spaced alike. */
-.mast-brand .mast-nav { display: flex; flex-wrap: wrap; }
-.mast-nav a.forecast-link:first-child { padding-right: var(--space-4); }
+   other hairline on the site, never faded. The air either side is
+   clamp(14px, 2vw, 24px): the flex gap supplies it on the left, where the
+   border sits, and the second link's own padding supplies it on the right, so
+   the hairline is centred between the two labels at every width. */
+.mast-brand .mast-nav { display: flex; flex-wrap: wrap; gap: clamp(14px, 2vw, 24px); }
 .mast-nav a.forecast-link + a.forecast-link {
-  border-left: 1px solid var(--color-divider); padding-left: var(--space-4);
+  border-left: 1px solid var(--color-divider); padding-left: clamp(14px, 2vw, 24px);
 }
 /* The current page reads at full ink. The underline it also carries comes
    from .mast-bar a[aria-current='location'] above, which already sets the
@@ -163,43 +182,53 @@ a.btn { white-space: nowrap; }
 .mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
 </style>
 <style>
-/* This page's own sections. */
-#delivery { padding: 72px 0 80px; }
-#delivery .display {
-  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: var(--text-display); line-height: 1.06; letter-spacing: -0.03em;
-  margin: 0; margin-left: -0.058em; /* optical left alignment, the deck's measured Archivo 800 value */
-  text-box: trim-both cap alphabetic;
-}
-/* The lead carries the display weight, not the browser's bold: <strong>
+/* This page's own sections. index.html's #about, carried here rather than
+   redrawn: the same padding, the same uncapped display headline, and the same
+   two-part shape of a headline and subline above a 2px seam with a 4fr/7fr
+   band below it. The classes are index.html's and so are the values, so the
+   two pages cannot drift apart. */
+#about { padding: 72px 0 80px; }
+/* The headline is uncapped and takes the full content width, as index.html's
+   does. */
+#about .display { font-size: var(--text-display); line-height: 1.06;
+  letter-spacing: -0.03em; }
+/* The subline carries the display weight, not the browser's bold: <strong>
    defaults to 700 and the design calls for 800. */
-#delivery .sub, #delivery .sub strong { font-weight: var(--font-heading-weight); }
-#delivery .sub { font-size: var(--text-lead); line-height: 1.4; max-width: 34em;
+#about .sub, #about .sub strong { font-weight: var(--font-heading-weight); }
+#about .sub { font-size: var(--text-lead); line-height: 1.4; max-width: 34em;
   margin: 20px 0 0; text-box: trim-both cap alphabetic; }
-/* Body copy at full ink on a 48ch measure, index.html's .note-direct
-   treatment. The muted variant is for a sub-note beside primary copy, and on
-   this page the paragraphs under the lead are the primary copy. */
-/* The section seam under the lead, index.html's values: 56px of air, the 2px
-   ink rule that draws every section division on this site, then 40px to the
-   first line. The rule is the page grammar rather than decoration, which is why
-   it takes the seam weight and not the 1px hairline the lists inside use. */
-#delivery .intro { margin-top: 56px; padding-top: 40px;
+/* The band: prose left, list right, tops aligned. index.html's .lower values.
+   It is used twice on this page, under the lead and again under the approach
+   head, so the grid sits on the class and the seam above it sits on the
+   section that carries it. */
+.lower { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 56px; align-items: start; }
+/* The seam under the lead, index.html's values: 56px of air, the 2px ink rule
+   that draws every section division on this site, then 40px to the first
+   line. The rule is the page grammar rather than decoration, which is why it
+   takes the seam weight and not the 1px hairline the lists inside use. */
+#about .lower { margin-top: 56px; padding-top: 40px;
   border-top: 2px solid var(--color-divider); }
-#delivery .intro p { font-size: var(--text-body); line-height: 1.5;
-  color: var(--color-text); max-width: 48ch; margin: 22px 0 0; }
-/* The seam's own padding is the gap above the first line, so the paragraph adds
-   nothing on top of it. index.html does the same thing with .note at margin 0. */
-#delivery .intro p:first-child { margin-top: 0; }
-#delivery h2 { margin: 56px 0 var(--space-4); }
-#delivery .approach p { font-size: var(--text-body); line-height: 1.5;
-  color: var(--color-text); max-width: 48ch; margin: 0 0 var(--space-3); }
-#delivery .approach p:last-child { margin-bottom: 0; }
+/* The lead-in and the paragraph under it are one grid child, not two. Three
+   children in a two-column grid silently puts the third back in column one,
+   which is how the services list ended up under the prose the first time
+   index.html was built. */
+#about .note-col { min-width: 0; }
+/* The lead-in is the muted step and the paragraph under it is full ink, which
+   is index.html's pairing: the shorter line sets the subject and the longer
+   one carries the weight. */
+#about .note { font-size: var(--text-body); line-height: 1.5;
+  color: color-mix(in srgb, var(--color-text) 78%, transparent);
+  margin: 0; max-width: 48ch; }
+#about .note-direct { font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text); margin: 22px 0 0; max-width: 48ch; }
 
-/* The numbered list, index.html's .domains. The marker is the accent's mark
-   moment on this page: it is spent as a mark, never as a status. The
-   separators are 1px hairlines at full ink. Item headings are h3 rather than
-   index.html's h2, because here the section head above them is the h2 and a
-   list item cannot outrank the section holding it. Same values either way. */
+/* The numbered list, index.html's .domains at five items rather than three.
+   The marker is the accent's mark moment on this page: spent as a mark, never
+   as a status. The separators are 1px hairlines at full ink. The existing
+   :first-child and :not(:last-child) rules are correct for five items with no
+   change, so none is made. Item headings are h2, index.html's markup, because
+   the band they sit in carries no section head above them. */
 .domains { list-style: none; margin: 0; padding: 0; }
 .domains li { display: grid; grid-template-columns: 44px 1fr; gap: 14px;
   padding: 20px 0; }
@@ -208,19 +237,42 @@ a.btn { white-space: nowrap; }
 .domains .n { color: var(--color-accent); font-family: var(--font-heading);
   font-weight: var(--font-heading-weight); font-size: var(--text-lead);
   line-height: 1.35; }
-.domains h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+.domains h2 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: var(--text-subhead); line-height: 1.2; letter-spacing: -0.02em;
   margin: 0; color: var(--color-text); }
 .domains p { font-size: var(--text-body); font-weight: 400; line-height: 1.5;
   color: var(--color-text-muted); margin: 6px 0 0; }
 
-/* The hairline list, forecastability.html's .gets, copied verbatim as this
-   page's own rule rather than promoted to a shared stylesheet. A top rule per
-   item and no bullet mark: the rule is the mark. */
-.gets { list-style: none; margin: 24px 0 0; padding: 0;
-  display: flex; flex-direction: column; gap: 16px; }
-.gets li { font-size: var(--text-lead); line-height: 1.5;
-  padding-top: 16px; border-top: 1px solid var(--color-divider); }
+/* Typical assignments. Nine short lines across as many columns as the measure
+   allows, each marked by the 1px rule above it rather than by a bullet: the
+   rule is the mark, which is the site's own idiom on every list it draws. A
+   top rule per item is also what leaves no rule under the last item in either
+   column, which a bottom rule could not do once the list splits in two. */
+.assignments { border-top: 2px solid var(--color-divider); padding: 0 0 80px; }
+.assignments h2 { margin: 40px 0 24px; }
+/* 320px is the column the list is drawn for, and min() is what stops that
+   minimum becoming an overflow narrower than itself. A bare minmax(320px, 1fr)
+   holds a 320px track even when the content column is 280px, which is what a
+   320px phone leaves after the gutter, and the page scrolled sideways by 20px.
+   Measured, not guessed: it was found by a render check at 320px and would not
+   have shown in a source read. The track is still 320px everywhere there is
+   room for one. */
+.assignment-list { list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  column-gap: 56px; }
+.assignment-list li { padding: 18px 0;
+  border-top: 1px solid var(--color-divider);
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-lead); line-height: 1.2; letter-spacing: -0.01em; }
+
+/* A practical delivery approach. The same band as the lead, head left and
+   prose right, so the page closes on the shape it opened with. */
+.approach { border-top: 2px solid var(--color-divider); padding: 0 0 80px; }
+.approach .lower { margin-top: 40px; }
+.approach h2 { margin: 0; }
+.approach p { font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text); margin: 0; max-width: 48ch; }
+.approach p + p { margin-top: 22px; }
 
 /* The closing accent field, index.html's rules carried here unchanged. This is
    the accent's one field moment on the page, the only place orange is spent as
@@ -260,24 +312,30 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
   color: color-mix(in srgb, var(--color-text) 70%, transparent); }
 
 @media (max-width: 720px) {
-  #delivery { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }
-  /* The seam closes up with the section, as index.html's does. */
-  #delivery .intro { margin-top: var(--leading); padding-top: var(--leading); }
+  #about { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }
+  /* Both bands stack, and the seam closes up with the section as
+     index.html's does. */
+  .lower { grid-template-columns: 1fr; gap: var(--leading); }
+  #about .lower { margin-top: var(--leading); padding-top: var(--leading); }
 }
 
-/* 716px is measured, not chosen, against the nav labels this lockup carries
-   now: "Project Management" and "AI Forecast Diagnostic". What fails first is
-   those two links ceasing to fit on one line. It is not the subline, which
-   holds its single line far below this width. A border-left between two links
-   that have wrapped draws a vertical rule at the start of a line rather than
-   between two labels, so the nav drops to its own row here and both hairlines
-   go with it. Measured in headless Chromium with the fonts loaded, stepping
-   1300px down to 300px with this query neutralised, on both pages carrying
-   this lockup: index.html and delivery.html both fail at 716px and both hold
-   at 717px. The number tracks the label strings and has already moved twice,
-   so remeasure it whenever any string in the lockup changes, the nav labels
-   included. */
-@media (max-width: 716px) {
+/* 712px is measured, not chosen, against the lockup this masthead carries
+   now: the wordmark "Silurian PM", and the nav labels "Project Management"
+   and "AI Forecast Diagnostic". What fails first is those two links ceasing
+   to fit on one line. It is not the subline, which holds its single line far
+   below this width. A border-left between two links that have wrapped draws a
+   vertical rule at the start of a line rather than between two labels, so the
+   nav drops to its own row here and both hairlines go with it. Measured in
+   headless Chromium 1194 with the fonts loaded and awaited, stepping 1300px
+   down to 300px in 1px steps with this query neutralised, 1001 observations
+   per page, on both pages carrying this lockup: index.html and delivery.html
+   both fail at 712px and both hold at 713px. It came down from 716px because
+   the air either side of the nav hairline became clamp(14px, 2vw, 24px),
+   which is 14.24px at this width where the flat var(--space-4) was 16px, so
+   the labels fit about 4px further down. The number tracks the strings and
+   the spacing and has now moved three times, so remeasure it whenever either
+   changes. */
+@media (max-width: 712px) {
   .mast-brand { grid-template-columns: auto 1fr; }
   .mast-rule { display: none; }
   .mast-brand .mast-nav {
@@ -288,7 +346,6 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
      own row and the two links can wrap onto two lines, where a border-left
      would draw a vertical rule at the start of a line rather than between two
      labels. The gap above carries the air the paddings were holding. */
-  .mast-nav a.forecast-link:first-child { padding-right: 0; }
   .mast-nav a.forecast-link + a.forecast-link { border-left: 0; padding-left: 0; }
 }
 </style>
@@ -311,25 +368,27 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
 </header>
 
 <div class="wrap">
-  <section id="delivery">
+  <section id="about">
     <h1 class="display">Programme and Project Delivery</h1>
     <p class="sub"><strong>Delivery leadership for complex, cross-functional change</strong></p>
-    <div class="intro">
-      <p>Silurian Consulting provides independent project and programme leadership for pharmaceutical and other regulated organisations.</p>
-      <p>We take on complex delivery where success depends on coordinating multiple functions, sites, external partners, systems or markets. This includes establishing control from the outset, recovering work that has lost direction, and leading critical projects through implementation.</p>
+    <div class="lower">
+      <div class="note-col">
+        <p class="note">Silurian Consulting provides independent project and programme leadership for pharmaceutical and other regulated organisations.</p>
+        <p class="note-direct">We take on complex delivery where success depends on coordinating multiple functions, sites, external partners, systems or markets. This includes establishing control from the outset, recovering work that has lost direction, and leading critical projects through implementation.</p>
+      </div>
+      <ul class="domains">
+        <li><span class="n">#1</span><div><h2>Mobilising delivery</h2><p>Turning an objective into a structured and deliverable plan, with clear scope, milestones, responsibilities, dependencies and decision points.</p></div></li>
+        <li><span class="n">#2</span><div><h2>Establishing control</h2><p>Creating proportionate governance, reporting and escalation so that risks are visible, decisions are made at the right level and stakeholders have a reliable view of progress.</p></div></li>
+        <li><span class="n">#3</span><div><h2>Leading execution</h2><p>Coordinating cross-functional teams across supply chain, manufacturing, quality, regulatory, commercial, finance, technology and external partners.</p></div></li>
+        <li><span class="n">#4</span><div><h2>Recovering challenged projects</h2><p>Identifying what is preventing delivery, resetting priorities and accountabilities, and creating a credible route to completion.</p></div></li>
+        <li><span class="n">#5</span><div><h2>Managing implementation</h2><p>Taking projects through readiness, go-live, cutover, stabilisation and handover while protecting operational and supply continuity.</p></div></li>
+      </ul>
     </div>
+  </section>
 
-    <h2>Where we add value</h2>
-    <ul class="domains">
-      <li><span class="n">#1</span><div><h3>Mobilising delivery</h3><p>Turning an objective into a structured and deliverable plan, with clear scope, milestones, responsibilities, dependencies and decision points.</p></div></li>
-      <li><span class="n">#2</span><div><h3>Establishing control</h3><p>Creating proportionate governance, reporting and escalation so that risks are visible, decisions are made at the right level and stakeholders have a reliable view of progress.</p></div></li>
-      <li><span class="n">#3</span><div><h3>Leading execution</h3><p>Coordinating cross-functional teams across supply chain, manufacturing, quality, regulatory, commercial, finance, technology and external partners.</p></div></li>
-      <li><span class="n">#4</span><div><h3>Recovering challenged projects</h3><p>Identifying what is preventing delivery, resetting priorities and accountabilities, and creating a credible route to completion.</p></div></li>
-      <li><span class="n">#5</span><div><h3>Managing implementation</h3><p>Taking projects through readiness, go-live, cutover, stabilisation and handover while protecting operational and supply continuity.</p></div></li>
-    </ul>
-
+  <section class="assignments">
     <h2>Typical assignments</h2>
-    <ul class="gets">
+    <ul class="assignment-list">
       <li>Business and supply chain transformation</li>
       <li>New product introduction and global expansion</li>
       <li>Site and technology transfer</li>
@@ -340,11 +399,15 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
       <li>Portfolio prioritisation and governance</li>
       <li>Artwork and labelling programmes, including major rebranding and regulatory safety updates</li>
     </ul>
+  </section>
 
-    <h2>A practical delivery approach</h2>
-    <div class="approach">
-      <p>Our approach is structured but proportionate. We establish the controls needed to deliver the work without creating unnecessary process or reporting.</p>
-      <p>Assignments are built around clear outcomes, defined responsibilities and transparent evidence of progress.</p>
+  <section class="approach">
+    <div class="lower">
+      <h2>A practical delivery approach</h2>
+      <div>
+        <p>Our approach is structured but proportionate. We establish the controls needed to deliver the work without creating unnecessary process or reporting.</p>
+        <p>Assignments are built around clear outcomes, defined responsibilities and transparent evidence of progress.</p>
+      </div>
     </div>
   </section>
 </div>
