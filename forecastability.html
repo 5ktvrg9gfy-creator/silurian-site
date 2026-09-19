@@ -15,6 +15,9 @@
    does not invent one. */
 :root {
   --edge: clamp(20px, 5vw, 72px);
+  /* Read by the masthead bar's padding, same name and same value as
+     index.html and delivery.html. */
+  --half: 14px;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--color-bg); color: var(--color-text);
@@ -24,17 +27,155 @@ img { display: block; max-width: 100%; }
 figure { margin: 0; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 
-/* Masthead, the single-link brand block the other pages carry. */
-.mast { border-bottom: 2px solid var(--color-divider); background: var(--color-paper); }
-.mast .wrap { display: flex; align-items: center; gap: 14px;
-  padding-top: 12px; padding-bottom: 12px; }
-.mast img { width: 26px; aspect-ratio: 200 / 290; }
-.mast .brand-home { display: flex; align-items: center; gap: 14px;
-  text-decoration: none; color: var(--color-text); margin-right: auto; }
-.mast .brand-home:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-.brand { font-weight: var(--font-heading-weight); font-size: var(--wordmark-size);
-  letter-spacing: -0.02em; }
-.back { font-size: var(--text-body); font-weight: 600; text-decoration: none; }
+/* Masthead. index.html's lockup rules, carried here unchanged so the three
+   pages cannot drift apart: three pages running three names for the same role
+   is what tokens.css was created to stop, and a masthead copied by eye is the
+   same failure one level up. This page carried the older single-link masthead
+   until 19 September 2026, when the product owner ruled the unification. It is
+   the same ground either way: the bar is painted --color-paper inline on all
+   three pages, so nothing about this page's top moved from paper to accent. */
+.mast { --gutter: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge))); }
+.mast-bar { padding-inline: var(--gutter);
+  background: var(--color-accent); display: flex; align-items: center;
+  gap: clamp(20px, 3vw, 40px); flex-wrap: wrap;
+  padding-top: var(--half); padding-bottom: var(--half); }
+.mast-bar a:not(.btn) { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-text); text-decoration: none; }
+.mast-bar a:not(.btn):hover { text-decoration: underline; text-underline-offset: 5px; }
+/* The keyboard focus ring the old masthead carried on .brand-home, restored
+   for every link in the bar rather than just the mark. index.html and
+   delivery.html get this from a global :focus-visible in their base layer and
+   this page has none, so without this the port would have quietly traded an
+   accent outline for the browser default. Same two declarations as theirs. */
+.mast-bar a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.mast-bar a[aria-current='location'] { text-decoration: underline; text-underline-offset: 5px; }
+
+/* The lockup is a grid, not a row of flex items, because the nav label has to
+   sit on the wordmark's baseline and the rule has to span both lines. */
+.mast-brand {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  column-gap: 14px;
+}
+/* The mark is a route home, so it is wrapped in an anchor, and the anchor takes
+   the mark's grid placement rather than the image keeping it. A wrapper that did
+   not take the placement would become an unplaced grid item and push the
+   wordmark out of column 2. This is the one place this lockup diverges from
+   index.html's, and it diverges because index.html is the homepage and has
+   nowhere to go. */
+.mast-brand .mast-home { grid-column: 1; grid-row: 1 / 3; align-self: center;
+  display: block; }
+.mast-brand .wordmark { grid-column: 2; grid-row: 1; align-self: baseline; }
+.mast-brand .mast-subline { grid-column: 2; grid-row: 2; }
+.mast-rule { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
+/* The nav spans both lockup rows and is centred against the pair, not aligned
+   to the wordmark's baseline. The lockup is a two-line block and the nav is
+   one line, so centring is what reads as level against it; baseline alignment
+   tied the nav to the first line and left it sitting high over a block twice
+   its height. The drift against the wordmark's own baseline is about 7px at
+   desktop and is intended. Ruled 19 September 2026. */
+.mast-brand .mast-nav { grid-column: 4; grid-row: 1 / 3; align-self: center; }
+.mast-brand .wordmark {
+  margin: 0; font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--wordmark-size); line-height: 1.2; letter-spacing: -0.02em;
+  white-space: nowrap; color: var(--color-text);
+}
+/* No anchor on the wordmark. The route home was the builder's own addition
+   rather than the changeset's and the product owner removed it on 18 September
+   2026. It is worth knowing why the rule that dressed it is gone too: any
+   anchor placed in this bar is caught by `.mast-bar a:not(.btn)`, the nav link
+   rule, which renders it at the 12px label step, tracked and uppercased. That
+   is what happened to the mark here, and a future anchor in this lockup needs
+   the same five properties overridden, not just colour. */
+.mast-brand .mast-subline {
+  margin: var(--space-1) 0 0; font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-label); line-height: 1.2; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--color-text-muted);
+}
+/* The divider between the lockup and the nav. 1px solid var(--color-divider),
+   the site's own hairline, never faded. var(--space-4) either side, of which
+   the row's column gap supplies 14. */
+.mast-rule {
+  width: 1px; background: var(--color-divider);
+  margin-inline: calc(var(--space-4) - 14px);
+}
+.mast-bar a.forecast-link {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text-muted); letter-spacing: normal; text-transform: none;
+}
+.mast-bar a.forecast-link:hover { color: var(--color-text); }
+/* The second route home, and the words rather than the picture. The mark reads
+   as home to anyone who knows the convention and says nothing to anyone who
+   does not, so the text link carries it for everyone else. It reads "Home" and
+   not "Back to Silurian" from 19 September 2026, on the product owner's
+   instruction, with its destination unchanged. forecast-risk.html still carries
+   the old string and is out of scope, recorded in the open questions.
+   Written as `.mast-bar a.back` and not `.mast-bar .back`: the nav link rule
+   above is `.mast-bar a:not(.btn)`, which is one element more specific than two
+   classes and would otherwise win and render this uppercase at the label step.
+   That is exactly how the wordmark came to render uppercase on 18 September. */
+.mast-bar { justify-content: space-between; }
+.mast-bar a.back {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--text-body); line-height: 1.5;
+  color: var(--color-text-muted); letter-spacing: normal; text-transform: none;
+}
+.mast-bar a.back:hover { color: var(--color-text); }
+/* The nav holds the two service lines, so this masthead now carries a second
+   hairline. It is drawn as a border on the second link rather than as an
+   element: .mast-rule divides two blocks that are not siblings, where these
+   two links already are, and a span between them would be a third child
+   doing what a border does. Same 1px solid var(--color-divider) as every
+   other hairline on the site, never faded. The air either side is
+   clamp(14px, 2vw, 24px): the flex gap supplies it on the left, where the
+   border sits, and the second link's own padding supplies it on the right, so
+   the hairline is centred between the two labels at every width. */
+.mast-brand .mast-nav { display: flex; flex-wrap: wrap; gap: clamp(14px, 2vw, 24px); }
+.mast-nav a.forecast-link + a.forecast-link {
+  border-left: 1px solid var(--color-divider); padding-left: clamp(14px, 2vw, 24px);
+}
+/* The current page reads at full ink. The underline it also carries comes
+   from .mast-bar a[aria-current='location'] above, which already sets the
+   5px offset. Written on both pages that carry this lockup so the block stays
+   one thing: index.html has no current link, so there it matches nothing, and
+   a masthead that differs between pages is how this site came to run three
+   palettes. */
+.mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
+
+/* 712px is measured, not chosen, against the lockup this masthead carries
+   now: the wordmark "Silurian PM", and the nav labels "Project Management"
+   and "AI Forecast Diagnostic". What fails first is those two links ceasing
+   to fit on one line. It is not the subline, which holds its single line far
+   below this width. A border-left between two links that have wrapped draws a
+   vertical rule at the start of a line rather than between two labels, so the
+   nav drops to its own row here and both hairlines go with it. Measured in
+   headless Chromium 1194 with the fonts loaded and awaited, stepping 1300px
+   down to 300px in 1px steps with this query neutralised, 1001 observations
+   per page, on all three pages carrying this lockup: index.html,
+   delivery.html and forecastability.html all fail at 712px and all hold at
+   713px. It came down from 716px because the air either side of the nav
+   hairline became clamp(14px, 2vw, 24px), which is 14.24px at this width
+   where the flat var(--space-4) was 16px, so the labels fit about 4px further
+   down. Remeasured again on 19 September 2026 when forecastability.html
+   joined this lockup and the back link's label became "Home": it did not
+   move, because what fails first is the nav's own two labels and neither of
+   those changed. The number tracks the strings and the spacing, so remeasure
+   it whenever either changes, and record it even when it holds. */
+@media (max-width: 712px) {
+  .mast-brand { grid-template-columns: auto 1fr; }
+  .mast-rule { display: none; }
+  .mast-brand .mast-nav {
+    grid-column: 1 / -1; grid-row: 3; margin-top: var(--space-2);
+    column-gap: var(--space-4); row-gap: var(--space-1);
+  }
+  /* The second hairline goes with the first. Below this width the nav is its
+     own row and the two links can wrap onto two lines, where a border-left
+     would draw a vertical rule at the start of a line rather than between two
+     labels. The gap above carries the air the paddings were holding. */
+  .mast-nav a.forecast-link + a.forecast-link { border-left: 0; padding-left: 0; }
+}
 
 /* main.wrap, not main. The page section carries the site gutter through
    .wrap, and a class selector outranks an element selector, so a bare
@@ -182,9 +323,18 @@ footer img { width: 26px; aspect-ratio: 200 / 290; flex: none; }
 <body>
 
 <header class="mast">
-  <div class="wrap">
-    <a class="brand-home" href="index.html"><img src="logo-stone.svg" alt="" /><span class="brand">Silurian PM</span></a>
-    <a class="back" href="index.html">Back to Silurian</a>
+  <div class="mast-bar" style="background:var(--color-paper);gap:14px;border-bottom:2px solid var(--color-divider);padding-top:var(--space-3);padding-bottom:var(--space-3)">
+    <div class="mast-brand">
+      <a class="mast-home" href="index.html" aria-label="Silurian PM home"><img class="mast-mark" src="logo-stone.svg" alt="" style="width:26px;aspect-ratio:200/290" /></a>
+      <p class="wordmark">Silurian PM</p>
+      <p class="mast-subline">Project &amp; Programme Delivery</p>
+      <span class="mast-rule" aria-hidden="true"></span>
+      <nav class="mast-nav" aria-label="Services">
+        <a class="forecast-link" href="delivery.html">Project Management</a>
+        <a class="forecast-link" href="forecastability.html" aria-current="location">AI Forecast Diagnostic</a>
+      </nav>
+    </div>
+    <a class="back" href="index.html">Home</a>
   </div>
 </header>
 

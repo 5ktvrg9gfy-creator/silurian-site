@@ -270,3 +270,176 @@ finding about the code.
   product owner's own instruction, recorded in commit `ccf373b`, so removing
   them under a brief written before that ruling would undo a decision rather
   than apply one.
+
+---
+
+# Second pass, 19 September 2026: masthead unification and the back link
+
+Two changes ruled by the product owner after the first pass: move
+`forecastability.html` onto the same masthead as `index.html` and
+`delivery.html`, and change the back link's visible text to "Home" wherever it
+appears. Same branch, so pull request 134 updates. Nothing merged.
+
+Same method as above: headless Chromium 1194 against a local static server on
+the repository's own files, fonts awaited, every figure read through
+`getComputedStyle` or `getBoundingClientRect`.
+
+## The ground did not change, and the note that said it would was wrong
+
+`docs/marketing-site-open-questions.md` Q9 said the port "changes the top of
+the page from paper to orange". **It does not.** `.mast-bar` declares
+`background: var(--color-accent)` and every page carrying it overrides that
+inline with `--color-paper`. Measured on all three pages, at all six widths:
+
+```
+index.html             .mast-bar background  rgb(255, 255, 255)
+delivery.html          .mast-bar background  rgb(255, 255, 255)
+forecastability.html   .mast-bar background  rgb(255, 255, 255)
+```
+
+`forecastability.html`'s old masthead painted `--color-paper` on `.mast` and
+computed the same white. The ground is unchanged. What moved is the lockup, the
+nav and the 2px seam, which is now on the bar rather than on `.mast`.
+
+Q9 was written by reading the stylesheet rather than a rendered page. The
+correction is recorded in the questions file and the wrong sentence is left
+standing there, because a correction to the record stays on the record.
+
+## What was ported, and how
+
+`delivery.html`'s masthead `<style>` block was taken whole and put into
+`forecastability.html`, not retyped. Its wrap query lives in that page's third
+style block rather than the second, so it was extracted separately and added;
+the first build of this change was missing it and the nav would not have
+dropped to its own row below the breakpoint. Caught by counting `.mast-nav`
+rules across the three pages, 6 against 4.
+
+`--half: 14px` was added to the page's `:root`, which the bar's padding reads.
+Same name and same value as the other two pages, not a new token.
+
+Three shared comments named two pages and the old back-link string. They were
+updated on all three pages in the same edit, so the block stays one thing.
+
+## The breakpoint held at 712px, and was remeasured anyway
+
+Method as before, wrap query neutralised, 1300px to 300px in 1px steps.
+
+```
+index.html             first fail 712px   last hold 713px   1001 observations
+delivery.html          first fail 712px   last hold 713px   1001 observations
+forecastability.html   first fail 712px   last hold 713px   1001 observations
+```
+
+**It did not move.** What fails first is the nav's own two labels, and neither
+of those changed. The comment was still updated on all three pages, because it
+previously said "on both pages carrying this lockup: index.html and
+delivery.html" and that is now three pages. **A number that holds is a
+measurement, not an absence of one**, and the comment has to say what was
+actually measured or the next reader cannot tell the difference between a
+value that was checked and one that was skipped.
+
+## The new masthead, read at the six named widths
+
+```
+width   bar ground           nav   hairline    aria-label  aria-current              nav centre - lockup centre
+1440    rgb(255,255,255)     1     1px solid   Services    AI Forecast Diagnostic    -0.01px
+1090    rgb(255,255,255)     1     1px solid   Services    AI Forecast Diagnostic    -0.01px
+ 720    rgb(255,255,255)     1     1px solid   Services    AI Forecast Diagnostic     0.00px
+ 560    rgb(255,255,255)     1     0px none    Services    AI Forecast Diagnostic    n/a, nav on its own row
+ 521    rgb(255,255,255)     1     0px none    Services    AI Forecast Diagnostic    n/a
+ 320    rgb(255,255,255)     2     0px none    Services    AI Forecast Diagnostic    n/a
+```
+
+Wordmark "Silurian PM" and subline "Project & Programme Delivery" read from the
+rendered DOM on all three lockup pages, identical on each.
+
+`aria-current="location"` is on the AI Forecast Diagnostic link on this page,
+on the Project Management link on `delivery.html`, and on neither link on
+`index.html`.
+
+## The back link
+
+```
+page                   visible text        href
+delivery.html          Home                index.html
+forecastability.html   Home                index.html
+forecast-risk.html     Back to Silurian    index.html    <- not changed, Q10
+index.html             no back link
+privacy.html           no back link
+```
+
+No `aria-label` or `title` anywhere on the site contained "Back to Silurian",
+so none needed changing. Checked by grep across every tracked HTML file, which
+found the string on three pages and in no attribute.
+
+Destinations are unchanged on every one.
+
+## One thing added that the instruction did not name
+
+`forecastability.html`'s only focus ring was
+`.mast .brand-home:focus-visible`, which the port deleted with the rest of the
+old masthead. **That page has no global `:focus-visible` rule**, where
+`index.html` and `delivery.html` both do in their base layer, so the port would
+have silently traded an accent outline for the browser default on the one link
+that had one.
+
+Restored as `.mast-bar a:focus-visible` with the same two declarations the
+other pages use, which covers all four links in the bar rather than just the
+mark. Verified by focusing each in turn:
+
+```
+.mast-home                  2px solid rgb(236, 105, 23)
+.mast-nav a.forecast-link   2px solid rgb(236, 105, 23)
+.back                       2px solid rgb(236, 105, 23)
+```
+
+`rgb(236, 105, 23)` is `--color-accent`. This is a restoration of what the port
+removed, not a new treatment, and it is called out here because it is the one
+declaration in this pass that no instruction asked for.
+
+## Horizontal overflow and radius
+
+`scrollWidth - clientWidth` at 320, 521, 560, 720, 1090 and 1440px on all five
+pages. **30 combinations, every one 0px.**
+
+Radius read through `getComputedStyle`, all four corners of every element, at
+every width:
+
+```
+page                   corners read   rounded
+index.html             256            2, both .close .contact-badge at 50%
+delivery.html          376            2, both .close .contact-badge at 50%
+forecastability.html   720            1, .mail-badge at 50%
+forecast-risk.html     692            1, .contact-badge at 50%
+privacy.html           164            0
+```
+
+Six rounded elements from four rules, which is the count `CLAUDE.md` section 9a
+carries. `forecastability.html`'s corner count rose from 696 to 720 because the
+new masthead has more elements in it, and its rounded count is unchanged at
+one. **The new masthead added 24 corners and no radius.**
+
+## Tests
+
+`python -m unittest discover -s tests` from `forecast-app/`. **294 before, 294
+after, OK both times.** No test added, changed or removed.
+
+`test_no_page_uses_an_undeclared_var` passes, which is the control that would
+have caught the ported block naming a token `forecastability.html` cannot see.
+That is the reason `--half` was added rather than assumed.
+
+## What did not run
+
+**No Vercel Preview check and no Production check were run by this session.**
+The previews build and Vercel reports them, but this container's egress proxy
+answers 403 to CONNECT for `*.vercel.app`, so the deployed pages were not
+opened from here. Every rendered figure in this record is from the local build
+of the same commit, not from the preview.
+
+## Not done
+
+- `forecast-risk.html`: wordmark, masthead and back-link label all unchanged.
+  Out of scope by instruction, and the back link's label is the half of that
+  instruction that disagrees with itself. Q10.
+- No page copy was written, on this page or any other.
+- The rest of `forecastability.html` below the masthead is untouched.

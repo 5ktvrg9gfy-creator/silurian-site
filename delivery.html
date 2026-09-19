@@ -147,8 +147,10 @@ a.btn { white-space: nowrap; }
 .mast-bar a.forecast-link:hover { color: var(--color-text); }
 /* The second route home, and the words rather than the picture. The mark reads
    as home to anyone who knows the convention and says nothing to anyone who
-   does not, so the text link carries it for everyone else. Same string and same
-   place as forecastability.html and forecast-risk.html, at the right of the bar.
+   does not, so the text link carries it for everyone else. It reads "Home" and
+   not "Back to Silurian" from 19 September 2026, on the product owner's
+   instruction, with its destination unchanged. forecast-risk.html still carries
+   the old string and is out of scope, recorded in the open questions.
    Written as `.mast-bar a.back` and not `.mast-bar .back`: the nav link rule
    above is `.mast-bar a:not(.btn)`, which is one element more specific than two
    classes and would otherwise win and render this uppercase at the label step.
@@ -328,13 +330,16 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
    nav drops to its own row here and both hairlines go with it. Measured in
    headless Chromium 1194 with the fonts loaded and awaited, stepping 1300px
    down to 300px in 1px steps with this query neutralised, 1001 observations
-   per page, on both pages carrying this lockup: index.html and delivery.html
-   both fail at 712px and both hold at 713px. It came down from 716px because
-   the air either side of the nav hairline became clamp(14px, 2vw, 24px),
-   which is 14.24px at this width where the flat var(--space-4) was 16px, so
-   the labels fit about 4px further down. The number tracks the strings and
-   the spacing and has now moved three times, so remeasure it whenever either
-   changes. */
+   per page, on all three pages carrying this lockup: index.html,
+   delivery.html and forecastability.html all fail at 712px and all hold at
+   713px. It came down from 716px because the air either side of the nav
+   hairline became clamp(14px, 2vw, 24px), which is 14.24px at this width
+   where the flat var(--space-4) was 16px, so the labels fit about 4px further
+   down. Remeasured again on 19 September 2026 when forecastability.html
+   joined this lockup and the back link's label became "Home": it did not
+   move, because what fails first is the nav's own two labels and neither of
+   those changed. The number tracks the strings and the spacing, so remeasure
+   it whenever either changes, and record it even when it holds. */
 @media (max-width: 712px) {
   .mast-brand { grid-template-columns: auto 1fr; }
   .mast-rule { display: none; }
@@ -363,7 +368,7 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
         <a class="forecast-link" href="forecastability.html">AI Forecast Diagnostic</a>
       </nav>
     </div>
-    <a class="back" href="index.html">Back to Silurian</a>
+    <a class="back" href="index.html">Home</a>
   </div>
 </header>
 

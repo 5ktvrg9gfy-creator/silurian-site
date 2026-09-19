@@ -746,6 +746,24 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 ## Next starting point
 
+**Marketing site, 19 September 2026, second pass on the same branch `claude/awesome-faraday-70irmq`, so pull request 134 updates. Not merged, not deployed by this session.** Two changes ruled by the product owner after the first pass.
+
+**`forecastability.html` is on the shared lockup.** Same masthead as `index.html` and `delivery.html`: the mark, "Silurian PM", the "Project & Programme Delivery" subline, the hairline, the two-link nav labelled "Project Management" and "AI Forecast Diagnostic" with `aria-label="Services"`, `aria-current="location"` on its own link, and the nav centred against the lockup. `delivery.html`'s masthead style block was taken whole rather than retyped, plus its wrap query, which lives in that page's third style block and was missed on the first attempt. `--half: 14px` added to that page's `:root`, same name and value as the other two, which is what `test_no_page_uses_an_undeclared_var` exists to force.
+
+**The back link reads "Home"** on `delivery.html` and `forecastability.html`, destinations unchanged. No `aria-label` or `title` on the site carried the old string.
+
+**A correction that matters, because a decision was made on it.** `docs/marketing-site-open-questions.md` Q9 said the port changes that page's top "from paper to orange", and the product owner restated it when he ruled the change. **It is wrong.** `.mast-bar` declares `background: var(--color-accent)` and every page using it overrides that inline with `--color-paper`, so the bar computes `rgb(255, 255, 255)` on all three pages and the old masthead computed the same white. **The ground did not change.** Q9 was written from the stylesheet rather than from a rendered page, which is section 13's rule about checks that read nothing, one level up. The wrong sentence stays in the questions file with the correction beside it.
+
+**The breakpoint held at 712px and was remeasured anyway**, on all three pages, 1001 observations each. It did not move because what fails first is the nav's own two labels and neither changed. The comment was still updated on all three, because it named two pages and there are now three: a number that holds is a measurement, and the comment has to say so or the next reader cannot tell a checked value from a skipped one.
+
+**One declaration was added that no instruction asked for.** `forecastability.html`'s only focus ring was `.mast .brand-home:focus-visible`, and that page has no global `:focus-visible` where the other two do, so the port would have traded an accent outline for the browser default. Restored as `.mast-bar a:focus-visible`, same declarations, now covering all four links in the bar.
+
+Tests **294 before, 294 after, OK both times**. Overflow 0px across 30 page-width combinations at 320, 521, 560, 720, 1090 and 1440. Radius unchanged at six rounded elements from four rules. Evidence in `docs/evidence/masthead-nav-2026-09-19-evidence.md`.
+
+**`forecast-risk.html` is now the only page out of step, in three ways**: its masthead reads "Silurian", it is still on the older single-link masthead, and its back link still reads "Back to Silurian". The instruction for this pass said the label changes on every page and also said not to touch that file, which disagree, so it was left and reported. **The recommendation is one change that ports it onto the lockup and settles all three at once**, now that the port is a known quantity. Q10.
+
+**Still open and unchanged: the footer's placeholder company number**, which needs James's incorporation documents. Q11, and the highest-consequence item on the site.
+
 **Marketing site, 19 September 2026: the delivery page, wordmark and masthead nav brief is applied on branch `claude/awesome-faraday-70irmq` and is not merged and not deployed.** No Vercel Preview and no Production smoke test have been run on it. Nothing below should be read as a deployment check.
 
 What is in the branch, against the brief of 18 September revised 19 September. **Changeset 1**: `forecastability.html`'s wordmark now reads "Silurian PM"; `index.html`, `delivery.html` and `privacy.html` already did, from the 18 September build. **Changeset 2**: the nav gap and the hairline's padding are the brief's `clamp(14px, 2vw, 24px)` rather than the flat `var(--space-4)` the 18 September build used, and `delivery.html` is rebuilt to the changeset's structure, which it did not previously match. **Changeset 3**: the nav spans both lockup rows and is centred against the pair, `grid-row: 1 / 3; align-self: center`, where it was aligned to the wordmark's baseline. The nav labels and the current-page state were already correct.

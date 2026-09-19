@@ -484,3 +484,52 @@ this session cannot verify them.
 - **Cost if wrong.** A wrong company number on a live trading site is a
   statutory disclosure failure, not a typo. It is the highest-consequence
   open item on this list and the cheapest to close.
+
+---
+
+## Q9 and Q10, status on 19 September 2026
+
+**Q9 is closed by the product owner, and one fact in it was wrong.**
+
+He ruled the unification: `forecastability.html` now carries the same lockup as
+`index.html` and `delivery.html`, with the two-link nav, the hairline,
+`aria-label="Services"`, `aria-current="location"` on its own link and the nav
+centred against the lockup. `forecast-risk.html` stays out, which is his
+ruling and is what Q10 is about.
+
+**The correction, which stays on the record rather than being edited into the
+question above.** Q9 said adopting the lockup "changes the top of the page
+from paper to orange", and the product owner restated that when he ruled it,
+so he decided on it. **It is not true.** `.mast-bar` carries
+`background: var(--color-accent)` in the stylesheet, which is what Q9 was
+written from, and every page using it overrides that inline with
+`style="background:var(--color-paper)"`. Read through `getComputedStyle`, the
+bar computes `rgb(255, 255, 255)` on `index.html` and on `delivery.html`, and
+`forecastability.html`'s old masthead computed the same white. **The ground did
+not change.** What changed is the lockup, the nav and the seam moving from
+`.mast` onto the bar.
+
+The error was reading a rule instead of a rendered page, which is the same
+failure section 13 of `CLAUDE.md` names about a check that reads nothing: a
+declaration is not what the browser does with it. Q9 was written from the
+stylesheet and should have been written from a render.
+
+**Q10 is still open and has gained a second half.** `forecast-risk.html` is now
+the only page whose masthead reads "Silurian" rather than "Silurian PM", the
+only one still on the older single-link masthead, and, from this pass, the only
+one whose back link still reads "Back to Silurian" rather than "Home".
+
+The back link's label was left there deliberately. The instruction for this
+pass said the label changes "on every page where it appears" and also said "do
+not touch forecast-risk.html". Those disagree, and the standing rule is to
+report a contradiction rather than pick the convenient reading.
+
+- **What it blocks.** Nothing. One page of five now differs in three ways
+  rather than one.
+- **Recommended default.** Bring `forecast-risk.html` onto the lockup in one
+  change, which settles the wordmark, the masthead and the back link together.
+  It is the same port that was just done and it is now a known quantity. Doing
+  the back link alone would close the smallest of the three gaps and leave the
+  page looking half-converted.
+- **Cost if wrong.** Low. The page's own content is untouched either way, and
+  the port is reversible.
