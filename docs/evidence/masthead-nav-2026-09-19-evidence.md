@@ -623,3 +623,39 @@ fixes the defect above and touches all four pages.
 for two pages that are now both in scope. It was left as written, because it is
 a dated changeset record and the correction belongs in the questions file
 rather than in an edit to the original.
+
+---
+
+# Merge and production, 19 September 2026
+
+**Merged**: `29aa1fe` on `main`, 11:34 UTC, a two-parent merge commit titled
+"Merge pull request #134 from 5ktvrg9gfy-creator/claude/awesome-faraday-70irmq".
+The method matches every pull request from 128 to 133, each of which left a
+two-parent merge commit on `main`. The branch was kept.
+
+Verified on the merged `main` rather than assumed: all four lockup pages read
+"Silurian PM", each carries two nav links, the three back links read "Home",
+the breakpoint is 712px on all four, and the suite runs 294 tests OK.
+
+**Production, marketing site: passed.** Confirmed by the product owner on
+19 September 2026, who opened `/forecast-risk.html` on
+`https://www.silurianconsulting.co.uk/` and reported the masthead correct.
+
+That page is the correct probe rather than an arbitrary one. Its masthead
+existed only in `3c01034`, the third pass, which reached production solely
+through this merge, so a correct masthead there cannot be served by any earlier
+deployment. It confirms production is on `29aa1fe`.
+
+**Production, Assay: not checked.** `https://assay.silurianconsulting.co.uk/`
+has not been opened since the merge. The `silurian-forecast-diagnostic` project
+built from an unchanged `forecast-app/` and nothing is expected to have moved,
+but this line records that as unchecked rather than as a pass.
+
+**The build session could not check either.** Its egress proxy answered 403 to
+CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and
+`assay.silurianconsulting.co.uk`, on curl and on the fetch tool alike. It also
+has no tool that reads commit statuses for an arbitrary SHA: the status
+endpoint available to it is pull-request scoped and kept reporting the pull
+request head `3c010349`, not the merge commit, which is a trap worth naming
+because those two green lines look exactly like a production pass and are not
+one.
