@@ -652,11 +652,22 @@ needed. The `silurian-forecast-diagnostic` project built from an unchanged
 `forecast-app/`, and this check confirms it. **Checked by James at a browser,
 not by this session**, which could not reach the domain at all.
 
-**The build session could not check either.** Its egress proxy answered 403 to
-CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and
-`assay.silurianconsulting.co.uk`, on curl and on the fetch tool alike. It also
-has no tool that reads commit statuses for an arbitrary SHA: the status
-endpoint available to it is pull-request scoped and kept reporting the pull
-request head `3c010349`, not the merge commit, which is a trap worth naming
-because those two green lines look exactly like a production pass and are not
-one.
+**The build session could not open either page.** Its egress proxy answered 403
+to CONNECT for `*.vercel.app`, `www.silurianconsulting.co.uk` and
+`assay.silurianconsulting.co.uk`, on curl and on the fetch tool alike, and that
+is still true: no deployed page can be opened from it.
+
+**Corrected 19 September 2026. This paragraph previously said the build session
+has no tool that reads commit statuses for an arbitrary SHA. That is wrong.**
+It can read commit statuses for any SHA or branch through GitHub's public
+combined-status API over curl, because this repository is public and
+`github.com` is reachable from the proxy. The claim was concluded from the MCP
+toolset alone and written down without being tested.
+
+What is true is the trap, and the correction is what makes it usable rather
+than a detail beside it. **The pull-request scoped status endpoint keeps
+returning the old head after a merge.** It kept reporting the pull request head
+`3c010349` while the merge commit carried the production builds, and those two
+green lines look exactly like a production pass and are not one. **That is why
+a production check has to read a main-scoped or SHA-scoped source**, keyed on
+the merge commit or on `main`, and never the pull request's own status.
