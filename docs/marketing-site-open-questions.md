@@ -533,3 +533,63 @@ report a contradiction rather than pick the convenient reading.
   page looking half-converted.
 - **Cost if wrong.** Low. The page's own content is untouched either way, and
   the port is reversible.
+
+---
+
+## Q10 is closed, and Q11 was wrong
+
+Recorded 19 September 2026.
+
+### Q10, closed
+
+`forecast-risk.html` carries the same lockup as the other three: "Silurian PM",
+the "Project & Programme Delivery" subline, the two-link nav with
+`aria-label="Services"`, the hairline, the nav centred against the lockup, and
+the back link reading "Home" with its destination unchanged. **Neither nav link
+is current on this page**, because it is neither destination: it is the sample
+analysis that `forecastability.html` links to twice.
+
+**The record was read before anything was edited, as instructed, and nothing
+still blocked it.** The only recorded reason was
+`docs/change-wordmark-silurian-pm.md`: "Not forecast-risk.html or
+forecastability.html. Those two stay branded as Assay and are permanently out
+of scope for this rename." **That reason was already overturned for the sibling
+page** by the ruling of 19 September, "one wordmark, every page, never swapped
+per page", so it could not survive for this one on its own.
+
+Nothing says the page is retired, redirected or deliberately separate. The
+opposite: `docs/forecastability-page-spec.md` calls it "the sample analysis
+page" and two live links point at it. `docs/designdecisions.md` parks four
+issues on it for "a separate pass", and none of them is the masthead: they are
+the status palette needing to be written down as a scoped exception, the 12px
+label step carrying nine roles, the mixed third and first person voice, and the
+borrowed-credibility note on TimesFM. **Those four are still open and this pass
+touched none of them.** `docs/marketing-site.md` records that the page "keeps a
+product voice on purpose", which is a copy rule, and no copy was written.
+
+**The masthead unification is now complete.** Four pages carry the lockup and
+`privacy.html` carries the small brand line, which nothing in this pass
+changed.
+
+### Q11 was wrong, and the product owner corrected it
+
+Q11 said the footer carries "a placeholder company number from the old
+template" and no registered office. **Both halves are false.** The product owner
+confirmed on 19 September 2026 that company number 17415387 and the registered
+office at 22 Gelliwastad Road, Pontypridd, CF37 2BW are the real details, live
+and correct.
+
+The footer already carries the registered name, the number and the office on
+every page. **There is nothing outstanding and nothing to supply.**
+
+The error came from the brief of 18 September, which described the number as a
+placeholder, and it was carried into the questions file without being checked
+against Companies House or put to the person who would know. **A compliance
+finding is exactly the kind that should not be repeated on trust.** Reporting
+it was right; asserting it as fact was not, and the two are a sentence apart.
+
+Q11 as written above stays on the record with this correction beside it, which
+is the rule in `CLAUDE.md` section 13. It is the second thing in two days
+recorded as fact from a source rather than from a check, after Q9's
+paper-to-orange claim, and both were reported to the product owner as settled
+when they were not.

@@ -75,8 +75,8 @@ a.btn { white-space: nowrap; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 </style>
 <style>
-/* Masthead. index.html's lockup rules, carried here unchanged so the two
-   pages cannot drift apart: three pages running three names for the same role
+/* Masthead. index.html's lockup rules, carried here unchanged so the four
+   pages cannot drift apart: four pages running four names for the same role
    is what tokens.css was created to stop, and a masthead copied by eye is the
    same failure one level up. */
 .mast { --gutter: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge))); }
@@ -105,6 +105,15 @@ a.btn { white-space: nowrap; }
    nowhere to go. */
 .mast-brand .mast-home { grid-column: 1; grid-row: 1 / 3; align-self: center;
   display: block; }
+/* The mark is blocked here rather than left to a page-level `img` rule.
+   index.html, delivery.html and forecastability.html each carry one and
+   forecast-risk.html does not, so on that page the mark stayed inline, sat on
+   the text baseline and carried a descender gap: its anchor measured 43.28px
+   against 37.69px and stretched the whole lockup, drawing .mast-rule at 43.3px
+   where the other three draw 40.0px. A shared block that only works where an
+   ambient rule happens to exist is not shared, so the dependency is written
+   down. It computes identically on the three pages that already had one. */
+.mast-brand .mast-mark { display: block; }
 .mast-brand .wordmark { grid-column: 2; grid-row: 1; align-self: baseline; }
 .mast-brand .mast-subline { grid-column: 2; grid-row: 2; }
 .mast-rule { grid-column: 3; grid-row: 1 / 3; align-self: stretch; }
@@ -149,8 +158,8 @@ a.btn { white-space: nowrap; }
    as home to anyone who knows the convention and says nothing to anyone who
    does not, so the text link carries it for everyone else. It reads "Home" and
    not "Back to Silurian" from 19 September 2026, on the product owner's
-   instruction, with its destination unchanged. forecast-risk.html still carries
-   the old string and is out of scope, recorded in the open questions.
+   instruction, with its destination unchanged. Every page that has one now
+   says the same word.
    Written as `.mast-bar a.back` and not `.mast-bar .back`: the nav link rule
    above is `.mast-bar a:not(.btn)`, which is one element more specific than two
    classes and would otherwise win and render this uppercase at the label step.
@@ -177,10 +186,10 @@ a.btn { white-space: nowrap; }
 }
 /* The current page reads at full ink. The underline it also carries comes
    from .mast-bar a[aria-current='location'] above, which already sets the
-   5px offset. Written on both pages that carry this lockup so the block stays
-   one thing: index.html has no current link, so there it matches nothing, and
-   a masthead that differs between pages is how this site came to run three
-   palettes. */
+   5px offset. Written on all four pages that carry this lockup so the block
+   stays one thing: index.html and forecast-risk.html have no current link, so
+   there it matches nothing, and a masthead that differs between pages is how
+   this site came to run three palettes. */
 .mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
 </style>
 <style>
@@ -330,16 +339,17 @@ footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
    nav drops to its own row here and both hairlines go with it. Measured in
    headless Chromium 1194 with the fonts loaded and awaited, stepping 1300px
    down to 300px in 1px steps with this query neutralised, 1001 observations
-   per page, on all three pages carrying this lockup: index.html,
-   delivery.html and forecastability.html all fail at 712px and all hold at
-   713px. It came down from 716px because the air either side of the nav
-   hairline became clamp(14px, 2vw, 24px), which is 14.24px at this width
-   where the flat var(--space-4) was 16px, so the labels fit about 4px further
-   down. Remeasured again on 19 September 2026 when forecastability.html
-   joined this lockup and the back link's label became "Home": it did not
-   move, because what fails first is the nav's own two labels and neither of
-   those changed. The number tracks the strings and the spacing, so remeasure
-   it whenever either changes, and record it even when it holds. */
+   per page, on all four pages carrying this lockup: index.html,
+   delivery.html, forecastability.html and forecast-risk.html all fail at
+   712px and all hold at 713px. It came down from 716px because the air either
+   side of the nav hairline became clamp(14px, 2vw, 24px), which is 14.24px at
+   this width where the flat var(--space-4) was 16px, so the labels fit about
+   4px further down. Remeasured twice since, on 19 September 2026, as
+   forecastability.html and then forecast-risk.html joined this lockup and the
+   back link's label became "Home". It did not move either time, because what
+   fails first is the nav's own two labels and neither of those changed. The
+   number tracks the strings and the spacing, so remeasure it whenever either
+   changes, and record it even when it holds. */
 @media (max-width: 712px) {
   .mast-brand { grid-template-columns: auto 1fr; }
   .mast-rule { display: none; }

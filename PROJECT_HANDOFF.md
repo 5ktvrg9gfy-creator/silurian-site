@@ -746,6 +746,26 @@ Band 2.10 is built, merged and live. **It is not accepted.** The brief's accepta
 
 ## Next starting point
 
+**Marketing site, 19 September 2026, third pass on branch `claude/awesome-faraday-70irmq`, so pull request 134 updates. Not merged, not deployed by this session.**
+
+**The masthead unification is complete.** `forecast-risk.html` carries the same lockup as `index.html`, `delivery.html` and `forecastability.html`: "Silurian PM", the "Project & Programme Delivery" subline, the two-link nav with `aria-label="Services"`, the hairline, the nav centred against the lockup, the back link reading "Home", and the focus ring. **Neither nav link is current on that page**, because it is neither destination: it is the sample analysis `forecastability.html` links to twice. `privacy.html` keeps its small brand line and was not touched.
+
+**Nothing blocked the port and the record was read before editing.** The only recorded reason was `docs/change-wordmark-silurian-pm.md` keeping that page "branded as Assay", and the product owner overturned that same sentence for `forecastability.html` earlier the same day. Nothing anywhere says the page is retired, redirected or deliberately separate. The four issues `docs/designdecisions.md` parks on it are content and type, not masthead, and all four are still open and untouched.
+
+**The parity check earned its place.** Every masthead property was read on all four pages and compared, and one differed: `.mast-rule` drew 43.3px on `forecast-risk.html` against 40.0px elsewhere. The cause is that the other three declare `img { display: block }` in their base layer and that page does not, so the mark stayed inline, carried a baseline descender gap, measured 43.28px against 37.69px, and stretched the lockup it spans. Fixed with `.mast-brand .mast-mark { display: block; }` in the shared block on all four pages, which computes identically where an ambient rule already existed. **Nothing in the diff showed it, nothing overflowed and no test failed**, so a source read or a test run would both have passed it. All twelve properties now match at 1440 and at 720.
+
+**The breakpoint held at 712px**, remeasured on all four pages, 1001 observations each, and remeasured again after the mark fix in case the lockup height was what failed first. It is not; the nav's two labels are. The comment was updated on all four because it named three.
+
+**"Back to Silurian" is gone from the site**, surviving only in the CSS comments that record the rename. Every back link reads "Home" and every destination is unchanged.
+
+Tests **294 before, 294 after, OK both times**. Overflow 0px across 30 page-width combinations at 320, 521, 560, 720, 1090 and 1440. Radius unchanged at six rounded elements from four rules. Evidence in `docs/evidence/masthead-nav-2026-09-19-evidence.md`.
+
+**Q10 is closed. Q11 was wrong and is corrected**: the footer's company number 17415387 and the registered office at 22 Gelliwastad Road, Pontypridd, CF37 2BW are the real details, confirmed by the product owner on 19 September. There is nothing outstanding on the footer and nothing to supply. The claim came from the brief of 18 September and was written into the questions file without being checked or put to the person who would know.
+
+**Two claims in two days were recorded as fact from a source rather than from a check**, Q9's paper-to-orange and Q11's placeholder number, and both were reported to the product owner as settled. Both corrections stay on the record beside the originals. The pattern is worth more than either instance: read the render, not the rule, and ask the owner before asserting a compliance finding.
+
+**Still open on the marketing site**: the four `forecast-risk.html` content and type issues in `docs/designdecisions.md`, and `forecastability.html`'s own copy, which needs James's words. `docs/change-wordmark-silurian-pm.md` still reads "permanently out of scope" for two pages that are now both in scope; it was left as a dated record with the correction in the questions file.
+
 **Marketing site, 19 September 2026, second pass on the same branch `claude/awesome-faraday-70irmq`, so pull request 134 updates. Not merged, not deployed by this session.** Two changes ruled by the product owner after the first pass.
 
 **`forecastability.html` is on the shared lockup.** Same masthead as `index.html` and `delivery.html`: the mark, "Silurian PM", the "Project & Programme Delivery" subline, the hairline, the two-link nav labelled "Project Management" and "AI Forecast Diagnostic" with `aria-label="Services"`, `aria-current="location"` on its own link, and the nav centred against the lockup. `delivery.html`'s masthead style block was taken whole rather than retyped, plus its wrap query, which lives in that page's third style block and was missed on the first attempt. `--half: 14px` added to that page's `:root`, same name and value as the other two, which is what `test_no_page_uses_an_undeclared_var` exists to force.

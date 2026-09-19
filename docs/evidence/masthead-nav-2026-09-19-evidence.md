@@ -443,3 +443,183 @@ of the same commit, not from the preview.
   instruction that disagrees with itself. Q10.
 - No page copy was written, on this page or any other.
 - The rest of `forecastability.html` below the masthead is untouched.
+
+---
+
+# Third pass, 19 September 2026: forecast-risk.html onto the lockup
+
+The last page over. Same branch, so pull request 134 updates. Nothing merged.
+
+## The record was read first, and nothing blocked it
+
+The instruction was to read the recorded reason for this page being out of
+scope and stop if it still held. It does not.
+
+The only record is `docs/change-wordmark-silurian-pm.md`: "Not
+forecast-risk.html or forecastability.html. Those two stay branded as Assay and
+are permanently out of scope for this rename." **The same sentence covered
+`forecastability.html`, and the product owner overturned it for that page on 19
+September**, so it cannot stand for this one alone.
+
+Searched for retirement, redirect and deliberate separation and found the
+opposite: `docs/forecastability-page-spec.md` calls this "the sample analysis
+page", and `forecastability.html` links to it twice, from an arrow link and
+from its closing head. `docs/designdecisions.md` parks four issues on it for "a
+separate pass", all of them content and type rather than masthead: the status
+palette needing to be scoped in writing, the 12px label step carrying nine
+roles, the mixed voice, and the borrowed credibility on TimesFM. None was
+touched.
+
+## What was ported, and one element check
+
+The masthead block was taken whole from `forecastability.html`, not retyped,
+including the wrap query and the focus ring. `--half: 14px` added to `:root`,
+read by the bar's padding, same name and value as the other three.
+
+**The old masthead held exactly two elements and both have an obvious place**:
+the brand link becomes `.mast-home` and the back link stays at the right of the
+bar reading "Home". Nothing was left without a home, so there was nothing to
+stop on.
+
+`aria-current="location"` is on neither link here. This page is neither nav
+destination.
+
+## The parity check caught a real defect, and it was the point of running it
+
+Every masthead property was read on all four pages and compared. Eleven of
+twelve matched. **One did not: `.mast-rule` drew 43.3px on this page against
+40.0px on the other three**, and the nav's centre offset read 25.64px against
+22.84px at 521 and 560.
+
+The cause, measured rather than guessed:
+
+```
+                      .mast-mark display   anchor height   subline height
+delivery.html         block               37.69px          14.39px
+forecast-risk.html    inline              43.28px          16.05px
+```
+
+`index.html`, `delivery.html` and `forecastability.html` each declare
+`img { display: block; max-width: 100%; }` in their base layer.
+**`forecast-risk.html` does not.** So the mark stayed inline, sat on the text
+baseline and carried a descender gap, its anchor measured 43.28px against
+37.69px, and because that anchor spans both lockup rows the extra 3.3px
+stretched the grid and the row the subline sits in.
+
+The fix is `.mast-brand .mast-mark { display: block; }`, added to the block on
+all four pages. It computes identically on the three that already had an
+ambient `img` rule and it stops the block depending on one. **A shared block
+that only works where a page-level rule happens to exist is not shared**, which
+is the whole reason the four carry the same bytes.
+
+**This is what the check was for.** Nothing in the diff showed it, the page did
+not overflow, no test failed, and it would have shipped as a masthead that is
+3px taller on one page out of four.
+
+### After the fix, all twelve match
+
+At 1440px and again at 720px, across all four pages:
+
+```
+barBg        rgb(255, 255, 255)
+barBorder    2px rgb(63, 61, 59)
+barPad       12px / 12px
+wordmark     "Silurian PM"        18px/800/-0.36px/rgb(63, 61, 59)   (15px at 720)
+subline      "Project & Programme Delivery"  12px/600/0.96px/rgb(102, 97, 95)/uppercase
+mast-rule    1px / rgb(63, 61, 59) / block / h40.0   (h37.7 at 720)
+hairline     1px solid rgb(63, 61, 59), h22.5
+gap/padding  24px / 24px   (14.4px / 14.4px at 720)
+aria-label   Services
+nav labels   Project Management | AI Forecast Diagnostic
+```
+
+Nav centre against lockup centre: `-0.01px` at 1440 and `0.00px` at 720, on all
+four.
+
+`aria-current="location"`: none on `index.html`, Project Management on
+`delivery.html`, AI Forecast Diagnostic on `forecastability.html`, none on
+`forecast-risk.html`.
+
+## The focus ring
+
+Same regression as the previous page and the instruction asked for the rule.
+`forecast-risk.html` had `.mast .brand-home:focus-visible` and no global
+`:focus-visible`, so the port would have dropped it. Carried in the block and
+verified by focusing each link:
+
+```
+.mast-home                  2px solid rgb(236, 105, 23)
+.mast-nav a.forecast-link   2px solid rgb(236, 105, 23)
+.back                       2px solid rgb(236, 105, 23)
+```
+
+`rgb(236, 105, 23)` is `--color-accent`.
+
+## The breakpoint held at 712px, remeasured on four pages
+
+Wrap query neutralised, 1300px to 300px in 1px steps, fonts awaited.
+
+```
+index.html             first fail 712px   last hold 713px   1001 observations
+delivery.html          first fail 712px   last hold 713px   1001 observations
+forecastability.html   first fail 712px   last hold 713px   1001 observations
+forecast-risk.html     first fail 712px   last hold 713px   1001 observations
+```
+
+Measured again after the mark fix, in case the lockup height had been what
+failed first. It is not: the nav's two labels are, and neither changed. The
+comment was updated on all four pages because it named three.
+
+## Back links, whole site
+
+```
+delivery.html          Home               index.html
+forecastability.html   Home               index.html
+forecast-risk.html     Home               index.html
+index.html             none
+privacy.html           none
+```
+
+"Back to Silurian" no longer appears anywhere on the site except in the CSS
+comments that record the rename.
+
+## Overflow and radius
+
+`scrollWidth - clientWidth` at 320, 521, 560, 720, 1090 and 1440px on all five
+pages. **30 combinations, every one 0px.**
+
+Radius, every element's four corners through `getComputedStyle`:
+
+```
+index.html             256 corners   2 rounded
+delivery.html          376 corners   2 rounded
+forecastability.html   720 corners   1 rounded
+forecast-risk.html     716 corners   1 rounded
+privacy.html           164 corners   0 rounded
+```
+
+Six rounded elements from four rules, which is the count `CLAUDE.md` section 9a
+carries. `forecast-risk.html` rose from 692 corners to 716 because the new
+masthead has more elements, and its rounded count is unchanged at one.
+
+## Tests
+
+**294 before, 294 after, OK both times.** No test added, changed or removed.
+
+## What did not run
+
+**No Vercel Preview check and no Production check were run by this session.**
+This container's egress proxy answers 403 to CONNECT for `*.vercel.app`. Every
+figure above is from the local build of the same commit.
+
+## Not done to spec
+
+Nothing was left undone. Two declarations exist that no instruction named, both
+called out rather than slipped in: the focus ring, which the instruction did
+ask for on this page, and `.mast-brand .mast-mark { display: block; }`, which
+fixes the defect above and touches all four pages.
+
+`docs/change-wordmark-silurian-pm.md` still reads "permanently out of scope"
+for two pages that are now both in scope. It was left as written, because it is
+a dated changeset record and the correction belongs in the questions file
+rather than in an edit to the original.
