@@ -286,9 +286,13 @@ figcaption { font-size: var(--text-label); line-height: 1.5;
   font-size: var(--text-lead); font-weight: var(--font-heading-weight);
   border-bottom: 2px solid currentColor; margin-top: 24px; }
 
-/* 9. */
+/* 9. Full bleed, the homepage's approach: the accent field is a section
+   outside the measure and an inner .wrap carries the gutter. It sat inside
+   main.wrap before, so the field stopped at 1200px instead of running edge
+   to edge. Vertical padding moves to the inner wrap for the same reason. */
 .close { background: var(--color-accent); color: var(--color-paper);
-  padding: 32px 32px 48px; margin-top: 72px; }
+  margin-bottom: 80px; }
+.close .wrap { padding-top: 32px; padding-bottom: 48px; }
 /* text-wrap: balance, and the site record warns against it. That warning is
    about the homepage headline, where the line is single at desktop so
    balancing does nothing, and where balancing a wrapped headline produced
@@ -513,8 +517,11 @@ footer img { width: 26px; aspect-ratio: 200 / 290; flex: none; }
     </div>
   </div>
 
-  <!-- 9. Closing accent field -->
-  <div class="close">
+</main>
+
+<!-- 9. Closing accent field -->
+<section class="close">
+  <div class="wrap">
     <p class="kicker">Next</p>
     <h2>Get the assessment back on your own products. Or look at the <a href="forecast-risk.html">sample analysis first. <span aria-hidden="true">&#8594;</span></a></h2>
     <a class="mail-link" href="mailto:hello@silurianconsulting.co.uk">
@@ -522,8 +529,7 @@ footer img { width: 26px; aspect-ratio: 200 / 290; flex: none; }
       <span class="mail-label">Send a demand extract</span>
     </a>
   </div>
-
-</main>
+</section>
 
 <div class="wrap"><footer><img src="logo-stone.svg" alt="" /><span>Silurian Consulting LTD. Registered in England and Wales, company number 17415387. Registered office, 22 Gelliwastad Road, Pontypridd, CF37 2BW. <a href="privacy.html">Privacy</a>.</span></footer></div>
 
