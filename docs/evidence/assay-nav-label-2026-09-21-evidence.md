@@ -161,9 +161,16 @@ expect to do the same.
 
 ## What did not run
 
-**No Vercel Preview check and no Production check.** Nothing is pushed, so
-there is no Preview to test and no deployment to smoke test. Both remain
-outstanding and are the next step before merge, per section 6 of `CLAUDE.md`.
+The branch `claude/upbeat-volta-vjn5wd` is pushed, at `08e0719`.
+
+**The Vercel Preview check has not run.** Whether a Preview builds at all for a
+branch other than `main` depends on the Vercel project settings, and those are
+not verified here, so this record does not say a Preview exists.
+
+**The Production smoke test has not run.** Production deploys only from `main`,
+after merge, so there is nothing yet to smoke test.
+
+Both remain outstanding before merge, per section 6 of `CLAUDE.md`.
 
 ## Out of scope
 
