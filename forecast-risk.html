@@ -146,9 +146,9 @@ a{color:inherit;text-underline-offset:3px}
    this site came to run three palettes. */
 .mast-bar a.forecast-link[aria-current='location'] { color: var(--color-text); }
 
-/* 712px is measured, not chosen, against the lockup this masthead carries
+/* 648px is measured, not chosen, against the lockup this masthead carries
    now: the wordmark "Silurian PM", and the nav labels "Project Management"
-   and "AI Forecast Diagnostic". What fails first is those two links ceasing
+   and "Silurian Assay". What fails first is those two links ceasing
    to fit on one line. It is not the subline, which holds its single line far
    below this width. A border-left between two links that have wrapped draws a
    vertical rule at the start of a line rather than between two labels, so the
@@ -157,16 +157,18 @@ a{color:inherit;text-underline-offset:3px}
    down to 300px in 1px steps with this query neutralised, 1001 observations
    per page, on all four pages carrying this lockup: index.html,
    delivery.html, forecastability.html and forecast-risk.html all fail at
-   712px and all hold at 713px. It came down from 716px because the air either
-   side of the nav hairline became clamp(14px, 2vw, 24px), which is 14.24px at
-   this width where the flat var(--space-4) was 16px, so the labels fit about
-   4px further down. Remeasured twice since, on 19 September 2026, as
-   forecastability.html and then forecast-risk.html joined this lockup and the
-   back link's label became "Home". It did not move either time, because what
-   fails first is the nav's own two labels and neither of those changed. The
-   number tracks the strings and the spacing, so remeasure it whenever either
-   changes, and record it even when it holds. */
-@media (max-width: 712px) {
+   648px and all hold at 649px. Remeasured on 21 September 2026, when the
+   second nav label became "Silurian Assay". It came down from 712px, and the
+   64px is that label: it is eight characters shorter than the one it
+   replaced, so the pair fits that much further down. The same sweep run
+   against the pages as they stood before the label changed still reports
+   712px on all four, which is what says the move is the string and not the
+   method. Before that it came down from 716px, when the air either side of
+   the nav hairline became clamp(14px, 2vw, 24px), which is 14.24px at that
+   width where the flat var(--space-4) was 16px. The number tracks the strings
+   and the spacing, so remeasure it whenever either changes, and record it
+   even when it holds. */
+@media (max-width: 648px) {
   .mast-brand { grid-template-columns: auto 1fr; }
   .mast-rule { display: none; }
   .mast-brand .mast-nav {
@@ -274,7 +276,7 @@ footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-heigh
       <span class="mast-rule" aria-hidden="true"></span>
       <nav class="mast-nav" aria-label="Services">
         <a class="forecast-link" href="delivery.html">Project Management</a>
-        <a class="forecast-link" href="forecastability.html">AI Forecast Diagnostic</a>
+        <a class="forecast-link" href="forecastability.html">Silurian Assay</a>
       </nav>
     </div>
     <a class="back" href="index.html">Home</a>
