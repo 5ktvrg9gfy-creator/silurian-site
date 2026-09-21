@@ -1,6 +1,6 @@
 # Silurian project handoff
 
-Last updated: 18 September 2026
+Last updated: 21 September 2026
 
 This is the recovery and transfer document for the Silurian website and Forecast Diagnostic. It must be reviewed and updated as part of every build, including small website changes. A new Codex task or another AI system should read this file before making changes.
 
