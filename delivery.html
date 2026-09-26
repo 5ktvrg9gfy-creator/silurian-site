@@ -320,7 +320,8 @@ a.btn { white-space: nowrap; }
 
 footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label);
   line-height: var(--leading);
-  color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+  color: var(--color-text-muted); }
+footer a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 
 @media (max-width: 720px) {
   #about { padding: calc(2 * var(--leading)) 0 calc(2.5 * var(--leading)); }

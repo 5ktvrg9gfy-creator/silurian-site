@@ -242,7 +242,11 @@ a.btn { white-space: nowrap; }
 .close .contact-badge:hover { background: var(--color-text); border-color: var(--color-text); color: var(--color-paper); }
 .close .email-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
 footer { padding: calc(2 * var(--leading)) 0; font-size: var(--text-label); line-height: var(--leading);
-  color: color-mix(in srgb, var(--color-text) 70%, transparent); /* 5.8:1 â€” see .stat-label */ }
+  color: var(--color-text-muted); }
+/* --color-text-muted is 5.5:1 on --color-bg. The 70% color-mix it replaced
+   measured about 4.2:1 at the 12px label step, not the 5.8:1 recorded here
+   before 26 September 2026. */
+footer a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 
 /* the feature grid's fixed-max columns (160 + 420 + gaps) crush the copy
    column in the tablet band, so it collapses earlier than the page */

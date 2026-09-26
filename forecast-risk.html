@@ -256,7 +256,8 @@ th{font-size:var(--text-label);letter-spacing:.08em;text-transform:uppercase;bor
 .close .contact-badge svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
 .close .contact-cta:hover .contact-badge{background:var(--color-text);border-color:var(--color-text);color:var(--color-paper)}
 .close .contact-cta:focus-visible{outline:2px solid var(--color-paper);outline-offset:3px}
-footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-height:var(--leading);color:color-mix(in srgb, var(--color-text) 70%, transparent)}
+footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-height:var(--leading);color:var(--color-text-muted)}
+footer a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 @media(max-width:850px){.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0;border-top:1px solid var(--color-divider);padding-left:0}.stat:nth-child(4){border-top:1px solid var(--color-divider)}.grid,.method-grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.chart-wrap{height:330px}}
 /* The 12px label step is one pixel up from the 11px this table used, which
    is invisible on tracked caps and was not invisible to the layout: at

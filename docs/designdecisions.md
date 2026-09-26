@@ -217,7 +217,7 @@ No illustration, no abstract graphic, no icons.
 - Structure is drawn with 2px seams and 1px hairlines and nothing else. Rules are never faded: a hairline still carries `--color-divider` at full value.
 - Everything flush left, including button labels.
 - **The accent is spent as a mark or a field, never as a status palette.** `forecast-risk.html` currently breaks this, see below.
-- **The brand block in the header is one link.** The mark and the wordmark sit inside a single `<a>` to `index.html`, so clicking either goes home. On `privacy.html` the wordmark is the link and the mark is not; on `forecast-risk.html` it is the other way round. Both should be the single-link pattern.
+- **The mark is the route home. The wordmark is not a link.** Ruled by the product owner on 18 September 2026, when the wordmark anchor was removed on `delivery.html`. The mark sits alone inside an `<a>` to `index.html` labelled "Silurian PM home", and the wordmark sits outside it as plain text. `delivery.html`, `forecastability.html`, `forecast-risk.html` and `privacy.html` follow it, and `index.html` is the home page so carries no home link. This replaces the earlier rule that the mark and the wordmark share one link.
 
 ## Closed, do not raise again
 
