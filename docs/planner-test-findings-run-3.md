@@ -8,7 +8,7 @@ Band 2.10 acceptance, run 26 September 2026 with one supply chain planner who ha
 
 **Three of the four criteria pass, and the fourth was found unaided but not timed. Band 2.10 is not accepted.**
 
-The test found new items, which is the bar the band set for itself: if the test finds a twelfth item, the band is not finished. One is fixed. Two are waiting on a product owner wording decision.
+The test found new items, which is the bar the band set for itself: if the test finds a twelfth item, the band is not finished. All three are now fixed: one in pull request 140, two in pull request 142.
 
 ---
 
@@ -35,9 +35,9 @@ The test found new items, which is the bar the band set for itself: if the test 
 
 Band 2.10 is therefore not accepted.
 
-**1. "Do this" as a heading.** The planner asked what it meant. Waiting on a product owner wording decision.
+**1. "Do this" as a heading.** The planner asked what it meant. **Fixed in pull request 142**, merge commit `a082997`: renamed "Next step" in all 4 places it appears.
 
-**2. The two open items headings.** "Waiting on an answer from you" and "Need a commercial decision rather than a forecast": the planner asked for the difference. Waiting on a product owner wording decision.
+**2. The two open items headings.** "Waiting on an answer from you" and "Need a commercial decision rather than a forecast": the planner asked for the difference. **Fixed in pull request 142**, merge commit `a082997`: renamed "Answer these and they can be forecast" and "No forecast will work: these need a commercial arrangement".
 
 **3. Wide interval contradiction on `RTG-60101`.** The erratic reason said "the interval is the useful output and the point number is not", against the glossary and the 9 September ruling. **Fixed in pull request 140**, merge commit `07f8426`. The reason now reads "so the forecast is still a number to plan from, but it could move a long way either side."
 
