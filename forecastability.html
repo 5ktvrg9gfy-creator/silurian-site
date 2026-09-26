@@ -221,6 +221,45 @@ h2, h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weigh
    its only use, and a page may spend none. */
 .intro { margin: 48px 0 0; max-width: 62ch; }
 
+/* The comparison diagram, added 26 September 2026 to the brief "Design
+   brief, forecastability.html". Two lanes under one charcoal entry bar.
+   The lanes are subgrids of one grid so each row, and the two outcomes, line
+   up across both lanes at desktop whatever the copy length; below 860px the
+   lanes stack whole, manual first, and each keeps its own connectors.
+   Connectors are 2px seams at full ink, the site's drawn rule. No arrowheads
+   and no cross-lane lines. The accent is spent as a field on two boxes only:
+   "See what needs attention" and the Assay outcome. Text on those fields is
+   --color-charcoal-deep (5.52:1); paper would be 3.18:1 at body size. The
+   outcomes are told apart by size and a 2px frame, not by colour alone. */
+.compare-flow { margin: 32px 0 0; }
+.compare-entry { margin: 0; padding: 20px; background: var(--color-charcoal-deep);
+  color: var(--color-paper); font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight); font-size: var(--text-lead);
+  line-height: 1.2; letter-spacing: -0.02em; }
+.lanes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 48px; }
+.lane { display: grid; grid-row: span 10; grid-template-rows: subgrid; }
+.lane-drop, .lane-link { display: block; width: 2px; margin-left: 27px;
+  background: var(--color-divider); }
+.lane-drop { height: 28px; }
+.lane-link { height: 24px; }
+.lane-head { padding-bottom: 16px; border-bottom: 1px solid var(--color-divider); }
+.lane-head h3 { font-size: var(--text-label); letter-spacing: 0.12em;
+  text-transform: uppercase; line-height: 1.55; }
+.lane-head p, .step p { font-size: var(--text-body); line-height: 1.5; margin: 8px 0 0; }
+.step { padding: 20px; background: var(--color-paper);
+  border: 1px solid var(--color-divider); }
+.step h4 { margin: 0; font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight); font-size: var(--text-lead);
+  line-height: 1.2; letter-spacing: -0.02em; }
+.step.outcome { padding: 24px 20px; border-width: 2px; }
+.step.outcome p { margin: 0; font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight); font-size: var(--text-subhead);
+  line-height: 1.2; letter-spacing: -0.02em; }
+.step.is-accent { background: var(--color-accent); border-color: var(--color-accent);
+  color: var(--color-charcoal-deep); }
+.compare-close { max-width: 62ch; margin-top: 32px; }
+
 /* The four findings. The page's two-column treatment, stacking in reading
    order below 860px. Each item opens on a 1px hairline, the site's rule for a
    division inside a section. */
@@ -285,6 +324,12 @@ footer a { color: var(--color-text); text-decoration-color: var(--color-accent);
 @media (max-width: 860px) {
   .findings { grid-template-columns: 1fr; }
   main.wrap { padding: 48px var(--edge) 56px; }
+  .lanes { grid-template-columns: minmax(0, 1fr); }
+  .lane { grid-row: auto; grid-template-rows: none; }
+  .lane + .lane { margin-top: 48px; }
+  /* The Assay lane has no line back to the entry bar once the lanes stack,
+     because that line would have to cross the whole manual lane. */
+  .lane + .lane .lane-drop { display: none; }
 }
 </style>
 </head>
@@ -320,6 +365,48 @@ footer a { color: var(--color-text); text-decoration-color: var(--color-accent);
     <h2 id="look">Know where to look</h2>
     <p class="lead">Gaps in the data, infrequent orders and large changes in demand raise different questions. A single portfolio total can hide those differences.</p>
     <p class="lead">Assay examines each product’s history and brings the findings together, helping you focus your review.</p>
+  </section>
+
+  <!-- 2a. Comparison diagram -->
+  <hr class="section-seam" />
+  <section class="compare" aria-labelledby="compare">
+    <h2 id="compare">Less time preparing the analysis. More time deciding what to do.</h2>
+    <div class="compare-flow">
+      <p class="compare-entry">Historical demand from your systems</p>
+      <div class="lanes">
+        <div class="lane">
+          <span class="lane-drop" aria-hidden="true"></span>
+          <div class="lane-head">
+            <h3>Manual review</h3>
+            <p>You build the checks, investigate the products and assemble the evidence.</p>
+          </div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step"><h4>Build the assessment</h4><p>Prepare spreadsheet checks for data quality and demand patterns.</p></div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step"><h4>Find what needs attention</h4><p>Work through the results to identify gaps, unusual patterns and limited history.</p></div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step"><h4>Bring the evidence together</h4><p>Collect the calculations and supporting history for discussion.</p></div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step outcome"><p>Your team prepares the analysis and decides what it means.</p></div>
+        </div>
+        <div class="lane">
+          <span class="lane-drop" aria-hidden="true"></span>
+          <div class="lane-head">
+            <h3>With Assay</h3>
+            <p>Assay runs the checks and brings the findings together for your review.</p>
+          </div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step"><h4>Start with your demand extract</h4><p>Assay checks the data and assesses each product’s demand pattern.</p></div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step is-accent"><h4>See what needs attention</h4><p>Review flagged products, with the reason behind each finding.</p></div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step"><h4>Review the evidence in one place</h4><p>Use the findings and supporting history to focus the discussion.</p></div>
+          <span class="lane-link" aria-hidden="true"></span>
+          <div class="step outcome is-accent"><p>The analysis is ready for your team to interpret and act on.</p></div>
+        </div>
+      </div>
+    </div>
+    <p class="lead compare-close">Your planners bring the business knowledge. Assay gives them a consistent starting point, with the checks completed and the evidence ready to review.</p>
   </section>
 
   <!-- 3. What the assessment shows -->
