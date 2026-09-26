@@ -25,8 +25,8 @@ header {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px max(var(--edge), calc((100% - 1000px) / 2 + var(--edge)));
-  border-bottom: 2px solid var(--color-text);
+  padding: var(--space-3) max(var(--edge), calc((100% - 1200px) / 2 + var(--edge)));
+  border-bottom: 2px solid var(--color-divider);
   background: var(--color-paper);
 }
 header img { width: 26px; aspect-ratio: 200 / 290; }
@@ -42,17 +42,33 @@ header a { color: var(--color-text); font-weight: var(--font-heading-weight); te
   font-size: var(--wordmark-size); letter-spacing: -0.02em;
   display: flex; align-items: center; gap: 14px; }
 header a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-main { max-width: 860px; margin: 0 auto; padding: 72px var(--edge) 96px; }
-h1, h2 { line-height: 1.12; letter-spacing: -0.02em; }
+/* The site's 1200px column, as on every other page, so the mark, the
+   headline and the footer share one left edge and the mark does not move on
+   arrival. The reading measure is set by p, ul { max-width: 34em } below and
+   is unchanged. It was an 860px centred box until 26 September 2026, which put
+   the headline 70px right of the wordmark at 1440px. */
+main { max-width: 1200px; margin: 0 auto; padding: 72px var(--edge) 96px; }
+h1, h2 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.12; letter-spacing: -0.02em; }
 h1 { margin: 0 0 42px; font-size: var(--text-display); }
 h2 { margin: 40px 0 12px; font-size: var(--text-subhead); }
 /* 34em, as specified. It was 68ch, which measures within a pixel of the
    same thing in Archivo; the em form is the one the design names and does
    not move if the face ever changes. */
 p, ul { max-width: 34em; }
+/* The lawful-basis list sits on the text's own left edge, with no bullet and
+   no indent: everything on this site is flush left, and each item already
+   opens with a bold label, which is the mark. Added 26 September 2026 with
+   the approved privacy copy. */
+ul { padding-left: 0; list-style: none; }
+li + li { margin-top: var(--space-3); }
+/* Inline labels in body copy take the browser's bold, 700, deliberately. The
+   800 heading weight is for headings; at 15px inside a sentence it reads as a
+   heading dropped into the text. */
+strong { font-weight: 700; }
 a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.updated { color: color-mix(in srgb, var(--color-text) 65%, transparent); font-size: var(--text-body); }
-.page-foot { padding-inline: max(var(--edge), calc((100% - 1000px) / 2 + var(--edge))); }
+.updated { color: var(--color-text-muted); font-size: var(--text-body); }
+.page-foot { padding-inline: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge))); }
 footer{padding:calc(2 * var(--leading)) 0;font-size:var(--text-label);line-height:var(--leading);color:color-mix(in srgb, var(--color-text) 70%, transparent)}
 </style>
 </head>
