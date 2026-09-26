@@ -453,7 +453,7 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("routing.refusal.resolution_options.map", drawer)
         self.assertIn("never changes the decision or the quality band", drawer)
         self.assertEqual(drawer.count('class="action-slot"'), 1)
-        self.assertIn('<strong>Do this</strong><span class="reason">${esc(routing.action)}</span>', drawer)
+        self.assertIn('<strong>Next step</strong><span class="reason">${esc(routing.action)}</span>', drawer)
         self.assertNotIn('aria-hidden="true"></div>', drawer)
 
     def test_recorded_bundle_view_and_version_gates_accept_routing(self):
@@ -462,7 +462,7 @@ class WorkspaceUiTests(unittest.TestCase):
         self.assertIn("routing:'1.1.0'", HTML)
         self.assertIn("Recorded routing result", HTML)
         self.assertIn("<th>Resolution</th>", HTML)
-        self.assertIn("<th>Do this</th>", HTML)
+        self.assertIn("<th>Next step</th>", HTML)
 
     def test_resolution_picker_is_a_closed_list_that_shows_its_consequence_first(self):
         start = HTML.index("function lineDetailMarkup(sku){")

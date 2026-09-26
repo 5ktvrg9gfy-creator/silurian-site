@@ -205,8 +205,8 @@ class OpenItemsMembershipTests(unittest.TestCase):
         absent lines on the same screen, so the rule is now stated by the two
         headings and by what each section says an answer can and cannot do."""
         renderer = HTML[HTML.index("function renderOpenItems(){"):HTML.index("function renderForecastEmpty(){")]
-        self.assertIn("Waiting on an answer from you", renderer)
-        self.assertIn("Need a commercial decision rather than a forecast", renderer)
+        self.assertIn("Answer these and they can be forecast", renderer)
+        self.assertIn("No forecast will work: these need a commercial arrangement", renderer)
         self.assertIn("An answer from you can move one of these to forecastable.", renderer)
         self.assertIn("No answer moves one of these to forecastable.", renderer)
         self.assertNotIn("are not listed here", renderer)
@@ -399,8 +399,8 @@ class OneListTwoSectionsTests(unittest.TestCase):
         self.assertNotIn("cannot move until you answer something", HTML)
 
     def test_both_headings_are_present_and_in_the_brief_s_words(self):
-        self.assertIn(">Waiting on an answer from you</h3>", self.renderer)
-        self.assertIn(">Need a commercial decision rather than a forecast</h3>", self.renderer)
+        self.assertIn(">Answer these and they can be forecast</h3>", self.renderer)
+        self.assertIn(">No forecast will work: these need a commercial arrangement</h3>", self.renderer)
 
     def test_the_second_section_holds_the_lines_that_used_to_be_absent(self):
         """Policy only lines were ineligible, carried no refusal and were listed nowhere."""
