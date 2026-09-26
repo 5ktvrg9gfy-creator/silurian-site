@@ -68,7 +68,7 @@ RESOLUTIONS = {
 
 REASON = {
     "model_eligible": "demand in every period at a stable size, so a model and the statistical baselines can both run",
-    "model_eligible_wide_interval": "demand in every period but the size swings hard, so the interval carries the value and the point number does not",
+    "model_eligible_wide_interval": "the forecast number is still what the planner plans from, and the reason must say it could move a long way either side",
     "intermittent_methods": "demand arrives with regular gaps at a consistent size, which needs the Croston family rather than a general model",
     "policy_only": "demand is sporadic and the size varies by an order of magnitude, so no statistical method will forecast it well",
     "insufficient_evidence": "too few non-zero observations to describe a pattern",
