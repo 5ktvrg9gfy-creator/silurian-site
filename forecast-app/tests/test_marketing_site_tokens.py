@@ -509,8 +509,10 @@ class MarketingSiteTypeScale(unittest.TestCase):
         which makes the step unusable as soon as a fourth page exists and
         turns a scale step into one element's private size. Not once per
         closing panel, which welds a size to a component: the homepage's
-        loudest element is its closing line, forecastability.html's is the
-        92.5% numeral, and both are correct under the same rule.
+        loudest element is its closing line, forecastability.html's was the
+        92.5% numeral, and both were correct under the same rule. That
+        numeral was removed on 26 September 2026 with the M5 figure, and
+        forecastability.html now spends none.
 
         What this counts is declarations, not rendered elements. One
         declaration matching several elements would pass, and on index.html
