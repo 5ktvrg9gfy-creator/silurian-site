@@ -298,7 +298,7 @@
       "decision": "model_eligible_wide_interval",
       "decided_by": "class table, rule 3",
       "forecast_eligible": true,
-      "reason_must_convey": "demand in every period but the size swings hard, so the interval carries the value and the point number does not",
+      "reason_must_convey": "the forecast number is still what the planner plans from, and the reason must say it could move a long way either side",
       "refusal": null,
       "caveat_codes_shown": [
         "OUTLIER_CANDIDATE"
