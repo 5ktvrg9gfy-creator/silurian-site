@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>You can't forecast every product | Silurian Consulting LTD</title>
-<meta name="description" content="Assay reads a demand extract and tells you which products you can forecast, which you never will, and which you have not got the history to judge." />
+<title>Demand history assessment | Silurian Assay</title>
+<meta name="description" content="Silurian Assay examines historical demand to identify data problems, describe demand patterns and highlight products needing closer review." />
 <link rel="icon" href="logo-stone.svg" />
 <link rel="stylesheet" href="tokens.css" />
 <style>
@@ -24,7 +24,6 @@ body { margin: 0; background: var(--color-bg); color: var(--color-text);
   font-family: var(--font-body); font-size: var(--text-body); line-height: 1.55; }
 a { color: inherit; text-underline-offset: 3px; }
 img { display: block; max-width: 100%; }
-figure { margin: 0; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 
 /* Masthead. index.html's lockup rules, carried here unchanged so the four
@@ -209,84 +208,48 @@ h1 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
 h2, h3 { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   font-size: var(--text-subhead); line-height: 1.2; letter-spacing: -0.02em; margin: 0; }
 .lead { font-size: var(--text-lead); font-weight: 400; line-height: 1.55; margin: 16px 0 0; }
-.detail { font-size: var(--text-body); line-height: 1.5; margin: 8px 0 0; }
+.standfirst + .standfirst { margin-top: 16px; }
 
 /* Rules. 2px seams and 1px hairlines, both at full ink, and nothing else. */
 .seam { border: 0; border-top: 2px solid var(--color-divider); margin: 32px 0 0; }
-.hair { border: 0; border-top: 1px solid var(--color-divider); margin: 16px 0 0; }
 .section-seam { border: 0; border-top: 2px solid var(--color-divider); margin: 72px 0 32px; }
 
-/* 2. Intro row. The text track is not pinned to a ch width: doing that stops the
-   figure shrinking and the figure then grows tall enough to leave a void under
-   the text. */
-.intro { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
-  gap: 72px; align-items: start; margin: 48px 0 72px; }
-.stat-numeral { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: var(--text-poster); color: var(--color-accent);
-  line-height: 0.95; letter-spacing: -0.02em; margin: 16px 0 0; }
-.stat-claim { font-size: var(--text-lead); font-weight: 400; line-height: 1.4; margin: 16px 0 0; }
-.stat-line { font-size: var(--text-body); line-height: 1.5; margin: 12px 0 0; }
-figcaption { font-size: var(--text-label); line-height: 1.5;
-  color: var(--color-text-muted); margin: 16px 0 0; }
+/* Rewritten 26 September 2026 to the mapped brief "Assay: mapped changes to
+   forecastability.html". The M5 figure, the two-column comparison flow, the
+   argument columns and the illustrative volume bar are gone, and their rules
+   with them. The page no longer spends the poster step: the 92.5% numeral was
+   its only use, and a page may spend none. */
+.intro { margin: 48px 0 0; max-width: 62ch; }
 
-/* 3. Chart. Each column is a flex column so the last connector can stretch. */
-.entry { background: var(--color-charcoal-deep); color: var(--color-text-on-dark);
-  padding: 24px; }
-.entry-title { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: var(--text-lead); margin: 0; }
-.entry-sub { font-size: var(--text-body); margin: 4px 0 0; }
-.flow { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; }
-.col { display: flex; flex-direction: column; }
-.conn { width: 2px; background: var(--color-divider); margin-left: 32px; height: 24px; flex: none; }
-.conn-entry { height: 32px; }
-/* This one holds the two outcome boxes level whatever sits above them. Nothing
-   may be added inside a column after its outcome box, or that column shortens
-   and the level finish breaks. It happened once, and cost 37px. */
-.conn-fill { flex: 1; min-height: 24px; }
-.col-kicker { margin: 0; }
-.col-clause { font-size: var(--text-body); line-height: 1.4; margin: 8px 0 0; }
-.col-head-seam { border: 0; border-top: 2px solid var(--color-divider); margin: 12px 0 0; }
-.node { border: 2px solid var(--color-divider); background: var(--color-bg); padding: 24px; }
-.node-mid { background: var(--color-surface); padding: 16px 24px; font-size: var(--text-body);
-  line-height: 1.5; }
-.node-title { font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: var(--text-lead); margin: 0; }
-.node-body { font-size: var(--text-body); line-height: 1.5; margin: 8px 0 0; }
-.node-accent { background: var(--color-accent); color: var(--color-paper);
-  border-color: var(--color-accent); }
-.node-accent .hair { border-top-color: var(--color-paper); }
-.familiar { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; margin-top: 16px; }
-.familiar p { font-size: var(--text-body); margin: 0; }
+/* The four findings. The page's two-column treatment, stacking in reading
+   order below 860px. Each item opens on a 1px hairline, the site's rule for a
+   division inside a section. */
+.findings { list-style: none; margin: 24px 0 0; padding: 0;
+  display: grid; grid-template-columns: 1fr 1fr; column-gap: 72px; row-gap: 32px; }
+.findings li { padding-top: 16px; border-top: 1px solid var(--color-divider); }
+.findings h3, .steps h3 { font-size: var(--text-lead); }
+.findings p, .steps p { font-size: var(--text-body); line-height: 1.5; margin: 8px 0 0; }
+.scope { max-width: 62ch; margin-top: 32px; }
 
-/* 5 to 8. */
-.callback { border: 0; border-top: 2px solid var(--color-divider);
-  padding-top: 24px; margin-top: 32px; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: start; }
-.pullout { border-top: 2px solid var(--color-divider); padding-top: 24px; margin-top: 32px; }
-.gets { list-style: none; margin: 24px 0 0; padding: 0;
-  display: flex; flex-direction: column; gap: 16px; }
-.gets li { font-size: var(--text-lead); line-height: 1.5;
-  padding-top: 16px; border-top: 1px solid var(--color-divider); }
-.bridge { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
-  gap: 72px; align-items: start; border-top: 2px solid var(--color-divider);
-  padding-top: 24px; margin-top: 72px; }
-.bar { display: flex; height: 28px; margin-top: 16px; }
-.bar-can { background: var(--color-accent); }
-.bar-never { background: var(--color-charcoal-deep); }
-.bar-unknown { border: 1px solid var(--color-divider); }
-.legend { list-style: none; margin: 0; padding: 0; }
-.legend li { display: flex; align-items: baseline; gap: 12px;
-  font-size: var(--text-body); line-height: 1.5;
-  padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--color-divider); }
-.swatch { width: 12px; height: 12px; flex: none; }
-.caption { font-size: var(--text-label); color: var(--color-text-muted); margin: 16px 0 0; }
+/* The three steps. A plain numbered list: the marker is the list's own, set in
+   the heading face so it reads with the step title. The li carries the lead
+   step so the marker matches the title beside it; the body drops to body. */
+.steps { margin: 24px 0 0; padding-left: 1.5em; max-width: 62ch;
+  display: flex; flex-direction: column; gap: 24px; }
+.steps li { font-size: var(--text-lead); padding-left: 8px; }
+.steps li::marker { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
 
-/* Links. The label must not wrap: if it does, the underline trails off and
-   leaves the arrow floating. */
-.arrow-link { display: inline-flex; align-items: baseline; gap: 12px;
-  white-space: nowrap; text-decoration: none;
-  font-size: var(--text-lead); font-weight: var(--font-heading-weight);
-  border-bottom: 2px solid currentColor; margin-top: 24px; }
+.record { max-width: 62ch; }
+/* The demonstration link is a secondary route, so it is a plain underlined
+   link at body size, not the lead-size arrow link the page used to carry.
+   That rule set white-space: nowrap, and this label is long enough to push
+   the page sideways on a phone, so it wraps like any other text. */
+.demo { max-width: 62ch; margin-top: 32px; padding-top: 16px;
+  border-top: 1px solid var(--color-divider); }
+.demo p { margin: 0; }
+.demo p + p { margin-top: 8px; }
+.demo a { font-weight: 600; white-space: normal;
+  text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; }
 
 /* 9. Full bleed, the homepage's approach: the accent field is a section
    outside the measure and an inner .wrap carries the gutter. It sat inside
@@ -295,34 +258,23 @@ figcaption { font-size: var(--text-label); line-height: 1.5;
 .close { background: var(--color-accent); color: var(--color-paper);
   margin-bottom: 80px; }
 .close .wrap { padding-top: 32px; padding-bottom: 48px; }
-/* text-wrap: balance, and the site record warns against it. That warning is
-   about the homepage headline, where the line is single at desktop so
-   balancing does nothing, and where balancing a wrapped headline produced
-   the orphan the design session rejected. Here it does the opposite.
-   Measured: as shipped this statement set three lines of 784, 812 and 328px
-   at 1440, the last an orphan. Balanced it sets 643, 654 and 627. Widening
-   the measure was tried first and fixes 1440 only: at 768 the field is
-   already narrower than the cap, so the orphan survives. Nothing the spec
-   pinned moves, the step, the weight, the 34ch and the copy are unchanged. */
-.close h2 { font-size: var(--text-title); max-width: 34ch; margin: 16px 0 32px;
-  text-wrap: balance; }
+/* No kicker in this field and no balance: the heading is three words on one
+   line, so there is nothing to balance. */
+.close h2 { font-size: var(--text-title); max-width: 34ch; margin: 0; }
+.close .lead { max-width: 62ch; margin: 16px 0 32px; }
 /* The one rounded corner on this page, and it is the site's existing agreed
    exception rather than a new one: the email and LinkedIn contact badges are
    round, agreed before design was involved. Do not flatten it to zero. Square
-   stroke caps on the envelope, because the site does not draw round ends. */
-/* .close .mail-link, not .mail-link. The field gives every anchor a 2px
-   underline for the sample analysis link, and that rule outranks a bare
-   .mail-link, so the badge arrived underlined. The spec asks for no
-   underline here: the badge is the affordance. */
+   stroke caps on the envelope, because the site does not draw round ends.
+   No underline on the label: the badge is the affordance. */
 .close .mail-link { display: inline-flex; align-items: center; gap: 16px;
-  color: var(--color-paper); text-decoration: none; border-bottom: 0; }
+  color: var(--color-paper); text-decoration: none; }
 .mail-badge { width: 44px; height: 44px; border-radius: 50%; flex: none;
   background: var(--color-paper);
   display: flex; align-items: center; justify-content: center; }
 .mail-badge svg { width: 20px; height: 20px; display: block; fill: none;
   stroke: var(--color-accent); stroke-width: 2; stroke-linecap: square; }
 .mail-label { font-size: var(--text-lead); font-weight: var(--font-heading-weight); }
-.close a { text-decoration: none; border-bottom: 2px solid currentColor; }
 
 footer { padding: 56px 0; font-size: var(--text-label); line-height: 1.6;
   display: flex; align-items: center; gap: 14px;
@@ -331,8 +283,7 @@ footer img { width: 26px; aspect-ratio: 200 / 290; flex: none; }
 footer a { color: var(--color-text); text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 
 @media (max-width: 860px) {
-  .intro, .flow, .familiar, .two-col, .bridge { grid-template-columns: 1fr; gap: 32px; }
-  .conn-fill { flex: none; }
+  .findings { grid-template-columns: 1fr; }
   main.wrap { padding: 48px var(--edge) 56px; }
 }
 </style>
@@ -357,179 +308,66 @@ footer a { color: var(--color-text); text-decoration-color: var(--color-accent);
 
 <main class="wrap">
 
-  <!-- 1. Header block -->
+  <!-- 1. Opening -->
   <p class="kicker">Silurian Assay</p>
-  <h1>You can't forecast every product.</h1>
-  <p class="standfirst">Assay reads a demand extract and tells you what is wrong with the file, which products you can forecast, which you never will, and which you have not got the history to judge. Minutes rather than hours, and the same method every cycle.</p>
+  <h1>Understand your demand before building on it.</h1>
+  <p class="standfirst">Assay examines your historical demand to identify data problems, describe demand patterns and highlight products that need closer review.</p>
+  <p class="standfirst">It gives your planning team a consistent assessment, with the evidence behind each finding.</p>
   <hr class="seam" />
 
-  <!-- 2. Intro row -->
-  <div class="intro">
-    <div>
-      <h2>Before a forecast becomes a plan, somebody has to decide whether to believe it.</h2>
-      <p class="lead">That work happens every cycle. Tidying up the extract, comparing it to last month, working out from memory which lines never behave. It is not in anyone's process document and it has no name, so it gets done differently every time and the reasoning leaves the building with whoever did it.</p>
-      <p class="lead">It is also the cheapest place in the whole chain to catch a problem, because nothing has been bought yet.</p>
-    </div>
-    <figure>
-      <p class="kicker">The largest forecasting contest ever run</p>
-      <hr class="seam" style="margin-top:12px" />
-      <p class="stat-numeral">92.5%</p>
-      <p class="stat-claim">of the teams that entered produced forecasts <strong>less accurate than a basic weighted average</strong>.</p>
-      <hr class="hair" />
-      <p class="stat-line"><strong>Two thirds</strong> were less accurate than repeating last year's pattern.</p>
-      <p class="stat-line"><strong>Half</strong> were less accurate than assuming next month looks like last month.</p>
-      <hr class="seam" style="margin-top:16px" />
-      <p class="stat-line">People who forecast for a living, trying hard, on clean data.</p>
-      <figcaption>Known as M5. Run on open Walmart sales data with a public leaderboard and prize money, and reported in the <em>International Journal of Forecasting</em>, 2022.</figcaption>
-    </figure>
-  </div>
+  <!-- 2. Know where to look -->
+  <section class="intro" aria-labelledby="look">
+    <h2 id="look">Know where to look</h2>
+    <p class="lead">Gaps in the data, infrequent orders and large changes in demand raise different questions. A single portfolio total can hide those differences.</p>
+    <p class="lead">Assay examines each product’s history and brings the findings together, helping you focus your review.</p>
+  </section>
 
-  <!-- 3. Chart -->
-  <div class="entry">
-    <p class="entry-title">A forecast arrives</p>
-    <p class="entry-sub">Yours, or your customer's</p>
-  </div>
-
-  <div class="flow">
-    <div class="col">
-      <div class="conn conn-entry"></div>
-      <div>
-        <p class="kicker col-kicker">The work you do now</p>
-        <p class="col-clause">hours, and an answer nobody can check</p>
-        <hr class="col-head-seam" />
-      </div>
-      <div class="conn"></div>
-      <div class="node">
-        <p class="node-title">Pivot tables, judgement, or both</p>
-        <p class="node-body">Tidy up the extract. Compare it to last month.<br />Work out from memory which lines look wrong.</p>
-        <hr class="hair" />
-        <p class="node-body">Hours of work. A different answer depending on who did it.</p>
-      </div>
-      <div class="conn"></div>
-      <div class="node node-mid">Into the plan</div>
-      <div class="conn"></div>
-      <div class="node node-mid">Agreed, then committed<br />Material bought. Capacity booked.</div>
-      <div class="conn conn-fill"></div>
-      <div class="node">
-        <p class="node-title">Stock carried against products nothing could ever predict.</p>
-        <p class="node-body">Time spent on the wrong products.<br />No way to challenge the forecast you were sent.</p>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="conn conn-entry"></div>
-      <div>
-        <p class="kicker col-kicker">The same work with Assay</p>
-        <p class="col-clause">minutes, and an answer you can show anyone</p>
-        <hr class="col-head-seam" />
-      </div>
-      <div class="conn"></div>
-      <div class="node node-accent">
-        <p class="node-title">Upload the extract</p>
-        <p class="node-body">What is wrong with the file.<br />Which products you can forecast.<br />Which ones you never will.<br />Which ones you have not got the history to judge.</p>
-        <hr class="hair" />
-        <p class="node-body">Minutes. The same method every cycle.</p>
-      </div>
-      <div class="conn"></div>
-      <div class="node node-mid">Into the plan, knowing<br />which numbers to trust</div>
-      <div class="conn"></div>
-      <div class="node node-mid">Agreed, then committed<br />Material bought. Capacity booked.</div>
-      <div class="conn conn-fill"></div>
-      <div class="node node-accent">
-        <p class="node-title">Stock carried for reasons you can explain.</p>
-        <p class="node-body">Time spent where it makes a difference.<br />Evidence to challenge the forecast you were sent.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. Does this look familiar -->
-  <div class="familiar">
-    <p>Does this look familiar?</p>
-  </div>
-
-  <!-- 5. Full width callback -->
-  <div class="callback">
-    <h2 style="max-width:52ch">The 92.5 percent were not bad at forecasting. They were forecasting products nothing could predict, because nobody had told them which ones those were.</h2>
-    <p class="lead" style="max-width:62ch">The cost never shows up in the forecast. It shows up later, as stock you cannot sell, service you cannot hold, and an argument with your customer you have no evidence for.</p>
-  </div>
-
-  <!-- 6. Two column argument -->
+  <!-- 3. What the assessment shows -->
   <hr class="section-seam" />
-  <div class="two-col">
-    <div>
-      <h2>Better forecasting is not the answer for every product</h2>
-      <p class="lead">The competition above tells you something the leaderboard does not. The gains available on sparse, irregular products were close to nothing: around three percent at the level individual products are actually planned at, against forty percent higher up the aggregation.</p>
-      <p class="lead">The products that make your forecast look bad are the products where trying harder helps least.</p>
-      <p class="lead">The lesson is not that forecasting is pointless. It is that effort spent on the wrong products produces nothing, and nobody is telling you which products those are.</p>
-    </div>
-    <div>
-      <h2>When the forecast comes from your customer</h2>
-      <p class="lead">Read the supply agreement. Beyond the first few months it almost certainly says the forecast creates no binding obligation and is provided for planning purposes only.</p>
-      <p class="lead">Your customer has told you in writing not to rely on it. You buy material against it anyway.</p>
-      <p class="lead">There is a reason those numbers run high, and it is not dishonesty. A customer who wants capacity held has every reason to ask for more than they need, and it costs them nothing to do it.</p>
-      <p class="lead">So you are committing money against a number that is not binding, produced by someone with a reason to round it up, and checked by nobody.</p>
-    </div>
-  </div>
-  <div class="pullout">
-    <h2>Ask how often those forecasts turned into orders last year. Most companies cannot answer, because nobody has ever counted.</h2>
-  </div>
+  <section aria-labelledby="shows">
+    <h2 id="shows">What the assessment shows</h2>
+    <ul class="findings">
+      <li><h3>Data quality</h3><p>Missing periods, inconsistent records and other issues that could affect the analysis.</p></li>
+      <li><h3>Demand patterns</h3><p>How frequently demand occurs and how much quantities vary.</p></li>
+      <li><h3>Products needing attention</h3><p>Lines with limited evidence, data issues or patterns that warrant further investigation, with a reason for each finding.</p></li>
+      <li><h3>The portfolio picture</h3><p>How much recorded demand volume sits within each assessment outcome.</p></li>
+    </ul>
+    <p class="lead scope">The findings describe the history supplied. They support your planners’ judgement and do not establish that a product will always, or never, be predictable.</p>
+  </section>
 
-  <!-- 7. Two column lists -->
+  <!-- 4. How it works -->
   <hr class="section-seam" />
-  <div class="two-col">
-    <div>
-      <h2>What you get</h2>
-      <ul class="gets">
-        <li>What is wrong with your file, in plain terms, before anything else happens</li>
-        <li>Which products you can forecast, which you never will, and which you have not got the history to judge</li>
-        <li>How much of your volume sits in each group</li>
-        <li>A short list of products to raise with whoever sent you the forecast, with their own history as the evidence</li>
-        <li>A record of the run you can repeat next month and get the same answer</li>
-      </ul>
-    </div>
-    <div>
-      <h2>What it will not tell you</h2>
-      <p class="lead">It will not tell you what stock to hold. It tells you which products need an arrangement with a customer rather than a number, and stops there.</p>
-      <p class="lead">It will not improve a forecast. It tells you where improving one is worth the effort, and where it never will be.</p>
-      <p class="lead">And it will not tell you what you want to hear. Every company selling forecasting software has a reason to say your whole portfolio is forecastable. This is the opposite service.</p>
-    </div>
-  </div>
+  <section aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="steps">
+      <li><h3>Discuss the assessment</h3><p>We agree the planning question, the products in scope and the data required.</p></li>
+      <li><h3>Review the history</h3><p>Assay analyses an agreed export from your existing systems. No direct system connection is needed.</p></li>
+      <li><h3>Review the findings together</h3><p>We discuss the results, add the business context and agree which issues need further attention.</p></li>
+    </ol>
+  </section>
 
-  <!-- 8. Bridge row -->
-  <div class="bridge">
-    <div>
-      <p class="kicker">What comes back</p>
-      <h2 style="max-width:34ch;margin-top:16px">Your portfolio, split three ways, with the volume in each group.</h2>
-      <p class="lead" style="max-width:52ch">One page you can put in front of a customer, and a record of the run you can repeat next month and get the same answer.</p>
-      <a class="arrow-link" href="forecast-risk.html"><span>See a sample analysis</span><span aria-hidden="true">&#8594;</span></a>
-    </div>
-    <div>
-      <p class="kicker">Percent of volume</p>
-      <hr class="seam" style="margin-top:12px" />
-      <div class="bar">
-        <div class="bar-can" style="flex:55"></div>
-        <div class="bar-never" style="flex:20"></div>
-        <div class="bar-unknown" style="flex:25"></div>
-      </div>
-      <ul class="legend">
-        <li><span class="swatch bar-can"></span><span><strong>55%</strong> can be forecast</span></li>
-        <li><span class="swatch bar-never"></span><span><strong>20%</strong> never will be, and need an arrangement instead</span></li>
-        <li><span class="swatch bar-unknown"></span><span><strong>25%</strong> not enough history to judge</span></li>
-      </ul>
-      <p class="caption">Illustrative split. Every portfolio comes back different.</p>
-    </div>
+  <!-- 5. A record you can check, then the secondary demonstration link -->
+  <hr class="section-seam" />
+  <section class="record" aria-labelledby="record">
+    <h2 id="record">A record you can check</h2>
+    <p class="lead">Each assessment records the data, settings and method used. You can trace the findings and reproduce the analysis under the same conditions.</p>
+    <p class="lead">As new demand becomes available, a fresh assessment reflects the updated history.</p>
+  </section>
+  <div class="demo">
+    <p><a href="forecast-risk.html">Forecasting demonstration using synthetic data</a></p>
+    <p>This separate demonstration shows forecasting and inventory projections, rather than the demand-history assessment described here.</p>
   </div>
 
 </main>
 
-<!-- 9. Closing accent field -->
-<section class="close">
+<!-- 6. Closing accent field -->
+<section class="close" aria-labelledby="discuss">
   <div class="wrap">
-    <p class="kicker">Next</p>
-    <h2>Get the assessment back on your own products. Or look at the <a href="forecast-risk.html">sample analysis first. <span aria-hidden="true">&#8594;</span></a></h2>
+    <h2 id="discuss">Discuss an assessment</h2>
+    <p class="lead">Tell us what you are trying to understand about your demand and planning process. We will agree the scope and data requirements before you share a file.</p>
     <a class="mail-link" href="mailto:hello@silurianconsulting.co.uk">
       <span class="mail-badge"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="1" y="4" width="18" height="12" /><polyline points="1,4 10,12 19,4" /></svg></span>
-      <span class="mail-label">Send a demand extract</span>
+      <span class="mail-label">Discuss an assessment</span>
     </a>
   </div>
 </section>
