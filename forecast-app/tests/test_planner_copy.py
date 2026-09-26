@@ -43,7 +43,7 @@ class ReadinessStatementTests(unittest.TestCase):
         self.assertIn("an answer from you first, covering", renderer)
         self.assertIn("?'needs':'need'}", renderer)
         self.assertIn("percent of volume.", renderer)
-        self.assertIn("a commercial decision rather than a forecast.", renderer)
+        self.assertIn("a commercial arrangement, because no forecast will work.", renderer)
 
     def test_the_sentence_accounts_for_every_line_in_the_portfolio(self):
         """Eligible plus waiting does not reach the portfolio while policy-only lines exist.
@@ -442,7 +442,7 @@ class OneListTwoSectionsTests(unittest.TestCase):
     def test_absence_is_a_result_in_both_sections(self):
         """CLAUDE.md section 8. An empty section names what was eligible and why."""
         self.assertIn("Nothing is waiting on you.", self.renderer)
-        self.assertIn("No line here needs a commercial decision.", self.renderer)
+        self.assertIn("No line here needs a commercial arrangement.", self.renderer)
         self.assertIn("No line in this run was refused.", self.renderer)
 
     def test_a_term_inside_a_row_opens_the_line_rather_than_the_glossary(self):
