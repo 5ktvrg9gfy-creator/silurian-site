@@ -220,7 +220,7 @@
       },
       "output_ref": {
         "type": "routing_result",
-        "sha256": "b083a84382219906c2416bfb3a4ae72935f2f0d1c87f36afa04b6965b248b696",
+        "sha256": "c79077919b9b20c6cab6b21b4bd842585e93e755eb4318fd2b3d3e17861bf635",
         "series": 12
       },
       "options": {
@@ -308,8 +308,8 @@
     "statement": "Validation, quality, classification and routing are bitwise reproducible."
   },
   "integrity": {
-    "manifest_sha256": "8bd753ed2cf6d21191f21fcf6e0d3d733f0de67ff42349e2a61420b2662ca5e9",
-    "content_fingerprint_sha256": "8212d723a5ebf6aecef4a39c0fb1126f2eef9914a0b34c1fe3b13ce0c25b3107",
+    "manifest_sha256": "b5872449a8182e43ee0dca7d9757f02859b5e79f6271862d8e142fda1cb8c983",
+    "content_fingerprint_sha256": "8769bb563944e1907cbdbd7da71804934218f5f261e422a50b9d939b19a1437c",
     "chain_verified": true
   }
 }

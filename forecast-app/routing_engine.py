@@ -239,7 +239,7 @@ def _class_reason(demand_class: str, item: dict[str, Any]) -> str:
     if demand_class == "erratic":
         return (
             f"Demand arrives in {non_zero} of {present} periods but its size swings hard (ADI {adi:.2f}, CV squared {cv_squared:.3f}), "
-            "so the interval is the useful output and the point number is not."
+            "so the forecast is still a number to plan from, but it could move a long way either side."
         )
     if demand_class == "intermittent":
         return (

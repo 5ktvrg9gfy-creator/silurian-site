@@ -26,8 +26,8 @@ account for. Six independent checks, each able to fail on its own:
 
 3.  STRING LEAVES. Every differing string leaf is bucketed by its field name.
     The set of names must be a subset of the declared copy fields plus the
-    declared hash fields. A changed `reason`, `code`, `band` or `sku` fails
-    here even though it is a string.
+    declared hash fields. A changed `code`, `band` or `sku` fails here even
+    though it is a string. `reason` is a declared copy field since Q4.
 
 4.  HASHES ARE DERIVED, NOT EDITED. Every changed hash is recomputed from the
     new content using the application's own functions, never copied from the
@@ -70,8 +70,10 @@ GOLDENS = (
     "forecast-app/tests/run_bundle_fixtures/run_manifest.golden.json",
 )
 
-# The only fields whose text this story is allowed to have moved.
-COPY_FIELDS = {"action", "detail"}
+# The only fields whose text a copy regeneration is allowed to have moved.
+# `reason` added 26 September 2026, approved by the product owner under Q4
+# in docs/2.10-open-questions.md, for the erratic reason fix.
+COPY_FIELDS = {"action", "detail", "reason"}
 # Digests that follow from the copy, each proved by recomputation in check 4.
 HASH_FIELDS = {"sha256", "manifest_sha256", "bundle_sha256", "content_fingerprint_sha256"}
 
