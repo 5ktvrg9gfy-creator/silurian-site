@@ -43,7 +43,7 @@ class ReadinessStatementTests(unittest.TestCase):
         self.assertIn("an answer from you first, covering", renderer)
         self.assertIn("?'needs':'need'}", renderer)
         self.assertIn("percent of volume.", renderer)
-        self.assertIn("a commercial decision rather than a forecast.", renderer)
+        self.assertIn("a commercial arrangement, because no forecast will work.", renderer)
 
     def test_the_sentence_accounts_for_every_line_in_the_portfolio(self):
         """Eligible plus waiting does not reach the portfolio while policy-only lines exist.
@@ -205,8 +205,8 @@ class OpenItemsMembershipTests(unittest.TestCase):
         absent lines on the same screen, so the rule is now stated by the two
         headings and by what each section says an answer can and cannot do."""
         renderer = HTML[HTML.index("function renderOpenItems(){"):HTML.index("function renderForecastEmpty(){")]
-        self.assertIn("Waiting on an answer from you", renderer)
-        self.assertIn("Need a commercial decision rather than a forecast", renderer)
+        self.assertIn("Answer these and they can be forecast", renderer)
+        self.assertIn("No forecast will work: these need a commercial arrangement", renderer)
         self.assertIn("An answer from you can move one of these to forecastable.", renderer)
         self.assertIn("No answer moves one of these to forecastable.", renderer)
         self.assertNotIn("are not listed here", renderer)
@@ -399,8 +399,8 @@ class OneListTwoSectionsTests(unittest.TestCase):
         self.assertNotIn("cannot move until you answer something", HTML)
 
     def test_both_headings_are_present_and_in_the_brief_s_words(self):
-        self.assertIn(">Waiting on an answer from you</h3>", self.renderer)
-        self.assertIn(">Need a commercial decision rather than a forecast</h3>", self.renderer)
+        self.assertIn(">Answer these and they can be forecast</h3>", self.renderer)
+        self.assertIn(">No forecast will work: these need a commercial arrangement</h3>", self.renderer)
 
     def test_the_second_section_holds_the_lines_that_used_to_be_absent(self):
         """Policy only lines were ineligible, carried no refusal and were listed nowhere."""
@@ -442,7 +442,7 @@ class OneListTwoSectionsTests(unittest.TestCase):
     def test_absence_is_a_result_in_both_sections(self):
         """CLAUDE.md section 8. An empty section names what was eligible and why."""
         self.assertIn("Nothing is waiting on you.", self.renderer)
-        self.assertIn("No line here needs a commercial decision.", self.renderer)
+        self.assertIn("No line here needs a commercial arrangement.", self.renderer)
         self.assertIn("No line in this run was refused.", self.renderer)
 
     def test_a_term_inside_a_row_opens_the_line_rather_than_the_glossary(self):

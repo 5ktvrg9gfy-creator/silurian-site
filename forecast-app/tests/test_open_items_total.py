@@ -176,7 +176,7 @@ class TheRoundingSentenceTests(unittest.TestCase):
         section would be the combined figure that story refuses."""
         self.assertEqual(self.renderer.count("<tfoot>"), 2)
         self.assertIn('scope="row">Total waiting on an answer</th>', self.renderer)
-        self.assertIn('scope="row">Total needing a commercial decision</th>', self.renderer)
+        self.assertIn('scope="row">Total needing a commercial arrangement</th>', self.renderer)
         self.assertNotIn('scope="row">Total</th>', self.renderer)
         self.assertLess(self.renderer.index("</tbody>"), self.renderer.index("<tfoot>"))
 
