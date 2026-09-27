@@ -42,3 +42,16 @@ Button corner radius read through `getComputedStyle`: 0px in every case.
 ## Still to do
 
 Run the four checks in a real Vercel Preview in a browser that can reach it, using the Network tab: a request to `/_vercel/insights/view` on a normal load, none after pressing the button, one again after pressing it a second time, and the status text after a reload.
+
+Done on the same day: see the next section.
+
+## Vercel Preview check, 27 September 2026
+
+Run by the product owner in a real browser on the pull request 148 Preview, `silurian-site-16zch009u-silurian.vercel.app`, against Vercel's own `/_vercel/insights/script.js`. Reported to the build session, which could not reach the Preview itself.
+
+- **a. Analytics on:** `POST /_vercel/insights/view` sent.
+- **b. After pressing the button:** no `/view` request on `index.html`, `delivery.html`, `forecast-risk.html`, `forecastability.html` or `privacy.html`. `script.js` still loaded.
+- **c. After pressing it again:** `/view` requests returned.
+- **d. Status text after a reload:** correct in both states.
+
+This closes the gap the local run left open: Vercel's real script honours the `beforeSend` check.
