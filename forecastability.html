@@ -334,6 +334,17 @@ footer a { color: var(--color-text); text-decoration-color: var(--color-accent);
 </style>
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  /* Visitor opt-out, Vercel's documented beforeSend check. Nothing is sent
+     when this browser holds va-disable, set by the button on privacy.html, or
+     sends a Global Privacy Control signal. Storage that cannot be read counts
+     as no choice saved, so the Global Privacy Control check still applies. */
+  window.va('beforeSend', function (event) {
+    if (navigator.globalPrivacyControl === true) return null;
+    try {
+      if (localStorage.getItem('va-disable')) return null;
+    } catch (error) {}
+    return event;
+  });
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
