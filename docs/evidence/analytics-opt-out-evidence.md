@@ -55,3 +55,10 @@ Run by the product owner in a real browser on the pull request 148 Preview, `sil
 - **d. Status text after a reload:** correct in both states.
 
 This closes the gap the local run left open: Vercel's real script honours the `beforeSend` check.
+
+## Production check, 27 September 2026
+
+Run by the product owner in a real browser on `www.silurianconsulting.co.uk` after pull request 148 merged as `57dad3e`. Reported to the build session, which cannot reach the production domain.
+
+- After pressing the button on `privacy.html`, the homepage loaded `/_vercel/insights/script.js` and sent no `/_vercel/insights/view` request.
+- After a reload of `privacy.html`, the status read "Analytics is off in this browser."
