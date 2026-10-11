@@ -125,6 +125,8 @@ Absence is a result. An empty state names what was eligible, what was excluded a
 
 The tell is a vague verb standing in for something concrete. Serve, carry, support, enable, underpin, leverage. "Which products a forecast can serve" means "which products you can forecast". "Knowing what the plan can carry" means "knowing which numbers to trust". The abstraction is always longer and always says less.
 
+The same verb can be either, so the list is a prompt to look rather than a ban. "Five lines carrying 25.39 percent of your volume" is concrete: the volume is measured and the verb is doing that work. "What the plan can carry" is a metaphor standing in for a real word. The test is whether the verb is doing measurable work or standing in for something the writer could not be bothered to name.
+
 Two things follow from it.
 
 **Say what the reader gets, not what the method is.** "Stock sized to what the data supports" describes a method. "Stock carried for reasons you can explain" describes what the reader gets to say when someone asks them why the stock is there.
