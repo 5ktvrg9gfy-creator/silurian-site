@@ -1,5 +1,39 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node scripts/build-public.mjs",
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "rewrites": [
+    {
+      "source": "/notes",
+      "destination": "/notes/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/notes",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/notes/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
 }

@@ -1,0 +1,57 @@
+# Notes page: open questions
+
+Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recommended default, the cost if wrong. Nine questions are waiting. None blocks the branch; Q1 and Q5 are the ones to answer before merge.
+
+## Q1. Monospace in the note box, against "Archivo only"
+
+- **Blocks:** nothing built. CLAUDE.md section 9 says Archivo only and "there is no mono in the system". The brief asks for a plain monospace text box. The two disagree and CLAUDE.md says to raise it rather than choose.
+- **Default as built:** the note box alone uses the system monospace stack. Every other element is Archivo. `test_archivo_everywhere_but_the_note_box` pins it to exactly one monospace declaration.
+- **Cost if wrong:** one CSS line. Pasted scripts lose column alignment if Archivo is chosen, and tabs and indented code read worse.
+
+## Q2. Two devices editing the same note overwrite each other
+
+- **Blocks:** nothing built. Saves are last write wins. A stale tab left open on a phone, then typed into, replaces the newer text saved from the desktop.
+- **Default as built:** none. Version 1 as briefed.
+- **Recommended:** the client sends the last-edited time it holds and the server answers 409 if the stored time differs, with a "this note changed on another device" message. About 30 lines and one test.
+- **Cost if wrong:** one overwritten script. Autosave makes it silent.
+
+## Q3. A browser text box turns Windows line endings into Unix ones
+
+- **Blocks:** nothing built. The server and the storage round-trip every byte exactly, including `\r\n` and a lone `\r`, and the tests prove it. A browser `<textarea>` normalises line breaks to `\n` in its value, so a Windows-style script pasted into the page is stored with `\n`.
+- **Default as built:** accept it. Scripts that run on Unix or in an editor are unaffected.
+- **Cost if wrong:** replacing the text box with a different editor control. Not small.
+
+## Q4. Brute-force protection is a delay only
+
+- **Blocks:** nothing built. A failed login waits one second before answering, as briefed. Many parallel guesses are not limited, because the gate keeps no state.
+- **Default as built:** a long random password, which makes the delay enough.
+- **Cost if wrong:** a stored attempt counter (Vercel KV or the same Blob store) and lockout rules.
+
+## Q5. Is the whole repository root served publicly?
+
+- **Blocks:** not this branch, but it matters more now. The root has no `.vercelignore` and no build output directory, so the static project probably serves every file at its path: `CLAUDE.md`, `PROJECT_HANDOFF.md`, `docs/`, and now `package.json` and `notes-tests/`. This session's network blocks Vercel hosts, so it was not checked.
+- **Default as built:** nothing changed. The notes themselves are not in the repository.
+- **Check:** open `/CLAUDE.md` on the Production site. If it loads, add a `.vercelignore` as its own small changeset.
+- **Cost if wrong:** internal planning documents readable by anyone with the address.
+
+## Q6. No sign-out button
+
+- **Blocks:** nothing. Not in the brief. A shared machine stays signed in for 30 days. Changing the password in Vercel signs everyone out at once.
+- **Default as built:** none. **Cost if wrong:** one route and one button.
+
+## Q7. Route style on the Node runtime was not run on Vercel
+
+- **Blocks:** Preview acceptance. The four route files export `GET`, `POST`, `PUT` and `DELETE` as Web `Request` to `Response` handlers, which Vercel's Node runtime documents. That is why the handlers are testable without a server. No Vercel environment was reachable, so the first real proof is the Preview.
+- **Default as built:** Web handlers.
+- **Cost if wrong:** rewrite the four wrappers to the older `(req, res)` form. The logic in `api/_lib/notes-api.js` does not change.
+
+## Q8. Handoff record not updated
+
+- **Blocks:** nothing. CLAUDE.md section 6 step 9 wants `PROJECT_HANDOFF.md` updated with the actual merge and deployment evidence. The brief asked for CLAUDE.md only, and there is no merge or Preview evidence yet.
+- **Default as built:** left alone. **Cost if wrong:** a short entry once the Preview has been checked.
+
+## Q9. The Python checks for the notes page live outside forecast-app
+
+- **Blocks:** nothing built. The brief said nothing under `forecast-app/` changes, and CLAUDE.md says the permanent suite is run from `forecast-app/`. `notes-tests/test_notes_page.py` runs the Node suite and holds the page to the site's token, type size, radius and dash scans. It runs with `python -m unittest discover -s notes-tests` from the root, and is not in the normal suite.
+- **Recommended:** move it to `forecast-app/tests/` (change one line, `REPOSITORY`, back to `parents[2]`) so a plain `python -m unittest discover -s tests` covers the notes page too. It was proved in that position first: the normal suite went from 303 to 310 and passed.
+- **Cost if wrong:** the page rules only run when someone remembers the second command.
