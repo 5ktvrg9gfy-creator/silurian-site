@@ -1,0 +1,20 @@
+# The marketing site's public allowlist. Only what is named here is deployed by
+# the marketing Vercel project. Everything else in the repository, including
+# CLAUDE.md, docs/, forecast-app/ and any file added later, is private by
+# default and answers 404.
+#
+# One path per line, relative to the repository root. A trailing slash means the
+# whole directory. No wildcards, no "..", no leading slash.
+#
+# Adding a line here is a decision to publish. forecast-app/tests/
+# test_marketing_deploy_allowlist.py pins the same list and fails until both
+# agree, so a file cannot become public by editing one place.
+
+index.html
+delivery.html
+forecast-risk.html
+forecastability.html
+privacy.html
+tokens.css
+logo-stone.svg
+assets/
