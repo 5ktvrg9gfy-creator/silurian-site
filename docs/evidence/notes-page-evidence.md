@@ -70,3 +70,16 @@ The private store was connected to `silurian-site` for Preview and Production. V
 **Suites.** `npm test`: 50 before, 53 after, all passing. `python -m unittest discover -s tests` from `forecast-app/`: 318 before and after, all passing.
 
 **Not shown.** That Vercel's production runtime puts the identity token on a Node function's request context. Vercel's published `@vercel/node` 24.0.3 contains only the development server, which sets the request context without headers, so this could not be read. The same header is what the Assay project's Python functions already read in Production to reach Google Cloud. The first save on the Preview is the proof. Not run: the Preview, the real store.
+
+## Vercel Preview check, 18 October 2026
+
+Run by the product owner in a real browser on the branch Preview, `silurian-site-git-notes-page-silurian.vercel.app/notes`, at `f6debe9`. Reported to the build session, which cannot reach Vercel hosts.
+
+- **Sign-in works** with `SILURIAN_NOTES_PASSWORD`, now set for Preview and Production. It was set for Production only at first, which is what caused the earlier wrong-password failures on the Preview. Nothing in the code was wrong.
+- **A new note saved**, showed Saved, and survived a page refresh. This is the first proof against a real store that the Blob sign-in works through `BLOB_STORE_ID` and Vercel's runtime identity token, which the section above could only show with a stand-in. It also closes the gap recorded there: Vercel's production runtime does put the identity token on a Node function's request.
+- **The note was visible on a second device.**
+- **Conflict:** an edit saved on one device, then typing on the other, showed the changed-elsewhere message and kept the text on screen.
+
+Approved to merge by the product owner on 18 October 2026, through pull request 149. Q10 stays open and is not built, by his instruction.
+
+Not run: Production. That follows the merge.
