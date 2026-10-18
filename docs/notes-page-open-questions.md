@@ -55,3 +55,9 @@ Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recomme
 - **Blocks:** nothing built. The brief said nothing under `forecast-app/` changes, and CLAUDE.md says the permanent suite is run from `forecast-app/`. `notes-tests/test_notes_page.py` runs the Node suite and holds the page to the site's token, type size, radius and dash scans. It runs with `python -m unittest discover -s notes-tests` from the root, and is not in the normal suite.
 - **Recommended:** move it to `forecast-app/tests/` (change one line, `REPOSITORY`, back to `parents[2]`) so a plain `python -m unittest discover -s tests` covers the notes page too. It was proved in that position first: the normal suite went from 303 to 310 and passed.
 - **Cost if wrong:** the page rules only run when someone remembers the second command.
+
+## Q10. A missing storage credential logs as a bare "Error" (open, raised 18 October 2026)
+
+- **Blocks:** nothing built, but it decides how fast a failed first Preview save is understood. The API logs only the error's name, deliberately, because a Blob error message can name the store. The package's credential error is a plain `Error`, so a deployment with no identity token logs `notes: storage error Error`, the same as any other storage failure.
+- **Recommended default:** log a second fixed line when the package reports no credentials, for example `notes: storage error, no Blob credentials on this deployment`, naming nothing. About five lines and one test.
+- **Cost if wrong:** one round trip to the Vercel dashboard to check the identity token setting by elimination.

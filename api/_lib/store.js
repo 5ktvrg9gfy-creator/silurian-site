@@ -8,6 +8,15 @@
 // with the title "Untitled" and the blob's own upload time, and is repaired by
 // the next save. The list is driven by the text files for that reason.
 //
+// Credentials: none are passed. Connecting the store to the project adds
+// BLOB_STORE_ID and no read-write token. The package then authenticates each
+// call with the store ID and the short-lived identity token Vercel's runtime
+// puts on the request (x-vercel-oidc-token, read through @vercel/oidc). It falls
+// back to BLOB_READ_WRITE_TOKEN only when there is no identity token, and that
+// variable is not set on this project. Passing a token option here would take
+// the place of the identity token, so this file must not. Held by
+// notes-tests/blob-auth.test.js.
+//
 // The Blob functions are passed in, not imported here, so the adapter can be
 // tested against an in-memory stand-in and the real package is only touched by
 // the route files.
