@@ -40,3 +40,9 @@ Each was mutated, the suite run, and the file restored. Every one failed the sui
 - A browser text box turns Windows line endings into Unix ones on the page (Q3). The API and storage keep every byte.
 - A second device editing the same note overwrites it (Q2).
 - The repository root is probably served in full by the static project (Q5).
+
+## Rebase onto the allowlist fix, 18 October 2026
+
+The branch was rebased onto `main` at `2d500b6` (the `site-public-allowlist` merge). Conflicts in `.gitignore`, `CLAUDE.md` and `vercel.json` were resolved by keeping both sides. Then: `notes/` added to `site-allowlist.txt` and `PUBLIC_FILES`; the two tests that pinned `vercel.json` now allow the build settings beside the `/notes` rules; the local build puts `notes/index.html` in `public/` and no private file. Removing `notes/` from the allowlist fails the allowlist test. After the rebase: `npm test` 39 of 39, `notes-tests` Python 7 of 7, `forecast-app` suite 311 of 311, browser check 29 of 29.
+
+Still not run: the Vercel Preview, a real Blob store, and whether root `api/` functions deploy with `outputDirectory` set to `public` (Q2 in the allowlist questions file).

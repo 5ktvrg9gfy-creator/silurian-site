@@ -35,7 +35,12 @@ function existingUrls() {
 const sourceMatches = (source, path) => new RegExp(`^${source}$`).test(path);
 
 test("vercel.json only touches /notes", () => {
-  assert.deepEqual(Object.keys(config).sort(), ["$schema", "headers", "rewrites"], "no redirects, cleanUrls, trailingSlash or other keys");
+  assert.deepEqual(
+    Object.keys(config).sort(),
+    ["$schema", "buildCommand", "headers", "outputDirectory", "rewrites"],
+    "the allowlist build settings and the /notes rules, and no redirects, cleanUrls, trailingSlash or other keys",
+  );
+  assert.equal(config.outputDirectory, "public", "only the allowlisted folder is served");
   const sources = [...config.rewrites.map((r) => r.source), ...config.headers.map((h) => h.source)];
   assert.ok(sources.length >= 3, "the rules were read");
   for (const source of sources) assert.match(source, /^\/notes(\/\(\.\*\))?$/, `${source} is a /notes rule`);

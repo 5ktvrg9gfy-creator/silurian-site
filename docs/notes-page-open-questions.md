@@ -1,8 +1,8 @@
 # Notes page: open questions
 
-Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recommended default, the cost if wrong. Nine questions are waiting. None blocks the branch; Q1 and Q5 are the ones to answer before merge.
+Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recommended default, the cost if wrong. Eight questions are waiting; Q1 is answered. Q5 (the repository root served publicly) was found real and fixed by the `site-public-allowlist` branch, merged 18 October 2026, so it is closed. The branch was rebased onto that fix on 18 October 2026. Answers to Q2 to Q4 and Q6 to Q9 have not been received.
 
-## Q1. Monospace in the note box, against "Archivo only"
+## Q1. Monospace in the note box, against "Archivo only" (ANSWERED 18 October 2026: keep it, recorded in CLAUDE.md section 9b)
 
 - **Blocks:** nothing built. CLAUDE.md section 9 says Archivo only and "there is no mono in the system". The brief asks for a plain monospace text box. The two disagree and CLAUDE.md says to raise it rather than choose.
 - **Default as built:** the note box alone uses the system monospace stack. Every other element is Archivo. `test_archivo_everywhere_but_the_note_box` pins it to exactly one monospace declaration.
@@ -27,7 +27,7 @@ Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recomme
 - **Default as built:** a long random password, which makes the delay enough.
 - **Cost if wrong:** a stored attempt counter (Vercel KV or the same Blob store) and lockout rules.
 
-## Q5. Is the whole repository root served publicly?
+## Q5. Is the whole repository root served publicly? (CLOSED: yes, fixed by `site-public-allowlist`, merge `2d500b6`)
 
 - **Blocks:** not this branch, but it matters more now. The root has no `.vercelignore` and no build output directory, so the static project probably serves every file at its path: `CLAUDE.md`, `PROJECT_HANDOFF.md`, `docs/`, and now `package.json` and `notes-tests/`. This session's network blocks Vercel hosts, so it was not checked.
 - **Default as built:** nothing changed. The notes themselves are not in the repository.
