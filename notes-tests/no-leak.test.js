@@ -39,6 +39,7 @@ test("a full session writes the password, cookie and token nowhere", async () =>
   const failing = {
     list: async () => { throw new Error(`denied for ${token}`); },
     read: async () => { throw new Error(`denied for ${token}`); },
+    stamp: async () => { throw new Error(`denied for ${token}`); },
     write: async () => { throw new Error(`denied for ${token}`); },
     remove: async () => { throw new Error(`denied for ${token}`); },
   };
@@ -56,17 +57,17 @@ test("a full session writes the password, cookie and token nowhere", async () =>
     await record(await call(t.api.session, { path: "/api/session", cookie: cookieHeader }));
     await record(await call(t.api.session, { path: "/api/session" }));
     const created = await record(await call(t.api.collection.POST, { method: "POST", cookie: cookieHeader, body: "hello" }));
-    const { id } = JSON.parse(bodies.at(-1));
+    const { id, updatedAt: stamp } = JSON.parse(bodies.at(-1));
     assert.equal(created.status, 201);
     await record(await call(t.api.collection.GET, { cookie: cookieHeader }));
     await record(await call(t.api.item.GET, { path: `/api/note?id=${id}`, cookie: cookieHeader }));
-    await record(await call(t.api.item.PUT, { method: "PUT", path: `/api/note?id=${id}`, cookie: cookieHeader, body: "changed" }));
+    await record(await call(t.api.item.PUT, { method: "PUT", path: `/api/note?id=${id}`, cookie: cookieHeader, body: "changed", headers: { "x-base-updated": stamp } }));
     await record(await call(t.api.item.DELETE, { method: "DELETE", path: `/api/note?id=${id}`, cookie: cookieHeader }));
     for (const [handler, init] of [
       [broken.api.collection.GET, {}],
       [broken.api.collection.POST, { method: "POST", body: "x" }],
       [broken.api.item.GET, { path: `/api/note?id=${"a".repeat(32)}` }],
-      [broken.api.item.PUT, { method: "PUT", path: `/api/note?id=${"a".repeat(32)}`, body: "x" }],
+      [broken.api.item.PUT, { method: "PUT", path: `/api/note?id=${"a".repeat(32)}`, body: "x", headers: { "x-base-updated": "2026-10-01T12:00:00.000Z" } }],
       [broken.api.item.DELETE, { method: "DELETE", path: `/api/note?id=${"a".repeat(32)}` }],
     ]) {
       const response = await record(await call(handler, { ...init, cookie: cookieHeader }));

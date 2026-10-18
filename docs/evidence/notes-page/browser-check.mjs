@@ -22,6 +22,7 @@ const notes = new Map();
 const store = {
   async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt })); },
   async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt } : null; },
+  async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
   async write(id, bytes, meta) { notes.set(id, { bytes: new Uint8Array(bytes), meta }); },
   async remove(id) { notes.delete(id); },
 };
@@ -146,6 +147,46 @@ check('over 1 MB: the stored note is untouched', Buffer.from([...notes.values()]
 await page2.evaluate(() => { const t = document.getElementById('text'); t.value = 'x'.repeat(900 * 1024); t.dispatchEvent(new Event('input', { bubbles: true })); });
 await sleep(2500);
 check('back under 1 MB: saves again', (await page2.locator('#status').textContent()) === 'Saved' && notes.size === 1 && [...notes.values()][0].bytes.length === 900 * 1024);
+
+// 7b. Another device changes the note: the save is refused, the text stays, nothing is lost
+const otherDevice = await page2.evaluate(async () => {
+  const id = location.hash.slice(3);
+  const current = await fetch('/api/note?id=' + id);
+  const base = current.headers.get('X-Note-Updated');
+  const saved = await fetch('/api/note?id=' + id, { method: 'PUT', headers: { 'X-Base-Updated': base }, body: 'written on the other device\n' });
+  return saved.status;
+});
+check('another device saved a newer version', otherDevice === 200 && Buffer.from([...notes.values()][0].bytes).toString('utf8') === 'written on the other device\n');
+const attempts = [];
+page2.on('request', (r) => { if (r.method() === 'PUT') attempts.push(r.method()); });
+const mine = 'my unsaved edit, typed on the stale copy\n';
+await page2.fill('#text', mine);
+await page2.waitForFunction(() => document.getElementById('detail').textContent.includes('another device'), null, { timeout: 5000 });
+check('conflict: Not saved with the plain message', (await page2.locator('#status').textContent()) === 'Not saved' && (await page2.locator('#detail').innerText()).includes('your edits were not saved'), await page2.locator('#detail').innerText());
+check('conflict: my text is still on screen', (await page2.inputValue('#text')) === mine);
+check('conflict: the other device\'s version is untouched in storage', Buffer.from([...notes.values()][0].bytes).toString('utf8') === 'written on the other device\n');
+await page2.screenshot({ path: SHOTS + '/5-conflict.png' });
+const before = attempts.length;
+await page2.fill('#text', mine + 'and some more typing\n');
+await sleep(2500);
+check('conflict: typing more does not keep hammering the server', attempts.length === before && (await page2.inputValue('#text')) === mine + 'and some more typing\n');
+check('conflict: Copy still gives me my text', await (async () => { await page2.click('#copy'); return (await page2.evaluate(() => navigator.clipboard.readText())) === mine + 'and some more typing\n'; })());
+const leaving = [];
+page2.once('dialog', async (d) => { leaving.push(d.type()); await d.dismiss(); });
+await page2.evaluate(() => { window.dispatchEvent(new Event('beforeunload', { cancelable: true })); });
+await page2.click('#back');
+await sleep(800);
+// the in-page leave prompt is a confirm dialog; dismissing it keeps me on the note
+check('conflict: leaving asks first and dismissing it keeps the text', (await page2.locator('#edit').isVisible()) && (await page2.inputValue('#text')) === mine + 'and some more typing\n', leaving.join());
+page2.on('dialog', (d) => d.accept());
+await page2.click('#back');
+await page2.waitForSelector('#list:not([hidden])');
+await page2.click('.note-link');
+await page2.waitForFunction(() => document.getElementById('text').value.startsWith('written on'));
+check('reopening shows the latest version and saves normally again', (await page2.inputValue('#text')) === 'written on the other device\n');
+await page2.fill('#text', 'written on the other device\nplus my follow up\n');
+await sleep(1600);
+check('after reopening, a save goes through', (await page2.locator('#status').textContent()) === 'Saved' && Buffer.from([...notes.values()][0].bytes).toString('utf8') === 'written on the other device\nplus my follow up\n');
 
 // 8. Delete with confirmation
 await page2.click('#delete');

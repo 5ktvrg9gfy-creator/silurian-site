@@ -23,6 +23,11 @@ export const MESSAGES = {
     "This note is over 1 MB, so it was not saved. The last saved version is unchanged. Cut it down and it will save.",
   notText: "This note is not valid text, so it was not saved.",
   notFound: "That note does not exist.",
+  changedElsewhere:
+    "This note was changed on another device, so your edits were not saved. Your text is still on screen. Copy it, then open the note again to see the latest version.",
+  deletedElsewhere:
+    "This note was deleted on another device, so your edits were not saved. Your text is still on screen. Copy it before you leave.",
+  missingVersion: "This save did not say which version of the note it started from, so it was not saved. Reload the page.",
   storage: "Storage is not available right now. Nothing was changed. Try again in a moment.",
 };
 
@@ -86,8 +91,17 @@ export function createNotesApi({
     return { bytes, text };
   }
 
-  async function save(id, body) {
-    const updatedAt = new Date(now()).toISOString();
+  // The time of this save. Never equal to or earlier than the time already on
+  // the note, so two saves in the same millisecond still tell a stale copy from a
+  // current one.
+  function nextStamp(previous) {
+    const stamp = now();
+    const floor = previous ? Date.parse(previous) + 1 : 0;
+    return new Date(Math.max(stamp, floor)).toISOString();
+  }
+
+  async function save(id, body, previous = null) {
+    const updatedAt = nextStamp(previous);
     await store.write(id, body.bytes, { title: titleOf(body.text), updatedAt });
     return updatedAt;
   }
@@ -150,7 +164,19 @@ export function createNotesApi({
         const body = await readNoteBody(request);
         if (body.tooLarge) return fail(413, MESSAGES.tooLarge);
         if (body.notText) return fail(400, MESSAGES.notText);
-        const updatedAt = await save(id, body);
+
+        // A save says which version of the note it started from. If the note has
+        // moved on since, or is gone, nothing is written and the caller keeps its
+        // own text.
+        const base = request.headers.get("x-base-updated");
+        if (!base) return fail(400, MESSAGES.missingVersion);
+        const current = await store.stamp(id);
+        if (current === null) return fail(409, MESSAGES.deletedElsewhere);
+        if (current !== base) {
+          return reply(409, { error: MESSAGES.changedElsewhere, updatedAt: current });
+        }
+
+        const updatedAt = await save(id, body, current);
         return reply(200, { id, updatedAt });
       }),
 

@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { build, call, signedInCookie } from "./helpers.js";
+import { build, call, put, signedInCookie } from "./helpers.js";
 import { MAX_NOTE_BYTES, MESSAGES, titleOf } from "../api/_lib/notes-api.js";
 
 // A fixture that is awkward on purpose: tabs, trailing spaces, blank lines,
@@ -59,7 +59,7 @@ test("a note of at least 50,000 characters round-trips byte for byte", async () 
 
   const created = await create(t, cookie, text);
   assert.equal(created.status, 201);
-  const { id } = await created.json();
+  const { id, updatedAt: v1 } = await created.json();
 
   const first = await fetchBytes(t, cookie, id);
   assert.equal(first.response.status, 200);
@@ -68,7 +68,8 @@ test("a note of at least 50,000 characters round-trips byte for byte", async () 
 
   // Edit and save again: the second save replaces the first byte for byte.
   const edited = text + "\r\nlast line, no newline";
-  const saved = await call(t.api.item.PUT, { method: "PUT", path: `/api/note?id=${id}`, cookie, body: edited });
+  t.clock.now += 1000;
+  const saved = await put(t, cookie, id, edited, v1);
   assert.equal(saved.status, 200);
   const second = await fetchBytes(t, cookie, id);
   assert.ok(second.bytes.equals(Buffer.from(edited, "utf8")), "bytes after edit are identical");
@@ -103,7 +104,7 @@ test("a note over 1 MB is rejected with the plain message and the saved version 
   const t = build();
   const cookie = await signIn(t);
   const original = "the saved version\n\twith a tab\r\n";
-  const { id } = await (await create(t, cookie, original)).json();
+  const { id, updatedAt: base } = await (await create(t, cookie, original)).json();
   const before = (await t.store.list())[0];
 
   const tooBig = "b".repeat(MAX_NOTE_BYTES + 1);
@@ -111,7 +112,7 @@ test("a note over 1 MB is rejected with the plain message and the saved version 
     ["PUT", `/api/note?id=${id}`, t.api.item.PUT],
     ["POST", "/api/notes", t.api.collection.POST],
   ]) {
-    const response = await call(handler, { method, path, cookie, body: tooBig });
+    const response = await call(handler, { method, path, cookie, body: tooBig, headers: { "x-base-updated": base } });
     assert.equal(response.status, 413);
     assert.deepEqual(await response.json(), { error: MESSAGES.tooLarge });
   }
@@ -191,7 +192,8 @@ test("the list is newest first, titled by the first line, and Untitled when ther
 
   // Editing a note moves it to the top and changes its time.
   t.clock.now = Date.parse("2026-10-02T08:30:00Z");
-  await call(t.api.item.PUT, { method: "PUT", path: `/api/note?id=${oldest}`, cookie, body: "Renamed first line" });
+  const base = (await (await call(t.api.collection.GET, { cookie })).json()).notes.find((n) => n.id === oldest).updatedAt;
+  await put(t, cookie, oldest, "Renamed first line", base);
   const after = (await (await call(t.api.collection.GET, { cookie })).json()).notes;
   assert.equal(after[0].id, oldest);
   assert.equal(after[0].title, "Renamed first line");

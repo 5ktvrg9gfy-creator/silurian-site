@@ -274,7 +274,7 @@
   var statusEl = $("status");
   var detailEl = $("detail");
 
-  var note = { id: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false };
+  var note = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
   var currentView = null;
 
   function show(name) {
@@ -293,7 +293,7 @@
   function byteLength(text) { return new TextEncoder().encode(text).length; }
 
   function isDirty() { return textBox.value !== note.saved; }
-  function hasUnsavedWork() { return note.saving || note.failed || note.tooLarge || isDirty() && !(note.id === null && textBox.value === ""); }
+  function hasUnsavedWork() { return note.saving || note.failed || note.tooLarge || note.conflict !== null || isDirty() && !(note.id === null && textBox.value === ""); }
 
   function request(path, options) {
     options = options || {};
@@ -386,9 +386,9 @@
 
   /* ---------- edit and autosave ---------- */
 
-  function openEditor(id, text) {
+  function openEditor(id, text, version) {
     clearTimers();
-    note = { id: id, saved: text, timer: null, retry: null, saving: false, failed: false, tooLarge: false };
+    note = { id: id, version: version || null, saved: text, timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
     textBox.value = text;
     // A textarea normalises line breaks, so what it holds is the baseline.
     note.saved = textBox.value;
@@ -406,10 +406,11 @@
     textBox.disabled = true;
     request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
       if (!response.ok) { throw new Error("open"); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+      var version = response.headers.get("X-Note-Updated");
+      return response.arrayBuffer().then(function (buffer) { return { buffer: buffer, version: version }; });
+    }).then(function (loaded) {
       textBox.disabled = false;
-      openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(buffer));
+      openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(loaded.buffer), loaded.version);
     }).catch(function () {
       textBox.disabled = false;
       location.hash = "";
@@ -417,6 +418,11 @@
   }
 
   textBox.addEventListener("input", function () {
+    if (note.conflict !== null) {
+      // The note moved on elsewhere. Keep the words on screen and stop trying.
+      setStatus("failed", "Not saved", note.conflict);
+      return;
+    }
     note.failed = false;
     clearTimeout(note.retry);
     if (byteLength(textBox.value) > MAX_BYTES) {
@@ -433,7 +439,7 @@
 
   function save() {
     clearTimeout(note.timer); note.timer = null;
-    if (note.saving) { return Promise.resolve(false); }
+    if (note.saving || note.conflict !== null) { return Promise.resolve(false); }
     var body = textBox.value;
     if (body === note.saved || (note.id === null && body === "")) {
       setStatus("saved", "Saved", "");
@@ -446,9 +452,22 @@
     var path = creating ? "/api/notes" : "/api/note?id=" + encodeURIComponent(note.id);
     return request(path, {
       method: creating ? "POST" : "PUT",
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
+      headers: creating
+        ? { "Content-Type": "text/plain; charset=utf-8" }
+        : { "Content-Type": "text/plain; charset=utf-8", "X-Base-Updated": note.version },
       body: body
     }).then(function (response) {
+      if (response.status === 409) {
+        // Changed or deleted on another device. Nothing was written. Keep the text.
+        return response.json().then(function (data) {
+          note.saving = false;
+          note.failed = false;
+          note.conflict = data.error;
+          clearTimers();
+          setStatus("failed", "Not saved", data.error);
+          return false;
+        });
+      }
       if (response.status === 413) {
         note.saving = false; note.tooLarge = true;
         setStatus("failed", "Not saved", TOO_LARGE);
@@ -459,6 +478,7 @@
         note.saving = false;
         note.failed = false;
         note.saved = body;
+        note.version = data.updatedAt;
         if (creating) {
           note.id = data.id;
           history.replaceState(null, "", "#n/" + data.id);
@@ -517,7 +537,7 @@
   });
 
   $("back").addEventListener("click", function () {
-    leaveEditor().then(function (ok) { if (ok) { clearTimers(); note.failed = note.tooLarge = false; location.hash = ""; } });
+    leaveEditor().then(function (ok) { if (ok) { clearTimers(); note.failed = note.tooLarge = false; note.conflict = null; location.hash = ""; } });
   });
 
   $("copy").addEventListener("click", function () {
@@ -542,7 +562,7 @@
   $("confirm-delete").addEventListener("click", function () {
     clearTimers();
     var id = note.id;
-    note.saved = textBox.value; note.failed = note.tooLarge = false; note.saving = false;
+    note.saved = textBox.value; note.failed = note.tooLarge = false; note.conflict = null; note.saving = false;
     if (id === null) { location.hash = ""; return; }
     request("/api/note?id=" + encodeURIComponent(id), { method: "DELETE" }).then(function (response) {
       if (!response.ok) { throw new Error("delete"); }
@@ -572,7 +592,7 @@
       // The browser back button must not drop unsaved work.
       var wanted = target;
       leaveEditor().then(function (ok) {
-        if (ok) { note.failed = note.tooLarge = false; lastHash = wanted; route(); }
+        if (ok) { note.failed = note.tooLarge = false; note.conflict = null; lastHash = wanted; route(); }
         else { history.replaceState(null, "", lastHash || "#"); }
       });
       return;

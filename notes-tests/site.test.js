@@ -108,7 +108,7 @@ test("package.json is the minimum: one dependency, no build step", () => {
   const pkg = JSON.parse(read("package.json"));
   assert.deepEqual(Object.keys(pkg.dependencies), ["@vercel/blob"]);
   assert.match(pkg.dependencies["@vercel/blob"], /^\d+\.\d+\.\d+$/, "pinned to an exact version");
-  assert.deepEqual(Object.keys(pkg.scripts), ["test"], "no build, install or start script that would change how the static pages deploy");
+  assert.deepEqual(Object.keys(pkg.scripts), ["test", "test:vercel"], "test scripts only: no build, install or start script that would change how the static pages deploy");
   assert.equal(pkg.devDependencies, undefined);
   assert.ok(existsSync(join(ROOT, "package-lock.json")));
 });

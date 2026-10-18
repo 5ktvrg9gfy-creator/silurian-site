@@ -40,6 +40,15 @@ export function createBlobStore(sdk) {
     }
   }
 
+  async function headOrNull(path) {
+    try {
+      return await sdk.head(path);
+    } catch (error) {
+      if (isMissing(error)) return null;
+      throw error;
+    }
+  }
+
   async function deleteIfPresent(path) {
     try {
       await sdk.del(path);
@@ -98,6 +107,16 @@ export function createBlobStore(sdk) {
         bytes,
         updatedAt: meta ? meta.updatedAt : new Date(result.blob.uploadedAt).toISOString(),
       };
+    },
+
+    // The last-edited time of a note, or null when there is no such note. Two
+    // small calls and no note text, so a save can check for a newer version
+    // without reading the note.
+    async stamp(id) {
+      const text = await headOrNull(textPath(id));
+      if (!text) return null;
+      const meta = await readMeta(id);
+      return meta ? meta.updatedAt : new Date(text.uploadedAt).toISOString();
     },
 
     async write(id, bytes, meta) {

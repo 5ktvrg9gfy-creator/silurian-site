@@ -21,6 +21,10 @@ export function memoryStore() {
       const n = notes.get(id);
       return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt } : null;
     },
+    async stamp(id) {
+      const n = notes.get(id);
+      return n ? n.meta.updatedAt : null;
+    },
     async write(id, bytes, meta) {
       notes.set(id, { bytes: new Uint8Array(bytes), meta });
     },
@@ -58,3 +62,14 @@ export function call(handler, { method = "GET", path = "/api/notes", cookie, bod
 }
 
 export const COOKIE = COOKIE_NAME;
+
+// A save of an existing note, starting from the version the caller last saw.
+export function put(t, cookie, id, body, base) {
+  return call(t.api.item.PUT, {
+    method: "PUT",
+    path: `/api/note?id=${id}`,
+    cookie,
+    body,
+    headers: base === undefined ? {} : { "x-base-updated": base },
+  });
+}

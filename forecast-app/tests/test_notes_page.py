@@ -2,11 +2,9 @@
 
 The notes page is the first server-side code the marketing site has had. Its
 own tests are Node tests in `notes-tests/`, because the code under test is Node.
-This file lives here, not in `forecast-app/tests/`, because the brief for the
-notes page said nothing under `forecast-app/` changes. Run it from the repository
-root with `python -m unittest discover -s notes-tests`. It is not part of the
-`forecast-app` suite until the product owner agrees to move it (open question
-Q9 in docs/notes-page-open-questions.md). It does two jobs:
+This file does two jobs, so that `python -m unittest discover -s tests` still
+means the whole repository. The Node suite needs `npm ci` at the repository root
+first:
 
 1. It runs the Node suite and fails, rather than skips, when it cannot. A control
    that did not run has not passed (CLAUDE.md section 13).
@@ -19,17 +17,14 @@ Q9 in docs/notes-page-open-questions.md). It does two jobs:
 import re
 import shutil
 import subprocess
-import sys
 import unittest
 from pathlib import Path
 
-REPOSITORY = Path(__file__).parents[1]
+REPOSITORY = Path(__file__).parents[2]
 
 # The site's own scans are reused, not copied: a second copy of a rule is how
 # the two drift apart.
-sys.path.insert(0, str(REPOSITORY / "forecast-app" / "tests"))
-
-from test_marketing_site_tokens import (  # noqa: E402
+from test_marketing_site_tokens import (
     EXPECTED_PAGES,
     declared_custom_properties,
     marketing_pages,
@@ -42,7 +37,7 @@ from test_marketing_site_tokens import (  # noqa: E402
 
 
 NOTES_PAGE = REPOSITORY / "notes" / "index.html"
-DASHES = re.compile("[–—]|&mdash;|&ndash;|&#8212;|&#8211;|\\\\u201[34]", re.IGNORECASE)
+DASHES = re.compile(r"[\u2013\u2014]|&mdash;|&ndash;|&#8212;|&#8211;|\\u201[34]", re.IGNORECASE)
 
 
 class NotesNodeSuite(unittest.TestCase):

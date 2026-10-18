@@ -6,7 +6,8 @@
     "node": "22.x"
   },
   "scripts": {
-    "test": "node --test notes-tests/*.test.js"
+    "test": "node --test notes-tests/*.test.js",
+    "test:vercel": "node --test notes-tests/vercel-local.check.js"
   },
   "dependencies": {
     "@vercel/blob": "2.8.2"

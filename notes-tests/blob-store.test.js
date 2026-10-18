@@ -36,6 +36,12 @@ function fakeSdk({ pageSize = 2 } = {}) {
         blob: { size: file.bytes.length, uploadedAt: file.uploadedAt, contentType: "text/plain" },
       };
     },
+    async head(pathname) {
+      calls.push({ op: "head", pathname });
+      const file = files.get(pathname);
+      if (!file) throw new FakeNotFound();
+      return { size: file.bytes.length, uploadedAt: file.uploadedAt, pathname };
+    },
     async list({ prefix, limit, cursor }) {
       calls.push({ op: "list", prefix, limit, cursor });
       const all = [...files.keys()].filter((p) => p.startsWith(prefix)).sort();
@@ -129,7 +135,9 @@ test("a note whose metadata is missing or damaged still lists, as Untitled", asy
   assert.deepEqual(notes.map((n) => n.title).sort(), ["Untitled", "Untitled"]);
   // Reading the text still works and a save repairs the title.
   assert.equal((await api.item.GET(request(`/api/note?id=${a}`, "GET", cookie))).status, 200);
-  await api.item.PUT(request(`/api/note?id=${a}`, "PUT", cookie, "Repaired title"));
+  const base = (await (await api.item.GET(request(`/api/note?id=${a}`, "GET", cookie))).headers.get("x-note-updated"));
+  const repaired = await api.item.PUT(new Request(`https://notes.test/api/note?id=${a}`, { method: "PUT", headers: { cookie, "x-base-updated": base }, body: "Repaired title" }));
+  assert.equal(repaired.status, 200, "a note with no metadata can still be saved from the time it was opened");
   const after = (await (await api.collection.GET(request("/api/notes", "GET", cookie))).json()).notes;
   assert.ok(after.some((n) => n.id === a && n.title === "Repaired title"));
 });
@@ -149,4 +157,24 @@ test("a storage failure answers 500 with a plain message and leaks nothing", asy
   } finally {
     console.error = quiet;
   }
+});
+
+test("the version check reads two small files and never the note text", async () => {
+  const { sdk, api, cookie } = wire();
+  const { id, updatedAt } = await (await api.collection.POST(request("/api/notes", "POST", cookie, "A".repeat(100_000)))).json();
+  sdk.calls.length = 0;
+  const response = await api.item.PUT(new Request(`https://notes.test/api/note?id=${id}`, { method: "PUT", headers: { cookie, "x-base-updated": updatedAt }, body: "B" }));
+  assert.equal(response.status, 200);
+  const before = sdk.calls.slice(0, sdk.calls.findIndex((c) => c.op === "put"));
+  assert.deepEqual(before.map((c) => c.pathname), [`notes/${id}.txt`, `notes/${id}.json`], "a head of the text, then the metadata");
+  assert.ok(!before.some((c) => c.op === "get" && c.pathname.endsWith(".txt")), "the text was not downloaded to check the version");
+});
+
+test("a note with no text file is reported as gone even if its metadata lingers", async () => {
+  const { sdk, api, cookie } = wire();
+  const { id, updatedAt } = await (await api.collection.POST(request("/api/notes", "POST", cookie, "A"))).json();
+  sdk.files.delete(`notes/${id}.txt`);
+  const response = await api.item.PUT(new Request(`https://notes.test/api/note?id=${id}`, { method: "PUT", headers: { cookie, "x-base-updated": updatedAt }, body: "B" }));
+  assert.equal(response.status, 409);
+  assert.ok(!sdk.files.has(`notes/${id}.txt`), "the deleted note was not brought back");
 });
