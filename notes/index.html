@@ -107,7 +107,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  input[type="password"] {
+  input[type="password"], input[type="search"] {
     width: 100%;
     min-height: 44px;
     padding: 8px 10px;
@@ -134,6 +134,17 @@
 
   .notes { list-style: none; margin: var(--space-4) 0 0; padding: 0; border-top: 2px solid var(--color-divider); }
   .notes li { border-bottom: 1px solid var(--color-divider); }
+  .note-row { display: flex; align-items: center; gap: var(--space-2); }
+  .note-row .note-link { flex: 1; min-width: 0; }
+  .note-row .confirm, .note-row-message { margin: 0 0 var(--space-3); }
+  .note-main { display: flex; flex-direction: column; min-width: 0; }
+  .note-line {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+  }
+  .search { margin-bottom: var(--space-2); }
   .note-link {
     display: flex;
     align-items: baseline;
@@ -198,6 +209,8 @@
 
   @media (max-width: 520px) {
     .note-link { flex-direction: column; gap: 2px; }
+    .note-row { align-items: flex-start; }
+    .note-row .row-delete { margin-top: 10px; }
     .panel { padding: 16px; }
   }
 </style>
@@ -208,6 +221,7 @@
     <p class="wordmark">Silurian <span>Notes</span></p>
     <div class="row" id="bar-actions" hidden>
       <button type="button" class="primary" id="new-note">New note</button>
+      <button type="button" id="sign-out">Sign out</button>
     </div>
   </div>
 </header>
@@ -232,8 +246,12 @@
   <section id="list" hidden aria-labelledby="list-heading">
     <h1 id="list-heading">Notes</h1>
     <p id="list-error" class="message" role="alert" hidden></p>
+    <div class="search">
+      <label for="search">Search</label>
+      <input id="search" type="search" maxlength="200" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </div>
     <ul class="notes" id="notes"></ul>
-    <p class="empty" id="empty" hidden>No notes yet. Press New note to write the first one.</p>
+    <p class="empty" id="empty" role="status" hidden>No notes yet. Press New note to write the first one.</p>
   </section>
 
   <section id="edit" hidden aria-label="Edit note">
@@ -267,6 +285,9 @@
   var SAVE_DELAY_MS = 1000;
   var RETRY_DELAY_MS = 5000;
   var TOO_LARGE = "This note is over 1 MB, so it cannot be saved. Cut it down and it will save.";
+  var NOT_DELETED = "Could not delete this note. Nothing was changed. Try again.";
+  var EMPTY_LIST = "No notes yet. Press New note to write the first one.";
+  var SEARCH_DELAY_MS = 250;
 
   var $ = function (id) { return document.getElementById(id); };
   var views = { login: $("login"), list: $("list"), edit: $("edit") };
@@ -306,6 +327,8 @@
 
   function goToLogin() {
     clearTimers();
+    clearTimeout(searchTimer);
+    searchSeq += 1;
     show("login");
     $("password").value = "";
     $("password").focus();
@@ -349,40 +372,147 @@
     return date.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
 
-  function showList() {
-    show("list");
+  var searchTimer = null;
+  var searchSeq = 0;
+
+  function closeRowConfirms() {
+    Array.prototype.forEach.call($("notes").querySelectorAll(".confirm"), function (el) { el.hidden = true; });
+  }
+
+  function noteRow(item) {
+    var li = document.createElement("li");
+    var row = document.createElement("div");
+    row.className = "note-row";
+    var link = document.createElement("a");
+    link.className = "note-link";
+    link.href = "#n/" + item.id;
+    var main = document.createElement("span");
+    main.className = "note-main";
+    var title = document.createElement("span");
+    title.className = "note-title";
+    title.textContent = item.title;
+    main.appendChild(title);
+    if (typeof item.line === "string") {
+      var line = document.createElement("span");
+      line.className = "note-line";
+      line.textContent = item.line;
+      main.appendChild(line);
+    }
+    var when = document.createElement("time");
+    when.className = "note-when";
+    when.dateTime = item.updatedAt;
+    when.textContent = whenText(item.updatedAt);
+    link.appendChild(main);
+    link.appendChild(when);
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger row-delete";
+    remove.textContent = "Delete";
+    remove.setAttribute("aria-label", "Delete " + item.title);
+    row.appendChild(link);
+    row.appendChild(remove);
+
+    // The same confirmation step as the edit view.
+    var confirmBox = document.createElement("div");
+    confirmBox.className = "confirm";
+    confirmBox.hidden = true;
+    var ask = document.createElement("p");
+    ask.textContent = "Delete this note? This cannot be undone.";
+    var buttons = document.createElement("div");
+    buttons.className = "row";
+    var yes = document.createElement("button");
+    yes.type = "button";
+    yes.className = "danger";
+    yes.textContent = "Delete note";
+    var keep = document.createElement("button");
+    keep.type = "button";
+    keep.textContent = "Keep";
+    buttons.appendChild(yes);
+    buttons.appendChild(keep);
+    confirmBox.appendChild(ask);
+    confirmBox.appendChild(buttons);
+
+    var message = document.createElement("p");
+    message.className = "message note-row-message";
+    message.setAttribute("role", "alert");
+    message.hidden = true;
+
+    remove.addEventListener("click", function () {
+      closeRowConfirms();
+      message.hidden = true;
+      confirmBox.hidden = false;
+      yes.focus();
+    });
+    keep.addEventListener("click", function () { confirmBox.hidden = true; remove.focus(); });
+    yes.addEventListener("click", function () {
+      yes.disabled = keep.disabled = true;
+      request("/api/note?id=" + encodeURIComponent(item.id), { method: "DELETE" }).then(function (response) {
+        if (!response.ok) { throw new Error("delete"); }
+        li.remove();
+        if ($("notes").children.length === 0) { showEmpty(currentQuery()); }
+      }).catch(function () {
+        if (currentView === "login") { return; }
+        // The row stays and says so.
+        yes.disabled = keep.disabled = false;
+        confirmBox.hidden = true;
+        message.textContent = NOT_DELETED;
+        message.hidden = false;
+      });
+    });
+
+    li.appendChild(row);
+    li.appendChild(confirmBox);
+    li.appendChild(message);
+    return li;
+  }
+
+  function currentQuery() {
+    var value = $("search").value;
+    return value.trim() === "" ? "" : value;
+  }
+
+  function showEmpty(query) {
+    var empty = $("empty");
+    empty.textContent = query === "" ? EMPTY_LIST : "No notes contain " + query;
+    empty.hidden = false;
+  }
+
+  function loadList() {
+    var query = currentQuery();
+    var seq = ++searchSeq;
     var errorEl = $("list-error");
-    errorEl.hidden = true;
-    request("/api/notes").then(function (response) {
-      if (!response.ok) { throw new Error("list"); }
+    var options = query === "" ? {} : { headers: { "X-Note-Search": encodeURIComponent(query) } };
+    request("/api/notes", options).then(function (response) {
+      if (!response.ok) {
+        return response.json().then(function (data) { throw new Error(data && data.error || "list"); }, function () { throw new Error("list"); });
+      }
       return response.json();
     }).then(function (data) {
+      // A slower answer to an older search must not replace a newer one.
+      if (seq !== searchSeq || currentView !== "list") { return; }
+      errorEl.hidden = true;
       var listEl = $("notes");
       listEl.textContent = "";
-      data.notes.forEach(function (item) {
-        var li = document.createElement("li");
-        var link = document.createElement("a");
-        link.className = "note-link";
-        link.href = "#n/" + item.id;
-        var title = document.createElement("span");
-        title.className = "note-title";
-        title.textContent = item.title;
-        var when = document.createElement("time");
-        when.className = "note-when";
-        when.dateTime = item.updatedAt;
-        when.textContent = whenText(item.updatedAt);
-        link.appendChild(title);
-        link.appendChild(when);
-        li.appendChild(link);
-        listEl.appendChild(li);
-      });
-      $("empty").hidden = data.notes.length > 0;
-    }).catch(function () {
-      if (currentView !== "list") { return; }
-      errorEl.textContent = "Could not load your notes. Check your connection and reload.";
+      data.notes.forEach(function (item) { listEl.appendChild(noteRow(item)); });
+      if (data.notes.length === 0) { showEmpty(query); } else { $("empty").hidden = true; }
+    }).catch(function (error) {
+      if (seq !== searchSeq || currentView !== "list") { return; }
+      errorEl.textContent = query === "" ? "Could not load your notes. Check your connection and reload."
+        : (error && error.message && error.message !== "list" ? error.message : "Could not search your notes. Check your connection and try again.");
       errorEl.hidden = false;
     });
   }
+
+  function showList() {
+    show("list");
+    $("list-error").hidden = true;
+    loadList();
+  }
+
+  $("search").addEventListener("input", function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadList, SEARCH_DELAY_MS);
+  });
 
   /* ---------- edit and autosave ---------- */
 
@@ -572,6 +702,57 @@
       $("confirm").hidden = true;
       setStatus("failed", "Not deleted", "Could not delete this note. Nothing was changed. Try again.");
     });
+  });
+
+  /* ---------- sign out ---------- */
+
+  // Remove every note from the page, so back, refresh or a restored page shows
+  // nothing once signed out.
+  function clearContent() {
+    clearTimers();
+    clearTimeout(searchTimer);
+    searchSeq += 1;
+    note = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
+    textBox.value = "";
+    $("notes").textContent = "";
+    $("search").value = "";
+    $("empty").hidden = true;
+    $("list-error").hidden = true;
+    $("confirm").hidden = true;
+    setStatus("saved", "Saved", "");
+  }
+
+  $("sign-out").addEventListener("click", function () {
+    var button = $("sign-out");
+    // Unsaved edits get the same warning as leaving the note.
+    var ready = currentView === "edit" ? leaveEditor() : Promise.resolve(true);
+    ready.then(function (ok) {
+      if (!ok) { return; }
+      button.disabled = true;
+      // Straight to fetch, not request(): a 401 here means already signed out.
+      return fetch("/api/session", { method: "DELETE", credentials: "same-origin" }).then(function (response) {
+        button.disabled = false;
+        if (!response.ok && response.status !== 401) { throw new Error("sign out"); }
+        clearContent();
+        history.replaceState(null, "", location.pathname);
+        lastHash = "";
+        goToLogin();
+      });
+    }).catch(function () {
+      button.disabled = false;
+      var where = currentView === "edit" ? null : $("list-error");
+      if (where) { where.textContent = "Could not sign out. Check your connection and try again."; where.hidden = false; }
+      else { setStatus("failed", "Not signed out", "Could not sign out. Check your connection and try again."); }
+    });
+  });
+
+  // A page restored from the browser's back-forward cache runs no code on
+  // arrival, so check the session again and wipe the page if it has ended.
+  window.addEventListener("pageshow", function (event) {
+    if (!event.persisted || currentView === "login") { return; }
+    fetch("/api/session", { credentials: "same-origin" }).then(function (response) {
+      if (!response.ok) { clearContent(); goToLogin(); }
+    }).catch(function () {});
   });
 
   /* ---------- routing ---------- */

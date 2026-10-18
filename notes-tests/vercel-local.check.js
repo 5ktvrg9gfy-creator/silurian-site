@@ -137,6 +137,7 @@ test("Vercel's own Node wrapper runs the named method exports of every route", {
     const id = "a".repeat(32);
     const gated = [
       [session, "GET", "/"],
+      [session, "DELETE", "/"],
       [notes, "GET", "/"],
       [notes, "POST", "/"],
       [note, "GET", `/?id=${id}`],

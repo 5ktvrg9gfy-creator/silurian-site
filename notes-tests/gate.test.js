@@ -11,6 +11,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function routes(api) {
   return [
     ["session GET", api.session, { method: "GET", path: "/api/session" }],
+    ["session DELETE (sign out)", api.signOut, { method: "DELETE", path: "/api/session" }],
     ["notes GET", api.collection.GET, { method: "GET", path: "/api/notes" }],
     ["notes POST", api.collection.POST, { method: "POST", path: "/api/notes", body: "text" }],
     ["note GET", api.item.GET, { method: "GET", path: `/api/note?id=${"a".repeat(32)}` }],
@@ -96,7 +97,7 @@ test("every route file in api/ is wired to the gate: 401 with no cookie, with a 
         checked += 1;
       }
     }
-    assert.equal(checked, 6, "six handlers across the three gated route files; zero checked would mean it did not run");
+    assert.equal(checked, 7, "seven handlers across the three gated route files, sign out included; zero checked would mean it did not run");
   } finally {
     if (original === undefined) delete process.env[ENVIRONMENT_VARIABLE];
     else process.env[ENVIRONMENT_VARIABLE] = original;

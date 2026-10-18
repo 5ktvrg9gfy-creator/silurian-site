@@ -98,6 +98,26 @@ export function requestIsSignedIn(request, env, nowMs) {
   return cookieIsValid(readCookie(request, COOKIE_NAME), password, nowMs);
 }
 
+// Sign out. The same name, path and flags with an empty value and a date in the
+// past, so the browser drops the cookie at once.
+//
+// This clears the browser's copy and nothing more. The gate holds no state, so
+// it cannot revoke a cookie value: a copy taken before sign out still opens the
+// API until its own expiry, up to 30 days, or until the password is changed,
+// which revokes every cookie at once. Revoking single cookies needs session
+// storage, which this gate deliberately does not have.
+export function signedOutCookieHeader() {
+  return [
+    `${COOKIE_NAME}=`,
+    `Path=${COOKIE_PATH}`,
+    "Max-Age=0",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    "HttpOnly",
+    "Secure",
+    "SameSite=Strict",
+  ].join("; ");
+}
+
 export function sessionCookieHeader(password, nowMs) {
   return [
     `${COOKIE_NAME}=${issueCookieValue(password, nowMs)}`,
