@@ -6,3 +6,4 @@
 .test-site-arm/
 __pycache__/
 *.py[cod]
+public/
