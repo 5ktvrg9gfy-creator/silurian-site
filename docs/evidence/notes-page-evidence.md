@@ -83,3 +83,16 @@ Run by the product owner in a real browser on the branch Preview, `silurian-site
 Approved to merge by the product owner on 18 October 2026, through pull request 149. Q10 stays open and is not built, by his instruction.
 
 Not run: Production. That follows the merge.
+
+## Production check, 18 October 2026
+
+Merged through pull request 149 by merge commit `88ca998`, from branch head `b58f732`. Run by the product owner on `www.silurianconsulting.co.uk` after the deployment of `88ca998` showed Ready. Reported to the build session, which cannot reach the production domain. All eight items passed:
+
+1. `/notes` shows the sign-in screen and no notes.
+2. A wrong password is refused.
+3. The right password signs in.
+4. A new note saved and survived a refresh.
+5. The note shows on a second device.
+6. An edit saved on one device, then typing on the other, showed the changed-elsewhere message and kept the typing on screen.
+7. `index.html`, `privacy.html` and `delivery.html` are unchanged, and the analytics button on `privacy.html` works.
+8. The test note was deleted.
