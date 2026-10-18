@@ -11,10 +11,16 @@ import {
   passwordIsCorrect,
   requestIsSignedIn,
   sessionCookieHeader,
+  signedOutCookieHeader,
 } from "./gate.js";
 
 export const MAX_NOTE_BYTES = 1024 * 1024;
 export const TITLE_MAX_CHARACTERS = 200;
+export const SEARCH_MAX_CHARACTERS = 200;
+// How much of a matching line a search result shows, and how much of it sits
+// before the match, so a long line still shows the part that matched.
+export const LINE_MAX_CHARACTERS = 160;
+const LINE_LEAD_CHARACTERS = 40;
 
 export const MESSAGES = {
   signedOut: "Sign in to see your notes.",
@@ -29,6 +35,8 @@ export const MESSAGES = {
     "This note was deleted on another device, so your edits were not saved. Your text is still on screen. Copy it before you leave.",
   missingVersion: "This save did not say which version of the note it started from, so it was not saved. Reload the page.",
   storage: "Storage is not available right now. Nothing was changed. Try again in a moment.",
+  searchTooLong: `Search for ${SEARCH_MAX_CHARACTERS} characters or fewer.`,
+  searchUnreadable: "That search could not be read. Clear the box and type it again.",
 };
 
 const ID_PATTERN = /^[0-9a-f]{32}$/;
@@ -54,6 +62,45 @@ export function titleOf(text) {
   const first = text.split(/\r\n|\n|\r/, 1)[0].trim();
   const clipped = Array.from(first).slice(0, TITLE_MAX_CHARACTERS).join("");
   return clipped === "" ? "Untitled" : clipped;
+}
+
+// Cut a line to at most LINE_MAX_CHARACTERS, keeping the match in view, without
+// splitting a character in two.
+function excerpt(line, at) {
+  const chars = Array.from(line);
+  if (chars.length <= LINE_MAX_CHARACTERS) return line.trim();
+  // `at` counts UTF-16 units; turn it into a character position.
+  const atChar = Array.from(line.slice(0, at)).length;
+  const start = Math.max(0, Math.min(atChar - LINE_LEAD_CHARACTERS, chars.length - LINE_MAX_CHARACTERS));
+  const end = start + LINE_MAX_CHARACTERS;
+  return `${start > 0 ? "\u2026" : ""}${chars.slice(start, end).join("").trim()}${end < chars.length ? "\u2026" : ""}`;
+}
+
+// The first line of a note containing the query, ignoring case, or null. A
+// plain substring test, never a pattern, so every symbol in the query is just a
+// character. A query cannot span a line break.
+export function matchingLine(text, query) {
+  const needle = query.toLowerCase();
+  for (const line of text.split(/\r\n|\n|\r/)) {
+    const at = line.toLowerCase().indexOf(needle);
+    if (at !== -1) return excerpt(line, at);
+  }
+  return null;
+}
+
+// The search text arrives URI-encoded in a header, not in the address, so it
+// stays out of request logs. Null means no search; a string is the query.
+function searchQuery(request) {
+  const raw = request.headers.get("x-note-search");
+  if (raw === null || raw === "") return { query: null };
+  let query;
+  try {
+    query = decodeURIComponent(raw);
+  } catch {
+    return { error: MESSAGES.searchUnreadable };
+  }
+  if (Array.from(query).length > SEARCH_MAX_CHARACTERS) return { error: MESSAGES.searchTooLong };
+  return { query: query.trim() === "" ? null : query };
 }
 
 export function createNotesApi({
@@ -109,6 +156,10 @@ export function createNotesApi({
   return {
     session: guarded(async () => reply(200, { signedIn: true })),
 
+    // Behind the gate like every route but login: a request with no valid
+    // cookie has nothing to sign out of and gets the usual 401.
+    signOut: guarded(async () => reply(200, { signedIn: false }, { "Set-Cookie": signedOutCookieHeader() })),
+
     async login(request) {
       const password = configuredPassword(env);
       let supplied = null;
@@ -128,12 +179,26 @@ export function createNotesApi({
     },
 
     collection: {
-      GET: guarded(async () => {
+      GET: guarded(async (request) => {
+        const search = searchQuery(request);
+        if (search.error) return fail(400, search.error);
         const notes = await store.list();
         notes.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
-        return reply(200, {
-          notes: notes.map((n) => ({ id: n.id, title: n.title || "Untitled", updatedAt: n.updatedAt })),
-        });
+        const listed = notes.map((n) => ({ id: n.id, title: n.title || "Untitled", updatedAt: n.updatedAt }));
+        if (search.query === null) return reply(200, { notes: listed });
+
+        // Search reads every note in full, behind the same cookie check as the
+        // list, and returns only the title and the line that matched.
+        const found = await Promise.all(
+          listed.map(async (n) => {
+            const note = await store.read(n.id);
+            if (!note) return null;
+            const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(note.bytes);
+            const line = matchingLine(text, search.query);
+            return line === null ? null : { ...n, line };
+          }),
+        );
+        return reply(200, { notes: found.filter(Boolean) });
       }),
 
       POST: guarded(async (request) => {

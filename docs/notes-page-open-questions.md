@@ -36,6 +36,8 @@ Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recomme
 
 ## Q6. No sign-out button (ACCEPTED as reported: no sign-out button)
 
+- **Superseded 18 October 2026:** notes version 2 adds a Sign out button, on branch `notes-v2`. The entry below is left as the record of what was accepted then.
+
 - **Blocks:** nothing. Not in the brief. A shared machine stays signed in for 30 days. Changing the password in Vercel signs everyone out at once.
 - **Default as built:** none. **Cost if wrong:** one route and one button.
 
@@ -61,3 +63,15 @@ Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recomme
 - **Blocks:** nothing built, but it decides how fast a failed first Preview save is understood. The API logs only the error's name, deliberately, because a Blob error message can name the store. The package's credential error is a plain `Error`, so a deployment with no identity token logs `notes: storage error Error`, the same as any other storage failure.
 - **Recommended default:** log a second fixed line when the package reports no credentials, for example `notes: storage error, no Blob credentials on this deployment`, naming nothing. About five lines and one test.
 - **Cost if wrong:** one round trip to the Vercel dashboard to check the identity token setting by elimination.
+
+## Q11. Sign out cannot revoke a copied cookie (open, raised 18 October 2026, notes version 2)
+
+- **Blocks:** nothing built. The gate is stateless, so sign out clears the browser's cookie but cannot revoke the value. A copy taken before sign out works until its expiry, up to 30 days, or until the password is changed. The cookie is HttpOnly, so the page cannot read it to leak it.
+- **Recommended default:** accept it. If a device is lost, change `SILURIAN_NOTES_PASSWORD` in Vercel, which signs every device out at once.
+- **Cost if wrong:** a revocation list in the Blob store, checked on every request: about 60 lines, one more storage read per request, and a new failure mode when storage is slow.
+
+## Q12. Two records outside the brief's scope go stale at merge (open, raised 18 October 2026, notes version 2)
+
+- **Blocks:** the merge of `notes-v2`, not the build. The brief allowed changes only to the notes page, its routes and their tests. `PROJECT_HANDOFF.md` records "no sign-out button" as an accepted limit, and CLAUDE.md section 3 describes the notes routes without sign out or search. Both are left unchanged on this branch.
+- **Recommended default:** update both in the same pull request at merge, as a records-only commit, with the Preview result.
+- **Cost if wrong:** the handoff says the page has no sign out after it does, which is the stale-record fault this project has paid for before.

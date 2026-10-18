@@ -96,3 +96,23 @@ Merged through pull request 149 by merge commit `88ca998`, from branch head `b58
 6. An edit saved on one device, then typing on the other, showed the changed-elsewhere message and kept the typing on screen.
 7. `index.html`, `privacy.html` and `delivery.html` are unchanged, and the analytics button on `privacy.html` works.
 8. The test note was deleted.
+
+## Version 2: sign out, delete from the list, search, 18 October 2026
+
+Branch `notes-v2`, from `main` at `596d38e`. Not merged. Only the notes page, its `api/` routes and their tests changed, plus this record, the questions file and a second local browser check beside the first.
+
+**What was built.**
+
+- **Sign out.** A Sign out button in the bar, on the list and the edit view. It calls `DELETE /api/session`, which answers 200 with the cookie set empty, `Max-Age=0` and a 1970 expiry, on the same path and flags it was set with. It sits behind the gate like every route but login, so CLAUDE.md's "every route except login answers 401" stays true. Unsaved edits get the existing leave warning first. The page then empties every note from itself, rewrites its address to `/notes` and shows sign-in; a page restored from the back-forward cache checks the session again on arrival.
+- **Delete from the list.** A Delete button on each row, with the edit view's own confirmation ("Delete this note? This cannot be undone.", Delete note, Keep) and the same `DELETE /api/note`. The row goes on success. On failure it stays and says "Could not delete this note. Nothing was changed. Try again.", the edit view's sentence.
+- **Search.** One box above the list. **Mechanism: the server searches; the list route reads every note in full behind the cookie check and returns each match's title and first matching line, and the page asks a quarter second after typing stops.** The search text travels URI-encoded in an `X-Note-Search` header, not in the address, so it stays out of request logs. Matching is a plain lower-cased substring test per line, never a pattern. A long line is cut to 160 characters around the match. 200 characters at most. Clearing the box restores the list; no match says "No notes contain" and the text.
+
+**Acceptance criterion 1, plainly: the gate is stateless and cannot revoke a cookie.** Sign out returns an expired cookie and the browser drops it, so every route then answers 401 for that browser. A copy of the old value taken before sign out still opens the API until its own expiry, up to 30 days, or until `SILURIAN_NOTES_PASSWORD` is changed, which revokes every cookie at once. The cookie is HttpOnly, so page script cannot read it to copy it. Session storage was not built, as the brief said. The limit is pinned by a test so it cannot change silently, and recorded as Q11.
+
+**Tests.** `notes-tests/v2.test.js`, 14 tests, one or more per criterion. `npm test`: 53 before, 67 after, all passing, the conflict tests included. Two existing tests were extended rather than changed in meaning: the gate's wiring test now counts seven gated handlers, not six, and its route list includes sign out; `vercel-local.check.js` now also calls `DELETE` on the session route. `python -m unittest discover -s tests` from `forecast-app/`: 318 before and after, passing. `npm run test:vercel`: 2 of 2.
+
+**Proved to fail.** Six defects planted in the API, each reverted: the search as a pattern (failed criterion 4), case-sensitive search (criteria 3 and 4), search skipping the cookie check (criteria 1 and 5), a sign-out cookie that does not expire, one on the wrong path (criterion 1 both times), and search reading only the first 50,000 characters (criterion 3).
+
+**Local browser run.** `docs/evidence/notes-page/browser-check-v2.mjs`, Chromium through Playwright against the real page and handlers over an in-memory store: 24 of 24. It covers the search cases on screen, the header carrying the search and the address not, the row confirmation, Keep, a failed delete keeping the row, a delete surviving a reload, the leave warning on sign out with an unsaved edit, the cookie gone after sign out, no note text left on the page, every Back step through the history (8 steps, 7 onto a note's own `#n/` address) showing sign-in and no note text, refresh, signing in again, and no sideways scroll at 360px. The first version's check, `browser-check.mjs`, still passes 38 of 38. The first Back check passed on two steps that never reached a note's address; it was tightened before it was accepted.
+
+**Not run.** The Preview, the real Blob store and Production. Search speed on the real store is not measured: each search reads every note, two small requests per note.
