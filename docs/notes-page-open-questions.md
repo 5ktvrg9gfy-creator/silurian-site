@@ -75,3 +75,7 @@ Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recomme
 - **Blocks:** the merge of `notes-v2`, not the build. The brief allowed changes only to the notes page, its routes and their tests. `PROJECT_HANDOFF.md` records "no sign-out button" as an accepted limit, and CLAUDE.md section 3 describes the notes routes without sign out or search. Both are left unchanged on this branch.
 - **Recommended default:** update both in the same pull request at merge, as a records-only commit, with the Preview result.
 - **Cost if wrong:** the handoff says the page has no sign out after it does, which is the stale-record fault this project has paid for before.
+
+## Note, 18 October 2026: the sign out fix changes one accepted behaviour
+
+Not a question, recorded so the change is visible. Notes version 2 had Sign out with unsaved edits use the existing leave warning, "Leave anyway and lose the unsaved changes?". The product owner's brief for the sign out fix replaced it: Sign out saves first, and if the save fails or hits a conflict it stays on the note with no offer to leave. The edit view's own Back and New note keep the leave warning.
