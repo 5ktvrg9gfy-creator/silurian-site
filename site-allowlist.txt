@@ -18,3 +18,4 @@ privacy.html
 tokens.css
 logo-stone.svg
 assets/
+notes/

@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Private notes</title>
+<link rel="icon" href="/logo-stone.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    font-feature-settings: "tnum" 1;
+  }
+
+  .bar {
+    border-bottom: 2px solid var(--color-divider);
+    background: var(--color-bg);
+  }
+  .bar-inner, main {
+    width: min(960px, 100%);
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+  .wordmark {
+    margin: 0;
+    font-size: var(--wordmark-size);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--color-charcoal-deep);
+  }
+  .wordmark span { color: var(--color-accent); }
+
+  main { padding-top: 24px; padding-bottom: 48px; }
+
+  h1 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-title);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--color-charcoal-deep);
+  }
+  .lead { margin: 0 0 var(--space-4); color: var(--color-text-muted); }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .row.spread { justify-content: space-between; }
+  .form-actions { margin-top: 14px; }
+
+  button, .button {
+    min-height: 44px;
+    padding: 8px 16px;
+    border: 2px solid var(--color-divider);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-weight: 800;
+    font-size: var(--text-label);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  button.primary {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-charcoal-deep);
+  }
+  button.danger { border-color: var(--color-status-bad); color: var(--color-status-bad); }
+  button:hover { background: var(--color-surface); }
+  button.primary:hover { background: var(--color-accent); filter: brightness(0.92); }
+  button:disabled { cursor: default; opacity: 0.55; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .note-link:focus-visible {
+    outline: 2px solid var(--color-charcoal-deep);
+    outline-offset: 2px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: var(--text-label);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  input[type="password"] {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 2px solid var(--color-divider);
+    border-radius: 0;
+    background: var(--color-paper);
+    color: var(--color-text);
+    font: inherit;
+  }
+
+  .panel {
+    background: var(--color-surface);
+    border-top: 4px solid var(--color-accent);
+    padding: 24px;
+  }
+  #login .panel { max-width: 380px; }
+  .message {
+    margin: 0 0 var(--space-4);
+    padding: 10px 12px;
+    border-left: 4px solid var(--color-status-bad);
+    background: var(--color-paper);
+    font-weight: 700;
+  }
+
+  .notes { list-style: none; margin: var(--space-4) 0 0; padding: 0; border-top: 2px solid var(--color-divider); }
+  .notes li { border-bottom: 1px solid var(--color-divider); }
+  .note-link {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 14px 4px;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  .note-link:hover { background: var(--color-surface); }
+  .note-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-lead);
+    font-weight: 800;
+    color: var(--color-charcoal-deep);
+  }
+  .note-when {
+    flex: none;
+    font-size: var(--text-label);
+    color: var(--color-text-muted);
+  }
+  .empty { margin: var(--space-4) 0 0; padding: 20px; background: var(--color-surface); }
+
+  .editor {
+    display: block;
+    width: 100%;
+    min-height: 60vh;
+    margin-top: var(--space-3);
+    padding: 12px;
+    border: 2px solid var(--color-divider);
+    border-radius: 0;
+    background: var(--color-paper);
+    color: var(--color-text);
+    /* The one place on this site that is not Archivo. The box holds scripts, and
+       a script only reads right in a fixed-width face. */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    tab-size: 2;
+    resize: vertical;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .status { font-weight: 800; font-size: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase; }
+  .status[data-state="saved"] { color: var(--color-status-good); }
+  .status[data-state="saving"] { color: var(--color-text-muted); }
+  .status[data-state="unsaved"] { color: var(--color-status-warn); }
+  .status[data-state="failed"] { color: var(--color-status-bad); }
+  .detail { margin: var(--space-2) 0 0; min-height: 1.5em; color: var(--color-text-muted); }
+
+  .confirm {
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-status-bad);
+    background: var(--color-surface);
+  }
+  .confirm p { margin: 0 0 var(--space-2); font-weight: 700; }
+
+  @media (max-width: 520px) {
+    .note-link { flex-direction: column; gap: 2px; }
+    .panel { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-inner">
+    <p class="wordmark">Silurian <span>Notes</span></p>
+    <div class="row" id="bar-actions" hidden>
+      <button type="button" class="primary" id="new-note">New note</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <p id="boot" class="lead">Loading.</p>
+
+  <section id="login" hidden aria-labelledby="login-heading">
+    <h1 id="login-heading">Private notes</h1>
+    <div class="panel">
+      <p id="login-error" class="message" role="alert" hidden></p>
+      <form id="login-form">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="row form-actions">
+          <button type="submit" class="primary" id="login-submit">Enter</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="list" hidden aria-labelledby="list-heading">
+    <h1 id="list-heading">Notes</h1>
+    <p id="list-error" class="message" role="alert" hidden></p>
+    <ul class="notes" id="notes"></ul>
+    <p class="empty" id="empty" hidden>No notes yet. Press New note to write the first one.</p>
+  </section>
+
+  <section id="edit" hidden aria-label="Edit note">
+    <div class="row spread">
+      <div class="row">
+        <button type="button" id="back">All notes</button>
+        <span class="status" id="status" role="status" aria-live="polite" data-state="saved">Saved</span>
+      </div>
+      <div class="row">
+        <button type="button" id="copy">Copy</button>
+        <button type="button" class="danger" id="delete">Delete</button>
+      </div>
+    </div>
+    <p class="detail" id="detail"></p>
+    <div class="confirm" id="confirm" hidden>
+      <p>Delete this note? This cannot be undone.</p>
+      <div class="row">
+        <button type="button" class="danger" id="confirm-delete">Delete note</button>
+        <button type="button" id="keep">Keep</button>
+      </div>
+    </div>
+    <textarea id="text" class="editor" aria-label="Note text" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var MAX_BYTES = 1024 * 1024;
+  var SAVE_DELAY_MS = 1000;
+  var RETRY_DELAY_MS = 5000;
+  var TOO_LARGE = "This note is over 1 MB, so it cannot be saved. Cut it down and it will save.";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var views = { login: $("login"), list: $("list"), edit: $("edit") };
+  var textBox = $("text");
+  var statusEl = $("status");
+  var detailEl = $("detail");
+
+  var note = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
+  var currentView = null;
+
+  function show(name) {
+    currentView = name;
+    $("boot").hidden = true;
+    Object.keys(views).forEach(function (key) { views[key].hidden = key !== name; });
+    $("bar-actions").hidden = name === "login";
+  }
+
+  function setStatus(state, word, detail) {
+    statusEl.dataset.state = state;
+    statusEl.textContent = word;
+    detailEl.textContent = detail || "";
+  }
+
+  function byteLength(text) { return new TextEncoder().encode(text).length; }
+
+  function isDirty() { return textBox.value !== note.saved; }
+  function hasUnsavedWork() { return note.saving || note.failed || note.tooLarge || note.conflict !== null || isDirty() && !(note.id === null && textBox.value === ""); }
+
+  function request(path, options) {
+    options = options || {};
+    options.credentials = "same-origin";
+    return fetch(path, options).then(function (response) {
+      if (response.status === 401 && path !== "/api/login") { goToLogin(); }
+      return response;
+    });
+  }
+
+  function goToLogin() {
+    clearTimers();
+    show("login");
+    $("password").value = "";
+    $("password").focus();
+  }
+
+  function clearTimers() {
+    clearTimeout(note.timer); note.timer = null;
+    clearTimeout(note.retry); note.retry = null;
+  }
+
+  /* ---------- sign in ---------- */
+
+  $("login-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    var button = $("login-submit");
+    var errorEl = $("login-error");
+    button.disabled = true;
+    errorEl.hidden = true;
+    request("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: $("password").value })
+    }).then(function (response) {
+      button.disabled = false;
+      if (response.ok) { $("password").value = ""; route(); return; }
+      errorEl.textContent = "That password is incorrect.";
+      errorEl.hidden = false;
+      $("password").select();
+    }).catch(function () {
+      button.disabled = false;
+      errorEl.textContent = "Could not reach the server. Try again.";
+      errorEl.hidden = false;
+    });
+  });
+
+  /* ---------- list ---------- */
+
+  function whenText(iso) {
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) { return ""; }
+    return date.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function showList() {
+    show("list");
+    var errorEl = $("list-error");
+    errorEl.hidden = true;
+    request("/api/notes").then(function (response) {
+      if (!response.ok) { throw new Error("list"); }
+      return response.json();
+    }).then(function (data) {
+      var listEl = $("notes");
+      listEl.textContent = "";
+      data.notes.forEach(function (item) {
+        var li = document.createElement("li");
+        var link = document.createElement("a");
+        link.className = "note-link";
+        link.href = "#n/" + item.id;
+        var title = document.createElement("span");
+        title.className = "note-title";
+        title.textContent = item.title;
+        var when = document.createElement("time");
+        when.className = "note-when";
+        when.dateTime = item.updatedAt;
+        when.textContent = whenText(item.updatedAt);
+        link.appendChild(title);
+        link.appendChild(when);
+        li.appendChild(link);
+        listEl.appendChild(li);
+      });
+      $("empty").hidden = data.notes.length > 0;
+    }).catch(function () {
+      if (currentView !== "list") { return; }
+      errorEl.textContent = "Could not load your notes. Check your connection and reload.";
+      errorEl.hidden = false;
+    });
+  }
+
+  /* ---------- edit and autosave ---------- */
+
+  function openEditor(id, text, version) {
+    clearTimers();
+    note = { id: id, version: version || null, saved: text, timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
+    textBox.value = text;
+    // A textarea normalises line breaks, so what it holds is the baseline.
+    note.saved = textBox.value;
+    $("confirm").hidden = true;
+    $("copy").textContent = "Copy";
+    setStatus("saved", "Saved", id === null ? "Nothing is saved until you type." : "");
+    show("edit");
+    textBox.focus();
+  }
+
+  function openNote(id) {
+    show("edit");
+    setStatus("saving", "Loading", "");
+    textBox.value = "";
+    textBox.disabled = true;
+    request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
+      if (!response.ok) { throw new Error("open"); }
+      var version = response.headers.get("X-Note-Updated");
+      return response.arrayBuffer().then(function (buffer) { return { buffer: buffer, version: version }; });
+    }).then(function (loaded) {
+      textBox.disabled = false;
+      openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(loaded.buffer), loaded.version);
+    }).catch(function () {
+      textBox.disabled = false;
+      location.hash = "";
+    });
+  }
+
+  textBox.addEventListener("input", function () {
+    if (note.conflict !== null) {
+      // The note moved on elsewhere. Keep the words on screen and stop trying.
+      setStatus("failed", "Not saved", note.conflict);
+      return;
+    }
+    note.failed = false;
+    clearTimeout(note.retry);
+    if (byteLength(textBox.value) > MAX_BYTES) {
+      note.tooLarge = true;
+      clearTimeout(note.timer);
+      setStatus("failed", "Not saved", TOO_LARGE);
+      return;
+    }
+    note.tooLarge = false;
+    setStatus("unsaved", "Not saved", "");
+    clearTimeout(note.timer);
+    note.timer = setTimeout(save, SAVE_DELAY_MS);
+  });
+
+  function save() {
+    clearTimeout(note.timer); note.timer = null;
+    if (note.saving || note.conflict !== null) { return Promise.resolve(false); }
+    var body = textBox.value;
+    if (body === note.saved || (note.id === null && body === "")) {
+      setStatus("saved", "Saved", "");
+      return Promise.resolve(true);
+    }
+    if (byteLength(body) > MAX_BYTES) { return Promise.resolve(false); }
+    note.saving = true;
+    setStatus("saving", "Saving", "");
+    var creating = note.id === null;
+    var path = creating ? "/api/notes" : "/api/note?id=" + encodeURIComponent(note.id);
+    return request(path, {
+      method: creating ? "POST" : "PUT",
+      headers: creating
+        ? { "Content-Type": "text/plain; charset=utf-8" }
+        : { "Content-Type": "text/plain; charset=utf-8", "X-Base-Updated": note.version },
+      body: body
+    }).then(function (response) {
+      if (response.status === 409) {
+        // Changed or deleted on another device. Nothing was written. Keep the text.
+        return response.json().then(function (data) {
+          note.saving = false;
+          note.failed = false;
+          note.conflict = data.error;
+          clearTimers();
+          setStatus("failed", "Not saved", data.error);
+          return false;
+        });
+      }
+      if (response.status === 413) {
+        note.saving = false; note.tooLarge = true;
+        setStatus("failed", "Not saved", TOO_LARGE);
+        return false;
+      }
+      if (!response.ok) { throw new Error("save"); }
+      return response.json().then(function (data) {
+        note.saving = false;
+        note.failed = false;
+        note.saved = body;
+        note.version = data.updatedAt;
+        if (creating) {
+          note.id = data.id;
+          history.replaceState(null, "", "#n/" + data.id);
+          lastHash = location.hash;
+        }
+        if (textBox.value !== body) {
+          setStatus("unsaved", "Not saved", "");
+          note.timer = setTimeout(save, SAVE_DELAY_MS);
+          return false;
+        }
+        setStatus("saved", "Saved", "");
+        return true;
+      });
+    }).catch(function () {
+      note.saving = false;
+      if (currentView === "login") { return false; }
+      note.failed = true;
+      setStatus("failed", "Not saved", "Could not reach storage. Trying again in 5 seconds.");
+      note.retry = setTimeout(save, RETRY_DELAY_MS);
+      return false;
+    });
+  }
+
+  function settle() {
+    // Resolves true when nothing is left unsaved.
+    clearTimeout(note.timer);
+    if (note.saving) {
+      return new Promise(function (resolve) { setTimeout(resolve, 300); }).then(settle);
+    }
+    return save().then(function (ok) { return ok && !note.tooLarge; });
+  }
+
+  function leaveEditor() {
+    if (!hasUnsavedWork()) { return Promise.resolve(true); }
+    return settle().then(function (ok) {
+      if (ok) { return true; }
+      return window.confirm("This note has not saved. Leave anyway and lose the unsaved changes?");
+    });
+  }
+
+  window.addEventListener("beforeunload", function (event) {
+    if (currentView === "edit" && hasUnsavedWork()) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  });
+
+  /* ---------- buttons ---------- */
+
+  $("new-note").addEventListener("click", function () {
+    leaveEditor().then(function (ok) {
+      if (!ok) { return; }
+      // Already on #new there is no hashchange to follow, so start over directly.
+      if (location.hash === "#new") { route(); } else { location.hash = "#new"; }
+    });
+  });
+
+  $("back").addEventListener("click", function () {
+    leaveEditor().then(function (ok) { if (ok) { clearTimers(); note.failed = note.tooLarge = false; note.conflict = null; location.hash = ""; } });
+  });
+
+  $("copy").addEventListener("click", function () {
+    var button = $("copy");
+    var text = textBox.value;
+    function done(ok) {
+      button.textContent = ok ? "Copied" : "Copy failed";
+      setTimeout(function () { button.textContent = "Copy"; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      return;
+    }
+    textBox.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    done(ok);
+  });
+
+  $("delete").addEventListener("click", function () { $("confirm").hidden = false; $("confirm-delete").focus(); });
+  $("keep").addEventListener("click", function () { $("confirm").hidden = true; });
+  $("confirm-delete").addEventListener("click", function () {
+    clearTimers();
+    var id = note.id;
+    note.saved = textBox.value; note.failed = note.tooLarge = false; note.conflict = null; note.saving = false;
+    if (id === null) { location.hash = ""; return; }
+    request("/api/note?id=" + encodeURIComponent(id), { method: "DELETE" }).then(function (response) {
+      if (!response.ok) { throw new Error("delete"); }
+      location.hash = "";
+    }).catch(function () {
+      if (currentView === "login") { return; }
+      $("confirm").hidden = true;
+      setStatus("failed", "Not deleted", "Could not delete this note. Nothing was changed. Try again.");
+    });
+  });
+
+  /* ---------- routing ---------- */
+
+  var lastHash = location.hash;
+
+  function route() {
+    var hash = location.hash;
+    var match = /^#n\/([0-9a-f]{32})$/.exec(hash);
+    if (match) { openNote(match[1]); }
+    else if (hash === "#new") { openEditor(null, ""); }
+    else { showList(); }
+  }
+
+  window.addEventListener("hashchange", function () {
+    var target = location.hash;
+    if (currentView === "edit" && hasUnsavedWork() && target !== lastHash) {
+      // The browser back button must not drop unsaved work.
+      var wanted = target;
+      leaveEditor().then(function (ok) {
+        if (ok) { note.failed = note.tooLarge = false; note.conflict = null; lastHash = wanted; route(); }
+        else { history.replaceState(null, "", lastHash || "#"); }
+      });
+      return;
+    }
+    lastHash = target;
+    route();
+  });
+
+  request("/api/session").then(function (response) {
+    if (response.ok) { route(); } else { goToLogin(); }
+  }).catch(function () {
+    $("boot").textContent = "Could not reach the server. Reload to try again.";
+  });
+})();
+</script>
+</body>
+</html>

@@ -8,10 +8,10 @@ Branch `site-public-allowlist`. Format per CLAUDE.md section 1. Two questions ar
 - **Recommended default:** add two sentences to section 3 in this branch or the next small one.
 - **Cost if wrong:** one failed build and a read of the test message.
 
-## Q2. Rebasing the notes page onto this fix needs three things
+## Q2. Rebasing the notes page onto this fix needs three things (DONE 18 October 2026; the `api/` question is answered by `npm run test:vercel`)
 
 - **Blocks:** the `notes-page` branch, not this one. (a) Both branches add a root `vercel.json`, so the keys merge: this fix's build settings plus the notes rewrite and headers. (b) `notes-tests/site.test.js` pins the `vercel.json` keys to exactly three and must allow the two new ones. (c) `notes/` goes into `site-allowlist.txt` and `PUBLIC_FILES`.
-- **Unverified:** that the root `api/` functions still deploy when `outputDirectory` is `public`. Vercel builds functions from `api/` separately from static output, so it should, but it has not been seen. The notes Preview is where it shows.
+- **Answered, locally:** a local `vercel build` with `outputDirectory` set to `public` produced the four `api/` functions and exactly the allowlisted static files. See `notes-tests/vercel-local.check.js`. Not shown: the Preview itself.
 - **Cost if wrong:** the notes routes 404 on the first Preview and the fix is a `vercel.json` setting.
 
 ## Q3. The Vercel dashboard may have project settings that disagree
