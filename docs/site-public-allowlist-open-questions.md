@@ -1,8 +1,8 @@
 # Site public allowlist: open questions
 
-Branch `site-public-allowlist`. Format per CLAUDE.md section 1. Three questions are waiting.
+Branch `site-public-allowlist`. Format per CLAUDE.md section 1. Two questions are waiting. Q1 was answered yes by the product owner on 18 October 2026 and built: one line in CLAUDE.md section 3.
 
-## Q1. CLAUDE.md section 3 does not yet say that new public files need the allowlist
+## Q1. CLAUDE.md section 3 does not yet say that new public files need the allowlist (ANSWERED, done)
 
 - **Blocks:** nothing built. A future session adding a page or an asset will find it answers 404 until it is added to `site-allowlist.txt` and to `PUBLIC_FILES` in `forecast-app/tests/test_marketing_deploy_allowlist.py`. The tests say so when they fail, but a rule in section 3 would say it first. The brief did not ask for a CLAUDE.md change.
 - **Recommended default:** add two sentences to section 3 in this branch or the next small one.
