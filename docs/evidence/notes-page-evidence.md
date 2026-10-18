@@ -116,3 +116,23 @@ Branch `notes-v2`, from `main` at `596d38e`. Not merged. Only the notes page, it
 **Local browser run.** `docs/evidence/notes-page/browser-check-v2.mjs`, Chromium through Playwright against the real page and handlers over an in-memory store: 24 of 24. It covers the search cases on screen, the header carrying the search and the address not, the row confirmation, Keep, a failed delete keeping the row, a delete surviving a reload, the leave warning on sign out with an unsaved edit, the cookie gone after sign out, no note text left on the page, every Back step through the history (8 steps, 7 onto a note's own `#n/` address) showing sign-in and no note text, refresh, signing in again, and no sideways scroll at 360px. The first version's check, `browser-check.mjs`, still passes 38 of 38. The first Back check passed on two steps that never reached a note's address; it was tightened before it was accepted.
 
 **Not run.** The Preview, the real Blob store and Production. Search speed on the real store is not measured: each search reads every note, two small requests per note.
+
+## Notes version 2: Vercel Preview check, 18 October 2026
+
+Run by the product owner in a real browser on the branch Preview, `silurian-site-git-notes-v2-silurian.vercel.app/notes`, at `68059ed`. Reported to the build session, which cannot reach Vercel hosts. Nine checks, all passed:
+
+1. The Search box and the Sign out button are shown.
+2. Search found a word deep in a note, ignoring case.
+3. Search matched `` `npm ci` `` with its backticks.
+4. A search with no match showed the no-results message correctly.
+5. Clearing the box restored the list.
+6. Delete, then Keep, left the note.
+7. Delete confirmed removed the note, and it stayed gone after a refresh.
+8. After Sign out, Back showed only the sign-in screen.
+9. After Sign out, refresh showed only the sign-in screen.
+
+**Not in the reported results**, so not claimed here: the leave warning on Sign out with an unsaved edit, and the second-device conflict check on this branch. Both are covered by the local browser run and the Node suite, not by the Preview.
+
+Decisions the same day: Q11 accepted, a copied cookie stays valid until expiry and a lost device is answered by changing the password; Q12 done in this pull request; Q10 stays open and is not built. Approved to merge through pull request 150.
+
+Not run: Production. That follows the merge.
