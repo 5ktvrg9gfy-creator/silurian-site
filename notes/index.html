@@ -7,24 +7,124 @@
 <meta name="referrer" content="no-referrer">
 <title>Private notes</title>
 <link rel="icon" href="/logo-stone.svg" type="image/svg+xml">
+<script id="theme-init">
+(function () {
+  try {
+    var saved = localStorage.getItem("silurian-notes-theme");
+    if (saved === "light" || saved === "dark") { document.documentElement.setAttribute("data-theme", saved); }
+  } catch (e) { /* storage is blocked: the page follows the device */ }
+})();
+</script>
 <link rel="stylesheet" href="/tokens.css">
 <style>
+  /* Light theme and page sizes. The only place a colour or a font size is written. */
+  :root {
+    color-scheme: light dark;
+    --notes-ground: #faf8f5;
+    --notes-panel: #f1ede7;
+    --notes-field: #ffffff;
+    --notes-line: #e2dcd3;
+    --notes-line-soft: #ebe6df;
+    --notes-hover: #ede8e1;
+    --notes-ink: #2f2d2b;
+    --notes-strong: #1a1918;
+    --notes-muted: #66615f;
+    --notes-icon: #4a4744;
+    --notes-accent: #ec6917;
+    --notes-on-accent: #1a1918;
+    --notes-good: #356b46;
+    --notes-warn: #9a5a12;
+    --notes-bad: #a52a1f;
+
+    --notes-size-12: 12px;
+    --notes-size-13: 13px;
+    --notes-size-14: 14px;
+    --notes-size-15: 15px;
+    --notes-size-18: 18px;
+    --notes-size-30: 30px;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+
+  /* Dark theme, following the device when no choice is saved. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --notes-ground: #262422;
+      --notes-panel: #1f1d1c;
+      --notes-field: #262422;
+      --notes-line: #3a3735;
+      --notes-line-soft: #33302e;
+      --notes-hover: #302d2b;
+      --notes-ink: #e3dfdd;
+      --notes-strong: #f5f2ef;
+      --notes-muted: #9f9893;
+      --notes-icon: #cfcac6;
+      --notes-accent: #ec6917;
+      --notes-on-accent: #1a1918;
+      --notes-good: #6fbf86;
+      --notes-warn: #e8a54b;
+      --notes-bad: #f0857a;
+    }
+  }
+
+  /* Dark theme, chosen with the switch. Same values as the block above. */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --notes-ground: #262422;
+    --notes-panel: #1f1d1c;
+    --notes-field: #262422;
+    --notes-line: #3a3735;
+    --notes-line-soft: #33302e;
+    --notes-hover: #302d2b;
+    --notes-ink: #e3dfdd;
+    --notes-strong: #f5f2ef;
+    --notes-muted: #9f9893;
+    --notes-icon: #cfcac6;
+    --notes-accent: #ec6917;
+    --notes-on-accent: #1a1918;
+    --notes-good: #6fbf86;
+    --notes-warn: #e8a54b;
+    --notes-bad: #f0857a;
+  }
+
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
 
   body {
     margin: 0;
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-family: "Archivo", system-ui, sans-serif;
-    font-size: var(--text-body);
+    background: var(--notes-ground);
+    color: var(--notes-ink);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: var(--notes-size-15);
     line-height: 1.5;
-    font-feature-settings: "tnum" 1;
+  }
+
+  .icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   .bar {
-    border-bottom: 2px solid var(--color-divider);
-    background: var(--color-bg);
+    background: var(--notes-panel);
+    border-bottom: 1px solid var(--notes-line-soft);
   }
   .bar-inner, main {
     width: min(960px, 100%);
@@ -36,155 +136,218 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
+    gap: 8px 16px;
     flex-wrap: wrap;
-    padding-top: var(--space-3);
-    padding-bottom: var(--space-3);
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .mark { display: block; width: 26px; height: auto; aspect-ratio: 200 / 290; }
   .wordmark {
     margin: 0;
-    font-size: var(--wordmark-size);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: var(--notes-size-18);
     font-weight: 800;
-    letter-spacing: -0.01em;
-    color: var(--color-charcoal-deep);
+    letter-spacing: -0.02em;
+    color: var(--notes-strong);
   }
-  .wordmark span { color: var(--color-accent); }
+  .bar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
   main { padding-top: 24px; padding-bottom: 48px; }
 
   h1 {
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-title);
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    color: var(--color-charcoal-deep);
+    margin: 0 0 16px;
+    font-size: var(--notes-size-30);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--notes-strong);
   }
-  .lead { margin: 0 0 var(--space-4); color: var(--color-text-muted); }
+  .lead { margin: 0 0 16px; color: var(--notes-muted); }
 
   .row {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 8px;
     flex-wrap: wrap;
   }
   .row.spread { justify-content: space-between; }
   .form-actions { margin-top: 14px; }
 
-  button, .button {
+  button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     min-height: 44px;
     padding: 8px 16px;
-    border: 2px solid var(--color-divider);
-    border-radius: 0;
-    background: transparent;
-    color: var(--color-text);
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-ground);
+    color: var(--notes-ink);
     font: inherit;
-    font-weight: 800;
-    font-size: var(--text-label);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: var(--notes-size-14);
+    font-weight: 600;
     cursor: pointer;
   }
+  button:hover { background: var(--notes-hover); }
   button.primary {
-    border-color: var(--color-accent);
-    background: var(--color-accent);
-    color: var(--color-charcoal-deep);
+    border: 0;
+    background: var(--notes-accent);
+    color: var(--notes-on-accent);
   }
-  button.danger { border-color: var(--color-status-bad); color: var(--color-status-bad); }
-  button:hover { background: var(--color-surface); }
-  button.primary:hover { background: var(--color-accent); filter: brightness(0.92); }
+  button.primary:hover { background: var(--notes-accent); filter: brightness(0.92); }
+  button.icon-button {
+    width: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--notes-icon);
+  }
+  button.icon-button:hover { background: var(--notes-hover); }
+  button.row-delete:hover, button.row-delete:focus-visible { color: var(--notes-bad); }
+  button.quiet-delete:hover, button.quiet-delete:focus-visible { color: var(--notes-bad); }
+  button.confirm-yes {
+    border: 1px solid var(--notes-bad);
+    background: var(--notes-ground);
+    color: var(--notes-bad);
+  }
+  button.confirm-yes:hover { background: var(--notes-hover); }
   button:disabled { cursor: default; opacity: 0.55; }
+
   button:focus-visible, input:focus-visible, textarea:focus-visible, .note-link:focus-visible {
-    outline: 2px solid var(--color-charcoal-deep);
+    outline: 2px solid var(--notes-accent);
     outline-offset: 2px;
   }
+
+  /* One icon at a time in the theme switch: the moon on a light page, the sun on a dark one. */
+  .theme-switch .icon-sun { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-switch .icon-sun { display: block; }
+    :root:not([data-theme="light"]) .theme-switch .icon-moon { display: none; }
+  }
+  :root[data-theme="dark"] .theme-switch .icon-sun { display: block; }
+  :root[data-theme="dark"] .theme-switch .icon-moon { display: none; }
 
   label {
     display: block;
     margin-bottom: 6px;
-    font-size: var(--text-label);
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: var(--notes-size-12);
+    font-weight: 600;
+    color: var(--notes-muted);
   }
   input[type="password"], input[type="search"] {
+    appearance: none;
     width: 100%;
     min-height: 44px;
-    padding: 8px 10px;
-    border: 2px solid var(--color-divider);
-    border-radius: 0;
-    background: var(--color-paper);
-    color: var(--color-text);
+    padding: 8px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-field);
+    color: var(--notes-ink);
     font: inherit;
   }
+  input::placeholder { color: var(--notes-muted); opacity: 1; }
+
+  .search-field { position: relative; }
+  .search-field .icon {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    color: var(--notes-muted);
+    pointer-events: none;
+  }
+  .search-field input { padding-left: 40px; }
+  .search { margin-bottom: 8px; }
 
   .panel {
-    background: var(--color-surface);
-    border-top: 4px solid var(--color-accent);
     padding: 24px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-panel);
   }
   #login .panel { max-width: 380px; }
   .message {
-    margin: 0 0 var(--space-4);
-    padding: 10px 12px;
-    border-left: 4px solid var(--color-status-bad);
-    background: var(--color-paper);
-    font-weight: 700;
+    margin: 0 0 16px;
+    font-weight: 600;
+    color: var(--notes-bad);
   }
 
-  .notes { list-style: none; margin: var(--space-4) 0 0; padding: 0; border-top: 2px solid var(--color-divider); }
-  .notes li { border-bottom: 1px solid var(--color-divider); }
-  .note-row { display: flex; align-items: center; gap: var(--space-2); }
+  .notes { list-style: none; margin: 16px 0 0; padding: 0; }
+  .notes li { margin-bottom: 2px; }
+  .note-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+  .note-row:hover { background: var(--notes-hover); }
+  .note-row .row-delete { margin: -8px -6px -8px 0; }
   .note-row .note-link { flex: 1; min-width: 0; }
-  .note-row .confirm, .note-row-message { margin: 0 0 var(--space-3); }
+  .notes .confirm { margin: 4px 0 8px; }
+  .note-row-message { margin: 4px 12px 8px; }
   .note-main { display: flex; flex-direction: column; min-width: 0; }
   .note-line {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--color-text-muted);
+    font-size: var(--notes-size-13);
+    color: var(--notes-muted);
   }
-  .search { margin-bottom: var(--space-2); }
   .note-link {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: var(--space-4);
-    padding: 14px 4px;
-    color: var(--color-text);
+    gap: 16px;
+    border-radius: 8px;
+    color: var(--notes-ink);
     text-decoration: none;
   }
-  .note-link:hover { background: var(--color-surface); }
   .note-title {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: var(--text-lead);
-    font-weight: 800;
-    color: var(--color-charcoal-deep);
+    font-size: var(--notes-size-14);
+    font-weight: 700;
+    color: var(--notes-strong);
   }
   .note-when {
     flex: none;
-    font-size: var(--text-label);
-    color: var(--color-text-muted);
+    text-align: right;
+    font-size: var(--notes-size-12);
+    font-variant-numeric: tabular-nums;
+    color: var(--notes-muted);
   }
-  .empty { margin: var(--space-4) 0 0; padding: 20px; background: var(--color-surface); }
+  .empty {
+    margin: 16px 0 0;
+    padding: 16px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-panel);
+  }
 
+  .toolbar {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--notes-line-soft);
+  }
   .editor {
     display: block;
     width: 100%;
     min-height: 60vh;
-    margin-top: var(--space-3);
-    padding: 12px;
-    border: 2px solid var(--color-divider);
-    border-radius: 0;
-    background: var(--color-paper);
-    color: var(--color-text);
-    /* The one place on this site that is not Archivo. The box holds scripts, and
-       a script only reads right in a fixed-width face. */
+    margin-top: 12px;
+    padding: 16px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--notes-ground);
+    color: var(--notes-ink);
+    /* The one place on this site that is not Archivo or system UI type. The box
+       holds scripts, and a script only reads right in a fixed-width face. */
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: var(--text-body);
+    font-size: var(--notes-size-15);
     line-height: 1.5;
     tab-size: 2;
     resize: vertical;
@@ -192,36 +355,65 @@
     overflow-wrap: anywhere;
   }
 
-  .status { font-weight: 800; font-size: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase; }
-  .status[data-state="saved"] { color: var(--color-status-good); }
-  .status[data-state="saving"] { color: var(--color-text-muted); }
-  .status[data-state="unsaved"] { color: var(--color-status-warn); }
-  .status[data-state="failed"] { color: var(--color-status-bad); }
-  .detail { margin: var(--space-2) 0 0; min-height: 1.5em; color: var(--color-text-muted); }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--notes-size-12);
+    color: var(--notes-muted);
+  }
+  .status::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 6px;
+    background: var(--notes-muted);
+  }
+  .status[data-state="saved"]::before { background: var(--notes-good); }
+  .status[data-state="saving"]::before { background: var(--notes-muted); }
+  .status[data-state="unsaved"]::before { background: var(--notes-warn); }
+  .status[data-state="failed"]::before { background: var(--notes-bad); }
+  .detail { margin: 8px 0 0; min-height: 1.5em; font-size: var(--notes-size-13); color: var(--notes-muted); }
 
   .confirm {
-    margin-top: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    border-left: 4px solid var(--color-status-bad);
-    background: var(--color-surface);
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: var(--notes-panel);
   }
-  .confirm p { margin: 0 0 var(--space-2); font-weight: 700; }
+  .confirm p { margin: 0 0 8px; font-weight: 600; }
 
   @media (max-width: 520px) {
-    .note-link { flex-direction: column; gap: 2px; }
-    .note-row { align-items: flex-start; }
-    .note-row .row-delete { margin-top: 10px; }
+    .note-link { flex-direction: column; align-items: stretch; gap: 2px; }
+    .note-when { text-align: left; }
     .panel { padding: 16px; }
   }
 </style>
 </head>
 <body>
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-bin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+</svg>
 <header class="bar">
   <div class="bar-inner">
-    <p class="wordmark">Silurian <span>Notes</span></p>
-    <div class="row" id="bar-actions" hidden>
-      <button type="button" class="primary" id="new-note">New note</button>
-      <button type="button" id="sign-out">Sign out</button>
+    <div class="brand">
+      <img class="mark" src="/logo-stone.svg" alt="">
+      <p class="wordmark">Silurian Notes</p>
+    </div>
+    <div class="bar-right">
+      <button type="button" class="icon-button theme-switch" id="theme-switch" aria-label="Switch to dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-moon"></use></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-sun"></use></svg>
+      </button>
+      <div class="row" id="bar-actions" hidden>
+        <button type="button" class="primary" id="new-note"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg>New note</button>
+        <button type="button" id="sign-out">Sign out</button>
+      </div>
     </div>
   </div>
 </header>
@@ -247,29 +439,32 @@
     <h1 id="list-heading">Notes</h1>
     <p id="list-error" class="message" role="alert" hidden></p>
     <div class="search">
-      <label for="search">Search</label>
-      <input id="search" type="search" maxlength="200" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <label for="search" class="sr-only">Search</label>
+      <div class="search-field">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-search"></use></svg>
+        <input id="search" type="search" placeholder="Search notes" maxlength="200" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      </div>
     </div>
     <ul class="notes" id="notes"></ul>
     <p class="empty" id="empty" role="status" hidden>No notes yet. Press New note to write the first one.</p>
   </section>
 
   <section id="edit" hidden aria-label="Edit note">
-    <div class="row spread">
+    <div class="row spread toolbar">
       <div class="row">
-        <button type="button" id="back">All notes</button>
+        <button type="button" id="back"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-chevron-left"></use></svg>All notes</button>
         <span class="status" id="status" role="status" aria-live="polite" data-state="saved">Saved</span>
       </div>
       <div class="row">
         <button type="button" id="copy">Copy</button>
-        <button type="button" class="danger" id="delete">Delete</button>
+        <button type="button" class="quiet-delete" id="delete">Delete</button>
       </div>
     </div>
     <p class="detail" id="detail"></p>
     <div class="confirm" id="confirm" hidden>
       <p>Delete this note? This cannot be undone.</p>
       <div class="row">
-        <button type="button" class="danger" id="confirm-delete">Delete note</button>
+        <button type="button" class="confirm-yes" id="confirm-delete">Delete note</button>
         <button type="button" id="keep">Keep</button>
       </div>
     </div>
@@ -277,6 +472,38 @@
   </section>
 </main>
 
+<script id="theme-switch-script">
+(function () {
+  "use strict";
+
+  var KEY = "silurian-notes-theme";
+  var root = document.documentElement;
+  var button = document.getElementById("theme-switch");
+  var query = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function current() {
+    var chosen = root.getAttribute("data-theme");
+    if (chosen === "light" || chosen === "dark") { return chosen; }
+    return query && query.matches ? "dark" : "light";
+  }
+
+  function paint() {
+    button.setAttribute("aria-label", current() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  }
+
+  button.addEventListener("click", function () {
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    // The choice is remembered on this device only. If storage is blocked the
+    // switch still works for this visit.
+    try { localStorage.setItem(KEY, next); } catch (e) { /* not saved */ }
+    paint();
+  });
+
+  if (query && query.addEventListener) { query.addEventListener("change", paint); }
+  paint();
+})();
+</script>
 <script>
 (function () {
   "use strict";
@@ -423,9 +650,10 @@
     link.appendChild(when);
     var remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "danger row-delete";
-    remove.textContent = "Delete";
-    remove.setAttribute("aria-label", "Delete " + item.title);
+    remove.className = "icon-button row-delete";
+    remove.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-bin"></use></svg>';
+    remove.title = "Delete note";
+    remove.setAttribute("aria-label", "Delete note: " + item.title);
     row.appendChild(link);
     row.appendChild(remove);
 
@@ -439,7 +667,7 @@
     buttons.className = "row";
     var yes = document.createElement("button");
     yes.type = "button";
-    yes.className = "danger";
+    yes.className = "confirm-yes";
     yes.textContent = "Delete note";
     var keep = document.createElement("button");
     keep.type = "button";

@@ -113,15 +113,13 @@ test("package.json is the minimum: one dependency, no build step", () => {
   assert.ok(existsSync(join(ROOT, "package-lock.json")));
 });
 
-test("the page uses only tokens: no raw colour and no hand-written type size", () => {
+test("the page takes its type sizes from its own variables and has no dash", () => {
+  // The notes page follows the Spud Notes look, not the site's tokens
+  // (CLAUDE.md section 9c, ruled 19 October 2026). Its palette, shape and
+  // contrast rules are held by forecast-app/tests/test_notes_page.py.
   const html = read("notes/index.html");
-  assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(html.replace(/&#\d+;/g, "")), "no hex colour");
-  assert.ok(!/\brgba?\(|\bhsla?\(/.test(html), "no rgb or hsl colour");
   const sizes = [...html.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1].trim());
   assert.ok(sizes.length >= 8, `${sizes.length} font-size declarations read`);
-  for (const size of sizes) assert.match(size, /^var\(--(?:text-[a-z]+|wordmark-size)\)$/, `font-size ${size}`);
-  const radii = [...html.matchAll(/border-radius:\s*([^;]+);/g)].map((m) => m[1].trim());
-  assert.ok(radii.length >= 3, `${radii.length} border-radius declarations read`);
-  assert.ok(radii.every((r) => r === "0"), "zero radius everywhere");
+  for (const size of sizes) assert.match(size, /^(?:var\(--notes-size-(?:12|13|14|15|18|30)\))$/, `font-size ${size}`);
   assert.ok(!/[\u2013\u2014]/.test(html), "no em or en dash in the page");
 });

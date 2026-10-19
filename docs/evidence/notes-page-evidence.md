@@ -178,3 +178,10 @@ Run by the product owner on the branch Preview, `silurian-site-git-notes-signout
 The report did not say which phone or browser was used, so a specific browser is not claimed here.
 
 Not run: Production. That follows the merge.
+
+## Sign out fix: Production check, 19 October 2026
+
+Run by the product owner on `www.silurianconsulting.co.uk` after pull request 151 merged (merge commit `e657105`). Reported to the build session, which cannot reach Vercel hosts. **Items 5 and 6 and the homepage spot-check all passed.** Item 5 is the typed change followed at once by Sign out, with the word still in the note on signing in again; item 6 is Back after Sign out showing no notes screen. Recorded here on the `notes-v3` branch, not as a separate push to `main`.
+
+The report did not say which phone or browser was used, so a specific browser is not claimed here. Nothing outstanding on the sign out fix.
+
