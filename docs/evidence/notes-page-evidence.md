@@ -136,3 +136,45 @@ Run by the product owner in a real browser on the branch Preview, `silurian-site
 Decisions the same day: Q11 accepted, a copied cookie stays valid until expiry and a lost device is answered by changing the password; Q12 done in this pull request; Q10 stays open and is not built. Approved to merge through pull request 150.
 
 Not run: Production. That follows the merge.
+
+## Sign out fix: Production items 5 and 6, 18 October 2026
+
+Branch `notes-signout-fix`, from `main` at `8ad059d`. Not merged. The product owner's Production check of `8ad059d` failed two items on `www.silurianconsulting.co.uk/notes`: item 5, typing a change and pressing Sign out at once signed out with no "Saved" and no warning; item 6, after Sign out, Back showed a quick flash of the notes screen before sign in.
+
+**What happened, reproduced on `main`'s page** with `docs/evidence/notes-page/browser-check-signout.mjs`, as a computer and as a phone (Chromium's Pixel 7 emulation: touch, small screen, mobile user agent):
+
+- **Item 5: the edit was saved, not lost.** On `main` a typed change followed at once by Sign out was in storage afterwards, on both, and so was one whose save was slowed to 1.5 seconds; Sign out waited for it with "Saving" on screen. On a normal connection the save takes a fraction of a second and the screen goes straight to sign in, which matches what was seen. Production storage could not be read from here, so the proof for Production is opening that note again, which is in the Preview steps. **The real defect was on the failure path:** when the save failed, `main` offered "Leave anyway and lose the unsaved changes?", and accepting it signed out and lost the text, on both.
+- **Item 6: the flash was the empty notes screen, with no title or note text in it.** Back after Sign out moves between the page's own `#n/` addresses inside one page, so no back-forward cache is involved there. `main` showed the list, the New note and Sign out buttons and the editor at once on every step, and only then asked the server and switched to sign in. The recorder saw the list, the buttons and the editor shown, each empty, because sign out had already emptied them. **The back-forward cache was a second, real leak:** with no-store off, standing in for a browser that caches such pages anyway, a page left while signed in and restored after signing out in another tab came back showing the list **with the note titles**, on both, until the session check answered. Chrome on a computer refuses to cache this page, because both the page and its API answers are no-store, and said so: `MainResourceHasCacheControlNoStore` and `JsNetworkRequestReceivedCacheControlNoStoreResource`.
+
+**Why the earlier browser checks passed while Production failed.** They read the screen only after each step had settled, half a second later, so a notes screen shown for a moment and then replaced by sign in was never seen; and Playwright switches the back-forward cache off by default, so no cache restore could ever happen in them. Both gaps are closed: the new check and `browser-check-v2.mjs` now record every time a notes view is shown at all, with what it held, and the new check turns the cache back on and proves a restore happened before judging it.
+
+**The fix, `notes/index.html` only.**
+
+- Sign out saves unsaved edits first, then signs out. If that save fails, is refused as a conflict or the note is over 1 MB, it does not sign out and offers no "Leave anyway": the user stays on the note with the text and the existing plain message. The edit view's own Back and New note keep their existing behaviour.
+- A navigation never shows the list or the editor until the server has answered for it: the list after `/api/notes`, a note after `/api/note`, a new note after `/api/session`. Until then the screen stays as it was, which after sign out is sign in. Each navigation is numbered so a slow answer cannot paint over a later one. A note that cannot be opened no longer rewrites the address when the page is already on sign in.
+- The page empties itself on `pagehide`, so whatever a back-forward cache keeps holds no note and shows only the wordmark and "Loading."; on return it asks the server before showing anything.
+- Already true and now held by test: every API answer and the page are `Cache-Control: no-store`.
+
+**Tests.**
+
+- `notes-tests/no-store.test.js`, 3 tests: every API answer across 200, 201, 400, 401, 404, 409, 413 and 500, sign out included, says no-store; `/notes` and `/notes/(.*)` are served no-store; the page empties itself on `pagehide`. `npm test` 67 before, 70 after, all passing. Proved to fail: against `main`'s page the `pagehide` test fails, and a planted `no-cache` on the API fails the first.
+- `browser-check-signout.mjs`, 26 checks, 13 as a computer and 13 as a phone. **On `main`'s page: 16 of 26.** Failing there: the failed save keeping the user signed in on the note, the session still valid after it, the conflict case, Back never showing the notes screen, and the cache restore showing no view and no title, each on both. On the fixed page: 26 of 26. The two item 5 success checks pass on `main` as well, because `main` already saved before signing out; that is the finding above, not a check that cannot fail.
+- `browser-check-v2.mjs`: the sign out with a failed save check now expects the new behaviour, and a check that no Back step shows the notes screen even for a moment was added. 25 of 25 on the fixed page; on `main`'s page it fails the sign out checks. `browser-check.mjs`: 38 of 38.
+- The `forecast-app` suite: 318, passing. `npm run test:vercel`: 2 of 2.
+
+**Not run.** The Preview, Production and the real Blob store. A real phone: the phone runs are Chromium's emulation, not Safari on an iPhone or Chrome on Android, and Safari's back-forward cache rules differ from Chrome's.
+
+## Sign out fix: Vercel Preview check, 19 October 2026
+
+Run by the product owner on the branch Preview, `silurian-site-git-notes-signout-fix-silurian.vercel.app/notes`, at `c0629ca`, on a phone and on a computer. Reported to the build session, which cannot reach Vercel hosts. All six steps passed, as reported:
+
+1. A word typed at the end of a note, then Sign out straight away, landed on the sign-in screen.
+2. Signed in again, the word was in the note. This also answers Production item 5: the save before sign out works on a real device.
+3. Back, pressed several times after Sign out, stayed on the sign-in screen with no flash of the notes screen, and then left the site for the browser's home page, which is normal browser behaviour. Forward from there, and opening the notes address directly, both showed sign in, so the session had ended.
+4. Forward and refresh after Sign out showed only sign in.
+5. Signed in on the list, left for another page, signed out elsewhere, then Back: sign in, never the list or a title.
+6. With the network off, Sign out kept the user on the note with the text and "Not saved".
+
+The report did not say which phone or browser was used, so a specific browser is not claimed here.
+
+Not run: Production. That follows the merge.

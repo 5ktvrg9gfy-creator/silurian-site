@@ -298,12 +298,29 @@
   var note = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
   var currentView = null;
 
+  // The only way a view is painted. The list and the editor are shown only by
+  // code that has just had a good answer from the server for them, so nothing of
+  // the notes screen, not even its empty layout, appears before the session is
+  // confirmed.
   function show(name) {
     currentView = name;
     $("boot").hidden = true;
     Object.keys(views).forEach(function (key) { views[key].hidden = key !== name; });
     $("bar-actions").hidden = name === "login";
   }
+
+  // Nothing but the wordmark and one line of text.
+  function showOnly(message) {
+    currentView = null;
+    Object.keys(views).forEach(function (key) { views[key].hidden = true; });
+    $("bar-actions").hidden = true;
+    $("boot").textContent = message;
+    $("boot").hidden = false;
+  }
+
+  // Each navigation gets a number, so a slow answer for an earlier one cannot
+  // paint over a later one.
+  var routeSeq = 0;
 
   function setStatus(state, word, detail) {
     statusEl.dataset.state = state;
@@ -477,9 +494,13 @@
     empty.hidden = false;
   }
 
-  function loadList() {
+  // reveal: this load is a navigation to the list, so the list is shown only
+  // once the server has answered. Without it, the load refreshes a list that is
+  // already on screen, as search does.
+  function loadList(reveal) {
     var query = currentQuery();
     var seq = ++searchSeq;
+    var navigation = routeSeq;
     var errorEl = $("list-error");
     var options = query === "" ? {} : { headers: { "X-Note-Search": encodeURIComponent(query) } };
     request("/api/notes", options).then(function (response) {
@@ -489,14 +510,22 @@
       return response.json();
     }).then(function (data) {
       // A slower answer to an older search must not replace a newer one.
-      if (seq !== searchSeq || currentView !== "list") { return; }
+      if (seq !== searchSeq) { return; }
+      if (reveal) {
+        if (navigation !== routeSeq) { return; }
+        show("list");
+      } else if (currentView !== "list") { return; }
       errorEl.hidden = true;
       var listEl = $("notes");
       listEl.textContent = "";
       data.notes.forEach(function (item) { listEl.appendChild(noteRow(item)); });
       if (data.notes.length === 0) { showEmpty(query); } else { $("empty").hidden = true; }
     }).catch(function (error) {
-      if (seq !== searchSeq || currentView !== "list") { return; }
+      if (seq !== searchSeq || currentView === "login") { return; }
+      if (currentView !== "list") {
+        if (reveal && navigation === routeSeq) { showOnly("Could not load your notes. Check your connection and reload."); }
+        return;
+      }
       errorEl.textContent = query === "" ? "Could not load your notes. Check your connection and reload."
         : (error && error.message && error.message !== "list" ? error.message : "Could not search your notes. Check your connection and try again.");
       errorEl.hidden = false;
@@ -504,9 +533,8 @@
   }
 
   function showList() {
-    show("list");
     $("list-error").hidden = true;
-    loadList();
+    loadList(true);
   }
 
   $("search").addEventListener("input", function () {
@@ -529,21 +557,32 @@
     textBox.focus();
   }
 
+  // The editor is shown only once the note has arrived. Until then whatever was
+  // on screen stays, which after sign out is the sign-in screen.
   function openNote(id) {
-    show("edit");
-    setStatus("saving", "Loading", "");
-    textBox.value = "";
-    textBox.disabled = true;
+    var navigation = routeSeq;
     request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
       if (!response.ok) { throw new Error("open"); }
       var version = response.headers.get("X-Note-Updated");
       return response.arrayBuffer().then(function (buffer) { return { buffer: buffer, version: version }; });
     }).then(function (loaded) {
-      textBox.disabled = false;
+      if (navigation !== routeSeq) { return; }
       openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(loaded.buffer), loaded.version);
     }).catch(function () {
-      textBox.disabled = false;
+      // A 401 has already gone to sign in. Anything else goes to the list.
+      if (navigation !== routeSeq || currentView === "login") { return; }
       location.hash = "";
+    });
+  }
+
+  // A new, empty note has nothing to fetch, so ask the server first.
+  function openNewNote() {
+    var navigation = routeSeq;
+    request("/api/session").then(function (response) {
+      if (navigation !== routeSeq || !response.ok) { return; }
+      openEditor(null, "");
+    }).catch(function () {
+      if (navigation === routeSeq && currentView !== "list" && currentView !== "edit") { showOnly("Could not reach the server. Reload to try again."); }
     });
   }
 
@@ -722,13 +761,19 @@
     setStatus("saved", "Saved", "");
   }
 
+  // Sign out saves unsaved edits first. If that save fails, is refused as a
+  // conflict, or the note is too large, there is no offer to leave anyway: the
+  // user stays signed in on the note, with the text and the message on screen.
+  function saveBeforeSignOut() {
+    if (currentView !== "edit" || !hasUnsavedWork()) { return Promise.resolve(true); }
+    return settle();
+  }
+
   $("sign-out").addEventListener("click", function () {
     var button = $("sign-out");
-    // Unsaved edits get the same warning as leaving the note.
-    var ready = currentView === "edit" ? leaveEditor() : Promise.resolve(true);
-    ready.then(function (ok) {
-      if (!ok) { return; }
-      button.disabled = true;
+    button.disabled = true;
+    saveBeforeSignOut().then(function (ok) {
+      if (!ok) { button.disabled = false; return; }
       // Straight to fetch, not request(): a 401 here means already signed out.
       return fetch("/api/session", { method: "DELETE", credentials: "same-origin" }).then(function (response) {
         button.disabled = false;
@@ -746,13 +791,23 @@
     });
   });
 
-  // A page restored from the browser's back-forward cache runs no code on
-  // arrival, so check the session again and wipe the page if it has ended.
+  // A browser may keep this page in its back-forward cache and show it again on
+  // Back exactly as it was left, before any code runs. So the page empties
+  // itself as it is left: what the cache keeps holds no note and shows only the
+  // wordmark. On return it asks the server before showing anything.
+  window.addEventListener("pagehide", function () {
+    clearContent();
+    showOnly("Loading.");
+  });
+
   window.addEventListener("pageshow", function (event) {
-    if (!event.persisted || currentView === "login") { return; }
-    fetch("/api/session", { credentials: "same-origin" }).then(function (response) {
-      if (!response.ok) { clearContent(); goToLogin(); }
-    }).catch(function () {});
+    if (!event.persisted) { return; }
+    lastHash = location.hash;
+    request("/api/session").then(function (response) {
+      if (response.ok) { route(); } else { goToLogin(); }
+    }).catch(function () {
+      showOnly("Could not reach the server. Reload to try again.");
+    });
   });
 
   /* ---------- routing ---------- */
@@ -760,10 +815,11 @@
   var lastHash = location.hash;
 
   function route() {
+    routeSeq += 1;
     var hash = location.hash;
     var match = /^#n\/([0-9a-f]{32})$/.exec(hash);
     if (match) { openNote(match[1]); }
-    else if (hash === "#new") { openEditor(null, ""); }
+    else if (hash === "#new") { openNewNote(); }
     else { showList(); }
   }
 

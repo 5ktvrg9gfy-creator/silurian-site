@@ -161,15 +161,18 @@ await page.locator('#notes .note-link', { hasText: 'Symbols' }).click();
 await page.waitForSelector('#edit:not([hidden])');
 await page.waitForFunction(() => document.getElementById('text').value.startsWith('Symbols'));
 check('sign out: the button shows on the edit view', await visible('#sign-out'));
-// Make the next save fail so the edit stays unsaved and the warning must show.
+// Make the next save fail. Sign out must save first, and when that save fails
+// it must not sign out and must not offer to leave anyway (changed 18 October
+// 2026 by the sign out fix: before, a "Leave anyway" warning was the design).
 await page.route('**/api/note?**', (route) => route.request().method() === 'PUT' ? route.abort() : route.continue());
 await page.fill('#text', 'Symbols\nUNSAVED EDIT');
 let dialogText = null;
-page.once('dialog', async (dialog) => { dialogText = dialog.message(); await dialog.dismiss(); });
+page.once('dialog', async (dialog) => { dialogText = dialog.message(); await dialog.accept(); });
 await page.click('#sign-out');
 await sleep(800);
-check('sign out with unsaved edits: the existing leave warning shows first', dialogText === 'This note has not saved. Leave anyway and lose the unsaved changes?', String(dialogText));
-check('sign out cancelled: still signed in, edit still on screen', (await visible('#edit')) && (await page.inputValue('#text')).includes('UNSAVED EDIT'));
+check('sign out with an unsaved edit whose save fails: no offer to leave anyway', dialogText === null, String(dialogText));
+check('sign out with a failed save: still signed in, edit still on screen with the plain message', (await visible('#edit')) && (await page.inputValue('#text')).includes('UNSAVED EDIT')
+  && (await page.locator('#status').textContent()) === 'Not saved' && (await page.locator('#detail').textContent()) !== '');
 await page.unroute('**/api/note?**');
 await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 8000 });
 
@@ -187,20 +190,40 @@ await page.screenshot({ path: SHOTS + '/5-signed-out.png' });
 // addresses, and look for note content at every step.
 const visited = [];
 let leaked = false;
-// The page rewrites a #n/ address it cannot open back to the list, so record
-// every address it passes through, not only where each step settles.
-await page.evaluate(() => { window.__seen = []; window.addEventListener('hashchange', () => window.__seen.push(location.hash)); });
+// Record every address the page passes through, and every time the list, the
+// editor or the signed-in buttons are shown at all, with what they held. This
+// closes the gap Production found on 18 October 2026: these checks looked only
+// at where each Back step settled, half a second later, so a notes screen shown
+// for a moment and then replaced by sign in was never seen.
+await page.evaluate(() => {
+  window.__seen = [];
+  window.__shown = [];
+  window.addEventListener('hashchange', () => window.__seen.push(location.hash));
+  ['list', 'edit', 'bar-actions'].forEach((id) => {
+    const el = document.getElementById(id);
+    new MutationObserver(() => { if (!el.hidden) window.__shown.push({ view: id, text: el.innerText.slice(0, 120) + document.getElementById('text').value.slice(0, 120) }); })
+      .observe(el, { attributes: true, attributeFilter: ['hidden'] });
+  });
+});
 const depth = await page.evaluate(() => history.length);
+const seen = [];
+const shownDuringBack = [];
 for (let step = 0; step < depth - 1; step += 1) {
   await page.goBack().catch(() => null);
   await sleep(500);
+  // Stop at the first entry before the notes page, the browser's blank start.
+  if (!page.url().startsWith(BASE + '/notes')) { await page.goForward().catch(() => null); await sleep(300); break; }
+  // Collected after every step: leaving the page would lose them.
+  const records = await page.evaluate(() => { const r = { seen: window.__seen.splice(0), shown: window.__shown.splice(0) }; return r; });
+  seen.push(...records.seen);
+  shownDuringBack.push(...records.shown);
   visited.push(page.url().replace(BASE, ''));
   const text = await pageText();
   if (/Symbols|zephyrine|Deploy runbook|lorem|npm ci/.test(text) || !(await visible('#login'))) leaked = true;
 }
-const seen = await page.evaluate(() => window.__seen);
 const noteSteps = seen.filter((h) => /^#n\/[0-9a-f]{32}$/.test(h)).length;
-check('after sign out, every Back step shows the sign-in screen and no note content', !leaked && noteSteps > 0, `${depth - 1} steps, ${noteSteps} of them to a note's own address`);
+check('after sign out, every Back step settles on sign in with no note content', !leaked && noteSteps > 0, `${visited.length} steps, ${noteSteps} of them to a note's own address`);
+check('after sign out, no Back step shows the notes screen even for a moment', shownDuringBack.length === 0, JSON.stringify(shownDuringBack.slice(0, 3)));
 await page.reload();
 await page.waitForSelector('#login:not([hidden])');
 check('after sign out, refresh shows the sign-in screen and no note content', !/Symbols|zephyrine|Deploy runbook|lorem/.test(await pageText()));
