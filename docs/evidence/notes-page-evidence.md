@@ -163,3 +163,18 @@ Branch `notes-signout-fix`, from `main` at `8ad059d`. Not merged. The product ow
 - The `forecast-app` suite: 318, passing. `npm run test:vercel`: 2 of 2.
 
 **Not run.** The Preview, Production and the real Blob store. A real phone: the phone runs are Chromium's emulation, not Safari on an iPhone or Chrome on Android, and Safari's back-forward cache rules differ from Chrome's.
+
+## Sign out fix: Vercel Preview check, 19 October 2026
+
+Run by the product owner on the branch Preview, `silurian-site-git-notes-signout-fix-silurian.vercel.app/notes`, at `c0629ca`, on a phone and on a computer. Reported to the build session, which cannot reach Vercel hosts. All six steps passed, as reported:
+
+1. A word typed at the end of a note, then Sign out straight away, landed on the sign-in screen.
+2. Signed in again, the word was in the note. This also answers Production item 5: the save before sign out works on a real device.
+3. Back, pressed several times after Sign out, stayed on the sign-in screen with no flash of the notes screen, and then left the site for the browser's home page, which is normal browser behaviour. Forward from there, and opening the notes address directly, both showed sign in, so the session had ended.
+4. Forward and refresh after Sign out showed only sign in.
+5. Signed in on the list, left for another page, signed out elsewhere, then Back: sign in, never the list or a title.
+6. With the network off, Sign out kept the user on the note with the text and "Not saved".
+
+The report did not say which phone or browser was used, so a specific browser is not claimed here.
+
+Not run: Production. That follows the merge.
