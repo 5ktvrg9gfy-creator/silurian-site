@@ -138,7 +138,7 @@ check('delete: Keep closes the confirmation and keeps the row', !(await shopping
 
 failRemove = true;
 await shoppingRow.locator('.row-delete').click();
-await shoppingRow.getByRole('button', { name: 'Delete note' }).click();
+await shoppingRow.getByRole('button', { name: 'Delete note', exact: true }).click();
 await page.waitForSelector('.note-row-message:not([hidden])');
 check('delete failed: the row stays with a plain message', (await rows().count()) === 3
   && (await shoppingRow.locator('.note-row-message').innerText()) === 'Could not delete this note. Nothing was changed. Try again.'
@@ -147,7 +147,7 @@ await page.screenshot({ path: SHOTS + '/4-delete-failed.png' });
 
 failRemove = false;
 await shoppingRow.locator('.row-delete').click();
-await shoppingRow.getByRole('button', { name: 'Delete note' }).click();
+await shoppingRow.getByRole('button', { name: 'Delete note', exact: true }).click();
 await page.waitForFunction(() => document.querySelectorAll('#notes > li').length === 2);
 check('delete: the row disappears and the note is gone from storage', (await rows().count()) === 2
   && ![...notes.values()].some((n) => new TextDecoder().decode(n.bytes).startsWith('Shopping')));
