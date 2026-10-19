@@ -47,6 +47,10 @@ Reported rather than quietly edited. The ruling of 19 October 2026 wins for `/no
 - **Status detail text** (for example the conflict message under the toolbar) stays muted at 13px. The brief puts the state in the dot and word only.
 - **`:root[data-theme="light"] { color-scheme: light; }`** is a fourth, colour-free rule, so that choosing light on a dark device also lights the scrollbar and form controls.
 
+## Vercel Preview check, 19 October 2026
+
+Run by the product owner on the branch Preview, at `6ad8427`, on a phone and on a computer. Reported to the build session, which cannot reach Vercel hosts. **All six steps passed, as reported:** the dark and light switch; the choice surviving a reload; the theme surviving Sign out, with the switch on the sign-in screen; search; the bin confirmation, with Delete note the only red-bordered element and Keep working; the status dots through Not saved, Saving and Saved, with All notes, Copy and Delete; and no sideways scroll at phone width, with long titles ending in an ellipsis. The report did not say which phone or browser was used, so a specific browser is not claimed here. **The six judgement calls above are accepted by the product owner.** Approved to merge.
+
 ## Not run
 
 - `npm run test:vercel`: needs the network, blocked in this environment.
