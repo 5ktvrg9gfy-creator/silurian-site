@@ -39,6 +39,10 @@ Run by the product owner on the branch Preview, at `f817cfe`, on a computer and 
 
 **`/api/labels` answered on the Preview, so the labels function deploys.** That closes the gap left by `npm run test:vercel` not being run (Q19); the product owner ruled the step unneeded. **Q13 to Q19 are accepted as built.** Approved to merge.
 
+## Production check, 20 October 2026
+
+Run by the product owner on `www.silurianconsulting.co.uk` after pull request 153 merged (merge commit `8d79552`, from branch head `5a0271d`). Reported to the build session as "passed". The report gave no step by step detail and did not say which phone or browser was used, so nothing beyond a pass is claimed here. Nothing outstanding on version 4.
+
 ## Not run
 
 - `npm run test:vercel`, Safari, Firefox and a real phone (the Preview was checked by the product owner, above). The 320px runs are a Chromium viewport.
