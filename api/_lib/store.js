@@ -7,6 +7,12 @@
 //                    without those fields has no labels and is not archived)
 //   labels.json      the label list, one file, outside the notes/ prefix so the
 //                    notes listing never sees it
+//   notes-index.json a copy of every note's metadata, so the list reads one
+//                    file instead of one per note. It is only ever a copy: the
+//                    per-note files above stay the authority for every version
+//                    check, and each list is checked against a fresh listing of
+//                    the store (below), so a stale or damaged index can cost an
+//                    extra read and can never put a wrong row on screen.
 //
 // The text is written first. A note whose metadata write failed still lists,
 // with the title "Untitled" and the blob's own upload time, and is repaired by
@@ -30,6 +36,8 @@ const TEXT_TYPE = "text/plain; charset=utf-8";
 const META_TYPE = "application/json";
 
 const LABELS_PATH = "labels.json";
+const INDEX_PATH = "notes-index.json";
+const INDEX_VERSION = 1;
 
 const textPath = (id) => `${PREFIX}${id}.txt`;
 const metaPath = (id) => `${PREFIX}${id}.json`;
@@ -93,49 +101,108 @@ export function createBlobStore(sdk) {
 
   // Title, time, labels and archived flag of a note, or null when there is no
   // text file for it. Two small calls and no note text.
+  // The two calls do not depend on each other, so they go out together.
   async function metaOf(id) {
-    const text = await headOrNull(textPath(id));
+    const [text, meta] = await Promise.all([headOrNull(textPath(id)), readMeta(id)]);
     if (!text) return null;
-    const meta = await readMeta(id);
     return meta || { title: "", updatedAt: new Date(text.uploadedAt).toISOString(), labels: [], archived: false };
   }
 
-  async function textBlobs() {
+  // Every blob under notes/, text and metadata files both, in one listing.
+  async function everyBlob() {
     const found = [];
     let cursor;
     do {
       const page = await sdk.list({ prefix: PREFIX, limit: 1000, cursor });
-      for (const blob of page.blobs) {
-        if (blob.pathname.endsWith(".txt")) found.push(blob);
-      }
+      found.push(...page.blobs);
       cursor = page.hasMore ? page.cursor : undefined;
     } while (cursor);
     return found;
   }
 
+  // The index, or an empty one when it is missing, damaged or from another
+  // version. Never throws for a bad file: the list simply reads the notes.
+  async function readIndex() {
+    try {
+      const result = await getPrivate(INDEX_PATH);
+      if (!result) return {};
+      const file = JSON.parse(new TextDecoder().decode(await readBytes(result.stream)));
+      return file && file.v === INDEX_VERSION && file.entries && typeof file.entries === "object" ? file.entries : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function writeIndex(entries) {
+    try {
+      await sdk.put(INDEX_PATH, JSON.stringify({ v: INDEX_VERSION, entries }), {
+        access: "private",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: META_TYPE,
+      });
+    } catch {
+      // Only a copy. The next list tries again.
+    }
+  }
+
   return {
+    // One listing and one read of the index, then a read of the metadata file
+    // only for a note whose file is not the one the index entry was made from.
+    // The tag is the etag of the note's metadata file (of its text file when it
+    // has none), which changes on every write, so an entry made from an older
+    // file never matches. After a change the first list repairs the index;
+    // lists after that read nothing else.
     async list() {
-      const blobs = await textBlobs();
-      return Promise.all(
-        blobs.map(async (blob) => {
-          const id = blob.pathname.slice(PREFIX.length, -".txt".length);
-          const meta = await readMeta(id);
-          return {
+      const [blobs, entries] = await Promise.all([everyBlob(), readIndex()]);
+      const texts = new Map();
+      const metas = new Map();
+      for (const blob of blobs) {
+        if (blob.pathname.endsWith(".txt")) texts.set(blob.pathname.slice(PREFIX.length, -".txt".length), blob);
+        else if (blob.pathname.endsWith(".json")) metas.set(blob.pathname.slice(PREFIX.length, -".json".length), blob);
+      }
+
+      const fresh = {};
+      let repaired = Object.keys(entries).some((id) => !texts.has(id));
+      const listed = await Promise.all(
+        [...texts].map(async ([id, text]) => {
+          const meta = metas.get(id);
+          const source = meta || text;
+          const tag = source.etag ? `${meta ? "m" : "t"}:${source.etag}` : null;
+          const held = entries[id];
+          if (tag !== null && held && held.tag === tag) {
+            fresh[id] = held;
+            return { id, title: held.title, updatedAt: held.updatedAt, labels: held.labels, archived: held.archived };
+          }
+          const read = await readMeta(id);
+          const item = {
             id,
-            title: meta ? meta.title : "",
-            updatedAt: meta ? meta.updatedAt : new Date(blob.uploadedAt).toISOString(),
-            labels: meta ? meta.labels : [],
-            archived: meta ? meta.archived : false,
+            title: read ? read.title : "",
+            updatedAt: read ? read.updatedAt : new Date(text.uploadedAt).toISOString(),
+            labels: read ? read.labels : [],
+            archived: read ? read.archived : false,
           };
+          if (tag !== null) {
+            fresh[id] = { tag, title: item.title, updatedAt: item.updatedAt, labels: item.labels, archived: item.archived };
+            repaired = true;
+          }
+          return item;
         }),
       );
+      if (repaired) await writeIndex(fresh);
+      return listed;
+    },
+
+    // The note text alone, for search.
+    async text(id) {
+      const result = await getPrivate(textPath(id));
+      return result ? readBytes(result.stream) : null;
     },
 
     async read(id) {
-      const result = await getPrivate(textPath(id));
+      const [result, meta] = await Promise.all([getPrivate(textPath(id)), readMeta(id)]);
       if (!result) return null;
       const bytes = await readBytes(result.stream);
-      const meta = await readMeta(id);
       return {
         bytes,
         updatedAt: meta ? meta.updatedAt : new Date(result.blob.uploadedAt).toISOString(),
