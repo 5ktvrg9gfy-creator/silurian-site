@@ -50,3 +50,7 @@ The 3 Blob calls on a repeated list are one listing, one index read and one labe
 ## Not run
 
 `npm run test:vercel` (needs the network). The Vercel Preview, a real Blob store, a real phone and Safari. The index's use of the real store's etags is shown against a stand-in that behaves as the package's types say; the Preview is where it is proved. If the Preview shows lists as slow as before, the first thing to check is whether `list()` returns `etag` for each blob in the real store.
+
+## Decision to merge without the Preview check, 20 October 2026
+
+The product owner answered Q1 (the notes Blob store is in London, so the London pin stays) and chose to merge `notes-speed` **without running the Preview steps**, and to test on Production over the following day. **Preview steps: not run. Production use is the test.** The reason is his: he would rather judge the speed on the real site, with his real notes, than on a Preview. What that means for this record: everything above was shown locally only (Chromium, a stand-in for Blob, injected delay). Nothing here shows the index working against the real Blob store, and the first thing to check if Production is no faster is whether the real store returns an `etag` for each blob in a listing. Q2 to Q7 stay open and are not built.

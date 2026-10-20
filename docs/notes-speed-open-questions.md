@@ -4,6 +4,8 @@ Branch `notes-speed`, 20 October 2026. Each question says what it blocks, the re
 
 ## Q1. Which region is the Blob store in?
 
+**Answered 20 October 2026 by the product owner: the notes Blob store is in London (`lhr1`). Keep the London pin, commit (a).** The text below is the question as it was asked and is kept as the record.
+
 **Blocks:** whether the London pin on the notes functions (commit "Notes speed (a)") should be merged as it is.
 
 The notes functions now run in London (`lhr1`). Before, `vercel.json` set no region, so they ran in Vercel's default, Washington DC (`iad1`). Every note read and write is a call from the function to the Blob store. If the store is in London, the pin removes an Atlantic crossing from each of those calls. **If the store is in the US, the pin makes each call slower, not faster.** The code cannot tell which; only the Vercel dashboard can (steps in the build report).
