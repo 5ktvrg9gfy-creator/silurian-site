@@ -24,6 +24,10 @@ export function memoryStore() {
       const n = notes.get(id);
       return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, ...held(n) } : null;
     },
+    async text(id) {
+      const n = notes.get(id);
+      return n ? n.bytes : null;
+    },
     async stamp(id) {
       const n = notes.get(id);
       return n ? n.meta.updatedAt : null;

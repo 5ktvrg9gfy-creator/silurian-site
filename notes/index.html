@@ -894,6 +894,28 @@
   // A new note started from a label view starts with that label.
   var newNoteLabel = null;
 
+  // What the page has already been told, kept in memory only: every note's row
+  // (all) and the notes opened so far (opened). It paints the next view at once
+  // while the server is asked again. It starts empty, is filled only from
+  // answers the server has given, and is dropped on sign out, on a 401 and when
+  // the page is left.
+  var mem = { all: null, opened: {} };
+  var OPENED_KEPT = 20;
+  // A change on its way to the server, by note id, and how many there are, so a
+  // note opened again waits for its change and a refresh cannot undo it.
+  var inFlight = {};
+  var changesInFlight = 0;
+  // Bumped when memory is dropped, so an answer that was in flight at the time
+  // cannot write into the next session.
+  var memoryGeneration = 0;
+  // The rows the list is showing, as one string, so a refresh that finds the
+  // same rows leaves them (and anything open on them) alone; and a counter that
+  // moves whenever the rows are redrawn.
+  var shownSig = "";
+  var listPaint = 0;
+  // The label save for the open note that is running, if one is.
+  var labelRun = null;
+
   // The only way a view is painted. The list and the editor are shown only by
   // code that has just had a good answer from the server for them, so nothing of
   // the notes screen, not even its empty layout, appears before the session is
@@ -959,6 +981,8 @@
     clearTimers();
     clearTimeout(searchTimer);
     searchSeq += 1;
+    forgetMemory();
+    $("notes").textContent = "";
     show("login");
     $("password").value = "";
     $("password").focus();
@@ -967,6 +991,72 @@
   function clearTimers() {
     clearTimeout(note.timer); note.timer = null;
     clearTimeout(note.retry); note.retry = null;
+  }
+
+  /* ---------- what the page remembers ---------- */
+
+  function forgetMemory() {
+    memoryGeneration += 1;
+    mem = { all: null, opened: {} };
+    inFlight = {};
+    changesInFlight = 0;
+    shownSig = "";
+    labelRun = null;
+  }
+
+  // The same title the server makes: the first line, trimmed, 200 characters.
+  function clientTitle(text) {
+    var first = text.split(/\r\n|\n|\r/, 1)[0].trim();
+    var clipped = Array.from(first).slice(0, 200).join("");
+    return clipped === "" ? "Untitled" : clipped;
+  }
+
+  function newestFirst(a, b) { return a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0; }
+
+  // The rows of one list, from every row: Notes leaves archived out, Archive
+  // holds only them, a label list is the unarchived notes that hold it.
+  function rowsFrom(all, kind, id) {
+    return all.filter(function (n) {
+      if (kind === "archive") { return n.archived === true; }
+      if (n.archived === true) { return false; }
+      return kind === "label" ? (n.labels || []).indexOf(id) !== -1 : true;
+    }).sort(newestFirst);
+  }
+
+  function rowsFor(kind, id) { return rowsFrom(mem.all, kind, id); }
+
+  // Put a note's row into memory, replacing the one it had. Nothing happens
+  // before the first list has arrived.
+  function remember(item) {
+    if (mem.all === null) { return; }
+    var kept = mem.all.filter(function (n) { return n.id !== item.id; });
+    kept.push({ id: item.id, title: item.title, updatedAt: item.updatedAt, labels: (item.labels || []).slice(), archived: item.archived === true });
+    mem.all = kept;
+  }
+
+  function forget(id) {
+    if (mem.all !== null) { mem.all = mem.all.filter(function (n) { return n.id !== id; }); }
+    delete mem.opened[id];
+    shownSig = "";
+  }
+
+  // The notes opened most recently, text and version, to open again at once.
+  function rememberOpened(id, entry) {
+    delete mem.opened[id];
+    mem.opened[id] = entry;
+    var ids = Object.keys(mem.opened);
+    while (ids.length > OPENED_KEPT) { delete mem.opened[ids.shift()]; }
+  }
+
+  // The open note as the server last confirmed it, into both.
+  function syncMemory() {
+    if (note.id === null) { return; }
+    rememberOpened(note.id, { text: note.saved, version: note.version, labels: note.serverLabels.slice(), archived: note.archived });
+    remember(noteItem());
+  }
+
+  function noteItem() {
+    return { id: note.id, title: clientTitle(note.saved), updatedAt: note.version, labels: note.serverLabels.slice(), archived: note.archived };
   }
 
   /* ---------- label helpers ---------- */
@@ -1219,18 +1309,54 @@
   }
 
   // Undo for an archive or unarchive that was just made: puts the flag back,
-  // from the version that change produced.
-  function undoArchive(id, version, nowArchived) {
+  // from the version that change produced. The change may still be on its way,
+  // so it waits for that answer first.
+  function undoArchive(item, pending, nowArchived) {
     return function () {
-      return patchRequest(id, version, { archived: !nowArchived }).then(function (result) {
-        if (!result.ok) {
-          showFlash(result.error, null);
-          return false;
-        }
-        if (currentView === "list") { loadList(false); }
-        return true;
+      var gen = memoryGeneration;
+      return pending.then(function (made) {
+        if (!made.ok) { return false; }
+        return patchRequest(item.id, made.updatedAt, { archived: !nowArchived }).then(function (result) {
+          if (gen !== memoryGeneration) { return false; }
+          if (!result.ok) {
+            showFlash(result.error, null);
+            return false;
+          }
+          remember({ id: item.id, title: item.title, updatedAt: result.updatedAt, labels: item.labels, archived: !nowArchived });
+          if (currentView === "list") { loadList(false); }
+          return true;
+        });
       });
     };
+  }
+
+  // An archive or unarchive that is already on screen. This sends it, and when
+  // the server refuses it, puts the note's row back in memory and calls
+  // refused with the server's own words. Resolves to { ok, updatedAt, error }.
+  function archiveInBackground(item, toArchive, refused) {
+    var gen = memoryGeneration;
+    changesInFlight += 1;
+    var pending = patchRequest(item.id, item.updatedAt, { archived: toArchive }).then(function (result) {
+      if (gen !== memoryGeneration) { return result; }
+      changesInFlight = Math.max(0, changesInFlight - 1);
+      if (inFlight[item.id] === pending) { delete inFlight[item.id]; }
+      if (result.ok) {
+        remember({ id: item.id, title: item.title, updatedAt: result.updatedAt, labels: item.labels, archived: toArchive });
+        if (currentView === "list") { loadList(false); }
+      } else {
+        remember(item);
+        refused(result.error);
+      }
+      return result;
+    });
+    inFlight[item.id] = pending;
+    return pending;
+  }
+
+  // Draw the list from memory again, as it is now.
+  function repaintFromMemory() {
+    if (currentView !== "list" || currentQuery() !== "" || mem.all === null) { return; }
+    paintList(rowsFor(listView.kind, listView.id), "", false, null);
   }
 
   function noteRow(item, searching) {
@@ -1317,18 +1443,47 @@
       closeRowConfirms();
       message.hidden = true;
       var toArchive = !item.archived;
-      archive.disabled = true;
-      patchRequest(item.id, item.updatedAt, { archived: toArchive }).then(function (result) {
-        archive.disabled = false;
+      var flashText = toArchive ? "Note archived." : "Note unarchived.";
+      if (searching || mem.all === null) {
+        // Search results keep the row on screen, so these wait for the server.
+        archive.disabled = true;
+        var waited = patchRequest(item.id, item.updatedAt, { archived: toArchive });
+        waited.then(function (result) {
+          archive.disabled = false;
+          if (currentView === "login") { return; }
+          if (!result.ok) {
+            message.textContent = result.error;
+            message.hidden = false;
+            return;
+          }
+          showFlash(flashText, undoArchive(item, waited, toArchive));
+          loadList(false);
+        });
+        return;
+      }
+      // The row leaves the list now. The server is told in the background, and
+      // if it refuses, the row comes back with the server's message.
+      var listEl = li.parentNode;
+      var after = li.nextSibling;
+      var paintedAs = listPaint;
+      li.remove();
+      shownSig = "";
+      remember({ id: item.id, title: item.title, updatedAt: item.updatedAt, labels: item.labels, archived: toArchive });
+      if (listEl.children.length === 0) { showEmpty(currentQuery()); }
+      var pending = archiveInBackground(item, toArchive, function (error) {
         if (currentView === "login") { return; }
-        if (!result.ok) {
-          message.textContent = result.error;
+        if (currentView === "list" && paintedAs === listPaint) {
+          listEl.insertBefore(li, after && after.parentNode === listEl ? after : null);
+          $("empty").hidden = true;
+          hideFlash();
+          message.textContent = error;
           message.hidden = false;
-          return;
+        } else {
+          repaintFromMemory();
+          showFlash(error, null);
         }
-        showFlash(toArchive ? "Note archived." : "Note unarchived.", undoArchive(item.id, result.updatedAt, toArchive));
-        loadList(false);
       });
+      showFlash(flashText, undoArchive(item, pending, toArchive));
     });
     remove.addEventListener("click", function () {
       hideFlash();
@@ -1342,6 +1497,7 @@
       yes.disabled = keep.disabled = true;
       request("/api/note?id=" + encodeURIComponent(item.id), { method: "DELETE" }).then(function (response) {
         if (!response.ok) { throw new Error("delete"); }
+        forget(item.id);
         li.remove();
         if ($("notes").children.length === 0) { showEmpty(currentQuery()); }
       }).catch(function () {
@@ -1378,12 +1534,17 @@
       empty.textContent = base;
       // Say so when archived notes carry the label, since the list leaves them out.
       var id = listView.id;
-      request("/api/notes?view=archive").then(function (response) {
-        return response.ok ? response.json() : { notes: [] };
-      }).then(function (data) {
-        var carried = data.notes.some(function (n) { return (n.labels || []).indexOf(id) !== -1; });
-        if (carried && seq === searchSeq && listView.id === id) { empty.textContent = base + LABEL_EMPTY_ARCHIVED; }
-      }).catch(function () { /* the plain sentence stands */ });
+      if (mem.all !== null) {
+        // Every row is already here, so no need to ask.
+        if (rowsFor("archive", null).some(function (n) { return (n.labels || []).indexOf(id) !== -1; })) { empty.textContent = base + LABEL_EMPTY_ARCHIVED; }
+      } else {
+        request("/api/notes?view=archive").then(function (response) {
+          return response.ok ? response.json() : { notes: [] };
+        }).then(function (data) {
+          var carried = data.notes.some(function (n) { return (n.labels || []).indexOf(id) !== -1; });
+          if (carried && seq === searchSeq && listView.id === id) { empty.textContent = base + LABEL_EMPTY_ARCHIVED; }
+        }).catch(function () { /* the plain sentence stands */ });
+      }
     } else {
       empty.textContent = EMPTY_LIST;
     }
@@ -1404,25 +1565,47 @@
     return "Notes";
   }
 
-  // reveal: this load is a navigation to the list, so the list is shown only
-  // once the server has answered. Without it, the load refreshes a list that is
-  // already on screen, as search does.
+  // Draw the rows. reveal: this is a navigation to the list, so the list is
+  // shown now. Rows identical to the ones on screen are left alone.
+  function paintList(rows, query, reveal, flash) {
+    var sig = labelsState.version + "|" + query + "|" + listView.kind + ":" + listView.id + "|" + JSON.stringify(rows);
+    if (reveal) { show("list"); } else { renderMenu(); }
+    lastListHash = listHashFor(listView);
+    $("list-heading").textContent = listHeading(query);
+    $("list-error").hidden = true;
+    if (flash) { showFlash(flash.text, flash.undo); }
+    if (sig === shownSig) { return; }
+    shownSig = sig;
+    listPaint += 1;
+    var listEl = $("notes");
+    listEl.textContent = "";
+    rows.forEach(function (item) { listEl.appendChild(noteRow(item, query !== "")); });
+    if (rows.length === 0) { showEmpty(query); } else { $("empty").hidden = true; }
+  }
+
+  // reveal: this load is a navigation to the list. The rows already fetched on
+  // this page are drawn at once, and the server is asked again either way: the
+  // list is shown from the server's answer only when there is nothing in
+  // memory yet. Without reveal, the load refreshes a list that is already on
+  // screen, as search does. The labels are asked for again on a navigation and
+  // not after the user's own change.
   function loadList(reveal, flash) {
     var query = currentQuery();
     var seq = ++searchSeq;
     var navigation = routeSeq;
     var errorEl = $("list-error");
-    var url = "/api/notes";
+    var url = "/api/notes?view=all";
     var options = {};
     if (query !== "") {
+      url = "/api/notes";
       options = { headers: { "X-Note-Search": encodeURIComponent(query) } };
-    } else if (listView.kind === "archive") {
-      url += "?view=archive";
-    } else if (listView.kind === "label") {
-      url += "?view=label&label=" + encodeURIComponent(listView.id);
-    } else {
-      url += "?view=notes";
     }
+    var painted = false;
+    if (query === "" && mem.all !== null && (reveal || currentView === "list") && (listView.kind !== "label" || labelById(listView.id))) {
+      paintList(rowsFor(listView.kind, listView.id), query, reveal, flash);
+      painted = true;
+    }
+    var gen = memoryGeneration;
     var listed = request(url, options).then(function (response) {
       if (!response.ok) {
         return response.json().then(function (data) { throw new Error(data && data.error || "list"); }, function () { throw new Error("list"); });
@@ -1432,14 +1615,20 @@
     // The chips need the label names, but a labels failure must not hide the
     // notes. A label view cannot be told from a deleted label without them, so
     // that one does fail.
-    var labelsLoaded = refreshLabels().then(function () { return true; }, function () { return false; });
+    var labelsLoaded = reveal ? refreshLabels().then(function () { return true; }, function () { return false; }) : Promise.resolve(true);
     Promise.all([listed, labelsLoaded]).then(function (results) {
       var data = results[0];
       if (!results[1] && query === "" && listView.kind === "label") { throw new Error("labels"); }
       // A slower answer to an older search must not replace a newer one.
-      if (seq !== searchSeq) { return; }
+      if (seq !== searchSeq || gen !== memoryGeneration) { return; }
       if (reveal && navigation !== routeSeq) { return; }
       if (!reveal && currentView !== "list") { return; }
+      if (query === "") {
+        // An answer that was asked for before a change of the user's own was
+        // sent does not know about it. The change refreshes the list itself.
+        if (changesInFlight > 0 && painted) { return; }
+        if (changesInFlight === 0) { mem.all = data.notes; }
+      }
       // A label that no longer exists shows the Notes list.
       if (query === "" && listView.kind === "label" && !labelById(listView.id)) {
         listView = { kind: "notes", id: null };
@@ -1448,17 +1637,10 @@
         loadList(reveal, flash);
         return;
       }
-      if (reveal) { show("list"); } else { renderMenu(); }
-      lastListHash = listHashFor(listView);
-      $("list-heading").textContent = listHeading(query);
-      errorEl.hidden = true;
-      if (flash) { showFlash(flash.text, flash.undo); }
-      var listEl = $("notes");
-      listEl.textContent = "";
-      data.notes.forEach(function (item) { listEl.appendChild(noteRow(item, query !== "")); });
-      if (data.notes.length === 0) { showEmpty(query); } else { $("empty").hidden = true; }
+      var rows = query === "" ? rowsFrom(data.notes, listView.kind, listView.id) : data.notes;
+      paintList(rows, query, reveal && !painted, painted ? null : flash);
     }).catch(function (error) {
-      if (seq !== searchSeq || currentView === "login") { return; }
+      if (seq !== searchSeq || gen !== memoryGeneration || currentView === "login") { return; }
       if (currentView !== "list") {
         if (reveal && navigation === routeSeq) { showOnly("Could not load your notes. Check your connection and reload."); }
         return;
@@ -1702,6 +1884,7 @@
 
   function openEditor(id, text, version, extra) {
     clearTimers();
+    labelRun = null;
     extra = extra || {};
     note = blankNote({ id: id, version: version || null, saved: text, labels: (extra.labels || []).slice(), serverLabels: (extra.labels || []).slice(), archived: extra.archived === true });
     textBox.value = text;
@@ -1717,22 +1900,67 @@
     textBox.focus();
   }
 
-  // The editor is shown only once the note has arrived. Until then whatever was
-  // on screen stays, which after sign out is the sign-in screen.
-  function openNote(id) {
-    var navigation = routeSeq;
-    var labelsLoaded = refreshLabels().catch(function () { /* names are missing, the note still opens */ });
-    request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
+  // Fetch a note and its version, labels and flag.
+  function fetchNote(id) {
+    return request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
       if (!response.ok) { throw new Error("open"); }
       var version = response.headers.get("X-Note-Updated");
       var labels = (response.headers.get("X-Note-Labels") || "").split(",").filter(Boolean);
       var archived = response.headers.get("X-Note-Archived") === "true";
-      return response.arrayBuffer().then(function (buffer) { return { buffer: buffer, version: version, labels: labels, archived: archived }; });
-    }).then(function (loaded) {
+      return response.arrayBuffer().then(function (buffer) {
+        return { text: new TextDecoder("utf-8", { ignoreBOM: true }).decode(buffer), version: version, labels: labels, archived: archived };
+      });
+    });
+  }
+
+  // The note on screen was opened from memory. Ask the server what it holds
+  // now and, if the note has moved on and nothing has been typed or is being
+  // saved, show that. Typing that is already under way is never replaced: the
+  // save carries the version the note was opened at, so if the note really did
+  // change, the save is refused and says so as it always has.
+  function refreshOpened(id, navigation) {
+    var gen = memoryGeneration;
+    fetchNote(id).then(function (loaded) {
+      if (gen !== memoryGeneration) { return; }
+      rememberOpened(id, loaded);
+      if (navigation !== routeSeq || currentView !== "edit" || note.id !== id) { return; }
+      if (loaded.version === note.version) { return; }
+      if (isDirty() || note.saving || note.conflict !== null || note.failed || note.tooLarge) { return; }
+      note.version = loaded.version;
+      note.serverLabels = loaded.labels.slice();
+      note.labels = loaded.labels.slice();
+      note.archived = loaded.archived;
+      textBox.value = loaded.text;
+      note.saved = textBox.value;
+      renderStrip();
+      updateEditButtons();
+      if (panelOpen()) { renderPanel(); }
+    }).catch(function () { /* the note on screen stands */ });
+  }
+
+  // The editor is shown only once the note has arrived, or at once when this
+  // page has already been given the note by the server. Until then whatever was
+  // on screen stays, which after sign out is the sign-in screen.
+  function openNote(id) {
+    var navigation = routeSeq;
+    var held = mem.opened[id];
+    if (held && inFlight[id] === undefined) {
+      openEditor(id, held.text, held.version, { labels: held.labels, archived: held.archived });
+      refreshOpened(id, navigation);
+      refreshLabels().then(function () {
+        if (currentView === "edit" && note.id === id) { renderStrip(); if (panelOpen()) { renderPanel(); } }
+      }, function () { /* names stay as they were */ });
+      return;
+    }
+    var gen = memoryGeneration;
+    var labelsLoaded = refreshLabels().catch(function () { /* names are missing, the note still opens */ });
+    // A change to this note that is still on its way is waited for first.
+    Promise.resolve(inFlight[id]).then(function () { return fetchNote(id); }).then(function (loaded) {
       return labelsLoaded.then(function () { return loaded; });
     }).then(function (loaded) {
-      if (navigation !== routeSeq) { return; }
-      openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(loaded.buffer), loaded.version, { labels: loaded.labels, archived: loaded.archived });
+      if (navigation !== routeSeq || gen !== memoryGeneration) { return; }
+      rememberOpened(id, loaded);
+      openEditor(id, loaded.text, loaded.version, { labels: loaded.labels, archived: loaded.archived });
     }).catch(function () {
       // A 401 has already gone to sign in. Anything else goes to the list.
       if (navigation !== routeSeq || currentView === "login") { return; }
@@ -1831,6 +2059,7 @@
           lastHash = location.hash;
           updateEditButtons();
         }
+        syncMemory();
         if (textBox.value !== body) {
           setStatus("unsaved", "Not saved", "");
           note.timer = setTimeout(save, SAVE_DELAY_MS);
@@ -1882,8 +2111,11 @@
           if (!response.ok) { setStatus("failed", "Not saved", data.error || NOT_CHANGED); return false; }
           note.version = data.updatedAt;
           note.serverLabels = data.labels.slice();
-          note.labels = data.labels.slice();
+          // Ticks made while this was on its way are the user's latest wish and
+          // are sent next; otherwise the server's own list stands.
+          if (!Array.isArray(change.labels) || sameIds(note.labels, change.labels)) { note.labels = data.labels.slice(); }
           note.archived = data.archived === true;
+          syncMemory();
           resumeAfterPatch();
           return true;
         });
@@ -1958,20 +2190,42 @@
     el.hidden = !text;
   }
 
-  // Ticking or unticking saves at once. On a note that is not saved yet the
-  // labels wait with it and go up with its first save.
+  // Ticking or unticking shows on screen at once and saves in the background.
+  // On a note that is not saved yet the labels wait with it and go up with its
+  // first save. Ticks made while a save is on its way are sent together when it
+  // ends, from the version it produced. If the server refuses, the labels go
+  // back to what the server last confirmed, with its message.
   function applyLabels(ids) {
-    var before = note.serverLabels.slice();
     note.labels = ids;
     renderStrip();
     if (note.id === null) { return Promise.resolve(true); }
-    return patchNote({ labels: ids }).then(function (ok) {
+    if (labelRun === null) {
+      var mine = note;
+      var run = saveLabels(mine).then(function (ok) {
+        if (labelRun === run) { labelRun = null; }
+        return ok;
+      });
+      labelRun = run;
+    }
+    return labelRun;
+  }
+
+  function sameIds(a, b) {
+    return a.length === b.length && a.every(function (id) { return b.indexOf(id) !== -1; });
+  }
+
+  function saveLabels(mine) {
+    var sent = note.labels.slice();
+    return patchNote({ labels: sent }).then(function (ok) {
+      if (note !== mine) { return ok; }
       if (!ok) {
-        note.labels = before.slice();
+        note.labels = note.serverLabels.slice();
         renderStrip();
         renderPanel();
+        return false;
       }
-      return ok;
+      if (!sameIds(note.labels, sent)) { return saveLabels(mine); }
+      return true;
     });
   }
 
@@ -2079,22 +2333,38 @@
     done(ok);
   });
 
-  // Archive and Unarchive need no confirmation. The note's own text is saved
-  // first, then the flag, then the page shows the list the note has left, with
-  // a message and an Undo.
+  // Archive and Unarchive need no confirmation. With nothing unsaved the page
+  // shows the list the note has left, with a message and an Undo, straight
+  // away, and the change is sent in the background; if the server refuses, the
+  // note is back in its list and the message says why. With unsaved text, the
+  // note's own text is saved first, then the flag, then the page leaves.
   $("archive").addEventListener("click", function () {
     if (note.id === null) { return; }
     var button = $("archive");
-    button.disabled = true;
     var toArchive = !note.archived;
     var id = note.id;
+    var flashText = toArchive ? "Note archived." : "Note unarchived.";
+    if (!hasUnsavedWork() && inFlight[id] === undefined && mem.all !== null) {
+      var item = noteItem();
+      remember({ id: id, title: item.title, updatedAt: item.updatedAt, labels: item.labels, archived: toArchive });
+      delete mem.opened[id];
+      var pending = archiveInBackground(item, toArchive, function (error) {
+        if (currentView === "login") { return; }
+        repaintFromMemory();
+        showFlash(error, null);
+      });
+      pendingFlash = { text: flashText, undo: undoArchive(item, pending, toArchive) };
+      location.hash = lastListHash;
+      return;
+    }
+    button.disabled = true;
     (hasUnsavedWork() ? settle() : Promise.resolve(true)).then(function (ok) {
       if (!ok) { return false; }
       return patchNote({ archived: toArchive });
     }).then(function (ok) {
       button.disabled = false;
       if (!ok) { return; }
-      pendingFlash = { text: toArchive ? "Note archived." : "Note unarchived.", undo: undoArchive(id, note.version, toArchive) };
+      pendingFlash = { text: flashText, undo: undoArchive(noteItem(), Promise.resolve({ ok: true, updatedAt: note.version }), toArchive) };
       location.hash = lastListHash;
     });
   });
@@ -2108,6 +2378,7 @@
     if (id === null) { location.hash = lastListHash; return; }
     request("/api/note?id=" + encodeURIComponent(id), { method: "DELETE" }).then(function (response) {
       if (!response.ok) { throw new Error("delete"); }
+      forget(id);
       location.hash = lastListHash;
     }).catch(function () {
       if (currentView === "login") { return; }
@@ -2124,6 +2395,7 @@
     clearTimers();
     clearTimeout(searchTimer);
     searchSeq += 1;
+    forgetMemory();
     note = blankNote();
     textBox.value = "";
     $("notes").textContent = "";

@@ -16,6 +16,7 @@ function fakeSdk({ pageSize = 2 } = {}) {
   const files = new Map();
   const calls = [];
   let tick = 0;
+  let version = 0;
   return {
     files,
     calls,
@@ -23,7 +24,8 @@ function fakeSdk({ pageSize = 2 } = {}) {
     async put(pathname, body, options) {
       calls.push({ op: "put", pathname, options });
       if (files.has(pathname) && !options.allowOverwrite) throw new Error("exists");
-      files.set(pathname, { bytes: Buffer.from(typeof body === "string" ? body : body), uploadedAt: new Date(NOW + tick++) });
+      // Like the real store, every write gives the blob a new etag.
+      files.set(pathname, { bytes: Buffer.from(typeof body === "string" ? body : body), uploadedAt: new Date(NOW + tick++), etag: `etag-${version++}` });
       return { pathname };
     },
     async get(pathname, options) {
@@ -49,7 +51,7 @@ function fakeSdk({ pageSize = 2 } = {}) {
       const slice = all.slice(start, start + pageSize);
       const next = start + pageSize;
       return {
-        blobs: slice.map((pathname) => ({ pathname, uploadedAt: files.get(pathname).uploadedAt, size: 1, url: "u", downloadUrl: "d", etag: "e" })),
+        blobs: slice.map((pathname) => ({ pathname, uploadedAt: files.get(pathname).uploadedAt, size: 1, url: "u", downloadUrl: "d", etag: files.get(pathname).etag })),
         hasMore: next < all.length,
         cursor: next < all.length ? String(next) : undefined,
       };

@@ -191,9 +191,9 @@ export function createNotesApi({
   // Ids a note holds that the labels file no longer knows are dropped on the
   // next save of that note. Reads the labels file only when there is something
   // to check, so ordinary typing never pays for it.
-  async function knownLabelIds(ids) {
+  async function knownLabelIds(ids, file = null) {
     if (ids.length === 0) return [];
-    const known = new Set((await labelsFile()).labels.map((l) => l.id));
+    const known = new Set((file || (await labelsFile())).labels.map((l) => l.id));
     return ids.filter((id) => known.has(id));
   }
 
@@ -277,9 +277,9 @@ export function createNotesApi({
         // returns only the title and the line that matched.
         const found = await Promise.all(
           every.map(async (n) => {
-            const note = await store.read(n.id);
-            if (!note) return null;
-            const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(note.bytes);
+            const bytes = await store.text(n.id);
+            if (!bytes) return null;
+            const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes);
             const line = matchingLine(text, search.query);
             return line === null ? null : { ...n, line };
           }),
@@ -354,7 +354,9 @@ export function createNotesApi({
 
         const base = request.headers.get("x-base-updated");
         if (!base) return fail(400, MESSAGES.missingVersion);
-        const current = await store.meta(id);
+        // A label change needs the label list to drop ids that no longer exist,
+        // and it does not depend on the note, so both are read together.
+        const [current, known] = await Promise.all([store.meta(id), wantsLabels ? labelsFile() : null]);
         if (current === null) return fail(409, MESSAGES.metaDeletedElsewhere);
         if (current.updatedAt !== base) {
           return reply(409, { error: MESSAGES.metaChangedElsewhere, updatedAt: current.updatedAt });
@@ -365,7 +367,7 @@ export function createNotesApi({
           const note = await store.read(id);
           title = note ? titleOf(new TextDecoder("utf-8", { ignoreBOM: true }).decode(note.bytes)) : "Untitled";
         }
-        const nextLabels = await knownLabelIds(wantsLabels ? labels : current.labels);
+        const nextLabels = await knownLabelIds(wantsLabels ? labels : current.labels, known);
         const archived = wantsArchived ? change.archived : current.archived;
         const updatedAt = nextStamp(current.updatedAt);
         await store.writeMeta(id, { title, updatedAt, labels: nextLabels, archived });
