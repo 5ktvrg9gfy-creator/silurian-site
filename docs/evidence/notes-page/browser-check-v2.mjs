@@ -22,10 +22,15 @@ const password = 'pw-' + randomBytes(12).toString('hex');
 
 const notes = new Map();
 let failRemove = false;
+let labelsFile = null;
 const store = {
-  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt })); },
-  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt } : null; },
+  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true })); },
+  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
   async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
+  async meta(id) { const n = notes.get(id); return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
+  async writeMeta(id, meta) { notes.get(id).meta = meta; },
+  async readLabels() { return labelsFile ? structuredClone(labelsFile) : null; },
+  async writeLabels(file) { labelsFile = structuredClone(file); },
   async write(id, bytes, meta) { notes.set(id, { bytes: new Uint8Array(bytes), meta }); },
   async remove(id) { if (failRemove) throw new Error('refused'); notes.delete(id); },
 };
@@ -34,6 +39,7 @@ const routes = {
   '/api/login': { POST: api.login },
   '/api/session': { GET: api.session, DELETE: api.signOut },
   '/api/notes': api.collection,
+  '/api/labels': api.labels,
   '/api/note': api.item,
 };
 const types = { '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.ttf': 'font/ttf' };

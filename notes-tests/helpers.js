@@ -12,21 +12,37 @@ export const NOW = Date.parse("2026-10-01T12:00:00Z");
 // An in-memory stand-in for the note store, with the same four calls.
 export function memoryStore() {
   const notes = new Map();
+  const state = { labelsFile: null };
+  const held = (n) => ({ labels: n.meta.labels || [], archived: n.meta.archived === true });
   return {
     notes,
+    state,
     async list() {
-      return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt }));
+      return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, ...held(n) }));
     },
     async read(id) {
       const n = notes.get(id);
-      return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt } : null;
+      return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, ...held(n) } : null;
     },
     async stamp(id) {
       const n = notes.get(id);
       return n ? n.meta.updatedAt : null;
     },
+    async meta(id) {
+      const n = notes.get(id);
+      return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, ...held(n) } : null;
+    },
     async write(id, bytes, meta) {
       notes.set(id, { bytes: new Uint8Array(bytes), meta });
+    },
+    async writeMeta(id, meta) {
+      notes.get(id).meta = meta;
+    },
+    async readLabels() {
+      return state.labelsFile ? structuredClone(state.labelsFile) : null;
+    },
+    async writeLabels(file) {
+      state.labelsFile = structuredClone(file);
     },
     async remove(id) {
       notes.delete(id);

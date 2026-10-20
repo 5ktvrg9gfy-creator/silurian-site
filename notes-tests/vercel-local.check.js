@@ -78,7 +78,7 @@ test("vercel build with the output directory set to public deploys the api funct
   assert.deepEqual(filesUnder(join(output, "static")), PUBLIC_FILES, "the deployed static files are exactly the allowlist");
 
   const functions = readdirSync(join(output, "functions", "api")).sort();
-  assert.deepEqual(functions, ["login.func", "note.func", "notes.func", "session.func"], "the four routes are deployed, and the library folder is not a route");
+  assert.deepEqual(functions, ["labels.func", "login.func", "note.func", "notes.func", "session.func"], "the five routes are deployed, and the library folder is not a route");
   for (const name of functions) {
     const config = JSON.parse(readFileSync(join(output, "functions", "api", name, ".vc-config.json"), "utf8"));
     assert.match(config.runtime, /^nodejs\d+\.x$/);

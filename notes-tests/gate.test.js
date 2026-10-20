@@ -86,6 +86,7 @@ test("every route file in api/ is wired to the gate: 401 with no cookie, with a 
       session: await import("../api/session.js"),
       notes: await import("../api/notes.js"),
       note: await import("../api/note.js"),
+      labels: await import("../api/labels.js"),
     };
     let checked = 0;
     for (const [name, mod] of Object.entries(modules)) {
@@ -97,7 +98,7 @@ test("every route file in api/ is wired to the gate: 401 with no cookie, with a 
         checked += 1;
       }
     }
-    assert.equal(checked, 7, "seven handlers across the three gated route files, sign out included; zero checked would mean it did not run");
+    assert.equal(checked, 12, "twelve handlers across the four gated route files, sign out and the note PATCH included; zero checked would mean it did not run");
   } finally {
     if (original === undefined) delete process.env[ENVIRONMENT_VARIABLE];
     else process.env[ENVIRONMENT_VARIABLE] = original;

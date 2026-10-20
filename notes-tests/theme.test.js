@@ -27,12 +27,15 @@ function page({ stored = null, deviceDark = false, storageThrows = false } = {})
   const attributes = new Map();
   const listeners = {};
   const store = new Map(stored === null ? [] : [[KEY, stored]]);
-  const button = {
+  const makeButton = (listenerMap) => ({
     attributes: new Map([["aria-label", "Switch to dark mode"]]),
     setAttribute(name, value) { this.attributes.set(name, value); },
     getAttribute(name) { return this.attributes.has(name) ? this.attributes.get(name) : null; },
-    addEventListener(type, handler) { listeners[type] = handler; },
-  };
+    addEventListener(type, handler) { listenerMap[type] = handler; },
+  });
+  const menuListeners = {};
+  const button = makeButton(listeners);
+  const menuButton = makeButton(menuListeners);
   const documentElement = {
     getAttribute: (name) => (attributes.has(name) ? attributes.get(name) : null),
     setAttribute: (name, value) => { attributes.set(name, value); },
@@ -42,7 +45,7 @@ function page({ stored = null, deviceDark = false, storageThrows = false } = {})
     setItem(name, value) { if (storageThrows) throw new Error("storage blocked"); store.set(name, String(value)); },
   };
   const context = {
-    document: { documentElement, getElementById: (id) => (id === "theme-switch" ? button : null) },
+    document: { documentElement, getElementById: (id) => (id === "theme-switch" ? button : id === "menu-theme" ? menuButton : null) },
     window: { matchMedia: () => ({ matches: deviceDark, addEventListener() {} }) },
     localStorage,
   };
@@ -52,6 +55,7 @@ function page({ stored = null, deviceDark = false, storageThrows = false } = {})
     theme: () => attributes.get("data-theme") ?? null,
     label: () => button.getAttribute("aria-label"),
     press: () => listeners.click(),
+    pressMenu: () => menuListeners.click(),
   };
 }
 
@@ -131,4 +135,23 @@ test("the scripts can fail: a switch that forgot to save would be caught", () =>
   runInNewContext(source, broken.context);
   broken.press();
   assert.equal(broken.store.has(KEY), false, "the mutated script does not save, and this test notices");
+});
+
+test("the theme row in the phone menu flips the same theme and saves the same choice", () => {
+  const p = boot({ deviceDark: false });
+  p.pressMenu();
+  assert.equal(p.theme(), "dark");
+  assert.equal(p.label(), "Switch to light mode", "the header button's label follows");
+  assert.equal(p.store.get(KEY), "dark");
+  p.press();
+  assert.equal(p.theme(), "light");
+  p.pressMenu();
+  assert.equal(p.theme(), "dark");
+});
+
+test("the menu row works with storage blocked too", () => {
+  const p = boot({ storageThrows: true });
+  p.pressMenu();
+  assert.equal(p.theme(), "dark");
+  assert.equal(p.store.size, 0);
 });

@@ -26,6 +26,8 @@
     --notes-line: #e2dcd3;
     --notes-line-soft: #ebe6df;
     --notes-hover: #ede8e1;
+    --notes-selected: #e4dccf;
+    --notes-scrim: rgba(26, 25, 24, 0.4);
     --notes-ink: #2f2d2b;
     --notes-strong: #1a1918;
     --notes-muted: #66615f;
@@ -36,6 +38,7 @@
     --notes-warn: #9a5a12;
     --notes-bad: #a52a1f;
 
+    --notes-header-height: 65px;
     --notes-size-12: 12px;
     --notes-size-13: 13px;
     --notes-size-14: 14px;
@@ -55,6 +58,8 @@
       --notes-line: #3a3735;
       --notes-line-soft: #33302e;
       --notes-hover: #302d2b;
+      --notes-selected: #3d3936;
+      --notes-scrim: rgba(0, 0, 0, 0.6);
       --notes-ink: #e3dfdd;
       --notes-strong: #f5f2ef;
       --notes-muted: #9f9893;
@@ -76,6 +81,8 @@
     --notes-line: #3a3735;
     --notes-line-soft: #33302e;
     --notes-hover: #302d2b;
+    --notes-selected: #3d3936;
+    --notes-scrim: rgba(0, 0, 0, 0.6);
     --notes-ink: #e3dfdd;
     --notes-strong: #f5f2ef;
     --notes-muted: #9f9893;
@@ -110,6 +117,7 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
+  .icon.small { width: 14px; height: 14px; }
   .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
   .sr-only {
     position: absolute;
@@ -122,27 +130,26 @@
     white-space: nowrap;
   }
 
+  /* ---------- header ---------- */
+
   .bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: var(--notes-header-height);
     background: var(--notes-panel);
     border-bottom: 1px solid var(--notes-line-soft);
-  }
-  .bar-inner, main {
-    width: min(960px, 100%);
-    margin: 0 auto;
-    padding-left: 16px;
-    padding-right: 16px;
   }
   .bar-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px 16px;
-    flex-wrap: wrap;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    height: 100%;
+    padding: 0 16px;
   }
-  .brand { display: flex; align-items: center; gap: 10px; }
-  .mark { display: block; width: 26px; height: auto; aspect-ratio: 200 / 290; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .mark { display: block; width: 26px; height: auto; aspect-ratio: 200 / 290; flex: none; }
   .wordmark {
     margin: 0;
     font-family: "Archivo", system-ui, sans-serif;
@@ -150,10 +157,64 @@
     font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--notes-strong);
+    white-space: nowrap;
   }
-  .bar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .bar-right { display: flex; align-items: center; gap: 8px; }
+  .menu-button { display: none; margin-right: 2px; }
 
-  main { padding-top: 24px; padding-bottom: 48px; }
+  /* ---------- menu bar and content ---------- */
+
+  .shell { display: flex; align-items: flex-start; }
+  .menu {
+    flex: none;
+    width: 240px;
+    position: sticky;
+    top: var(--notes-header-height);
+    height: calc(100vh - var(--notes-header-height));
+    overflow-y: auto;
+    padding: 8px 0;
+    background: var(--notes-panel);
+    border-right: 1px solid var(--notes-line-soft);
+  }
+  .menu-rule { margin: 8px 0; border: 0; border-top: 1px solid var(--notes-line-soft); }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    width: calc(100% - 16px);
+    min-height: 44px;
+    margin: 0 8px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--notes-ink);
+    font: inherit;
+    font-size: var(--notes-size-14);
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .menu-item .icon { color: var(--notes-icon); }
+  .menu-item .menu-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .menu-item:hover { background: var(--notes-hover); }
+  .menu-item[aria-current="page"] {
+    background: var(--notes-selected);
+    color: var(--notes-strong);
+    font-weight: 700;
+  }
+  .menu-item[aria-current="page"] .icon { color: var(--notes-strong); }
+  .menu-foot { display: none; }
+  .scrim { display: none; }
+
+  .content { flex: 1; min-width: 0; }
+  main {
+    width: min(800px, 100%);
+    margin: 0 auto;
+    padding: 24px 24px 48px;
+  }
 
   h1 {
     margin: 0 0 16px;
@@ -162,6 +223,7 @@
     line-height: 1.2;
     letter-spacing: -0.01em;
     color: var(--notes-strong);
+    overflow-wrap: anywhere;
   }
   .lead { margin: 0 0 16px; color: var(--notes-muted); }
 
@@ -173,6 +235,8 @@
   }
   .row.spread { justify-content: space-between; }
   .form-actions { margin-top: 14px; }
+
+  /* ---------- buttons ---------- */
 
   button {
     appearance: none;
@@ -207,7 +271,8 @@
     color: var(--notes-icon);
   }
   button.icon-button:hover { background: var(--notes-hover); }
-  button.row-delete:hover, button.row-delete:focus-visible { color: var(--notes-bad); }
+  button.row-delete:hover, button.row-delete:focus-visible,
+  button.label-delete:hover, button.label-delete:focus-visible { color: var(--notes-bad); }
   button.quiet-delete:hover, button.quiet-delete:focus-visible { color: var(--notes-bad); }
   button.confirm-yes {
     border: 1px solid var(--notes-bad);
@@ -215,21 +280,34 @@
     color: var(--notes-bad);
   }
   button.confirm-yes:hover { background: var(--notes-hover); }
+  button.row-button {
+    width: 100%;
+    justify-content: flex-start;
+    border: 0;
+    background: transparent;
+  }
+  button.row-button:hover { background: var(--notes-hover); }
   button:disabled { cursor: default; opacity: 0.55; }
 
-  button:focus-visible, input:focus-visible, textarea:focus-visible, .note-link:focus-visible {
+  button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
     outline: 2px solid var(--notes-accent);
     outline-offset: 2px;
   }
 
   /* One icon at a time in the theme switch: the moon on a light page, the sun on a dark one. */
-  .theme-switch .icon-sun { display: none; }
+  .theme-switch .icon-sun, .menu-item .to-light { display: none; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .theme-switch .icon-sun { display: block; }
     :root:not([data-theme="light"]) .theme-switch .icon-moon { display: none; }
+    :root:not([data-theme="light"]) .menu-item .to-light { display: inline; }
+    :root:not([data-theme="light"]) .menu-item .to-dark { display: none; }
   }
   :root[data-theme="dark"] .theme-switch .icon-sun { display: block; }
   :root[data-theme="dark"] .theme-switch .icon-moon { display: none; }
+  :root[data-theme="dark"] .menu-item .to-light { display: inline; }
+  :root[data-theme="dark"] .menu-item .to-dark { display: none; }
+
+  /* ---------- fields ---------- */
 
   label {
     display: block;
@@ -238,7 +316,8 @@
     font-weight: 600;
     color: var(--notes-muted);
   }
-  input[type="password"], input[type="search"] {
+  label.sr-only { margin: -1px; }
+  input[type="password"], input[type="search"], input[type="text"] {
     appearance: none;
     width: 100%;
     min-height: 44px;
@@ -250,6 +329,13 @@
     font: inherit;
   }
   input::placeholder { color: var(--notes-muted); opacity: 1; }
+  input[type="checkbox"] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--notes-accent);
+  }
 
   .search-field { position: relative; }
   .search-field .icon {
@@ -275,6 +361,21 @@
     color: var(--notes-bad);
   }
 
+  .flash {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 4px 4px 4px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-panel);
+  }
+  .flash p { margin: 0; }
+
+  /* ---------- note rows ---------- */
+
   .notes { list-style: none; margin: 16px 0 0; padding: 0; }
   .notes li { margin-bottom: 2px; }
   .note-row {
@@ -285,7 +386,7 @@
     border-radius: 8px;
   }
   .note-row:hover { background: var(--notes-hover); }
-  .note-row .row-delete { margin: -8px -6px -8px 0; }
+  .row-actions { display: flex; flex: none; margin: -8px -6px -8px 0; }
   .note-row .note-link { flex: 1; min-width: 0; }
   .notes .confirm { margin: 4px 0 8px; }
   .note-row-message { margin: 4px 12px 8px; }
@@ -329,6 +430,44 @@
     border-radius: 8px;
     background: var(--notes-panel);
   }
+  .empty.inline { margin: 8px 0; }
+
+  /* ---------- label chips ---------- */
+
+  .chips {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-top: 4px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .chips.strip { flex-wrap: wrap; margin: 12px 0 0; overflow: visible; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    gap: 4px;
+    min-width: 0;
+    max-width: 120px;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid var(--notes-line);
+    border-radius: 6px;
+    background: var(--notes-panel);
+    color: var(--notes-ink);
+    font-size: var(--notes-size-12);
+    font-weight: 600;
+    line-height: 1;
+  }
+  .chip > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip.plus { flex: none; }
+  .chip.archived-marker { flex: none; background: transparent; color: var(--notes-muted); }
+  .chip.archived-marker .icon { flex: none; }
+  .chips .plus-narrow { display: none; }
+  .chips .over-wide { display: none; }
+
+  /* ---------- edit view ---------- */
 
   .toolbar {
     padding-bottom: 12px;
@@ -375,14 +514,103 @@
   .status[data-state="failed"]::before { background: var(--notes-bad); }
   .detail { margin: 8px 0 0; min-height: 1.5em; font-size: var(--notes-size-13); color: var(--notes-muted); }
 
-  .confirm {
+  .confirm, .box {
     margin-top: 12px;
     padding: 12px 16px;
     border-radius: 8px;
     background: var(--notes-panel);
   }
   .confirm p { margin: 0 0 8px; font-weight: 600; }
+  .box {
+    max-width: 380px;
+    padding: 16px;
+    border: 1px solid var(--notes-line);
+  }
+  .box-heading { margin: 0 0 8px; font-size: var(--notes-size-12); font-weight: 600; color: var(--notes-muted); }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 4px;
+    border-radius: 8px;
+    font-size: var(--notes-size-14);
+    font-weight: 400;
+    color: var(--notes-ink);
+    cursor: pointer;
+  }
+  .check-row:hover { background: var(--notes-hover); }
+  .check-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #panel-list { margin: 8px 0; }
+  #panel-error { margin: 8px 0 0; }
 
+  /* ---------- edit labels ---------- */
+
+  .create-row { display: flex; align-items: center; gap: 8px; }
+  .create-row input { flex: 1; min-width: 0; }
+  #label-error { margin: 8px 0 0; }
+  .labels-list { list-style: none; margin: 16px 0 0; padding: 0; }
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding-left: 4px;
+    border-bottom: 1px solid var(--notes-line-soft);
+  }
+  .label-row .icon { color: var(--notes-icon); }
+  .label-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--notes-size-14);
+    font-weight: 600;
+    color: var(--notes-ink);
+  }
+  .label-row.renaming { flex-wrap: wrap; padding: 8px 0 8px 4px; }
+  .label-row.renaming input { flex: 1; min-width: 140px; }
+  .labels-list .confirm { margin: 8px 0; }
+
+  /* ---------- phone width ---------- */
+
+  @media (max-width: 760px) {
+    .menu-button { display: inline-flex; }
+    .menu {
+      display: none;
+      position: fixed;
+      top: var(--notes-header-height);
+      left: 0;
+      bottom: 0;
+      z-index: 20;
+      width: 280px;
+      max-width: 85vw;
+      height: auto;
+      border-right: 1px solid var(--notes-line);
+    }
+    .menu[data-open="true"] { display: block; }
+    .scrim {
+      position: fixed;
+      top: var(--notes-header-height);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      background: var(--notes-scrim);
+    }
+    .scrim:not([hidden]) { display: block; }
+    .menu-foot { display: block; }
+    body.signed-in #theme-switch, body.signed-in #sign-out { display: none; }
+    #new-note { width: 44px; padding: 0; border-radius: 8px; }
+    #new-note .btn-label { display: none; }
+    main { padding: 24px 16px 48px; }
+    .chips .over-narrow { display: none; }
+    .chips .over-wide { display: none; }
+    .chips .plus-wide { display: none; }
+    .chips .plus-narrow { display: inline-flex; }
+  }
   @media (max-width: 520px) {
     .note-link { flex-direction: column; align-items: stretch; gap: 2px; }
     .note-when { text-align: left; }
@@ -398,10 +626,17 @@
   <symbol id="i-bin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h20v3H2zM3 7h18v13H3zM10 11h4"/></symbol>
+  <symbol id="i-unarchive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h20v3H2zM3 7h18v13H3zM12 17v-6M9 14l3-3 3 3"/></symbol>
 </svg>
 <header class="bar">
   <div class="bar-inner">
     <div class="brand">
+      <button type="button" class="icon-button menu-button" id="menu-button" aria-label="Open menu" aria-expanded="false" aria-controls="menu" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-menu"></use></svg></button>
       <img class="mark" src="/logo-stone.svg" alt="">
       <p class="wordmark">Silurian Notes</p>
     </div>
@@ -411,15 +646,41 @@
         <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-sun"></use></svg>
       </button>
       <div class="row" id="bar-actions" hidden>
-        <button type="button" class="primary" id="new-note"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg>New note</button>
+        <button type="button" class="primary" id="new-note" aria-label="New note"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg><span class="btn-label">New note</span></button>
         <button type="button" id="sign-out">Sign out</button>
       </div>
     </div>
   </div>
 </header>
 
-<main>
+<div class="shell">
+  <nav class="menu" id="menu" aria-label="Notes menu" hidden>
+    <a class="menu-item" href="#" data-key="notes"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-note"></use></svg><span class="menu-text">Notes</span></a>
+    <hr class="menu-rule">
+    <div id="menu-labels"></div>
+    <a class="menu-item" href="#labels" data-key="labels"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-pencil"></use></svg><span class="menu-text">Edit labels</span></a>
+    <hr class="menu-rule">
+    <a class="menu-item" href="#archive" data-key="archive"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-archive"></use></svg><span class="menu-text">Archive</span></a>
+    <div class="menu-foot">
+      <hr class="menu-rule">
+      <button type="button" class="menu-item theme-switch" id="menu-theme">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-moon"></use></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-sun"></use></svg>
+        <span class="menu-text to-dark">Dark mode</span><span class="menu-text to-light">Light mode</span>
+      </button>
+      <button type="button" class="menu-item" id="menu-sign-out"><span class="menu-text">Sign out</span></button>
+    </div>
+  </nav>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <div class="content">
+<main id="main">
   <p id="boot" class="lead">Loading.</p>
+
+  <div class="flash" id="flash" role="status" hidden>
+    <p id="flash-text"></p>
+    <button type="button" id="flash-undo">Undo</button>
+  </div>
 
   <section id="login" hidden aria-labelledby="login-heading">
     <h1 id="login-heading">Private notes</h1>
@@ -449,6 +710,20 @@
     <p class="empty" id="empty" role="status" hidden>No notes yet. Press New note to write the first one.</p>
   </section>
 
+  <section id="labels" hidden aria-labelledby="labels-heading">
+    <h1 id="labels-heading">Edit labels</h1>
+    <form id="create-form" novalidate>
+      <label for="new-label">New label</label>
+      <div class="create-row">
+        <input id="new-label" type="text" maxlength="50" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button type="submit" id="create-label" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg>Create</button>
+      </div>
+      <p class="message" id="label-error" role="alert" hidden></p>
+    </form>
+    <ul class="labels-list" id="label-list"></ul>
+    <p class="empty" id="labels-empty" role="status" hidden>No labels yet. Type a name above and press Create.</p>
+  </section>
+
   <section id="edit" hidden aria-label="Edit note">
     <div class="row spread toolbar">
       <div class="row">
@@ -456,10 +731,13 @@
         <span class="status" id="status" role="status" aria-live="polite" data-state="saved">Saved</span>
       </div>
       <div class="row">
+        <button type="button" id="labels-button" aria-expanded="false" aria-controls="labels-panel"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-tag"></use></svg>Labels</button>
         <button type="button" id="copy">Copy</button>
+        <button type="button" id="archive"></button>
         <button type="button" class="quiet-delete" id="delete">Delete</button>
       </div>
     </div>
+    <div class="chips strip" id="note-strip" hidden></div>
     <p class="detail" id="detail"></p>
     <div class="confirm" id="confirm" hidden>
       <p>Delete this note? This cannot be undone.</p>
@@ -468,9 +746,20 @@
         <button type="button" id="keep">Keep</button>
       </div>
     </div>
+    <div class="box" id="labels-panel" hidden>
+      <p class="box-heading">Labels on this note</p>
+      <label class="sr-only" for="label-find">Find or create a label</label>
+      <input id="label-find" type="text" placeholder="Find or create a label" maxlength="50" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="message" id="panel-error" role="alert" hidden></p>
+      <div id="panel-list"></div>
+      <p class="empty inline" id="panel-empty" hidden>No labels yet. Type a name to create one.</p>
+      <div class="row"><button type="button" id="panel-done">Done</button></div>
+    </div>
     <textarea id="text" class="editor" aria-label="Note text" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
   </section>
 </main>
+  </div>
+</div>
 
 <script id="theme-switch-script">
 (function () {
@@ -478,7 +767,7 @@
 
   var KEY = "silurian-notes-theme";
   var root = document.documentElement;
-  var button = document.getElementById("theme-switch");
+  var buttons = [document.getElementById("theme-switch"), document.getElementById("menu-theme")].filter(Boolean);
   var query = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
   function current() {
@@ -488,22 +777,77 @@
   }
 
   function paint() {
-    button.setAttribute("aria-label", current() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    var label = current() === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    // The header button is an icon, so it needs the label. The menu row has its
+    // own words and its icon follows the theme in the stylesheet.
+    buttons[0].setAttribute("aria-label", label);
   }
 
-  button.addEventListener("click", function () {
+  function flip() {
     var next = current() === "dark" ? "light" : "dark";
     root.setAttribute("data-theme", next);
     // The choice is remembered on this device only. If storage is blocked the
     // switch still works for this visit.
     try { localStorage.setItem(KEY, next); } catch (e) { /* not saved */ }
     paint();
-  });
+  }
+
+  buttons.forEach(function (button) { button.addEventListener("click", flip); });
 
   if (query && query.addEventListener) { query.addEventListener("change", paint); }
   paint();
 })();
 </script>
+
+<script id="menu-script">
+(function () {
+  "use strict";
+
+  // The phone menu. Opens and closes at once, no animation. The wide layout's
+  // menu bar is always showing and never uses any of this.
+  var button = document.getElementById("menu-button");
+  var menu = document.getElementById("menu");
+  var scrim = document.getElementById("scrim");
+  var main = document.getElementById("main");
+  var phone = window.matchMedia ? window.matchMedia("(max-width: 760px)") : null;
+  var open = false;
+
+  function setOpen(next, restoreFocus) {
+    if (next === open) { return; }
+    open = next;
+    menu.setAttribute("data-open", open ? "true" : "false");
+    scrim.hidden = !open;
+    main.inert = open;
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    button.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    if (open) {
+      var target = menu.querySelector('[aria-current="page"]') || menu.querySelector("a");
+      if (target) { target.focus(); }
+    } else if (restoreFocus !== false) {
+      button.focus();
+    }
+  }
+
+  button.addEventListener("click", function () { setOpen(!open); });
+  scrim.addEventListener("click", function () { setOpen(false); });
+  menu.addEventListener("click", function (event) {
+    var item = event.target && event.target.closest ? event.target.closest("a, button") : null;
+    if (item && open) { setOpen(false); }
+  });
+  document.addEventListener("keydown", function (event) {
+    if (open && event.key === "Escape") { setOpen(false); }
+  });
+  if (phone && phone.addEventListener) {
+    phone.addEventListener("change", function (event) { if (!event.matches) { setOpen(false, false); } });
+  }
+
+  window.NotesMenu = {
+    close: function (restoreFocus) { setOpen(false, restoreFocus); },
+    isOpen: function () { return open; }
+  };
+})();
+</script>
+
 <script>
 (function () {
   "use strict";
@@ -513,17 +857,42 @@
   var RETRY_DELAY_MS = 5000;
   var TOO_LARGE = "This note is over 1 MB, so it cannot be saved. Cut it down and it will save.";
   var NOT_DELETED = "Could not delete this note. Nothing was changed. Try again.";
+  var NOT_CHANGED = "Could not save that change. Nothing was changed. Try again.";
   var EMPTY_LIST = "No notes yet. Press New note to write the first one.";
+  var EMPTY_ARCHIVE = "Nothing archived. Archive a note to take it out of your notes without deleting it.";
+  var LABEL_EMPTY_BEFORE = "No notes have the label ";
+  var LABEL_EMPTY_AFTER = ". Open a note and press Labels to add it.";
+  var LABEL_EMPTY_ARCHIVED = " Archived notes with this label are under Archive.";
+  var NAME_LENGTH = "A label name is 1 to 50 characters.";
   var SEARCH_DELAY_MS = 250;
+  var LABEL_NAME_MAX = 50;
 
   var $ = function (id) { return document.getElementById(id); };
-  var views = { login: $("login"), list: $("list"), edit: $("edit") };
+  var views = { login: $("login"), list: $("list"), labels: $("labels"), edit: $("edit") };
   var textBox = $("text");
   var statusEl = $("status");
   var detailEl = $("detail");
 
-  var note = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
+  function blankNote(over) {
+    var fresh = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null, labels: [], serverLabels: [], archived: false };
+    Object.keys(over || {}).forEach(function (key) { fresh[key] = over[key]; });
+    return fresh;
+  }
+
+  var note = blankNote();
   var currentView = null;
+
+  // Which list the list view is showing: notes, archive or one label.
+  var listView = { kind: "notes", id: null };
+  // The address of the list the user was last on, so All notes and Delete go back there.
+  var lastListHash = "";
+  // The labels file as the server last said it, and the version a change must start from.
+  var labelsState = { labels: [], version: "none" };
+  // A message bar and an Undo waiting for the list that is about to be shown.
+  var pendingFlash = null;
+  var flashUndo = null;
+  // A new note started from a label view starts with that label.
+  var newNoteLabel = null;
 
   // The only way a view is painted. The list and the editor are shown only by
   // code that has just had a good answer from the server for them, so nothing of
@@ -534,6 +903,9 @@
     $("boot").hidden = true;
     Object.keys(views).forEach(function (key) { views[key].hidden = key !== name; });
     $("bar-actions").hidden = name === "login";
+    setSignedIn(name !== "login");
+    if (name === "login" || name === "edit") { closeMenu(false); }
+    renderMenu();
   }
 
   // Nothing but the wordmark and one line of text.
@@ -541,8 +913,22 @@
     currentView = null;
     Object.keys(views).forEach(function (key) { views[key].hidden = true; });
     $("bar-actions").hidden = true;
+    setSignedIn(false);
+    closeMenu(false);
+    hideFlash();
     $("boot").textContent = message;
     $("boot").hidden = false;
+  }
+
+  // Signed out, the menu and its button are not on the page at any width.
+  function setSignedIn(on) {
+    document.body.classList.toggle("signed-in", on);
+    $("menu").hidden = !on;
+    $("menu-button").hidden = !on;
+  }
+
+  function closeMenu(restoreFocus) {
+    if (window.NotesMenu) { window.NotesMenu.close(restoreFocus); }
   }
 
   // Each navigation gets a number, so a slow answer for an earlier one cannot
@@ -583,6 +969,150 @@
     clearTimeout(note.retry); note.retry = null;
   }
 
+  /* ---------- label helpers ---------- */
+
+  function byName(a, b) {
+    var x = a.name.toLowerCase();
+    var y = b.name.toLowerCase();
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+
+  function sortedLabels() { return labelsState.labels.slice().sort(byName); }
+
+  function labelById(id) {
+    for (var i = 0; i < labelsState.labels.length; i += 1) {
+      if (labelsState.labels[i].id === id) { return labelsState.labels[i]; }
+    }
+    return null;
+  }
+
+  // The labels a note holds that the label list still knows, alphabetical.
+  function knownLabels(ids) {
+    return (ids || []).map(labelById).filter(Boolean).sort(byName);
+  }
+
+  function cleanName(value) {
+    var name = value.trim();
+    var length = Array.from(name).length;
+    return length >= 1 && length <= LABEL_NAME_MAX ? name : null;
+  }
+
+  function clashText(name) { return "There is already a label called " + name + "."; }
+
+  function nameTaken(name, exceptId) {
+    var lower = name.toLowerCase();
+    return labelsState.labels.some(function (l) { return l.id !== exceptId && l.name.toLowerCase() === lower; });
+  }
+
+  function takeLabels(data) {
+    labelsState = { labels: data.labels, version: data.updatedAt };
+    renderMenu();
+  }
+
+  function refreshLabels() {
+    return request("/api/labels").then(function (response) {
+      if (!response.ok) { throw new Error("labels"); }
+      return response.json();
+    }).then(function (data) { takeLabels(data); return labelsState; });
+  }
+
+  // A change to the label list says which version it started from. A stale one
+  // is refused, and the answer carries the current list.
+  function labelCall(method, path, body) {
+    var options = { method: method, headers: { "X-Base-Labels": labelsState.version } };
+    if (body !== undefined) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+    return request(path, options).then(function (response) {
+      return response.json().then(function (data) { return data; }, function () { return {}; }).then(function (data) {
+        if (response.ok) { takeLabels(data); }
+        else if (response.status === 409 && data.labels) { takeLabels(data); }
+        return { ok: response.ok, status: response.status, data: data };
+      });
+    }).catch(function () {
+      return { ok: false, status: 0, data: { error: NOT_CHANGED } };
+    });
+  }
+
+  /* ---------- the menu ---------- */
+
+  function menuItemKey() {
+    if (currentView === "labels") { return "labels"; }
+    if (currentView === "list") {
+      if (currentQuery() !== "") { return null; }
+      return listView.kind === "label" ? "label:" + listView.id : listView.kind;
+    }
+    if (currentView === "edit") {
+      var label = /^#l\/([0-9a-f]{32})$/.exec(lastListHash);
+      return lastListHash === "#archive" ? "archive" : label ? "label:" + label[1] : "notes";
+    }
+    return null;
+  }
+
+  function icon(name, extra) {
+    return '<svg class="icon' + (extra ? " " + extra : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-' + name + '"></use></svg>';
+  }
+
+  function renderMenu() {
+    var holder = $("menu-labels");
+    holder.textContent = "";
+    sortedLabels().forEach(function (label) {
+      var link = document.createElement("a");
+      link.className = "menu-item";
+      link.href = "#l/" + label.id;
+      link.setAttribute("data-key", "label:" + label.id);
+      link.title = label.name;
+      link.innerHTML = icon("tag");
+      var text = document.createElement("span");
+      text.className = "menu-text";
+      text.textContent = label.name;
+      link.appendChild(text);
+      holder.appendChild(link);
+    });
+    var active = menuItemKey();
+    Array.prototype.forEach.call($("menu").querySelectorAll("a[data-key]"), function (link) {
+      if (link.getAttribute("data-key") === active) { link.setAttribute("aria-current", "page"); }
+      else { link.removeAttribute("aria-current"); }
+    });
+  }
+
+  // Choosing an item leaves any search behind. Choosing the item for the view
+  // already showing starts that view again.
+  $("menu").addEventListener("click", function (event) {
+    var link = event.target.closest ? event.target.closest("a[data-key]") : null;
+    if (!link) { return; }
+    hideFlash();
+    $("search").value = "";
+    var target = link.getAttribute("href");
+    var same = (target === "#" ? "" : target) === location.hash;
+    if (same && currentView !== "edit") { route(); }
+  });
+
+  /* ---------- message bar ---------- */
+
+  function showFlash(text, undo) {
+    $("flash-text").textContent = text;
+    flashUndo = undo || null;
+    $("flash-undo").hidden = !undo;
+    $("flash").hidden = false;
+  }
+
+  function hideFlash() {
+    $("flash").hidden = true;
+    flashUndo = null;
+  }
+
+  $("flash-undo").addEventListener("click", function () {
+    var undo = flashUndo;
+    if (!undo) { return; }
+    $("flash-undo").disabled = true;
+    undo().then(function (ok) {
+      $("flash-undo").disabled = false;
+      if (ok) { hideFlash(); }
+    });
+  });
+
   /* ---------- sign in ---------- */
 
   $("login-form").addEventListener("submit", function (event) {
@@ -608,6 +1138,56 @@
     });
   });
 
+  /* ---------- chips ---------- */
+
+  function chip(text, className) {
+    var el = document.createElement("span");
+    el.className = "chip" + (className ? " " + className : "");
+    var inner = document.createElement("span");
+    inner.textContent = text;
+    el.appendChild(inner);
+    if (!className) { el.title = text; }
+    return el;
+  }
+
+  function archivedMarker() {
+    var el = document.createElement("span");
+    el.className = "chip archived-marker";
+    el.innerHTML = icon("archive", "small");
+    var inner = document.createElement("span");
+    inner.textContent = "Archived";
+    el.appendChild(inner);
+    return el;
+  }
+
+  // The chip line under a row: at most 3 chips above 760px and 2 at 760px and
+  // below, then one more reading +N. The stylesheet picks which, from the classes.
+  function chipLine(item, searching) {
+    var parts = [];
+    if (searching && item.archived) { parts.push(archivedMarker()); }
+    knownLabels(item.labels).forEach(function (label) { parts.push(chip(label.name)); });
+    if (parts.length === 0) { return null; }
+    var line = document.createElement("div");
+    line.className = "chips";
+    line.setAttribute("aria-hidden", "true");
+    parts.forEach(function (el, index) {
+      if (index >= 3) { el.classList.add("over-wide"); }
+      if (index >= 2) { el.classList.add("over-narrow"); }
+      line.appendChild(el);
+    });
+    if (parts.length > 3) { line.appendChild(chip("+" + (parts.length - 3), "plus plus-wide")); }
+    if (parts.length > 2) { line.appendChild(chip("+" + (parts.length - 2), "plus plus-narrow")); }
+    return line;
+  }
+
+  // What a screen reader gets in place of the chips.
+  function chipSpeech(item, searching) {
+    var names = knownLabels(item.labels).map(function (l) { return l.name; });
+    var text = searching && item.archived ? "Archived. " : "";
+    if (names.length) { text += "Labels: " + names.join(", "); }
+    return text;
+  }
+
   /* ---------- list ---------- */
 
   function whenText(iso) {
@@ -623,7 +1203,37 @@
     Array.prototype.forEach.call($("notes").querySelectorAll(".confirm"), function (el) { el.hidden = true; });
   }
 
-  function noteRow(item) {
+  // A label or archive change to a note that is not open. Resolves to
+  // { ok, updatedAt, error }.
+  function patchRequest(id, base, change) {
+    return request("/api/note?id=" + encodeURIComponent(id), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "X-Base-Updated": base },
+      body: JSON.stringify(change)
+    }).then(function (response) {
+      return response.json().then(function (data) { return data; }, function () { return {}; }).then(function (data) {
+        if (response.ok) { return { ok: true, updatedAt: data.updatedAt }; }
+        return { ok: false, error: data.error || NOT_CHANGED };
+      });
+    }).catch(function () { return { ok: false, error: NOT_CHANGED }; });
+  }
+
+  // Undo for an archive or unarchive that was just made: puts the flag back,
+  // from the version that change produced.
+  function undoArchive(id, version, nowArchived) {
+    return function () {
+      return patchRequest(id, version, { archived: !nowArchived }).then(function (result) {
+        if (!result.ok) {
+          showFlash(result.error, null);
+          return false;
+        }
+        if (currentView === "list") { loadList(false); }
+        return true;
+      });
+    };
+  }
+
+  function noteRow(item, searching) {
     var li = document.createElement("li");
     var row = document.createElement("div");
     row.className = "note-row";
@@ -642,20 +1252,40 @@
       line.textContent = item.line;
       main.appendChild(line);
     }
+    var chips = chipLine(item, searching);
+    if (chips) { main.appendChild(chips); }
+    var speech = chipSpeech(item, searching);
+    if (speech) {
+      var hidden = document.createElement("span");
+      hidden.className = "sr-only";
+      hidden.textContent = speech;
+      main.appendChild(hidden);
+    }
     var when = document.createElement("time");
     when.className = "note-when";
     when.dateTime = item.updatedAt;
     when.textContent = whenText(item.updatedAt);
     link.appendChild(main);
     link.appendChild(when);
+
+    var actions = document.createElement("div");
+    actions.className = "row-actions";
+    var archive = document.createElement("button");
+    archive.type = "button";
+    archive.className = "icon-button row-archive";
+    archive.innerHTML = icon(item.archived ? "unarchive" : "archive");
+    archive.title = item.archived ? "Unarchive note" : "Archive note";
+    archive.setAttribute("aria-label", (item.archived ? "Unarchive note: " : "Archive note: ") + item.title);
     var remove = document.createElement("button");
     remove.type = "button";
     remove.className = "icon-button row-delete";
-    remove.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-bin"></use></svg>';
+    remove.innerHTML = icon("bin");
     remove.title = "Delete note";
     remove.setAttribute("aria-label", "Delete note: " + item.title);
+    actions.appendChild(archive);
+    actions.appendChild(remove);
     row.appendChild(link);
-    row.appendChild(remove);
+    row.appendChild(actions);
 
     // The same confirmation step as the edit view.
     var confirmBox = document.createElement("div");
@@ -682,7 +1312,26 @@
     message.setAttribute("role", "alert");
     message.hidden = true;
 
+    archive.addEventListener("click", function () {
+      hideFlash();
+      closeRowConfirms();
+      message.hidden = true;
+      var toArchive = !item.archived;
+      archive.disabled = true;
+      patchRequest(item.id, item.updatedAt, { archived: toArchive }).then(function (result) {
+        archive.disabled = false;
+        if (currentView === "login") { return; }
+        if (!result.ok) {
+          message.textContent = result.error;
+          message.hidden = false;
+          return;
+        }
+        showFlash(toArchive ? "Note archived." : "Note unarchived.", undoArchive(item.id, result.updatedAt, toArchive));
+        loadList(false);
+      });
+    });
     remove.addEventListener("click", function () {
+      hideFlash();
       closeRowConfirms();
       message.hidden = true;
       confirmBox.hidden = false;
@@ -718,35 +1367,95 @@
 
   function showEmpty(query) {
     var empty = $("empty");
-    empty.textContent = query === "" ? EMPTY_LIST : "No notes contain " + query;
+    var seq = searchSeq;
+    if (query !== "") {
+      empty.textContent = "No notes contain " + query;
+    } else if (listView.kind === "archive") {
+      empty.textContent = EMPTY_ARCHIVE;
+    } else if (listView.kind === "label") {
+      var label = labelById(listView.id);
+      var base = LABEL_EMPTY_BEFORE + (label ? label.name : "") + LABEL_EMPTY_AFTER;
+      empty.textContent = base;
+      // Say so when archived notes carry the label, since the list leaves them out.
+      var id = listView.id;
+      request("/api/notes?view=archive").then(function (response) {
+        return response.ok ? response.json() : { notes: [] };
+      }).then(function (data) {
+        var carried = data.notes.some(function (n) { return (n.labels || []).indexOf(id) !== -1; });
+        if (carried && seq === searchSeq && listView.id === id) { empty.textContent = base + LABEL_EMPTY_ARCHIVED; }
+      }).catch(function () { /* the plain sentence stands */ });
+    } else {
+      empty.textContent = EMPTY_LIST;
+    }
     empty.hidden = false;
+  }
+
+  function listHashFor(view) {
+    return view.kind === "archive" ? "#archive" : view.kind === "label" ? "#l/" + view.id : "";
+  }
+
+  function listHeading(query) {
+    if (query !== "") { return "Search results"; }
+    if (listView.kind === "archive") { return "Archive"; }
+    if (listView.kind === "label") {
+      var label = labelById(listView.id);
+      return label ? label.name : "Notes";
+    }
+    return "Notes";
   }
 
   // reveal: this load is a navigation to the list, so the list is shown only
   // once the server has answered. Without it, the load refreshes a list that is
   // already on screen, as search does.
-  function loadList(reveal) {
+  function loadList(reveal, flash) {
     var query = currentQuery();
     var seq = ++searchSeq;
     var navigation = routeSeq;
     var errorEl = $("list-error");
-    var options = query === "" ? {} : { headers: { "X-Note-Search": encodeURIComponent(query) } };
-    request("/api/notes", options).then(function (response) {
+    var url = "/api/notes";
+    var options = {};
+    if (query !== "") {
+      options = { headers: { "X-Note-Search": encodeURIComponent(query) } };
+    } else if (listView.kind === "archive") {
+      url += "?view=archive";
+    } else if (listView.kind === "label") {
+      url += "?view=label&label=" + encodeURIComponent(listView.id);
+    } else {
+      url += "?view=notes";
+    }
+    var listed = request(url, options).then(function (response) {
       if (!response.ok) {
         return response.json().then(function (data) { throw new Error(data && data.error || "list"); }, function () { throw new Error("list"); });
       }
       return response.json();
-    }).then(function (data) {
+    });
+    // The chips need the label names, but a labels failure must not hide the
+    // notes. A label view cannot be told from a deleted label without them, so
+    // that one does fail.
+    var labelsLoaded = refreshLabels().then(function () { return true; }, function () { return false; });
+    Promise.all([listed, labelsLoaded]).then(function (results) {
+      var data = results[0];
+      if (!results[1] && query === "" && listView.kind === "label") { throw new Error("labels"); }
       // A slower answer to an older search must not replace a newer one.
       if (seq !== searchSeq) { return; }
-      if (reveal) {
-        if (navigation !== routeSeq) { return; }
-        show("list");
-      } else if (currentView !== "list") { return; }
+      if (reveal && navigation !== routeSeq) { return; }
+      if (!reveal && currentView !== "list") { return; }
+      // A label that no longer exists shows the Notes list.
+      if (query === "" && listView.kind === "label" && !labelById(listView.id)) {
+        listView = { kind: "notes", id: null };
+        history.replaceState(null, "", location.pathname);
+        lastHash = "";
+        loadList(reveal, flash);
+        return;
+      }
+      if (reveal) { show("list"); } else { renderMenu(); }
+      lastListHash = listHashFor(listView);
+      $("list-heading").textContent = listHeading(query);
       errorEl.hidden = true;
+      if (flash) { showFlash(flash.text, flash.undo); }
       var listEl = $("notes");
       listEl.textContent = "";
-      data.notes.forEach(function (item) { listEl.appendChild(noteRow(item)); });
+      data.notes.forEach(function (item) { listEl.appendChild(noteRow(item, query !== "")); });
       if (data.notes.length === 0) { showEmpty(query); } else { $("empty").hidden = true; }
     }).catch(function (error) {
       if (seq !== searchSeq || currentView === "login") { return; }
@@ -760,27 +1469,250 @@
     });
   }
 
-  function showList() {
+  function showList(flash) {
     $("list-error").hidden = true;
-    loadList(true);
+    loadList(true, flash);
   }
 
   $("search").addEventListener("input", function () {
+    hideFlash();
+    renderMenu();
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(loadList, SEARCH_DELAY_MS);
+    searchTimer = setTimeout(function () { loadList(false); }, SEARCH_DELAY_MS);
+  });
+
+  /* ---------- edit labels ---------- */
+
+  var renamingId = null;
+  var renameDraft = "";
+  var focusRename = false;
+  var confirmingId = null;
+
+  function labelError(text) {
+    var el = $("label-error");
+    el.textContent = text || "";
+    el.hidden = !text;
+  }
+
+  function showLabels() {
+    labelError("");
+    var navigation = routeSeq;
+    refreshLabels().then(function () {
+      if (navigation !== routeSeq) { return; }
+      renamingId = confirmingId = null;
+      show("labels");
+      $("new-label").value = "";
+      $("create-label").disabled = true;
+      renderLabelList();
+    }).catch(function () {
+      if (navigation === routeSeq && currentView !== "login") { showOnly("Could not load your labels. Check your connection and reload."); }
+    });
+  }
+
+  function renderLabelList() {
+    var list = $("label-list");
+    list.textContent = "";
+    var labels = sortedLabels();
+    $("labels-empty").hidden = labels.length !== 0;
+    labels.forEach(function (label) { list.appendChild(labelRow(label)); });
+  }
+
+  function labelRow(label) {
+    var li = document.createElement("li");
+    var row = document.createElement("div");
+    row.className = "label-row";
+    row.innerHTML = icon("tag");
+
+    if (renamingId === label.id) {
+      row.className += " renaming";
+      var field = document.createElement("input");
+      field.type = "text";
+      field.maxLength = LABEL_NAME_MAX;
+      field.value = renameDraft;
+      field.addEventListener("input", function () { renameDraft = field.value; });
+      field.setAttribute("aria-label", "Label name");
+      field.setAttribute("autocomplete", "off");
+      field.setAttribute("spellcheck", "false");
+      var save = document.createElement("button");
+      save.type = "button";
+      save.textContent = "Save";
+      var cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "Cancel";
+      var stopRename = function () { renamingId = null; labelError(""); renderLabelList(); };
+      var saveRename = function () {
+        var name = cleanName(field.value);
+        if (name === null) { labelError(NAME_LENGTH); return; }
+        if (nameTaken(name, label.id)) { labelError(clashText(name)); return; }
+        save.disabled = cancel.disabled = true;
+        labelCall("PUT", "/api/labels?id=" + encodeURIComponent(label.id), { name: name }).then(function (result) {
+          if (currentView === "login") { return; }
+          if (result.ok) { renamingId = null; labelError(""); }
+          else { labelError(result.data.error || NOT_CHANGED); if (result.status === 409) { renamingId = null; } }
+          renderLabelList();
+        });
+      };
+      save.addEventListener("click", saveRename);
+      cancel.addEventListener("click", stopRename);
+      field.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") { event.preventDefault(); saveRename(); }
+        else if (event.key === "Escape") { event.preventDefault(); stopRename(); }
+      });
+      row.appendChild(field);
+      row.appendChild(save);
+      row.appendChild(cancel);
+      li.appendChild(row);
+      // Only a rename that has just started takes focus, so opening a delete
+      // confirmation on another row does not pull it away.
+      if (focusRename) {
+        focusRename = false;
+        setTimeout(function () { field.focus(); field.select(); }, 0);
+      }
+      return li;
+    }
+
+    var name = document.createElement("span");
+    name.className = "label-name";
+    name.textContent = label.name;
+    name.title = label.name;
+    var rename = document.createElement("button");
+    rename.type = "button";
+    rename.className = "icon-button label-rename";
+    rename.innerHTML = icon("pencil");
+    rename.title = "Rename label";
+    rename.setAttribute("aria-label", "Rename label: " + label.name);
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "icon-button label-delete";
+    remove.innerHTML = icon("bin");
+    remove.title = "Delete label";
+    remove.setAttribute("aria-label", "Delete label: " + label.name);
+    row.appendChild(name);
+    row.appendChild(rename);
+    row.appendChild(remove);
+    li.appendChild(row);
+
+    rename.addEventListener("click", function () {
+      labelError("");
+      if (confirmingId === label.id) { confirmingId = null; }
+      renamingId = label.id;
+      renameDraft = label.name;
+      focusRename = true;
+      renderLabelList();
+    });
+    remove.addEventListener("click", function () {
+      labelError("");
+      if (renamingId === label.id) { renamingId = null; }
+      // The count is read fresh, from every note, archived or not.
+      request("/api/notes?view=all").then(function (response) {
+        if (!response.ok) { throw new Error("count"); }
+        return response.json();
+      }).then(function (data) {
+        var count = data.notes.filter(function (n) { return (n.labels || []).indexOf(label.id) !== -1; }).length;
+        confirmingId = label.id;
+        renderLabelList();
+        var found = document.querySelector('.labels-list .confirm[data-id="' + label.id + '"]');
+        if (found) {
+          found.querySelector("p").textContent = "Delete the label " + label.name + "? " +
+            (count === 0 ? "No notes carry it." : count === 1 ? "It is on 1 note." : "It is on " + count + " notes.") + " The notes stay.";
+          found.querySelector(".confirm-yes").focus();
+        }
+      }).catch(function () {
+        if (currentView !== "login") { labelError(NOT_CHANGED); }
+      });
+    });
+
+    if (confirmingId === label.id) {
+      var box = document.createElement("div");
+      box.className = "confirm";
+      box.setAttribute("data-id", label.id);
+      box.appendChild(document.createElement("p"));
+      var buttons = document.createElement("div");
+      buttons.className = "row";
+      var yes = document.createElement("button");
+      yes.type = "button";
+      yes.className = "confirm-yes";
+      yes.textContent = "Delete label";
+      var keep = document.createElement("button");
+      keep.type = "button";
+      keep.textContent = "Keep";
+      buttons.appendChild(yes);
+      buttons.appendChild(keep);
+      box.appendChild(buttons);
+      keep.addEventListener("click", function () { confirmingId = null; renderLabelList(); });
+      yes.addEventListener("click", function () {
+        yes.disabled = keep.disabled = true;
+        labelCall("DELETE", "/api/labels?id=" + encodeURIComponent(label.id)).then(function (result) {
+          if (currentView === "login") { return; }
+          confirmingId = null;
+          if (result.ok) { labelError(""); } else { labelError(result.data.error || NOT_CHANGED); }
+          renderLabelList();
+        });
+      });
+      li.appendChild(box);
+    }
+    return li;
+  }
+
+  $("new-label").addEventListener("input", function () {
+    $("create-label").disabled = $("new-label").value.trim() === "";
+    labelError("");
+  });
+
+  $("create-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    var typed = $("new-label").value;
+    if (typed.trim() === "") { return; }
+    var name = cleanName(typed);
+    if (name === null) { labelError(NAME_LENGTH); return; }
+    if (nameTaken(name, null)) { labelError(clashText(name)); return; }
+    $("create-label").disabled = true;
+    labelCall("POST", "/api/labels", { name: name }).then(function (result) {
+      if (currentView === "login") { return; }
+      if (result.ok) {
+        labelError("");
+        $("new-label").value = "";
+        $("create-label").disabled = true;
+      } else {
+        labelError(result.data.error || NOT_CHANGED);
+        $("create-label").disabled = $("new-label").value.trim() === "";
+      }
+      renderLabelList();
+      $("new-label").focus();
+    });
   });
 
   /* ---------- edit and autosave ---------- */
 
-  function openEditor(id, text, version) {
+  function updateEditButtons() {
+    var archive = $("archive");
+    archive.innerHTML = icon(note.archived ? "unarchive" : "archive") + (note.archived ? "Unarchive" : "Archive");
+    archive.disabled = note.id === null;
+  }
+
+  // The strip under the toolbar: every label the note carries, and the Archived
+  // marker. Display only.
+  function renderStrip() {
+    var strip = $("note-strip");
+    strip.textContent = "";
+    if (note.archived) { strip.appendChild(archivedMarker()); }
+    knownLabels(note.labels).forEach(function (label) { strip.appendChild(chip(label.name)); });
+    strip.hidden = strip.children.length === 0;
+  }
+
+  function openEditor(id, text, version, extra) {
     clearTimers();
-    note = { id: id, version: version || null, saved: text, timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
+    extra = extra || {};
+    note = blankNote({ id: id, version: version || null, saved: text, labels: (extra.labels || []).slice(), serverLabels: (extra.labels || []).slice(), archived: extra.archived === true });
     textBox.value = text;
     // A textarea normalises line breaks, so what it holds is the baseline.
     note.saved = textBox.value;
     $("confirm").hidden = true;
+    closePanel(false);
     $("copy").textContent = "Copy";
     setStatus("saved", "Saved", id === null ? "Nothing is saved until you type." : "");
+    renderStrip();
+    updateEditButtons();
     show("edit");
     textBox.focus();
   }
@@ -789,13 +1721,18 @@
   // on screen stays, which after sign out is the sign-in screen.
   function openNote(id) {
     var navigation = routeSeq;
+    var labelsLoaded = refreshLabels().catch(function () { /* names are missing, the note still opens */ });
     request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
       if (!response.ok) { throw new Error("open"); }
       var version = response.headers.get("X-Note-Updated");
-      return response.arrayBuffer().then(function (buffer) { return { buffer: buffer, version: version }; });
+      var labels = (response.headers.get("X-Note-Labels") || "").split(",").filter(Boolean);
+      var archived = response.headers.get("X-Note-Archived") === "true";
+      return response.arrayBuffer().then(function (buffer) { return { buffer: buffer, version: version, labels: labels, archived: archived }; });
+    }).then(function (loaded) {
+      return labelsLoaded.then(function () { return loaded; });
     }).then(function (loaded) {
       if (navigation !== routeSeq) { return; }
-      openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(loaded.buffer), loaded.version);
+      openEditor(id, new TextDecoder("utf-8", { ignoreBOM: true }).decode(loaded.buffer), loaded.version, { labels: loaded.labels, archived: loaded.archived });
     }).catch(function () {
       // A 401 has already gone to sign in. Anything else goes to the list.
       if (navigation !== routeSeq || currentView === "login") { return; }
@@ -806,9 +1743,15 @@
   // A new, empty note has nothing to fetch, so ask the server first.
   function openNewNote() {
     var navigation = routeSeq;
+    var starting = newNoteLabel;
+    newNoteLabel = null;
+    var labelsLoaded = refreshLabels().catch(function () { /* names are missing, the note still opens */ });
     request("/api/session").then(function (response) {
       if (navigation !== routeSeq || !response.ok) { return; }
-      openEditor(null, "");
+      return labelsLoaded.then(function () {
+        if (navigation !== routeSeq) { return; }
+        openEditor(null, "", null, { labels: starting && labelById(starting) ? [starting] : [] });
+      });
     }).catch(function () {
       if (navigation === routeSeq && currentView !== "list" && currentView !== "edit") { showOnly("Could not reach the server. Reload to try again."); }
     });
@@ -847,11 +1790,16 @@
     setStatus("saving", "Saving", "");
     var creating = note.id === null;
     var path = creating ? "/api/notes" : "/api/note?id=" + encodeURIComponent(note.id);
+    var headers = { "Content-Type": "text/plain; charset=utf-8" };
+    if (creating) {
+      // Labels ticked before the first save go up with it.
+      if (note.labels.length) { headers["X-Note-Labels"] = note.labels.join(","); }
+    } else {
+      headers["X-Base-Updated"] = note.version;
+    }
     return request(path, {
       method: creating ? "POST" : "PUT",
-      headers: creating
-        ? { "Content-Type": "text/plain; charset=utf-8" }
-        : { "Content-Type": "text/plain; charset=utf-8", "X-Base-Updated": note.version },
+      headers: headers,
       body: body
     }).then(function (response) {
       if (response.status === 409) {
@@ -878,8 +1826,10 @@
         note.version = data.updatedAt;
         if (creating) {
           note.id = data.id;
+          note.serverLabels = note.labels.slice();
           history.replaceState(null, "", "#n/" + data.id);
           lastHash = location.hash;
+          updateEditButtons();
         }
         if (textBox.value !== body) {
           setStatus("unsaved", "Not saved", "");
@@ -897,6 +1847,64 @@
       note.retry = setTimeout(save, RETRY_DELAY_MS);
       return false;
     });
+  }
+
+  function whenIdle() {
+    return new Promise(function (resolve) {
+      (function check() {
+        if (!note.saving) { resolve(); } else { setTimeout(check, 100); }
+      })();
+    });
+  }
+
+  // Labels and the archived flag go to the server without the note text, from
+  // the version the note was last saved at, through the same status as a text
+  // save. Resolves true when it was saved.
+  function patchNote(change) {
+    return whenIdle().then(function () {
+      if (note.conflict !== null || note.id === null) { return false; }
+      var id = note.id;
+      note.saving = true;
+      setStatus("saving", "Saving", "");
+      return request("/api/note?id=" + encodeURIComponent(id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "X-Base-Updated": note.version },
+        body: JSON.stringify(change)
+      }).then(function (response) {
+        return response.json().then(function (data) { return data; }, function () { return {}; }).then(function (data) {
+          note.saving = false;
+          if (response.status === 409) {
+            note.conflict = data.error;
+            clearTimers();
+            setStatus("failed", "Not saved", data.error);
+            return false;
+          }
+          if (!response.ok) { setStatus("failed", "Not saved", data.error || NOT_CHANGED); return false; }
+          note.version = data.updatedAt;
+          note.serverLabels = data.labels.slice();
+          note.labels = data.labels.slice();
+          note.archived = data.archived === true;
+          resumeAfterPatch();
+          return true;
+        });
+      }).catch(function () {
+        note.saving = false;
+        if (currentView === "login") { return false; }
+        setStatus("failed", "Not saved", NOT_CHANGED);
+        return false;
+      });
+    });
+  }
+
+  // Text typed while the change was in flight still gets saved.
+  function resumeAfterPatch() {
+    if (isDirty() && note.conflict === null) {
+      setStatus("unsaved", "Not saved", "");
+      clearTimeout(note.timer);
+      note.timer = setTimeout(save, SAVE_DELAY_MS);
+    } else {
+      setStatus("saved", "Saved", "");
+    }
   }
 
   function settle() {
@@ -923,18 +1931,135 @@
     }
   });
 
+  /* ---------- the Labels panel ---------- */
+
+  function panelOpen() { return !$("labels-panel").hidden; }
+
+  function openPanel() {
+    $("labels-panel").hidden = false;
+    $("labels-button").setAttribute("aria-expanded", "true");
+    $("confirm").hidden = true;
+    $("label-find").value = "";
+    renderPanel();
+    $("label-find").focus();
+  }
+
+  function closePanel(restoreFocus) {
+    if (!panelOpen()) { return; }
+    $("labels-panel").hidden = true;
+    $("labels-button").setAttribute("aria-expanded", "false");
+    $("panel-error").hidden = true;
+    if (restoreFocus !== false) { $("labels-button").focus(); }
+  }
+
+  function panelError(text) {
+    var el = $("panel-error");
+    el.textContent = text || "";
+    el.hidden = !text;
+  }
+
+  // Ticking or unticking saves at once. On a note that is not saved yet the
+  // labels wait with it and go up with its first save.
+  function applyLabels(ids) {
+    var before = note.serverLabels.slice();
+    note.labels = ids;
+    renderStrip();
+    if (note.id === null) { return Promise.resolve(true); }
+    return patchNote({ labels: ids }).then(function (ok) {
+      if (!ok) {
+        note.labels = before.slice();
+        renderStrip();
+        renderPanel();
+      }
+      return ok;
+    });
+  }
+
+  function renderPanel() {
+    var typed = $("label-find").value;
+    var needle = typed.trim().toLowerCase();
+    var list = $("panel-list");
+    list.textContent = "";
+    var all = sortedLabels();
+    all.filter(function (label) { return needle === "" || label.name.toLowerCase().indexOf(needle) !== -1; }).forEach(function (label) {
+      var row = document.createElement("label");
+      row.className = "check-row";
+      var box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = note.labels.indexOf(label.id) !== -1;
+      var text = document.createElement("span");
+      text.textContent = label.name;
+      text.title = label.name;
+      row.appendChild(box);
+      row.appendChild(text);
+      box.addEventListener("change", function () {
+        panelError("");
+        var ids = note.labels.filter(function (id) { return id !== label.id; });
+        if (box.checked) { ids.push(label.id); }
+        applyLabels(ids);
+      });
+      list.appendChild(row);
+    });
+    var name = cleanName(typed);
+    if (name !== null && !nameTaken(name, null)) {
+      var create = document.createElement("button");
+      create.type = "button";
+      create.className = "row-button";
+      create.id = "panel-create";
+      create.innerHTML = icon("plus");
+      create.appendChild(document.createTextNode('Create label "' + name + '"'));
+      create.addEventListener("click", function () { createFromPanel(name); });
+      list.appendChild(create);
+    }
+    $("panel-empty").hidden = !(all.length === 0 && typed.trim() === "");
+  }
+
+  function createFromPanel(name) {
+    panelError("");
+    labelCall("POST", "/api/labels", { name: name }).then(function (result) {
+      if (currentView === "login") { return; }
+      if (!result.ok) {
+        panelError(result.data.error || NOT_CHANGED);
+        renderPanel();
+        return;
+      }
+      $("label-find").value = "";
+      applyLabels(note.labels.concat([result.data.id])).then(function () { renderPanel(); });
+      renderPanel();
+      $("label-find").focus();
+    });
+  }
+
+  $("labels-button").addEventListener("click", function () {
+    if (panelOpen()) { closePanel(true); } else { openPanel(); }
+  });
+  $("panel-done").addEventListener("click", function () { closePanel(true); });
+  $("label-find").addEventListener("input", function () { panelError(""); renderPanel(); });
+  $("label-find").addEventListener("keydown", function (event) {
+    if (event.key !== "Enter") { return; }
+    event.preventDefault();
+    var create = $("panel-create");
+    if (create) { create.click(); }
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && currentView === "edit" && panelOpen()) { closePanel(true); }
+  });
+
   /* ---------- buttons ---------- */
 
   $("new-note").addEventListener("click", function () {
+    hideFlash();
+    var fromLabel = currentView === "list" && listView.kind === "label" && currentQuery() === "" ? listView.id : null;
     leaveEditor().then(function (ok) {
       if (!ok) { return; }
+      newNoteLabel = fromLabel;
       // Already on #new there is no hashchange to follow, so start over directly.
       if (location.hash === "#new") { route(); } else { location.hash = "#new"; }
     });
   });
 
   $("back").addEventListener("click", function () {
-    leaveEditor().then(function (ok) { if (ok) { clearTimers(); note.failed = note.tooLarge = false; note.conflict = null; location.hash = ""; } });
+    leaveEditor().then(function (ok) { if (ok) { clearTimers(); note.failed = note.tooLarge = false; note.conflict = null; location.hash = lastListHash; } });
   });
 
   $("copy").addEventListener("click", function () {
@@ -954,16 +2079,36 @@
     done(ok);
   });
 
-  $("delete").addEventListener("click", function () { $("confirm").hidden = false; $("confirm-delete").focus(); });
+  // Archive and Unarchive need no confirmation. The note's own text is saved
+  // first, then the flag, then the page shows the list the note has left, with
+  // a message and an Undo.
+  $("archive").addEventListener("click", function () {
+    if (note.id === null) { return; }
+    var button = $("archive");
+    button.disabled = true;
+    var toArchive = !note.archived;
+    var id = note.id;
+    (hasUnsavedWork() ? settle() : Promise.resolve(true)).then(function (ok) {
+      if (!ok) { return false; }
+      return patchNote({ archived: toArchive });
+    }).then(function (ok) {
+      button.disabled = false;
+      if (!ok) { return; }
+      pendingFlash = { text: toArchive ? "Note archived." : "Note unarchived.", undo: undoArchive(id, note.version, toArchive) };
+      location.hash = lastListHash;
+    });
+  });
+
+  $("delete").addEventListener("click", function () { closePanel(false); $("confirm").hidden = false; $("confirm-delete").focus(); });
   $("keep").addEventListener("click", function () { $("confirm").hidden = true; });
   $("confirm-delete").addEventListener("click", function () {
     clearTimers();
     var id = note.id;
     note.saved = textBox.value; note.failed = note.tooLarge = false; note.conflict = null; note.saving = false;
-    if (id === null) { location.hash = ""; return; }
+    if (id === null) { location.hash = lastListHash; return; }
     request("/api/note?id=" + encodeURIComponent(id), { method: "DELETE" }).then(function (response) {
       if (!response.ok) { throw new Error("delete"); }
-      location.hash = "";
+      location.hash = lastListHash;
     }).catch(function () {
       if (currentView === "login") { return; }
       $("confirm").hidden = true;
@@ -979,13 +2124,30 @@
     clearTimers();
     clearTimeout(searchTimer);
     searchSeq += 1;
-    note = { id: null, version: null, saved: "", timer: null, retry: null, saving: false, failed: false, tooLarge: false, conflict: null };
+    note = blankNote();
     textBox.value = "";
     $("notes").textContent = "";
     $("search").value = "";
     $("empty").hidden = true;
     $("list-error").hidden = true;
     $("confirm").hidden = true;
+    $("labels-panel").hidden = true;
+    $("labels-button").setAttribute("aria-expanded", "false");
+    $("label-find").value = "";
+    $("panel-list").textContent = "";
+    $("note-strip").textContent = "";
+    $("note-strip").hidden = true;
+    $("label-list").textContent = "";
+    $("new-label").value = "";
+    labelError("");
+    labelsState = { labels: [], version: "none" };
+    listView = { kind: "notes", id: null };
+    lastListHash = "";
+    pendingFlash = null;
+    newNoteLabel = null;
+    renamingId = confirmingId = null;
+    hideFlash();
+    renderMenu();
     setStatus("saved", "Saved", "");
   }
 
@@ -997,14 +2159,15 @@
     return settle();
   }
 
-  $("sign-out").addEventListener("click", function () {
-    var button = $("sign-out");
-    button.disabled = true;
+  function signOut() {
+    var buttons = [$("sign-out"), $("menu-sign-out")];
+    buttons.forEach(function (b) { b.disabled = true; });
+    var enable = function () { buttons.forEach(function (b) { b.disabled = false; }); };
     saveBeforeSignOut().then(function (ok) {
-      if (!ok) { button.disabled = false; return; }
+      if (!ok) { enable(); return; }
       // Straight to fetch, not request(): a 401 here means already signed out.
       return fetch("/api/session", { method: "DELETE", credentials: "same-origin" }).then(function (response) {
-        button.disabled = false;
+        enable();
         if (!response.ok && response.status !== 401) { throw new Error("sign out"); }
         clearContent();
         history.replaceState(null, "", location.pathname);
@@ -1012,12 +2175,15 @@
         goToLogin();
       });
     }).catch(function () {
-      button.disabled = false;
+      enable();
       var where = currentView === "edit" ? null : $("list-error");
       if (where) { where.textContent = "Could not sign out. Check your connection and try again."; where.hidden = false; }
       else { setStatus("failed", "Not signed out", "Could not sign out. Check your connection and try again."); }
     });
-  });
+  }
+
+  $("sign-out").addEventListener("click", signOut);
+  $("menu-sign-out").addEventListener("click", signOut);
 
   // A browser may keep this page in its back-forward cache and show it again on
   // Back exactly as it was left, before any code runs. So the page empties
@@ -1044,11 +2210,19 @@
 
   function route() {
     routeSeq += 1;
+    var flash = pendingFlash;
+    pendingFlash = null;
+    hideFlash();
     var hash = location.hash;
-    var match = /^#n\/([0-9a-f]{32})$/.exec(hash);
-    if (match) { openNote(match[1]); }
+    var opened = /^#n\/([0-9a-f]{32})$/.exec(hash);
+    var labelled = /^#l\/([0-9a-f]{32})$/.exec(hash);
+    if (opened) { openNote(opened[1]); }
     else if (hash === "#new") { openNewNote(); }
-    else { showList(); }
+    else if (hash === "#labels") { showLabels(); }
+    else {
+      listView = hash === "#archive" ? { kind: "archive", id: null } : labelled ? { kind: "label", id: labelled[1] } : { kind: "notes", id: null };
+      showList(flash);
+    }
   }
 
   window.addEventListener("hashchange", function () {

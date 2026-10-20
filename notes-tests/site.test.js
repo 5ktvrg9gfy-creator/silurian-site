@@ -96,9 +96,9 @@ test("the page loads no analytics and nothing from outside the site", () => {
   assert.ok(html.includes('href="/tokens.css"'), "styled from the site's tokens");
 });
 
-test("the API folder holds exactly the notes routes, and the library is not a route", () => {
+test("the API folder holds exactly the notes and labels routes, and the library is not a route", () => {
   const entries = readdirSync(join(ROOT, "api")).sort();
-  assert.deepEqual(entries, ["_lib", "login.js", "note.js", "notes.js", "session.js"]);
+  assert.deepEqual(entries, ["_lib", "labels.js", "login.js", "note.js", "notes.js", "session.js"]);
   for (const name of readdirSync(join(ROOT, "api", "_lib"))) {
     assert.ok(statSync(join(ROOT, "api", "_lib", name)).isFile());
   }

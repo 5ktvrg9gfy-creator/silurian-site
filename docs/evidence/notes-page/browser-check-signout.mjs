@@ -31,10 +31,15 @@ const password = 'pw-' + randomBytes(12).toString('hex');
 
 const notes = new Map();
 const control = { failWrites: false, writeDelayMs: 0 };
+let labelsFile = null;
 const store = {
-  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt })); },
-  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt } : null; },
+  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true })); },
+  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
   async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
+  async meta(id) { const n = notes.get(id); return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
+  async writeMeta(id, meta) { notes.get(id).meta = meta; },
+  async readLabels() { return labelsFile ? structuredClone(labelsFile) : null; },
+  async writeLabels(file) { labelsFile = structuredClone(file); },
   async write(id, bytes, meta) {
     if (control.writeDelayMs) await new Promise((r) => setTimeout(r, control.writeDelayMs));
     if (control.failWrites) throw new Error('refused');
@@ -47,6 +52,7 @@ const routes = {
   '/api/login': { POST: api.login },
   '/api/session': { GET: api.session, DELETE: api.signOut },
   '/api/notes': api.collection,
+  '/api/labels': api.labels,
   '/api/note': api.item,
 };
 const types = { '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.ttf': 'font/ttf' };
@@ -148,7 +154,11 @@ async function run(label, contextOptions) {
   await cdp.send('Page.enable');
   const notCached = [];
   cdp.on('Page.backForwardCacheNotUsed', (e) => notCached.push(e.notRestoredExplanations.map((x) => x.reason).join(',')));
-  const press = (sel) => (contextOptions.hasTouch ? page.tap(sel) : page.click(sel));
+  // At phone width Sign out is a row in the menu (notes version 4), not a header button.
+  const press = async (sel) => {
+    if (sel === '#sign-out' && contextOptions.hasTouch) { await page.tap('#menu-button'); return page.tap('#menu-sign-out'); }
+    return contextOptions.hasTouch ? page.tap(sel) : page.click(sel);
+  };
   const visible = (sel) => page.locator(sel).isVisible();
   const shown = () => page.evaluate(() => window.__shown.slice());
   const clearShown = () => page.evaluate(() => { window.__shown.length = 0; });
@@ -292,7 +302,7 @@ async function run(label, contextOptions) {
   const other = await context.newPage();
   await other.goto(BASE + '/notes');
   await other.waitForSelector('#list:not([hidden])');
-  await other.click('#sign-out');
+  if (contextOptions.hasTouch) { await other.tap('#menu-button'); await other.tap('#menu-sign-out'); } else { await other.click('#sign-out'); }
   await other.waitForSelector('#login:not([hidden])');
   await other.close();
   // A restore from the cache fires no load event, so wait for the commit only.
