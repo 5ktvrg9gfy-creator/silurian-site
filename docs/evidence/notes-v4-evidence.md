@@ -8,7 +8,7 @@ Branch `notes-v4`, cut from `main` at `1af386e` (the notes version 3 merge). Not
 - `python -m unittest discover -s tests` from `forecast-app/`: **332 before, 341 after, all pass.** (`pip install -r requirements.txt` first, as before.)
 - Every existing notes browser check, against the new page: `browser-check.mjs` **38 of 38**, `browser-check-v2.mjs` **25 of 25**, `browser-check-signout.mjs` **26 of 26**, `browser-check-v3.mjs` **66 of 66** (the version 3 screenshots are untouched).
 - New `docs/evidence/notes-page/browser-check-v4.mjs`: **149 checks, 0 failed**, and it writes the 54 screenshots below. It seeds seven labels and five notes through the real API and checks, wide and then at 320px: the 240px menu bar flush left, the header across the window, item order and alphabetical labels, the active item (including none while searching), addresses surviving a refresh, chips (3 and `+2` above 760px, 2 and `+3` at 320px, one line, never past the row buttons), the screen reader text, archive and unarchive from the row and the edit view with the message and Undo, search from a label view finding an archived note with the marker, the Labels panel (filter, tick, untick, create with Enter, Escape returns focus), a new note from a label view starting with that label, Edit labels (create, clash, rename, Escape, delete counts for 0, 1 and several notes), a deleted or unknown label id showing Notes, two devices changing labels at once, and the phone menu (width, scrim colour, focus, inert, Escape, scrim tap, item choice, theme row, Sign out, resize past 760px, signed out with no menu and the theme switch in the header).
-- `npm run test:vercel`: **not run**, the network is blocked here. It now expects five functions, so `labels.func` is unproved until it runs (Q19).
+- `npm run test:vercel`: **not run**, the network is blocked here. It expects five functions. The Preview showed `/api/labels` answering, which is the proof it was for, and the product owner ruled the step unneeded.
 
 ## Existing tests and checks changed, and why
 
@@ -33,9 +33,15 @@ Each change was made to `notes/index.html`, `api/_lib/notes-api.js` or `api/_lib
 
 Recorded as Q13 to Q19 in `docs/notes-page-open-questions.md`, each with the default built and the cost if it is wrong. The ones to read first: **Q13** (a label or archive change moves the note's last-edited time, because the version is that time), **Q14** (the header is now sticky) and **Q19** (five functions, unproved on Vercel).
 
+## Vercel Preview check, 20 October 2026
+
+Run by the product owner on the branch Preview, at `f817cfe`, on a computer and a phone. Reported to the build session, which cannot reach Vercel hosts. **All of his steps passed, as reported:** the menu bar and label items; Edit labels create, rename and the delete confirmation with the note count; the Labels panel tick and create with the Saved status; chips on the list; Archive with the message bar and Undo; the Archive view and Unarchive; the Archived marker in search; the phone menu opening and closing by button, Escape, scrim and item choice; the theme row and Sign out in the phone menu; two chips plus `+N` with no wrapping; and signed out on the phone, with no menu button and the theme switch in the header. The report did not say which phone or browser was used, so a specific browser is not claimed here.
+
+**`/api/labels` answered on the Preview, so the labels function deploys.** That closes the gap left by `npm run test:vercel` not being run (Q19); the product owner ruled the step unneeded. **Q13 to Q19 are accepted as built.** Approved to merge.
+
 ## Not run
 
-- `npm run test:vercel`, the Preview, Safari, Firefox and a real phone. The 320px runs are a Chromium viewport.
+- `npm run test:vercel`, Safari, Firefox and a real phone (the Preview was checked by the product owner, above). The 320px runs are a Chromium viewport.
 - Phone menu `inert` and focus behaviour in Safari. Chromium honours both.
 
 ## Screenshots
