@@ -185,6 +185,10 @@ await act(page, 'open list (first load)', () => page.goto(BASE + '/notes'), list
 await act(page, 'open note from list', () => page.locator('#notes .note-link').nth(1).click(), () => !document.getElementById('edit').hidden && document.getElementById('text').value.length > 0);
 await act(page, 'back to list', () => page.click('#back'), listShown);
 await act(page, 'open a second note', () => page.locator('#notes .note-link').nth(2).click(), () => !document.getElementById('edit').hidden && document.getElementById('text').value.length > 0);
+await page.click('#back');
+await page.waitForFunction(() => window.listShown());
+await sleep(1200);
+await act(page, 'open the same note again', () => page.locator('#notes .note-link').nth(2).click(), () => !document.getElementById('edit').hidden && document.getElementById('text').value.length > 0);
 await page.click('#labels-button');
 await page.waitForSelector('#labels-panel:not([hidden])');
 const chips = await page.locator('#note-strip .chip').count();

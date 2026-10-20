@@ -427,8 +427,11 @@ class NotesPageVersionFourMenuLabelsAndArchive(unittest.TestCase):
         self.assertEqual(DASHES.findall(self.page), [])
 
     def test_the_addresses_are_in_the_page(self) -> None:
+        # The list is asked for once, as every note (view=all), and Notes, Archive and a
+        # label are cut from it on the page (notes speed). view=archive stays as the
+        # fallback for the empty label sentence when nothing is in memory yet.
         for fragment in ('hash === "#labels"', 'hash === "#archive"', '"#l/" + view.id', 'hash === "#new"', "view=archive",
-                         "view=label&label=", "view=notes"):
+                         "view=all"):
             self.assertIn(fragment, self.text)
         self.assertRegex(self.text, r"#l\\/\(\[0-9a-f\]\{32\}\)\$")
 
@@ -436,6 +439,50 @@ class NotesPageVersionFourMenuLabelsAndArchive(unittest.TestCase):
         # api/labels.js is a function, not a static file, so the allowlist is unchanged.
         allowlist = (REPOSITORY / "site-allowlist.txt").read_text(encoding="utf-8")
         self.assertNotIn("labels", allowlist)
+
+
+def function_body(text: str, name: str) -> str:
+    """The body of `function name(...) { ... }` in the page script, braces matched."""
+    start = text.index("function " + name + "(")
+    return block_after(text[start:], text[start : text.index("{", start)] + "{")
+
+
+class NotesPageSpeedKeepsMemoryOnly(unittest.TestCase):
+    """What the page remembers to feel fast is held in memory and nowhere else,
+    and is dropped on sign out, on a 401 and when the page is left (notes speed).
+    The behaviour is held by `browser-check-speed.mjs`, which searches the page's
+    heap for a note's text; these are the static halves of the same promise."""
+
+    text = NOTES_PAGE.read_text(encoding="utf-8")
+
+    def test_memory_is_dropped_on_sign_out_on_a_401_and_when_the_page_is_left(self) -> None:
+        for name in ("clearContent", "goToLogin"):
+            self.assertIn("forgetMemory();", function_body(self.text, name), f"{name} must drop the page's memory")
+        # Sign out and leaving the page both go through clearContent.
+        self.assertIn("clearContent();", function_body(self.text, "signOut") + self.text[self.text.index('"pagehide"') : self.text.index('"pagehide"') + 200])
+        body = function_body(self.text, "forgetMemory")
+        for fragment in ("mem = { all: null, opened: {} };", "inFlight = {};", "changesInFlight = 0;", "memoryGeneration += 1;"):
+            self.assertIn(fragment, body)
+
+    def test_nothing_is_written_to_the_device_but_the_theme_choice(self) -> None:
+        for api in ("sessionStorage", "indexedDB", "caches.", "serviceWorker", "document.cookie", "openDatabase"):
+            self.assertNotIn(api, self.text, f"the page must not keep notes with {api}")
+        stores = re.findall(r"localStorage\.(?:setItem|getItem|removeItem)\(([^,)]+)", self.text)
+        self.assertTrue(stores, "the theme choice is read and written")
+        self.assertEqual(set(stores), {'"silurian-notes-theme"', "KEY"}, "localStorage holds the theme choice and nothing else")
+
+    def test_the_page_asks_for_the_whole_list_once_instead_of_one_list_per_view(self) -> None:
+        list_requests = re.findall(r'"/api/notes[^"]*"', self.text)
+        self.assertIn('"/api/notes?view=all"', list_requests)
+        self.assertNotIn('"/api/notes?view=notes"', list_requests)
+        self.assertNotRegex(self.text, r'view=label')
+
+    def test_a_refused_background_change_puts_the_screen_back(self) -> None:
+        # Both the row and the open note put the note back in memory on a refusal,
+        # and the labels go back to what the server confirmed.
+        self.assertIn("remember(item);\n        refused(result.error);", self.text)
+        self.assertIn("note.labels = note.serverLabels.slice();", function_body(self.text, "saveLabels"))
+        self.assertIn("repaintFromMemory();\n        showFlash(error, null);", self.text)
 
 
 if __name__ == "__main__":
