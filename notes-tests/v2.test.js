@@ -149,7 +149,7 @@ test("3. search finds a word that appears only deep inside a 50,000 character no
   assert.equal(results[0].id, deepId);
   assert.equal(results[0].title, "Deploy notes", "the title does not contain the word");
   assert.equal(results[0].line, "ssh deploy@host && run zephyrine --force", "the line that matched");
-  assert.deepEqual(Object.keys(results[0]).sort(), ["id", "line", "title", "updatedAt"], "the title and the line, never the note text");
+  assert.deepEqual(Object.keys(results[0]).sort(), ["archived", "id", "labels", "line", "title", "updatedAt"], "the title, the line, the label ids and the archived flag, never the note text");
 });
 
 test("3. search matches the title too, and a note matching nowhere is left out", async () => {

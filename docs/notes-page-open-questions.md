@@ -79,3 +79,50 @@ Branch `notes-page`. Format per CLAUDE.md section 1: what it blocks, the recomme
 ## Note, 18 October 2026: the sign out fix changes one accepted behaviour
 
 Not a question, recorded so the change is visible. Notes version 2 had Sign out with unsaved edits use the existing leave warning, "Leave anyway and lose the unsaved changes?". The product owner's brief for the sign out fix replaced it: Sign out saves first, and if the save fails or hits a conflict it stays on the note with no offer to leave. The edit view's own Back and New note keep the leave warning.
+
+## Notes version 4 (20 October 2026): questions raised while building
+
+None of these blocks the build. Each carries the default that was built.
+
+## Q13. A label or archive change moves a note's last-edited time (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** nothing built. The note's version, the thing a stale save is checked against, is its `updatedAt`, which is also the date the list shows and the order "newest edit first" uses. The brief says label and archive changes go through the same version check as text saves, so they take the same version and move it. Ticking a label, or archiving, therefore makes the note the newest in its list and changes its date, although its text did not change.
+- **Recommended default:** keep it as built. One version means a label change on one device and a text save on another can never silently overwrite each other, which is the brief's own test. It also means a stale text save after a label change on another device is refused as a conflict, with the existing message and the text still on screen.
+- **Cost if wrong:** a second field (`editedAt`, the last time the text changed) used for the date and the order, with the existing version kept for the check. About 20 lines and one more test; old notes fall back to `updatedAt`. The product owner accepted the default on 20 October 2026: archiving or labelling a note moves it to the top of its list, a small oddity to live with and raise again if it annoys.
+
+## Q14. The page header is now sticky (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** nothing built. The brief says the menu bar is "sticky under the header". A sticky menu under a header that scrolls away would leave a gap the height of the header, so the header is sticky too, 65px tall, and the phone menu sits below it at the same height.
+- **Recommended default:** keep it. The header is one line at every width now (the phone header holds only the menu button, mark, wordmark and New note).
+- **Cost if wrong:** at the cost of a few lines the header can scroll away and the menu bar can start at the top of the window instead.
+
+## Q15. The theme row in the phone menu closes the menu (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** nothing built. The brief lists "choosing an item" as a way to close the menu and calls the theme switch a menu row, so choosing it closes the menu. Pressing it switches the theme and the page behind shows the change at once.
+- **Recommended default:** keep it, as written.
+- **Cost if wrong:** one attribute on that row to leave the menu open, so the change can be watched.
+
+## Q16. Ticking labels on a note that is not saved yet waits for its first save (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** nothing built. A new note has no id until it has text. Labels ticked before then, or the starting label from a label view, are held on the page and go up with the first save in the same request. A note that is never typed in is never saved, so its ticks are not either, as with the existing "Nothing is saved until you type."
+- **Recommended default:** keep it. The strip under the toolbar shows the pending labels, and Archive is disabled until the note exists.
+- **Cost if wrong:** creating an empty note at the first tick, which adds an "Untitled" note a user did not ask for.
+
+## Q17. Search shows "Search results" as its heading and clears when a menu item is chosen (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** nothing built. A search covers every note whatever view it started from, so the view's own heading (a label name, Archive) over a list of all matches would be wrong. The brief does not name a heading, so the list reads "Search results" while a search is running, and choosing any menu item leaves the search behind.
+- **Recommended default:** keep it.
+- **Cost if wrong:** one string and one line.
+
+## Q18. A rename and a delete confirmation can be open on different rows at once (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** nothing built. The brief asks for a screenshot of Edit labels with a rename and a delete confirmation open. Opening a confirmation on another row does not cancel a rename in progress, and the typed text is kept; opening either on the same row replaces the other.
+- **Recommended default:** keep it.
+- **Cost if wrong:** one line each way to allow only one open at a time.
+
+## Q19. Five functions now, and `PATCH` on `/api/note` (ACCEPTED 20 October 2026: the default built is accepted)
+
+- **Blocks:** the opt-in `npm run test:vercel`, which lists the deployed functions. The brief put every new route behind the existing gate and did not say where it goes. Labels are their own file, `api/labels.js`, and label and archive changes to a note are `PATCH /api/note`, beside the existing `GET`, `PUT` and `DELETE`. That makes five functions, not four. `notes-tests/site.test.js` and `notes-tests/vercel-local.check.js` now name five. The local `vercel build` check was not run here, the network being blocked, so that it lists `labels.func` is unproved until it is.
+- **Recommended default:** keep it, and run `npm run test:vercel` once from a machine with network access before the merge. **Answered by the Preview on 20 October 2026:** `/api/labels` answered on the Preview, so the function deploys; the unrun `test:vercel` step is not needed.
+- **Cost if wrong:** a function that does not deploy would show as a 404 on `/api/labels` in the Preview, and the page would load with no labels in the menu and no label view.
+

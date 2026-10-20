@@ -15,6 +15,12 @@ import {
 } from "./gate.js";
 
 export const MAX_NOTE_BYTES = 1024 * 1024;
+export const LABEL_NAME_MAX_CHARACTERS = 50;
+export const MAX_LABELS_ON_A_NOTE = 500;
+const MAX_JSON_BYTES = 64 * 1024;
+export const NO_LABELS_VERSION = "none";
+
+export const labelClash = (name) => `There is already a label called ${name}.`;
 export const TITLE_MAX_CHARACTERS = 200;
 export const SEARCH_MAX_CHARACTERS = 200;
 // How much of a matching line a search result shows, and how much of it sits
@@ -35,6 +41,16 @@ export const MESSAGES = {
     "This note was deleted on another device, so your edits were not saved. Your text is still on screen. Copy it before you leave.",
   missingVersion: "This save did not say which version of the note it started from, so it was not saved. Reload the page.",
   storage: "Storage is not available right now. Nothing was changed. Try again in a moment.",
+  metaChangedElsewhere:
+    "This note was changed on another device, so this change was not saved. Reload to see the latest version.",
+  metaDeletedElsewhere: "This note was deleted on another device, so this change was not saved.",
+  labelsChanged:
+    "Labels were changed on another device, so this change was not saved. The list is up to date now. Try again.",
+  labelsMissingVersion: "This change did not say which version of the labels it started from, so it was not saved. Reload the page.",
+  labelNotFound: "That label does not exist.",
+  labelNameLength: "A label name is 1 to 50 characters.",
+  badChange: "That change could not be read, so it was not saved. Reload the page.",
+  badView: "That list could not be read. Reload the page.",
   searchTooLong: `Search for ${SEARCH_MAX_CHARACTERS} characters or fewer.`,
   searchUnreadable: "That search could not be read. Clear the box and type it again.",
 };
@@ -103,6 +119,24 @@ function searchQuery(request) {
   return { query: query.trim() === "" ? null : query };
 }
 
+// A label name, trimmed, 1 to 50 characters. Null when it is not one.
+export function cleanLabelName(value) {
+  if (typeof value !== "string") return null;
+  const name = value.trim();
+  const length = Array.from(name).length;
+  return length >= 1 && length <= LABEL_NAME_MAX_CHARACTERS ? name : null;
+}
+
+const sameName = (a, b) => a.toLowerCase() === b.toLowerCase();
+
+const asListed = (n) => ({
+  id: n.id,
+  title: n.title || "Untitled",
+  updatedAt: n.updatedAt,
+  labels: n.labels || [],
+  archived: n.archived === true,
+});
+
 export function createNotesApi({
   store,
   env,
@@ -147,10 +181,46 @@ export function createNotesApi({
     return new Date(Math.max(stamp, floor)).toISOString();
   }
 
-  async function save(id, body, previous = null) {
+  // The labels file: { labels: [{ id, name }], updatedAt }. The version of a
+  // file that does not exist yet is the word "none".
+  async function labelsFile() {
+    const file = await store.readLabels();
+    return file ? { labels: file.labels, updatedAt: file.updatedAt } : { labels: [], updatedAt: NO_LABELS_VERSION };
+  }
+
+  // Ids a note holds that the labels file no longer knows are dropped on the
+  // next save of that note. Reads the labels file only when there is something
+  // to check, so ordinary typing never pays for it.
+  async function knownLabelIds(ids) {
+    if (ids.length === 0) return [];
+    const known = new Set((await labelsFile()).labels.map((l) => l.id));
+    return ids.filter((id) => known.has(id));
+  }
+
+  const cleanIds = (value) => {
+    if (!Array.isArray(value) || value.length > MAX_LABELS_ON_A_NOTE) return null;
+    if (!value.every((id) => typeof id === "string" && ID_PATTERN.test(id))) return null;
+    return [...new Set(value)];
+  };
+
+  async function save(id, body, previous = null, held = { labels: [], archived: false }) {
     const updatedAt = nextStamp(previous);
-    await store.write(id, body.bytes, { title: titleOf(body.text), updatedAt });
+    const labels = await knownLabelIds(held.labels);
+    await store.write(id, body.bytes, { title: titleOf(body.text), updatedAt, labels, archived: held.archived });
     return updatedAt;
+  }
+
+  async function readJson(request) {
+    const declared = Number(request.headers.get("content-length"));
+    if (Number.isFinite(declared) && declared > MAX_JSON_BYTES) return null;
+    try {
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (bytes.byteLength > MAX_JSON_BYTES) return null;
+      const value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+      return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
+    } catch {
+      return null;
+    }
   }
 
   return {
@@ -182,15 +252,31 @@ export function createNotesApi({
       GET: guarded(async (request) => {
         const search = searchQuery(request);
         if (search.error) return fail(400, search.error);
+        const params = new URL(request.url).searchParams;
+        const view = params.get("view") || "notes";
+        const labelId = params.get("label");
+        if (!["notes", "archive", "label", "all"].includes(view)) return fail(400, MESSAGES.badView);
+        if (view === "label" && !ID_PATTERN.test(labelId || "")) return fail(400, MESSAGES.badView);
         const notes = await store.list();
         notes.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
-        const listed = notes.map((n) => ({ id: n.id, title: n.title || "Untitled", updatedAt: n.updatedAt }));
-        if (search.query === null) return reply(200, { notes: listed });
+        const every = notes.map(asListed);
+        if (search.query === null) {
+          // The Notes and label lists leave archived notes out and the Archive
+          // list holds only them. "all" is every note, for counting.
+          const shown = every.filter((n) => {
+            if (view === "archive") return n.archived;
+            if (view === "all") return true;
+            if (n.archived) return false;
+            return view === "notes" || n.labels.includes(labelId);
+          });
+          return reply(200, { notes: shown });
+        }
 
-        // Search reads every note in full, behind the same cookie check as the
-        // list, and returns only the title and the line that matched.
+        // Search reads every note in full, archived or not and whatever list it
+        // was started from, behind the same cookie check as the list, and
+        // returns only the title and the line that matched.
         const found = await Promise.all(
-          listed.map(async (n) => {
+          every.map(async (n) => {
             const note = await store.read(n.id);
             if (!note) return null;
             const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(note.bytes);
@@ -205,8 +291,12 @@ export function createNotesApi({
         const body = await readNoteBody(request);
         if (body.tooLarge) return fail(413, MESSAGES.tooLarge);
         if (body.notText) return fail(400, MESSAGES.notText);
+        // A note started from a label view starts with that label.
+        const starting = request.headers.get("x-note-labels");
+        const labels = starting ? cleanIds(starting.split(",")) : [];
+        if (labels === null) return fail(400, MESSAGES.badChange);
         const id = newId();
-        const updatedAt = await save(id, body);
+        const updatedAt = await save(id, body, null, { labels, archived: false });
         return reply(201, { id, updatedAt });
       }),
     },
@@ -220,6 +310,8 @@ export function createNotesApi({
         return reply(200, note.bytes, {
           "Content-Type": "text/plain; charset=utf-8",
           "X-Note-Updated": note.updatedAt,
+          "X-Note-Labels": (note.labels || []).join(","),
+          "X-Note-Archived": note.archived === true ? "true" : "false",
         });
       }),
 
@@ -235,14 +327,49 @@ export function createNotesApi({
         // own text.
         const base = request.headers.get("x-base-updated");
         if (!base) return fail(400, MESSAGES.missingVersion);
-        const current = await store.stamp(id);
+        const current = await store.meta(id);
         if (current === null) return fail(409, MESSAGES.deletedElsewhere);
-        if (current !== base) {
-          return reply(409, { error: MESSAGES.changedElsewhere, updatedAt: current });
+        if (current.updatedAt !== base) {
+          return reply(409, { error: MESSAGES.changedElsewhere, updatedAt: current.updatedAt });
         }
 
-        const updatedAt = await save(id, body, current);
+        // The text changes; the labels and the archived flag stay as they are.
+        const updatedAt = await save(id, body, current.updatedAt, current);
         return reply(200, { id, updatedAt });
+      }),
+
+      // Labels and the archived flag. The text file is not touched. The same
+      // version check as a text save: a change from a stale copy is refused.
+      PATCH: guarded(async (request) => {
+        const id = new URL(request.url).searchParams.get("id");
+        if (!ID_PATTERN.test(id || "")) return fail(404, MESSAGES.notFound);
+        const change = await readJson(request);
+        if (change === null) return fail(400, MESSAGES.badChange);
+        const wantsLabels = Object.hasOwn(change, "labels");
+        const wantsArchived = Object.hasOwn(change, "archived");
+        const labels = wantsLabels ? cleanIds(change.labels) : null;
+        if ((!wantsLabels && !wantsArchived) || (wantsLabels && labels === null) || (wantsArchived && typeof change.archived !== "boolean")) {
+          return fail(400, MESSAGES.badChange);
+        }
+
+        const base = request.headers.get("x-base-updated");
+        if (!base) return fail(400, MESSAGES.missingVersion);
+        const current = await store.meta(id);
+        if (current === null) return fail(409, MESSAGES.metaDeletedElsewhere);
+        if (current.updatedAt !== base) {
+          return reply(409, { error: MESSAGES.metaChangedElsewhere, updatedAt: current.updatedAt });
+        }
+
+        let title = current.title;
+        if (!title) {
+          const note = await store.read(id);
+          title = note ? titleOf(new TextDecoder("utf-8", { ignoreBOM: true }).decode(note.bytes)) : "Untitled";
+        }
+        const nextLabels = await knownLabelIds(wantsLabels ? labels : current.labels);
+        const archived = wantsArchived ? change.archived : current.archived;
+        const updatedAt = nextStamp(current.updatedAt);
+        await store.writeMeta(id, { title, updatedAt, labels: nextLabels, archived });
+        return reply(200, { id, updatedAt, labels: nextLabels, archived });
       }),
 
       DELETE: guarded(async (request) => {
@@ -252,5 +379,62 @@ export function createNotesApi({
         return reply(200, { deleted: true });
       }),
     },
+
+    // The label list lives in one file outside the notes. Every change to it
+    // says which version of the file it started from, as a note save does, so
+    // two devices changing labels at once never overwrite each other.
+    labels: {
+      GET: guarded(async () => reply(200, await labelsFile())),
+
+      POST: guarded(async (request) => {
+        const body = await readJson(request);
+        const name = body === null ? null : cleanLabelName(body.name);
+        if (name === null) return fail(400, MESSAGES.labelNameLength);
+        return changeLabels(request, (file) => {
+          if (file.labels.some((l) => sameName(l.name, name))) return { clash: name };
+          const label = { id: newId(), name };
+          return { labels: [...file.labels, label], created: label.id, status: 201 };
+        });
+      }),
+
+      PUT: guarded(async (request) => {
+        const id = new URL(request.url).searchParams.get("id");
+        if (!ID_PATTERN.test(id || "")) return fail(404, MESSAGES.labelNotFound);
+        const body = await readJson(request);
+        const name = body === null ? null : cleanLabelName(body.name);
+        if (name === null) return fail(400, MESSAGES.labelNameLength);
+        return changeLabels(request, (file) => {
+          if (!file.labels.some((l) => l.id === id)) return { missing: true };
+          if (file.labels.some((l) => l.id !== id && sameName(l.name, name))) return { clash: name };
+          return { labels: file.labels.map((l) => (l.id === id ? { id, name } : l)) };
+        });
+      }),
+
+      // Removes the label from the file and nothing else. Notes that still hold
+      // its id ignore it and drop it on their next save.
+      DELETE: guarded(async (request) => {
+        const id = new URL(request.url).searchParams.get("id");
+        if (!ID_PATTERN.test(id || "")) return fail(404, MESSAGES.labelNotFound);
+        return changeLabels(request, (file) => {
+          if (!file.labels.some((l) => l.id === id)) return { missing: true };
+          return { labels: file.labels.filter((l) => l.id !== id) };
+        });
+      }),
+    },
   };
+
+  async function changeLabels(request, change) {
+    const base = request.headers.get("x-base-labels");
+    if (!base) return fail(400, MESSAGES.labelsMissingVersion);
+    const file = await labelsFile();
+    if (file.updatedAt !== base) {
+      return reply(409, { error: MESSAGES.labelsChanged, labels: file.labels, updatedAt: file.updatedAt });
+    }
+    const result = change(file);
+    if (result.clash !== undefined) return reply(422, { error: labelClash(result.clash), code: "duplicate" });
+    if (result.missing) return fail(404, MESSAGES.labelNotFound);
+    const updatedAt = nextStamp(file.updatedAt === NO_LABELS_VERSION ? null : file.updatedAt);
+    await store.writeLabels({ labels: result.labels, updatedAt });
+    return reply(result.status || 200, { labels: result.labels, updatedAt, ...(result.created ? { id: result.created } : {}) });
+  }
 }

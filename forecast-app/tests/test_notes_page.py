@@ -65,6 +65,8 @@ class NotesNodeSuite(unittest.TestCase):
 
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 COLOUR_FUNCTION = re.compile(r"\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(")
+RGBA = re.compile(r"rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)")
+THEME_VALUE = re.compile(r"^(?:#[0-9a-fA-F]{6}|rgba\(\d+, \d+, \d+, [\d.]+\))$")
 DECLARATION = re.compile(r"(--[\w-]+|color-scheme)\s*:\s*([^;]+);")
 NOTES_SIZES = {"12px", "13px", "14px", "15px", "18px", "30px"}
 THEMES = ("light", "dark")
@@ -133,7 +135,7 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
         self.dark_media = declarations(block_after(self.style, DARK_MEDIA_HEADER))
         self.dark_attribute = declarations(block_after(self.style, DARK_ATTRIBUTE_HEADER))
         self.theme_variables = {
-            name: value for name, value in self.light.items() if name.startswith("--") and HEX.fullmatch(value)
+            name: value for name, value in self.light.items() if name.startswith("--") and THEME_VALUE.fullmatch(value)
         }
 
     def without_theme_blocks(self, text: str) -> str:
@@ -144,10 +146,14 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
     # ---- palette ----
 
     def test_raw_colours_only_inside_the_three_theme_blocks(self) -> None:
-        self.assertGreaterEqual(len(self.theme_variables), 15, "The light block was not read.")
+        self.assertGreaterEqual(len(self.theme_variables), 17, "The light block was not read.")
         outside = self.without_theme_blocks(self.text)
         self.assertEqual(HEX.findall(outside.replace("&#", "")), [], "A raw hex colour sits outside the theme blocks.")
+        # rgba() and every other colour function: only inside the theme blocks.
         self.assertEqual(COLOUR_FUNCTION.findall(outside), [], "A colour function sits outside the theme blocks.")
+        self.assertEqual(RGBA.findall(outside), [], "An rgba value sits outside the theme blocks.")
+        inside = "".join(block_after(self.style, h) for h in (LIGHT_HEADER, DARK_MEDIA_HEADER, DARK_ATTRIBUTE_HEADER))
+        self.assertEqual(len(RGBA.findall(inside)), 3, "The scrim is the only rgba value, once in each theme block.")
 
     def test_px_font_sizes_only_inside_root(self) -> None:
         outside = self.without_theme_blocks(self.style)
@@ -167,7 +173,7 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
         self.assertEqual(extra, [], "Declared in dark and not in the light block: " + ", ".join(extra))
         for name, value in self.dark_media.items():
             if name.startswith("--"):
-                self.assertRegex(value, r"^#[0-9a-fA-F]{6}$", name)
+                self.assertRegex(value, THEME_VALUE, name)
 
     def test_color_scheme_follows_the_device_and_the_choice(self) -> None:
         self.assertEqual(self.light["color-scheme"], "light dark")
@@ -197,6 +203,27 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
             pairs += 1
             self.assertGreaterEqual(ratio, 4.5, f"{theme}: --notes-on-accent on --notes-accent is {ratio:.2f}:1")
         self.assertEqual(pairs, 26, "A contrast pair was skipped.")
+
+    def test_contrast_on_the_selected_fill_in_both_themes(self) -> None:
+        for theme, values in (("light", self.light), ("dark", self.dark_media)):
+            for foreground, floor in (("--notes-strong", 4.5), ("--notes-ink", 4.5), ("--notes-icon", 3.0)):
+                ratio = contrast(values[foreground], values["--notes-selected"])
+                self.assertGreaterEqual(
+                    ratio, floor, f"{theme}: {foreground} on --notes-selected is {ratio:.2f}:1, needs {floor}:1"
+                )
+        self.assertEqual(self.light["--notes-selected"], "#e4dccf")
+        self.assertEqual(self.dark_media["--notes-selected"], "#3d3936")
+        self.assertEqual(self.light["--notes-scrim"], "rgba(26, 25, 24, 0.4)")
+        self.assertEqual(self.dark_media["--notes-scrim"], "rgba(0, 0, 0, 0.6)")
+
+    def test_muted_is_never_set_on_the_selected_fill(self) -> None:
+        rules = re.findall(r"([^{}@]+)\{([^{}]*)\}", self.without_theme_blocks(self.style))
+        selected = [(selector.strip(), body) for selector, body in rules if "--notes-selected" in body or "aria-current" in selector]
+        self.assertGreaterEqual(len(selected), 2, "The selected rules were not found.")
+        for selector, body in selected:
+            self.assertNotIn("--notes-muted", body, f"{selector} puts muted text on the selected fill.")
+        # Nothing else a selected menu item contains is muted either.
+        self.assertNotRegex(self.style, r"aria-current[^{}]*\{[^}]*muted")
 
     def test_the_contrast_check_can_fail(self) -> None:
         self.assertAlmostEqual(contrast("#000000", "#ffffff"), 21.0, places=1)
@@ -245,27 +272,46 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
 
     # ---- icons and controls ----
 
-    def test_exactly_six_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
+    def test_exactly_twelve_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
         symbols = re.findall(r"<symbol\b([^>]*)>", self.text)
         ids = sorted(re.search(r'id="([^"]+)"', attributes).group(1) for attributes in symbols)
-        self.assertEqual(ids, ["i-bin", "i-chevron-left", "i-moon", "i-plus", "i-search", "i-sun"])
+        self.assertEqual(
+            ids,
+            sorted(["i-archive", "i-bin", "i-chevron-left", "i-menu", "i-moon", "i-note", "i-pencil", "i-plus",
+                    "i-search", "i-sun", "i-tag", "i-unarchive"]),
+        )
         for attributes in symbols:
             for required in ('viewBox="0 0 24 24"', 'fill="none"', 'stroke="currentColor"', 'stroke-width="1.8"',
                              'stroke-linecap="round"', 'stroke-linejoin="round"'):
                 self.assertIn(required, attributes)
-        references = set(re.findall(r'<use href="#([^"]+)"', self.text))
+        # Used in the markup, or named in the script by icon("name").
+        references = set(re.findall(r'<use href="#(i-[a-z-]+)"', self.text))
+        for arguments in re.findall(r"\bicon\(([^()]*)\)", self.text):
+            references |= {"i-" + name for name in re.findall(r'"([a-z-]+)"', arguments.replace(', "small"', ''))}
         self.assertEqual(sorted(references), ids, "Every shape is used and nothing else is.")
         for svg in re.findall(r"<svg\b([^>]*class=\"icon[^>]*)>", self.text):
             self.assertIn('stroke="currentColor"', svg)
             self.assertIn('aria-hidden="true"', svg)
         for svg in re.findall(r"<svg\b[^>]*>", self.text):
             self.assertNotRegex(svg, r"stroke=\"(?!currentColor)")
+        # The script's own svg string is held to the same rule.
+        self.assertIn('viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"', self.text.split("function icon(", 1)[1])
 
-    def test_every_row_delete_button_names_its_note(self) -> None:
+    def test_every_icon_button_in_the_script_names_what_it_acts_on(self) -> None:
         self.assertIn('remove.setAttribute("aria-label", "Delete note: " + item.title);', self.text)
         self.assertIn('remove.title = "Delete note";', self.text)
-        self.assertIn('remove.className = "icon-button row-delete";', self.text)
-        self.assertEqual(len(re.findall(r"aria-label\", \"Delete", self.text)), 1)
+        self.assertIn('archive.setAttribute("aria-label", (item.archived ? "Unarchive note: " : "Archive note: ") + item.title);', self.text)
+        self.assertIn('rename.setAttribute("aria-label", "Rename label: " + label.name);', self.text)
+        self.assertIn('remove.setAttribute("aria-label", "Delete label: " + label.name);', self.text)
+        # Every icon button the script makes carries one of those labels.
+        made = re.findall(r'className = "icon-button [a-z-]+"', self.text)
+        self.assertEqual(
+            sorted(made),
+            sorted(['className = "icon-button row-archive"', 'className = "icon-button row-delete"',
+                    'className = "icon-button label-rename"', 'className = "icon-button label-delete"']),
+        )
+        self.assertEqual(len(re.findall(r'setAttribute\("aria-label", ', self.text)) - 3, len(made),
+                         "Besides the three other aria-labels, one per icon button.")
 
     def test_buttons_do_not_change_case_or_appearance(self) -> None:
         self.assertIn("appearance: none;", block_after(self.style, "\n  button {"))
@@ -298,6 +344,98 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
         self.assertIn('"silurian-notes-theme"', self.page)
         self.assertNotIn("localStorage", self.page.split('<script>\n(function () {\n  "use strict";\n\n  var MAX_BYTES')[1],
                          "The notes script must not read or write the theme choice.")
+
+
+
+class NotesPageVersionFourMenuLabelsAndArchive(unittest.TestCase):
+    """CLAUDE.md section 9d. Ruled by the product owner on 20 October 2026."""
+
+    def setUp(self) -> None:
+        self.page = NOTES_PAGE.read_text(encoding="utf-8")
+        self.text = without_comments(self.page)
+        self.style = self.text.split("<style>", 1)[1].split("</style>", 1)[0]
+        self.body = self.text.split("<body>", 1)[1]
+
+    def test_the_menu_is_a_nav_with_the_items_in_order_and_no_headings(self) -> None:
+        nav = re.search(r'<nav class="menu" id="menu" aria-label="Notes menu" hidden>(.*?)</nav>', self.body, re.DOTALL).group(1)
+        position, order = 0, []
+        for marker in ('data-key="notes"', '<hr class="menu-rule">', 'id="menu-labels"', 'data-key="labels"',
+                       '<hr class="menu-rule">', 'data-key="archive"'):
+            position = nav.index(marker, position)
+            order.append(position)
+            position += 1
+        self.assertEqual(order, sorted(order), "Notes, a rule, the labels, Edit labels, a rule, Archive.")
+        for key in ("notes", "labels", "archive"):
+            self.assertEqual(nav.count(f'data-key="{key}"'), 1, f"One {key} item.")
+        self.assertEqual(nav.count('<hr class="menu-rule">'), 3, "Two rules in the list, one above the phone-only footer.")
+        self.assertNotRegex(nav, r"<h[1-6]\b")
+        self.assertIn('<div id="menu-labels"></div>', nav, "With no labels nothing sits between the rules but Edit labels.")
+        for text in ("Notes", "Edit labels", "Archive"):
+            self.assertIn(f'<span class="menu-text">{text}</span>', nav)
+        self.assertIn('Dark mode', nav)
+        self.assertIn('Light mode', nav)
+
+    def test_the_menu_is_sized_and_placed_as_briefed(self) -> None:
+        self.assertIn("width: 240px;", block_after(self.style, "\n  .menu {"))
+        self.assertNotIn("960px", self.style, "The header no longer stops at 960px.")
+        main = block_after(self.style, "\n  main {")
+        self.assertIn("width: min(800px, 100%);", main)
+        self.assertIn("padding: 24px 24px 48px;", main)
+        phone = self.style.split("@media (max-width: 760px) {", 1)[1]
+        self.assertIn("width: 280px;", phone)
+        self.assertIn("max-width: 85vw;", phone)
+        self.assertIn("background: var(--notes-scrim);", phone)
+        self.assertEqual(len(re.findall(r"@media \(max-width: 760px\)", self.style)), 1)
+        self.assertNotRegex(self.style, r"transition|animation", "The phone menu opens and closes at once.")
+
+    def test_the_menu_button_and_new_note_button_at_phone_width(self) -> None:
+        self.assertIn('id="menu-button" aria-label="Open menu" aria-expanded="false" aria-controls="menu"', self.body)
+        self.assertIn('id="new-note" aria-label="New note"', self.body)
+        self.assertIn("#new-note .btn-label { display: none; }", self.style)
+        self.assertIn("body.signed-in #theme-switch, body.signed-in #sign-out { display: none; }", self.style)
+
+    def test_chip_shape_and_limits(self) -> None:
+        chip = block_after(self.style, "\n  .chip {")
+        for declaration in ("max-width: 120px;", "height: 22px;", "padding: 0 8px;", "border-radius: 6px;",
+                            "border: 1px solid var(--notes-line);", "background: var(--notes-panel);"):
+            self.assertIn(declaration, chip)
+        self.assertIn("gap: 6px;", block_after(self.style, "\n  .chips {"))
+        self.assertIn("flex-wrap: nowrap;", block_after(self.style, "\n  .chips {"))
+        self.assertIn("if (index >= 3) { el.classList.add(\"over-wide\"); }", self.text)
+        self.assertIn("if (index >= 2) { el.classList.add(\"over-narrow\"); }", self.text)
+        self.assertIn('aria-hidden", "true"', self.text)
+        self.assertIn('"Labels: "', self.text)
+
+    def test_every_empty_state_says_exactly_what_the_brief_says(self) -> None:
+        for copy in (
+            "No labels yet. Type a name above and press Create.",
+            "No labels yet. Type a name to create one.",
+            "No notes have the label ",
+            ". Open a note and press Labels to add it.",
+            " Archived notes with this label are under Archive.",
+            "Nothing archived. Archive a note to take it out of your notes without deleting it.",
+            "No notes yet. Press New note to write the first one.",
+        ):
+            self.assertIn(copy, self.text)
+        self.assertIn("LABEL_EMPTY_BEFORE + (label ? label.name : \"\") + LABEL_EMPTY_AFTER", self.text)
+        self.assertIn('"Note archived."', self.text)
+        self.assertIn('"Note unarchived."', self.text)
+        self.assertIn('"Delete the label " + label.name + "? "', self.text)
+        for sentence in ("No notes carry it.", "It is on 1 note.", '"It is on " + count + " notes."', '" The notes stay."'):
+            self.assertIn(sentence, self.text)
+        self.assertIn('"There is already a label called " + name + "."', self.text)
+        self.assertEqual(DASHES.findall(self.page), [])
+
+    def test_the_addresses_are_in_the_page(self) -> None:
+        for fragment in ('hash === "#labels"', 'hash === "#archive"', '"#l/" + view.id', 'hash === "#new"', "view=archive",
+                         "view=label&label=", "view=notes"):
+            self.assertIn(fragment, self.text)
+        self.assertRegex(self.text, r"#l\\/\(\[0-9a-f\]\{32\}\)\$")
+
+    def test_the_new_files_are_not_public(self) -> None:
+        # api/labels.js is a function, not a static file, so the allowlist is unchanged.
+        allowlist = (REPOSITORY / "site-allowlist.txt").read_text(encoding="utf-8")
+        self.assertNotIn("labels", allowlist)
 
 
 if __name__ == "__main__":

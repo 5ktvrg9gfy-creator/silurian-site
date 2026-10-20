@@ -21,10 +21,15 @@ const password = 'pw-' + randomBytes(12).toString('hex');
 
 const notes = new Map();
 const control = { failWrites: false, writeDelayMs: 0 };
+let labelsFile = null;
 const store = {
-  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt })); },
-  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt } : null; },
+  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true })); },
+  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
   async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
+  async meta(id) { const n = notes.get(id); return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
+  async writeMeta(id, meta) { notes.get(id).meta = meta; },
+  async readLabels() { return labelsFile ? structuredClone(labelsFile) : null; },
+  async writeLabels(file) { labelsFile = structuredClone(file); },
   async write(id, bytes, meta) {
     if (control.writeDelayMs) await new Promise((r) => setTimeout(r, control.writeDelayMs));
     if (control.failWrites) throw new Error('refused');
@@ -37,6 +42,7 @@ const routes = {
   '/api/login': { POST: api.login },
   '/api/session': { GET: api.session, DELETE: api.signOut },
   '/api/notes': api.collection,
+  '/api/labels': api.labels,
   '/api/note': api.item,
 };
 const types = { '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.ttf': 'font/ttf' };
@@ -98,6 +104,7 @@ const TITLES = [
 ];
 
 async function run(width, theme) {
+  const narrow = width === 320;
   const tag = `${width}-${theme}`;
   const context = await browser.newContext({ viewport: { width, height: width === 320 ? 640 : 800 }, colorScheme: 'light' });
   const page = await context.newPage();
@@ -159,7 +166,8 @@ async function run(width, theme) {
 
   if (theme === 'dark') {
     // The choice is the device's, not a note, and survives sign out.
-    await page.click('#sign-out');
+    // At phone width Sign out is a row in the menu (notes version 4).
+    if (narrow) { await page.click('#menu-button'); await page.click('#menu-sign-out'); } else { await page.click('#sign-out'); }
     await page.waitForSelector('#login:not([hidden])');
     check(`${tag}: sign out leaves the theme choice alone`, (await page.getAttribute('html', 'data-theme')) === 'dark' && (await page.evaluate(() => localStorage.getItem('silurian-notes-theme'))) === 'dark');
     await page.reload();
@@ -189,7 +197,7 @@ for (const width of [320, 1280]) for (const theme of ['light', 'dark']) {
   await page.goto(BASE + '/notes');
   await page.waitForSelector('#login:not([hidden])');
   check('device dark, no saved choice: page is dark and the switch offers light', (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(38, 36, 34)' && (await page.getAttribute('#theme-switch', 'aria-label')) === 'Switch to light mode');
-  check('device dark: the sun shows, the moon does not', await page.locator('.icon-sun').isVisible() && !(await page.locator('.icon-moon').isVisible()));
+  check('device dark: the sun shows, the moon does not', await page.locator('#theme-switch .icon-sun').isVisible() && !(await page.locator('#theme-switch .icon-moon').isVisible()));
   await page.click('#theme-switch');
   check('pressing it goes light and saves "light"', (await page.getAttribute('html', 'data-theme')) === 'light' && (await page.evaluate(() => localStorage.getItem('silurian-notes-theme'))) === 'light' && (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(250, 248, 245)');
   await context.close();

@@ -185,3 +185,7 @@ Run by the product owner on `www.silurianconsulting.co.uk` after pull request 15
 
 The report did not say which phone or browser was used, so a specific browser is not claimed here. Nothing outstanding on the sign out fix.
 
+## Notes version 3: Production check, 20 October 2026
+
+Run by the product owner on `www.silurianconsulting.co.uk` after pull request 152 merged (merge commit `1af386e`, from branch head `235bf2a`). Reported to the build session, which cannot reach Vercel hosts. **The check passed.** The report did not say which phone or browser was used, so a specific browser is not claimed here. Recorded on the `notes-v4` branch, not as a separate push to `main`. Nothing outstanding on version 3.
+
