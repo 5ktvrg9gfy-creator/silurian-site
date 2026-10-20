@@ -37,14 +37,23 @@ const sourceMatches = (source, path) => new RegExp(`^${source}$`).test(path);
 test("vercel.json only touches /notes", () => {
   assert.deepEqual(
     Object.keys(config).sort(),
-    ["$schema", "buildCommand", "headers", "outputDirectory", "rewrites"],
-    "the allowlist build settings and the /notes rules, and no redirects, cleanUrls, trailingSlash or other keys",
+    ["$schema", "buildCommand", "headers", "outputDirectory", "regions", "rewrites"],
+    "the allowlist build settings, the function region and the /notes rules, and no redirects, cleanUrls, trailingSlash or other keys",
   );
   assert.equal(config.outputDirectory, "public", "only the allowlisted folder is served");
   const sources = [...config.rewrites.map((r) => r.source), ...config.headers.map((h) => h.source)];
   assert.ok(sources.length >= 3, "the rules were read");
   for (const source of sources) assert.match(source, /^\/notes(\/\(\.\*\))?$/, `${source} is a /notes rule`);
   assert.deepEqual(config.rewrites, [{ source: "/notes", destination: "/notes/index.html" }]);
+});
+
+// The notes functions are the only functions this project has, so the region
+// applies to them alone. The static pages are files, not functions, and Assay is
+// a separate project whose own forecast-app/vercel.json pins the same region.
+test("the notes functions are pinned to London, with no failover region", () => {
+  assert.deepEqual(config.regions, ["lhr1"]);
+  const assay = JSON.parse(read("forecast-app/vercel.json"));
+  assert.deepEqual(assay.regions, ["lhr1"], "Assay stays pinned to London as it was");
 });
 
 test("no existing page or asset is matched by any rule, so each serves as it did", () => {
