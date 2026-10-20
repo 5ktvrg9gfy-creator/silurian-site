@@ -8,84 +8,84 @@
       "name": "open list (first load)",
       "requests": 3,
       "blobCalls": 42,
-      "shownMs": 293,
+      "shownMs": 287,
       "detail": "GET /api/session (0); GET /api/labels (1); GET /api/notes?view=notes (41)"
     },
     {
       "name": "open note from list",
       "requests": 2,
       "blobCalls": 3,
-      "shownMs": 240,
+      "shownMs": 227,
       "detail": "GET /api/labels (1); GET /api/note?id=<id> (2)"
     },
     {
       "name": "back to list",
       "requests": 2,
       "blobCalls": 42,
-      "shownMs": 214,
+      "shownMs": 205,
       "detail": "GET /api/labels (1); GET /api/notes?view=notes (41)"
     },
     {
       "name": "open a second note",
       "requests": 2,
       "blobCalls": 3,
-      "shownMs": 202,
+      "shownMs": 208,
       "detail": "GET /api/labels (1); GET /api/note?id=<id> (2)"
     },
     {
       "name": "tick a label (chip on screen)",
       "requests": 1,
       "blobCalls": 4,
-      "shownMs": 32,
+      "shownMs": 30,
       "detail": "PATCH /api/note?id=<id> (4)"
     },
     {
       "name": "untick the label (chip gone)",
       "requests": 1,
       "blobCalls": 4,
-      "shownMs": 41,
+      "shownMs": 39,
       "detail": "PATCH /api/note?id=<id> (4)"
     },
     {
       "name": "archive from the open note",
       "requests": 3,
       "blobCalls": 46,
-      "shownMs": 430,
+      "shownMs": 432,
       "detail": "PATCH /api/note?id=<id> (4); GET /api/labels (1); GET /api/notes?view=notes (41)"
     },
     {
       "name": "archive from a list row",
       "requests": 3,
       "blobCalls": 46,
-      "shownMs": 278,
+      "shownMs": 279,
       "detail": "PATCH /api/note?id=<id> (4); GET /api/labels (1); GET /api/notes?view=notes (41)"
     },
     {
       "name": "switch view: a label",
       "requests": 2,
       "blobCalls": 42,
-      "shownMs": 213,
+      "shownMs": 212,
       "detail": "GET /api/labels (1); GET /api/notes?view=label&label=<id> (41)"
     },
     {
       "name": "switch view: Archive",
       "requests": 2,
       "blobCalls": 42,
-      "shownMs": 215,
+      "shownMs": 200,
       "detail": "GET /api/labels (1); GET /api/notes?view=archive (41)"
     },
     {
       "name": "switch view: Notes",
       "requests": 2,
       "blobCalls": 42,
-      "shownMs": 204,
+      "shownMs": 205,
       "detail": "GET /api/labels (1); GET /api/notes?view=notes (41)"
     },
     {
       "name": "search (one word, typed)",
       "requests": 2,
       "blobCalls": 122,
-      "shownMs": 529,
+      "shownMs": 511,
       "detail": "GET /api/labels (1); GET /api/notes (121)"
     }
   ]

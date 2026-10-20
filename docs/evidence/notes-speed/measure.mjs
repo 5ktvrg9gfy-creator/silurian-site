@@ -34,6 +34,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 class BlobNotFoundError extends Error {}
 const blobs = new Map();
+let etags = 0; // the real store gives a blob a new etag on every write
 const counts = { get: 0, head: 0, put: 0, del: 0, list: 0 };
 // Each request has its own counter, so requests that run side by side are not
 // counted against each other.
@@ -56,7 +57,7 @@ const sdk = {
   async put(path, body) {
     await bump('put');
     const bytes = typeof body === 'string' ? Buffer.from(body) : Buffer.from(body);
-    blobs.set(path, { bytes, uploadedAt: new Date() });
+    blobs.set(path, { bytes, uploadedAt: new Date(), etag: `etag-${++etags}` });
   },
   async del(path) {
     await bump('del');
@@ -64,7 +65,7 @@ const sdk = {
   },
   async list({ prefix }) {
     await bump('list');
-    return { blobs: [...blobs].filter(([p]) => p.startsWith(prefix)).map(([pathname, b]) => ({ pathname, uploadedAt: b.uploadedAt })), hasMore: false };
+    return { blobs: [...blobs].filter(([p]) => p.startsWith(prefix)).map(([pathname, b]) => ({ pathname, uploadedAt: b.uploadedAt, etag: b.etag })), hasMore: false };
   },
 };
 
