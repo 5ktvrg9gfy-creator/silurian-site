@@ -81,7 +81,7 @@ Each break was made in the file named, the suites that should notice it were run
 
 ## Defects the browser run found
 
-Found by running the page, not by the suites, and fixed before this commit. Listed because a control that never failed has not been proved.
+Found by running the page and reading its screenshots, not by the suites, and fixed before this commit. Listed because a control that never failed has not been proved.
 
 * The theme colour tag was overwritten on load, so the dark device's pair became the light colour twice and the page forgot which was which. It now changes only after a person chooses a theme.
 * Sign out could show the wrong message: a save already on its way failed after the sign out message and replaced it. Quick notes now hand back the save that is on its way, and sign out waits for it.
@@ -92,7 +92,6 @@ Found by running the page, not by the suites, and fixed before this commit. List
 * A hovered date button put muted text on the selected fill, which the notes rules forbid. A bullet did the same when done. Both now use a border.
 * Month scrolled by the wrong offset and left today at the bottom. It now measures from the panel.
 * A redraw replaced every row after each save, which also made a check flaky. Unchanged rows are now kept as they are.
-* A refresh could replace Month's rows under a line being edited. A line being edited is now kept.
 
 ## Screenshots
 
