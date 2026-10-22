@@ -10,25 +10,24 @@ Choices the owner did not decide are in `docs/journal-open-questions.md`, each w
 
 * An **entry** has a type (task, event, note), a state, and text with optional bold and strike-through.
 * States: **open**, **done** (tasks only), **migrated** (moved forward, right arrow), **scheduled** (moved to a date, left arrow), **dropped** (tasks only, struck, kept).
-* A **list** is Today, Tomorrow, Migrate, or the log for any other date. A **calendar line** is one line of free text per date, shown in Month.
+* A **list** is Today, Tomorrow, Migrate, or the log for any other date. A **calendar line** is one line of free text per date, kept apart from that date's log. Month shows the line and that date's events (Q1, Q8).
 * Moving an entry never deletes it. The original stays in place, greyed, with its arrow. A copy lands at the bottom of the target list, just above the add bar.
 
 ---
 
 ## 1. Panel layout
 
-Five panels, always in this order: Month, Today, Tomorrow, Migrate, Quick notes. Each panel is a card: `--notes-panel` fill, 1px `--notes-line` border, 8px corners, no shadow, on a `--notes-ground` page. Header is the same 65px bar as notes (`--notes-header-height`).
+Five panels. On a phone and in the small window they run Month, Today, Tomorrow, Migrate, Quick notes. From 1000px up they sit as James's sticky notes sit now (below). Each panel is a card: `--notes-panel` fill, 1px `--notes-line` border, 8px corners, no shadow, on a `--notes-ground` page. Header is the same 65px bar as notes (`--notes-header-height`).
 
 | Window | Width | Layout |
 |---|---|---|
-| Wide desktop | 1400px and up | Five columns in one row, filling the window. Each panel scrolls inside itself. |
-| Typical desktop window, iPad landscape | 1000 to 1399px | Three columns, two rows, filling the window. Month is the left column and spans both rows. Today and Tomorrow sit on the top row, Migrate and Quick notes on the bottom row. |
+| Desktop, iPad landscape | 1000px and up | Three columns filling the window, one layout at every width. Left: Month, full height. Middle: Today above Tomorrow. Right: Migrate above Quick notes. Each panel scrolls inside itself. There is no five column layout. |
 | Small window, iPad portrait | 761 to 999px | Two columns. Month is the left column, sticky below the header and as tall as the window, scrolling inside itself. The right column stacks Today, Tomorrow, Migrate and Quick notes, and the page scrolls. |
 | Phone | 760px and below | One panel at a time with a bar of five tabs fixed to the bottom: Month, Today, Tomorrow, Migrate, Quick. Opens on Today. |
 
 Detail that decides the build:
 
-* **Typical desktop window means 1280 by 800.** Three columns of about 400px, rows of about 340px. Today shows about nine rows before it scrolls.
+* **At 1280 by 800** the columns are about 400px wide. Today and Tomorrow, and Migrate and Quick notes, are about 340px tall each, so Today shows about nine rows before it scrolls. Month is about 730px tall and scrolls inside itself, since a month is 31 rows. Columns are equal width (a note under the assumptions in the questions file).
 * **The add bar (section 2) is fixed to the bottom of each panel** and the list scrolls above it, so James never scrolls to find where to type.
 * **Tabs on phone are text only**, 44px tall, equal width, 1px top border, selected tab on `--notes-selected` with `--notes-strong` text. The word "Quick" is the tab, the panel heading says "Quick notes".
 * **The last tab used is remembered on the device** in `localStorage` inside try and catch, as the theme is. It is a convenience only. Without it the phone opens on Today.
@@ -82,7 +81,7 @@ Four actions, in this order: **Today**, **Tomorrow**, **Migrate**, **Date**.
 | Today | Right arrow, "to Today" | Bottom of Today |
 | Tomorrow | Right arrow, "to Tomorrow" | Bottom of Tomorrow |
 | Migrate | Right arrow, "to Migrate" | Bottom of the Migrate list |
-| Date | Left arrow, "to 28 Oct" | Bottom of the log for that date |
+| Date | Left arrow, "to 28 Oct" | Bottom of the log for that date. That log is Today's list when the date arrives, so nothing has to be moved again on the day. |
 
 The arrow follows the method and the owner's words: right arrow for moved forward, left arrow for scheduled. Moving **to Today** from Today itself, or to Tomorrow from Tomorrow, is not offered. The row hides the action that points where it already is.
 
@@ -116,8 +115,8 @@ A message bar (the one notes version 4 uses) says what happened and offers Undo:
 ### The panel
 
 * **Header:** previous month (44px, `Chevron left`), the month and year as a button, next month (44px, `Chevron right`). A "This month" text button appears at the right only when another month is showing, and returns to the current month with today in view.
-* **Body:** one row per date, 36px mouse and 44px touch. Left to right: the date number, a weekday letter, then the calendar line, an editable single line of text. Entries logged for that date show as a count chip at the right edge ("2"), in the notes chip shape, so a date with a plan is visible at a glance.
-* **Calendar lines are free text.** They are where James writes the things that happen on that date. They are not entries and have no bullet, state or move controls (Q1).
+* **Body:** one row per date, 36px mouse and 44px touch. Left to right: the date number, a weekday letter, then the calendar line, an editable single line of text. The line shows the calendar line's own text and then that date's events, the event entries in that date's log, as text. Tasks and notes in that log do not show on the line. A count chip at the right edge ("2") says how many entries the log holds, in the notes chip shape, so a date with a plan is visible at a glance. A line too long for the panel ends in an ellipsis. Clicking the date number shows all of it.
+* **A calendar line is free text and is separate from the day's log** (Q1, answered). It is where James writes the things that happen on that date. It has no bullet, state or move controls. **The events after it on the line are read only there.** Editing, ticking or moving an event is done in that date's log. Typing on the line never adds an entry to the log.
 
 ### The picker
 
@@ -147,7 +146,7 @@ State is told twice, fill and word. Neither is colour alone.
 
 * **A block at the top of Today**, above the list, only when there is something to deal with. If there is not, nothing renders and no space is held.
 * **It looks like a block, not a row:** `--notes-field` fill, 1px `--notes-line` border, 6px corners, 12px padding.
-* **Heading, in `--notes-size-14` weight 600:** "From yesterday, 4 open tasks" for one earlier day, or "From Friday 16 October, 3 open tasks" when it is not yesterday. One earlier day at a time, the most recent that has open tasks (Q2). Heading says whose problem it is: these are the tasks he left open.
+* **Heading, in `--notes-size-14` weight 600:** "From yesterday, 4 open tasks" for one earlier day, or "From Friday 16 October, 3 open tasks" when it is not yesterday. One earlier day at a time, the most recent earlier day that has any open tasks (Q2, answered yes). Friday's tasks are offered on Monday. Heading says whose problem it is: these are the tasks he left open.
 * **Each task is one row:** bullet, text, then two buttons.
   * **Bring forward**: the primary button, accent fill, `--notes-on-accent` text (5.52:1).
   * **Drop**: the plain bordered button.
@@ -157,6 +156,16 @@ State is told twice, fill and word. Neither is colour alone.
 * **Nothing moves by itself.** If James never opens the app, nothing changes. The strip is simply there on the next open, with the date in the heading.
 * When the last task is handled the block disappears. The message bar says "All handled." once.
 * Tomorrow is not mirrored this way. Only Today has a strip.
+
+### Month end, the same strip (Q3, answered yes)
+
+* **On the first open of a new month, last month's open Migrate tasks appear in the same strip**, as a second group below any daily group, with its own heading in the same words: "From October, 5 open tasks on Migrate". The two groups are separate because they go to different places.
+* **Bring forward here puts a copy at the bottom of the new month's Migrate list**, not Today. The original in last month's Migrate gets a right arrow and "to November". **Drop** strikes it and marks it "Dropped". Both are kept and both show the message bar with Undo. Same buttons, same sizes, same primary and plain styles.
+* **"Bring all forward" is per group.** There is still no "Drop all".
+* **It is never automatic and never expires.** The rule is the weekend rule applied to months: the most recent earlier month that has any open Migrate tasks, offered until handled, however many months have passed.
+* A daily group and a month group can be waiting at once. The daily group is first because it is today's work. Both clear independently.
+* Only open tasks are offered. Events and notes on the old list stay where they are.
+* Migrate is always the current month's list. Browsing another month in Month does not change it.
 
 ---
 
@@ -318,7 +327,9 @@ Detail for the planning session. Not designed here.
 * **Three kinds of file:** one per date holding that day's calendar line and entries, one per month holding the Migrate list, and one for Quick notes. Each carries an `updatedAt` as its version.
 * **Month needs one aggregate read.** One request returns a month's calendar lines and entry counts, read server side behind the cookie check, as search already does. Thirty one browser calls to draw a calendar is not acceptable.
 * **Conflicts need a different answer from notes.** Notes refuses a stale save and keeps the unsaved text. That is right for a note edited rarely on two devices. The journal is open on a PC and an iPad all day and the same lists are touched on both, so a refusal would fire constantly. Recommended: the page sends the change as an operation on an entry by id (add, edit, state, move), with the version it started from, and the server applies it to the newest file and answers with the result. A stale version is accepted for these operations because they cannot overwrite each other. Quick notes, which is one block of text, keeps the notes rule of refuse and keep the text (Q5).
-* **A move is two writes.** Write the copy first, then mark the original. A failure between them leaves a duplicate, never a lost task.
+* **A move is two writes.** Write the copy first, then mark the original. A failure between them leaves a duplicate, never a lost task. This holds across months too: bringing a task into the new Migrate writes the new month's file first, then marks the old one.
+* **The strip reads two places:** the most recent earlier day with open tasks, and the most recent earlier month's Migrate list. Both come back with the page's first request, not as extra calls.
+* **Month's aggregate read also returns each date's events** (the event entries in that date's log), so a scheduled event shows on its line.
 * **Dates are the viewer's local date, sent by the page.** The server never decides what "today" is. The zone is Europe/London for the owner, and the page says so in its date requests so a travelling iPad does not change what yesterday was.
 * One new route file, `api/journal.js`, makes six functions. Q19 in the notes questions says five is unproved on Vercel, so six should be checked on the Preview, not assumed.
 
@@ -335,8 +346,12 @@ New tests, named by the job:
 * every icon button names what it acts on, and the journal sprite is exactly eleven symbols, all stroked in the current colour
 * touch targets: the bullet, More, type buttons, B, S, tabs, month arrows and date rows are 44px under `pointer: coarse`
 * each panel renders alone
+* the layout at 1000px and up is three columns in the stated order at 1000, 1280 and 1920, and the five column layout is gone
+* the strip's month group: appears only when an earlier month's Migrate has an open task, offers only open tasks, brings them into the current month's Migrate, and clears when handled
+* the strip offers a Friday task on Monday, and never an event or a note
+* a scheduled entry lands in that date's log and shows as Today's list item when that date is today
 * no dash of any form in the page, manifest or copy
 * the manifest, icons and page are public and noindex as specified, and `api/journal.js` answers 401 with no cookie
 * the notes menu has Journal last, and the notes sprite is thirteen
 
-Not in scope: reminders, recurring tasks, collections and indexes, future log beyond the month in view, search, labels, notes bin, an offline mode, drag to reorder, sharing, export, anything on the marketing pages or in Assay. Moving a month's open tasks to the next month (Q3) is the method's own monthly migration and is a question, not part of this build.
+Not in scope: reminders, recurring tasks, collections and indexes, future log beyond the month in view, search, labels, notes bin, an offline mode, drag to reorder, sharing, export, anything on the marketing pages or in Assay. The month end strip is in scope (Q3, answered). Nothing moves by itself at month end or at any other time.
