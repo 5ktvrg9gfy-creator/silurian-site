@@ -2,11 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node scripts/build-public.mjs",
   "outputDirectory": "public",
-  "regions": ["lhr1"],
+  "regions": [
+    "lhr1"
+  ],
   "rewrites": [
     {
       "source": "/notes",
       "destination": "/notes/index.html"
+    },
+    {
+      "source": "/journal",
+      "destination": "/journal/index.html"
     }
   ],
   "headers": [
@@ -25,6 +31,32 @@
     },
     {
       "source": "/notes/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/journal",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/journal/(.*)",
       "headers": [
         {
           "key": "X-Robots-Tag",

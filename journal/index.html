@@ -1,0 +1,2401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#262422" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Journal">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Journal</title>
+<link rel="manifest" href="/journal/manifest.webmanifest">
+<link rel="icon" href="/journal/icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/journal/apple-touch-icon.png">
+<script id="theme-init">
+(function () {
+  try {
+    var saved = localStorage.getItem("silurian-notes-theme");
+    if (saved === "light" || saved === "dark") { document.documentElement.setAttribute("data-theme", saved); }
+  } catch (e) { /* storage is blocked: the page follows the device */ }
+})();
+</script>
+<link rel="stylesheet" href="/tokens.css">
+<style>
+  /* Light theme and page sizes. The only place a colour or a font size is written. */
+  :root {
+    color-scheme: light dark;
+    --notes-ground: #faf8f5;
+    --notes-panel: #f1ede7;
+    --notes-field: #ffffff;
+    --notes-line: #e2dcd3;
+    --notes-line-soft: #ebe6df;
+    --notes-hover: #ede8e1;
+    --notes-selected: #e4dccf;
+    --notes-scrim: rgba(26, 25, 24, 0.4);
+    --notes-ink: #2f2d2b;
+    --notes-strong: #1a1918;
+    --notes-muted: #66615f;
+    --notes-icon: #4a4744;
+    --notes-accent: #ec6917;
+    --notes-on-accent: #1a1918;
+    --notes-good: #356b46;
+    --notes-warn: #9a5a12;
+    --notes-bad: #a52a1f;
+
+    --notes-header-height: 65px;
+    --notes-size-12: 12px;
+    --notes-size-13: 13px;
+    --notes-size-14: 14px;
+    --notes-size-15: 15px;
+    --notes-size-18: 18px;
+    --notes-size-30: 30px;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+
+  /* Dark theme, following the device when no choice is saved. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --notes-ground: #262422;
+      --notes-panel: #1f1d1c;
+      --notes-field: #262422;
+      --notes-line: #3a3735;
+      --notes-line-soft: #33302e;
+      --notes-hover: #302d2b;
+      --notes-selected: #3d3936;
+      --notes-scrim: rgba(0, 0, 0, 0.6);
+      --notes-ink: #e3dfdd;
+      --notes-strong: #f5f2ef;
+      --notes-muted: #9f9893;
+      --notes-icon: #cfcac6;
+      --notes-accent: #ec6917;
+      --notes-on-accent: #1a1918;
+      --notes-good: #6fbf86;
+      --notes-warn: #e8a54b;
+      --notes-bad: #f0857a;
+    }
+  }
+
+  /* Dark theme, chosen with the switch. Same values as the block above. */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --notes-ground: #262422;
+    --notes-panel: #1f1d1c;
+    --notes-field: #262422;
+    --notes-line: #3a3735;
+    --notes-line-soft: #33302e;
+    --notes-hover: #302d2b;
+    --notes-selected: #3d3936;
+    --notes-scrim: rgba(0, 0, 0, 0.6);
+    --notes-ink: #e3dfdd;
+    --notes-strong: #f5f2ef;
+    --notes-muted: #9f9893;
+    --notes-icon: #cfcac6;
+    --notes-accent: #ec6917;
+    --notes-on-accent: #1a1918;
+    --notes-good: #6fbf86;
+    --notes-warn: #e8a54b;
+    --notes-bad: #f0857a;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    background: var(--notes-ground);
+    color: var(--notes-ink);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: var(--notes-size-15);
+    line-height: 1.5;
+  }
+
+  .icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ---------- header ---------- */
+
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: var(--notes-header-height);
+    background: var(--notes-panel);
+    border-bottom: 1px solid var(--notes-line-soft);
+  }
+  .bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    height: 100%;
+    padding: 0 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .mark { display: block; width: 26px; height: auto; aspect-ratio: 200 / 290; flex: none; }
+  .wordmark {
+    margin: 0;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: var(--notes-size-18);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--notes-strong);
+    white-space: nowrap;
+  }
+  .bar-right { display: flex; align-items: center; gap: 8px; }
+
+  /* ---------- buttons ---------- */
+
+  button, a.button-link {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 4px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-ground);
+    color: var(--notes-ink);
+    font: inherit;
+    font-size: var(--notes-size-14);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  button:hover, a.button-link:hover { background: var(--notes-hover); }
+  button.primary {
+    border: 0;
+    background: var(--notes-accent);
+    color: var(--notes-on-accent);
+  }
+  button.primary:hover { background: var(--notes-accent); filter: brightness(0.92); }
+  button.icon-button {
+    width: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--notes-icon);
+  }
+  button.icon-button:hover { background: var(--notes-hover); }
+  button.quiet {
+    border: 0;
+    background: transparent;
+  }
+  button.quiet:hover { background: var(--notes-hover); }
+  button:disabled { cursor: default; opacity: 0.55; }
+  /* A touch screen gets 44px targets everywhere a finger lands. */
+  @media (pointer: coarse) {
+    button, a.button-link { min-height: 44px; }
+    button.icon-button { width: 44px; }
+  }
+
+  button:focus-visible, input:focus-visible, a:focus-visible,
+  .editor-line:focus-visible, .entry-text:focus-visible, .line-text:focus-visible, .quick-editor:focus-visible {
+    outline: 2px solid var(--notes-accent);
+    outline-offset: 2px;
+  }
+
+  /* One icon at a time in the theme switch: the moon on a light page, the sun on a dark one. */
+  .theme-switch .icon-sun { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-switch .icon-sun { display: block; }
+    :root:not([data-theme="light"]) .theme-switch .icon-moon { display: none; }
+  }
+  :root[data-theme="dark"] .theme-switch .icon-sun { display: block; }
+  :root[data-theme="dark"] .theme-switch .icon-moon { display: none; }
+
+  /* ---------- sign in ---------- */
+
+  main { padding: 24px 16px 48px; }
+  .lead { margin: 0 0 16px; color: var(--notes-muted); }
+  h1 {
+    margin: 0 0 16px;
+    font-size: var(--notes-size-30);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--notes-strong);
+  }
+  .login-card {
+    max-width: 380px;
+    padding: 24px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-panel);
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: var(--notes-size-12);
+    font-weight: 600;
+    color: var(--notes-muted);
+  }
+  input[type="password"] {
+    appearance: none;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-field);
+    color: var(--notes-ink);
+    font: inherit;
+  }
+  .form-actions { margin-top: 14px; }
+  .message { margin: 0 0 16px; font-weight: 600; color: var(--notes-bad); }
+
+  /* ---------- message bar ---------- */
+
+  .flash {
+    position: fixed;
+    top: calc(var(--notes-header-height) + 8px);
+    left: 0;
+    right: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    width: min(620px, calc(100% - 16px));
+    margin: 0 auto;
+    padding: 4px 4px 4px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-panel);
+  }
+  .flash p { margin: 0; padding: 4px 0; }
+  .flash-actions { display: flex; flex: none; gap: 4px; }
+
+  /* ---------- panels ---------- */
+
+  #app { min-width: 0; }
+  .panels { display: grid; gap: 12px; padding: 12px; }
+  .panel {
+    container: panel / inline-size;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-panel);
+    overflow: hidden;
+  }
+  #panel-month { grid-area: month; }
+  #panel-today { grid-area: today; }
+  #panel-tomorrow { grid-area: tomorrow; }
+  #panel-migrate { grid-area: migrate; }
+  #panel-quick { grid-area: quick; }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--notes-line-soft);
+  }
+  .panel-title {
+    margin: 0;
+    font-size: var(--notes-size-18);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--notes-strong);
+  }
+  .panel-date { font-size: var(--notes-size-13); color: var(--notes-muted); text-align: right; }
+  .panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 4px; }
+
+  .empty {
+    margin: 8px;
+    padding: 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-field);
+    color: var(--notes-ink);
+  }
+
+  /* Three columns from 1000px, filling the window, as the sticky notes sit now:
+     Month full height on the left, Today above Tomorrow in the middle, Migrate
+     above Quick notes on the right. */
+  @media (min-width: 1000px) {
+    #app { height: calc(100dvh - var(--notes-header-height)); }
+    .panels {
+      height: 100%;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas: "month today migrate" "month tomorrow quick";
+    }
+  }
+
+  /* Small window and iPad portrait: Month stays on the left, as tall as the
+     window, and the other four stack on the right and the page scrolls. */
+  @media (min-width: 761px) and (max-width: 999px) {
+    .panels {
+      align-items: start;
+      grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+      grid-template-areas: "month today" "month tomorrow" "month migrate" "month quick";
+    }
+    #panel-month {
+      position: sticky;
+      top: calc(var(--notes-header-height) + 12px);
+      height: calc(100dvh - var(--notes-header-height) - 24px);
+    }
+    #panel-today, #panel-tomorrow, #panel-migrate, #panel-quick { min-height: 220px; }
+    #panel-today .panel-body, #panel-tomorrow .panel-body, #panel-migrate .panel-body { flex: none; overflow: visible; }
+  }
+
+  /* Phone: one panel at a time, five tabs along the bottom. */
+  @media (max-width: 760px) {
+    #app { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+    .panels { display: block; padding: 8px; }
+    .panel { display: none; height: calc(100dvh - var(--notes-header-height) - 56px - env(safe-area-inset-bottom) - 16px); }
+    .panel[data-active="true"] { display: flex; }
+    .tabbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      display: flex;
+      gap: 4px;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--notes-line);
+      background: var(--notes-panel);
+    }
+    .tabbar button { flex: 1; min-height: 44px; padding: 0 4px; }
+    .tabbar button[aria-selected="true"] {
+      border: 1px solid var(--notes-line);
+      background: var(--notes-selected);
+      color: var(--notes-strong);
+    }
+    .flash { top: calc(var(--notes-header-height) + 4px); }
+  }
+  .tabbar { display: none; }
+  @media (max-width: 760px) {
+    .tabbar { display: flex; }
+    .mark { display: none; }
+    .bar-inner { padding: 0 8px; }
+    .bar-right { gap: 2px; }
+    #sign-out, #notes-link { padding: 0 8px; }
+  }
+
+  /* ---------- the add bar ---------- */
+
+  .addbar { padding: 8px 12px 12px; border-top: 1px solid var(--notes-line-soft); background: var(--notes-panel); }
+  .editor-line, .quick-editor {
+    display: block;
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-field);
+    color: var(--notes-ink);
+    overflow-wrap: anywhere;
+  }
+  .editor-line:empty::before, .quick-editor:empty::before {
+    content: attr(data-placeholder);
+    color: var(--notes-muted);
+    pointer-events: none;
+  }
+  .addtools { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+  .addtools .grow { flex: 1; }
+  .type-button, .fmt-button { width: 36px; padding: 0; border: 1px solid var(--notes-line); border-radius: 6px; }
+  .type-button { color: var(--notes-icon); }
+  .type-button[aria-pressed="true"] { background: var(--notes-selected); color: var(--notes-strong); }
+  .fmt-button { color: var(--notes-ink); font-size: var(--notes-size-15); }
+  .fmt-button[aria-pressed="true"] { background: var(--notes-selected); color: var(--notes-strong); }
+  .fmt-button .struck { text-decoration: line-through; }
+  @media (pointer: coarse) {
+    .editor-line, .quick-editor { min-height: 44px; padding: 10px 12px; }
+    .type-button, .fmt-button { width: 44px; }
+  }
+
+  /* ---------- entries ---------- */
+
+  .entries { list-style: none; margin: 0; padding: 0 4px; }
+  .entry { position: relative; border-radius: 8px; }
+  .entry:hover { background: var(--notes-hover); }
+  .entry-main { display: flex; align-items: flex-start; gap: 4px; min-height: 36px; padding-right: 4px; }
+  .bullet {
+    flex: none;
+    width: 32px;
+    height: 36px;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--notes-icon);
+  }
+  span.bullet { display: flex; align-items: center; justify-content: center; }
+  button.bullet:hover { border-color: var(--notes-line); background: transparent; }
+  .entry-text {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 4px;
+    color: var(--notes-ink);
+    overflow-wrap: anywhere;
+    border-radius: 6px;
+  }
+  .entry-tail { display: flex; flex: none; align-items: center; gap: 4px; min-height: 36px; }
+  .entry-note { font-size: var(--notes-size-12); color: var(--notes-muted); white-space: nowrap; }
+  .entry[data-state="done"] .entry-text,
+  .entry[data-state="dropped"] .entry-text { color: var(--notes-muted); text-decoration: line-through; }
+  .entry[data-state="done"] .bullet,
+  .entry[data-state="dropped"] .bullet,
+  .entry[data-state="migrated"] .bullet,
+  .entry[data-state="scheduled"] .bullet { color: var(--notes-muted); }
+  .entry[data-state="migrated"] .entry-text,
+  .entry[data-state="scheduled"] .entry-text { color: var(--notes-muted); }
+  .entry.orphan { border: 1px solid var(--notes-line); }
+  @media (pointer: coarse) {
+    .entry-main { min-height: 44px; }
+    .bullet { width: 44px; height: 44px; }
+    .entry-text { padding: 10px 4px; }
+    .entry-tail { min-height: 44px; }
+    .date-row { min-height: 44px; }
+    .line-text { min-height: 44px; padding: 10px 4px; }
+  }
+
+  /* The four moves. Under the text, opened by the More button, for a finger and
+     for a narrow panel. In a wide panel with a mouse they sit at the right of
+     the row while it is hovered or has focus, and take no room from the text. */
+  .entry-actions { display: none; flex-wrap: wrap; gap: 4px; padding: 0 4px 8px 36px; }
+  .entry-actions button { flex: 1 1 96px; min-height: 36px; }
+  .entry[data-open="true"] .entry-actions { display: flex; }
+  .entry[data-picking="true"] .entry-actions { display: none; }
+  .more { color: var(--notes-icon); }
+  .date-pick { display: none; margin: 0 4px 8px 36px; padding: 8px; border: 1px solid var(--notes-line); border-radius: 8px; background: var(--notes-field); }
+  .entry[data-picking="true"] .date-pick { display: block; }
+  .pick-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .pick-title { font-size: var(--notes-size-14); font-weight: 700; color: var(--notes-strong); }
+  .pick-list { max-height: 264px; overflow-y: auto; margin-top: 4px; }
+  .pick-day { display: flex; justify-content: space-between; width: 100%; border: 0; background: transparent; min-height: 36px; }
+  .pick-day:hover { background: var(--notes-hover); }
+  .pick-word { font-size: var(--notes-size-12); color: var(--notes-ink); }
+  @media (pointer: coarse) {
+    .entry-actions button { min-height: 44px; }
+    .pick-day { min-height: 44px; }
+  }
+  @container panel (min-width: 440px) {
+    @media (hover: hover) and (pointer: fine) {
+      .entry-actions {
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        padding: 0;
+        background: var(--notes-hover);
+        display: none;
+      }
+      .entry-actions button { flex: none; min-height: 28px; padding: 0 12px; border-radius: 6px; font-size: var(--notes-size-13); }
+      .entry:hover .entry-actions, .entry:focus-within .entry-actions { display: flex; }
+      .entry[data-open="true"] .entry-actions { display: flex; }
+      .entry .more { display: none; }
+      .entry:hover .entry-note, .entry:focus-within .entry-note { display: none; }
+    }
+  }
+
+  /* ---------- the morning strip ---------- */
+
+  .strip { margin: 8px; display: grid; gap: 8px; }
+  .strip-group {
+    padding: 8px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-field);
+  }
+  .strip-head { margin: 0 0 4px; font-size: var(--notes-size-14); font-weight: 700; color: var(--notes-strong); }
+  .strip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 2px 0; }
+  .strip-row .strip-text { flex: 1 1 100px; min-width: 0; padding: 4px 0; overflow-wrap: anywhere; }
+  .strip-buttons { display: flex; flex: 1 1 100%; gap: 4px; }
+  .strip-buttons button { flex: 1; }
+  .strip-foot { margin-top: 4px; }
+  @container panel (min-width: 380px) {
+    .strip-buttons { flex: none; }
+    .strip-buttons button { flex: none; min-height: 32px; }
+  }
+  @media (pointer: coarse) {
+    .strip-buttons button, .strip-foot { min-height: 44px; }
+  }
+
+  /* ---------- Month ---------- */
+
+  .month-nav { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .month-title { border: 0; background: transparent; font-size: var(--notes-size-18); font-weight: 700; color: var(--notes-strong); }
+  .month-title:hover { background: var(--notes-hover); }
+  .date-rows { list-style: none; margin: 0; padding: 0 4px; }
+  .date-row { display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 4px; border-radius: 8px; }
+  .date-row[data-mark="today"] { background: var(--notes-selected); }
+  .date-row[data-mark="tomorrow"] { background: var(--notes-hover); }
+  .date-open {
+    flex: none;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 64px;
+    padding: 0 6px;
+    border: 0;
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  .date-open:hover { background: var(--notes-hover); }
+  .date-row[data-mark="today"] .date-open:hover { background: transparent; }
+  .date-open .num { font-weight: 700; color: var(--notes-strong); }
+  .date-open .wk { font-size: var(--notes-size-12); font-weight: 600; color: var(--notes-muted); }
+  .date-row[data-mark="today"] .date-open .wk { color: var(--notes-strong); }
+  .date-row[data-mark="tomorrow"] .date-open .wk { color: var(--notes-ink); }
+  .mark-word { flex: none; font-size: var(--notes-size-12); font-weight: 600; color: var(--notes-strong); }
+  .line-text { flex: 1 1 auto; min-width: 3em; padding: 6px 4px; border-radius: 6px; color: var(--notes-ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .line-text:focus { white-space: normal; overflow: visible; }
+  .line-events { flex: 0 1 auto; max-width: 55%; font-size: var(--notes-size-13); color: var(--notes-ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid var(--notes-line);
+    border-radius: 6px;
+    background: var(--notes-panel);
+    color: var(--notes-ink);
+    font-size: var(--notes-size-12);
+    font-weight: 600;
+    line-height: 1;
+  }
+  .month-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px; }
+  .month-picker button { border: 1px solid var(--notes-line); }
+  .month-picker button[aria-current="true"] { background: var(--notes-selected); color: var(--notes-strong); }
+  .year-bar { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 0; }
+  .year-bar span { font-weight: 700; color: var(--notes-strong); }
+  .day-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+
+  /* ---------- Quick notes ---------- */
+
+  .quick-tools { display: flex; align-items: center; gap: 4px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--notes-size-12); color: var(--notes-muted); }
+  .status::before { content: ""; width: 6px; height: 6px; border-radius: 6px; background: var(--notes-muted); }
+  .status[data-state="saved"]::before { background: var(--notes-good); }
+  .status[data-state="unsaved"]::before { background: var(--notes-warn); }
+  .status[data-state="failed"]::before { background: var(--notes-bad); }
+  .moved { flex: none; border-top: 1px solid var(--notes-line-soft); padding: 0 8px; }
+  .moved-toggle { min-height: 32px; padding: 0 8px; border: 0; background: transparent; color: var(--notes-muted); font-size: var(--notes-size-13); font-weight: 600; }
+  .moved-toggle:hover { background: var(--notes-hover); }
+  .moved-list { max-height: 9rem; overflow-y: auto; padding: 0 0 8px; }
+  @media (pointer: coarse) { .moved-toggle { min-height: 44px; } }
+  .quick-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+  .quick-editor { min-height: 100%; border: 0; background: var(--notes-field); white-space: pre-wrap; }
+  @media (min-width: 761px) and (max-width: 999px) { .quick-editor { min-height: 160px; } }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="j-task" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/></symbol>
+  <symbol id="j-event" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/></symbol>
+  <symbol id="j-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h8"/></symbol>
+  <symbol id="j-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l8 8M16 8l-8 8"/></symbol>
+  <symbol id="j-migrated" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12h10M13 8l4 4-4 4"/></symbol>
+  <symbol id="j-scheduled" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 12H7M11 8l-4 4 4 4"/></symbol>
+  <symbol id="j-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h.01M12 12h.01M18 12h.01"/></symbol>
+  <symbol id="j-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+</svg>
+<header class="bar">
+  <div class="bar-inner">
+    <div class="brand">
+      <img class="mark" src="/logo-stone.svg" alt="">
+      <p class="wordmark">Journal</p>
+    </div>
+    <div class="bar-right">
+      <div class="bar-right" id="bar-actions" hidden>
+        <a class="button-link quiet" id="notes-link" href="/notes">Notes</a>
+      </div>
+      <button type="button" class="icon-button theme-switch" id="theme-switch" aria-label="Switch to dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-moon"></use></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-sun"></use></svg>
+      </button>
+      <button type="button" id="sign-out" hidden>Sign out</button>
+    </div>
+  </div>
+</header>
+
+<div class="flash" id="flash" role="status" hidden>
+  <p id="flash-text"></p>
+  <div class="flash-actions">
+    <button type="button" id="flash-action" hidden></button>
+    <button type="button" id="flash-also" hidden></button>
+    <button type="button" class="quiet" id="flash-close">Dismiss</button>
+  </div>
+</div>
+
+<main id="boot-main">
+  <p id="boot" class="lead">Loading.</p>
+  <section id="login" hidden aria-labelledby="login-heading">
+    <h1 id="login-heading">Journal</h1>
+    <div class="login-card">
+      <p id="login-error" class="message" role="alert" hidden></p>
+      <form id="login-form">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="form-actions">
+          <button type="submit" class="primary" id="login-submit">Enter</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<div id="app" hidden>
+  <div class="panels" id="panels">
+
+    <section class="panel" id="panel-month" data-panel="month" data-active="false" aria-labelledby="month-heading">
+      <header class="panel-head" id="month-head">
+        <h2 class="sr-only" id="month-heading">Month</h2>
+        <div class="month-nav" id="month-nav">
+          <button type="button" class="icon-button" id="month-prev" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-chevron-left"></use></svg></button>
+          <button type="button" class="month-title" id="month-title" aria-expanded="false" aria-controls="month-picker"></button>
+          <button type="button" class="icon-button" id="month-next" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#j-chevron-right"></use></svg></button>
+        </div>
+        <button type="button" class="quiet" id="month-now" hidden>This month</button>
+        <div class="day-head" id="day-head" hidden>
+          <button type="button" id="day-back"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-chevron-left"></use></svg><span id="day-back-label">Back to the month</span></button>
+          <span class="panel-date" id="day-date"></span>
+        </div>
+      </header>
+      <div class="panel-body" id="month-body">
+        <div id="month-picker-wrap" hidden>
+          <div class="year-bar">
+            <button type="button" class="icon-button" id="year-prev" aria-label="Previous year"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-chevron-left"></use></svg></button>
+            <span id="year-label"></span>
+            <button type="button" class="icon-button" id="year-next" aria-label="Next year"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#j-chevron-right"></use></svg></button>
+          </div>
+          <div class="month-picker" id="month-picker"></div>
+        </div>
+        <p class="empty" id="month-empty" role="status" hidden></p>
+        <ul class="date-rows" id="date-rows"></ul>
+        <div id="day-view" hidden>
+          <ul class="entries" id="list-day"></ul>
+          <p class="empty" id="empty-day" role="status" hidden></p>
+        </div>
+      </div>
+      <div class="moved" id="moved-day" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-day" aria-expanded="false" aria-controls="moved-list-day"></button>
+        <ul class="entries moved-list" id="moved-list-day" hidden></ul>
+      </div>
+      <div class="addbar" id="addbar-day" hidden></div>
+    </section>
+
+    <section class="panel" id="panel-today" data-panel="today" data-active="true" aria-labelledby="h-today">
+      <header class="panel-head">
+        <h2 class="panel-title" id="h-today">Today</h2>
+        <span class="panel-date" id="date-today"></span>
+      </header>
+      <div class="panel-body">
+        <div class="strip" id="strip" hidden></div>
+        <ul class="entries" id="list-today"></ul>
+        <p class="empty" id="empty-today" role="status" hidden></p>
+      </div>
+      <div class="moved" id="moved-today" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-today" aria-expanded="false" aria-controls="moved-list-today"></button>
+        <ul class="entries moved-list" id="moved-list-today" hidden></ul>
+      </div>
+      <div class="addbar" id="addbar-today"></div>
+    </section>
+
+    <section class="panel" id="panel-tomorrow" data-panel="tomorrow" data-active="false" aria-labelledby="h-tomorrow">
+      <header class="panel-head">
+        <h2 class="panel-title" id="h-tomorrow">Tomorrow</h2>
+        <span class="panel-date" id="date-tomorrow"></span>
+      </header>
+      <div class="panel-body">
+        <ul class="entries" id="list-tomorrow"></ul>
+        <p class="empty" id="empty-tomorrow" role="status" hidden></p>
+      </div>
+      <div class="moved" id="moved-tomorrow" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-tomorrow" aria-expanded="false" aria-controls="moved-list-tomorrow"></button>
+        <ul class="entries moved-list" id="moved-list-tomorrow" hidden></ul>
+      </div>
+      <div class="addbar" id="addbar-tomorrow"></div>
+    </section>
+
+    <section class="panel" id="panel-migrate" data-panel="migrate" data-active="false" aria-labelledby="h-migrate">
+      <header class="panel-head">
+        <h2 class="panel-title" id="h-migrate">Migrate</h2>
+        <span class="panel-date" id="date-migrate"></span>
+      </header>
+      <div class="panel-body">
+        <ul class="entries" id="list-migrate"></ul>
+        <p class="empty" id="empty-migrate" role="status" hidden></p>
+      </div>
+      <div class="moved" id="moved-migrate" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-migrate" aria-expanded="false" aria-controls="moved-list-migrate"></button>
+        <ul class="entries moved-list" id="moved-list-migrate" hidden></ul>
+      </div>
+      <div class="addbar" id="addbar-migrate"></div>
+    </section>
+
+    <section class="panel" id="panel-quick" data-panel="quick" data-active="false" aria-labelledby="h-quick">
+      <header class="panel-head">
+        <h2 class="panel-title" id="h-quick">Quick notes</h2>
+        <div class="quick-tools">
+          <span class="status" id="quick-status" role="status" aria-live="polite" data-state="saved">Saved</span>
+          <button type="button" class="fmt-button fmt-bold" data-panel="quick" aria-pressed="false" aria-label="Bold" title="Bold (Ctrl+B)" aria-keyshortcuts="Control+B Meta+B"><b>B</b></button>
+          <button type="button" class="fmt-button fmt-strike" data-panel="quick" aria-pressed="false" aria-label="Strike-through" title="Strike-through (Ctrl+Shift+X)" aria-keyshortcuts="Control+Shift+X Meta+Shift+X"><span class="struck">S</span></button>
+        </div>
+      </header>
+      <div class="quick-body">
+        <div class="quick-editor" id="quick-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Quick notes" data-editor="multi" data-placeholder="Type anything here. It has no date and stays until you delete it." spellcheck="false"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Panels" hidden>
+  <button type="button" role="tab" data-panel="month" aria-selected="false">Month</button>
+  <button type="button" role="tab" data-panel="today" aria-selected="true">Today</button>
+  <button type="button" role="tab" data-panel="tomorrow" aria-selected="false">Tomorrow</button>
+  <button type="button" role="tab" data-panel="migrate" aria-selected="false">Migrate</button>
+  <button type="button" role="tab" data-panel="quick" aria-selected="false">Quick</button>
+</nav>
+
+<script id="theme-switch-script">
+(function () {
+  "use strict";
+
+  var KEY = "silurian-notes-theme";
+  var root = document.documentElement;
+  var button = document.getElementById("theme-switch");
+  var query = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function current() {
+    var chosen = root.getAttribute("data-theme");
+    if (chosen === "light" || chosen === "dark") { return chosen; }
+    return query && query.matches ? "dark" : "light";
+  }
+
+  // The window's title bar takes the page colour, so the installed app reads as
+  // one surface. With no choice made the two tags above carry the light and dark
+  // pair and the device picks. After a choice both take the page's own colour,
+  // read from its variable so it is never written a second time here.
+  var bars = Array.prototype.slice.call(document.querySelectorAll('meta[name="theme-color"]'));
+  var pair = bars.map(function (tag) { return tag.getAttribute("content"); });
+
+  function paintBar() {
+    var chosen = root.getAttribute("data-theme");
+    var ground = getComputedStyle(root).getPropertyValue("--notes-ground").trim();
+    bars.forEach(function (tag, index) {
+      tag.setAttribute("content", chosen === "light" || chosen === "dark" ? ground : pair[index]);
+    });
+  }
+
+  function paint() {
+    button.setAttribute("aria-label", current() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    paintBar();
+  }
+
+  function flip() {
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    // The choice is remembered on this device only. If storage is blocked the
+    // switch still works for this visit.
+    try { localStorage.setItem(KEY, next); } catch (e) { /* not saved */ }
+    paint();
+  }
+
+  button.addEventListener("click", flip);
+  if (query && query.addEventListener) { query.addEventListener("change", paint); }
+  paint();
+})();
+</script>
+
+<script type="module">
+import * as core from "/journal/core.js";
+
+(function () {
+  "use strict";
+
+  var TAB_KEY = "silurian-journal-tab";
+  var SAVE_DELAY_MS = 1000;
+  var POLL_MS = 45000;
+  var UNDO_MS = 10000;
+  var NOT_CHANGED = "Could not save that change. Nothing was changed. Try again.";
+  var NOT_LOADED = "Could not load your journal. Check your connection and reload.";
+  var PANELS = ["month", "today", "tomorrow", "migrate", "quick"];
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- small helpers ---------- */
+
+  function make(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function icon(name, extra) {
+    var holder = document.createElement("span");
+    holder.innerHTML = '<svg class="icon' + (extra ? " " + extra : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#' + name + '"></use></svg>';
+    return holder.firstChild;
+  }
+
+  function newId() {
+    var bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.prototype.map.call(bytes, function (b) { return (b < 16 ? "0" : "") + b.toString(16); }).join("");
+  }
+
+  // The date in London, which is the owner's day whatever the device's zone is.
+  function londonDate() {
+    var parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+    var got = {};
+    parts.forEach(function (p) { got[p.type] = p.value; });
+    return got.year + "-" + got.month + "-" + got.day;
+  }
+
+  function utc(date) {
+    var p = date.split("-");
+    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+  }
+  var fmtLong = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  var fmtShort = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  var fmtWeekday = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "UTC" });
+  var fmtMonthYear = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  var fmtMonth = new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" });
+  var fmtMonthShort = new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" });
+  function longDate(date) { return fmtLong.format(utc(date)); }
+  function shortDate(date) { return fmtShort.format(utc(date)); }
+  function monthYear(month) { return fmtMonthYear.format(utc(month + "-01")); }
+  function monthName(month) { return fmtMonth.format(utc(month + "-01")); }
+
+  /* ---------- state ---------- */
+
+  var today = londonDate();
+  function tomorrow() { return core.addDays(today, 1); }
+  function thisMonth() { return core.monthOf(today); }
+
+  var confirmed = {};      // month -> the file as the server last said it is
+  var pending = [];        // changes shown at once and not yet confirmed
+  var shown = {};          // confirmed with the pending changes applied: what is on screen
+  var sending = false;
+  var generation = 0;      // bumped when the page empties, so a late answer is ignored
+  var signedIn = false;
+  var viewMonth = thisMonth();
+  var dayView = null;      // a date opened in the Month panel, or null
+  var pickerOpen = false;
+  var pickerYear = null;
+  var ui = { openMove: null, picking: null, movedOpen: {} };   // openMove and picking are { list, id }; movedOpen is by list
+  var quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
+  var stripMonths = [];    // the months the last load sent: the strip looks only there
+  var lastRefresh = 0;
+  var pollTimer = null;
+  var flashTimer = null;
+  var flashRun = null;
+  var flashAlso = null;   // the second button of the message bar, or null
+
+  function stripFiles() {
+    var files = {};
+    stripMonths.forEach(function (m) { if (shown[m]) { files[m] = shown[m]; } });
+    return files;
+  }
+
+  function recompute() {
+    shown = {};
+    Object.keys(confirmed).forEach(function (m) { shown[m] = core.cloneMonth(confirmed[m]); });
+    pending.forEach(function (item) { core.applyOp(shown, item.op); });
+  }
+
+  // What the server says is put together with what this device holds, entry by
+  // entry: the higher revision of each entry and each line wins, and nothing is
+  // dropped because a read lacks it. A read can be shorter or older than a save
+  // this device has made, and it never draws over it. A removal arrives as a
+  // revision, not as an absence.
+  function takeMonths(months) {
+    Object.keys(months || {}).forEach(function (m) {
+      confirmed[m] = core.mergeMonth(confirmed[m], months[m]);
+    });
+  }
+
+  /* ---------- talking to the server ---------- */
+
+  function request(path, options) {
+    options = options || {};
+    options.credentials = "same-origin";
+    return fetch(path, options).then(function (response) {
+      if (response.status === 401 && path !== "/api/login") { goToLogin(); }
+      return response;
+    });
+  }
+
+  function readJson(response) {
+    return response.json().catch(function () { return {}; });
+  }
+
+  function loadMonths(months) {
+    var need = months.filter(function (m) { return !confirmed[m]; });
+    if (need.length === 0) { return Promise.resolve(true); }
+    var gen = generation;
+    return request("/api/journal?view=months&months=" + need.join(",")).then(function (response) {
+      if (!response.ok) { throw new Error("load"); }
+      return readJson(response);
+    }).then(function (body) {
+      if (gen !== generation) { return false; }
+      takeMonths(body.months);
+      recompute();
+      return true;
+    }).catch(function () {
+      showFlash("Could not load that month. Check your connection and try again.", null);
+      return false;
+    });
+  }
+
+  // Shows a change at once, then sends it. The same rules the server applies are
+  // applied here to the page's copy, so what is shown is what the server will
+  // say. Changes go one at a time, in order. If one is refused, the changes
+  // behind it are dropped with it and the page goes back to what the server last
+  // confirmed, with the message.
+  function submit(op, hooks) {
+    hooks = hooks || {};
+    // The time an entry is made, which sets where it sits in its list. The page
+    // says it, as it says the date, and the same change sent again says the same.
+    if ((op.op === "add" || op.op === "move") && op.at === undefined) { op.at = Date.now(); }
+    return loadMonths(core.monthsFor(op)).then(function (ok) {
+      if (!ok) { if (hooks.onFail) { hooks.onFail("error"); } return false; }
+      var trial = {};
+      core.monthsFor(op).forEach(function (m) { trial[m] = core.cloneMonth(shown[m]); });
+      var result = core.applyOp(trial, op);
+      if (result.error) {
+        refused(result.error.code === "undo" ? "undo" : "stale", [{ hooks: hooks }]);
+        return false;
+      }
+      pending.push({ op: op, hooks: hooks });
+      recompute();
+      renderAll();
+      pump();
+      return true;
+    });
+  }
+
+  var RETRY_MS = [1500, 3000, 5000];
+
+  function pause(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // One request for the change, tried again, as the very same change, if it could
+  // not be sent or the server could not finish it. The server treats a repeat of a
+  // change that already happened as done, so a retry never makes a second copy.
+  function sendChange(item, gen, tries) {
+    var body = JSON.stringify(item.op);
+    return request("/api/journal", { method: "POST", headers: { "Content-Type": "application/json" }, body: body }).then(function (response) {
+      return readJson(response).then(function (answer) { return { status: response.status, body: answer }; });
+    }).catch(function () {
+      return { status: 0, body: {} };
+    }).then(function (answer) {
+      var again = (answer.status === 0 || answer.status >= 500) && tries < RETRY_MS.length && gen === generation;
+      if (!again) { return answer; }
+      return pause(RETRY_MS[tries]).then(function () { return gen === generation ? sendChange(item, gen, tries + 1) : answer; });
+    });
+  }
+
+  function pump() {
+    if (sending || pending.length === 0 || !signedIn) { return; }
+    sending = true;
+    var item = pending[0];
+    var gen = generation;
+    sendChange(item, gen, 0).then(function (answer) {
+      if (gen !== generation) { return; }
+      sending = false;
+      if (answer.status === 200) {
+        takeMonths(answer.body.months);
+        pending.shift();
+        recompute();
+        renderAll();
+        if (item.hooks.onSaved) { item.hooks.onSaved(); }
+        pump();
+        return;
+      }
+      if (answer.status === 401) { return; }
+      refused(answer.status === 409 ? (answer.body.code === "undo" ? "undo" : "stale") : "error", pending.splice(0, pending.length));
+    });
+  }
+
+  // A change was refused or could not be sent. Nothing was saved. The screen goes
+  // back to what the server last confirmed, and anything typed is given back.
+  function refused(kind, dropped) {
+    pending.length = 0;
+    recompute();
+    renderAll();
+    dropped.forEach(function (item) { if (item.hooks && item.hooks.onFail) { item.hooks.onFail(kind); } });
+    if (kind === "stale") {
+      showFlash(core.MESSAGES.stale, { label: "Reload", run: function () { return refresh(true).then(function () { return true; }); } });
+    } else if (kind === "undo") {
+      showFlash(core.MESSAGES.undo, null);
+    } else {
+      showFlash(NOT_CHANGED, null);
+    }
+  }
+
+  function drained() {
+    return new Promise(function (resolve) {
+      (function wait() {
+        if (pending.length === 0 && !sending) { resolve(true); return; }
+        setTimeout(wait, 40);
+      })();
+    });
+  }
+
+  /* ---------- the message bar ---------- */
+
+  function showFlash(text, action, autoHide, also) {
+    clearTimeout(flashTimer);
+    $("flash-text").textContent = text;
+    flashRun = action ? action.run : null;
+    flashAlso = also ? also.run : null;
+    var button = $("flash-action");
+    button.hidden = !action;
+    button.textContent = action ? action.label : "";
+    button.disabled = false;
+    var second = $("flash-also");
+    second.hidden = !also;
+    second.textContent = also ? also.label : "";
+    $("flash").hidden = false;
+    if (autoHide) { flashTimer = setTimeout(hideFlash, UNDO_MS); }
+  }
+
+  function hideFlash() {
+    clearTimeout(flashTimer);
+    $("flash").hidden = true;
+    flashRun = null;
+    flashAlso = null;
+  }
+
+  $("flash-close").addEventListener("click", hideFlash);
+  $("flash-also").addEventListener("click", function () {
+    var run = flashAlso;
+    hideFlash();
+    if (run) { run(); }
+  });
+  $("flash-action").addEventListener("click", function () {
+    var run = flashRun;
+    if (!run) { return; }
+    $("flash-action").disabled = true;
+    Promise.resolve(run()).then(function (ok) {
+      $("flash-action").disabled = false;
+      if (ok) { hideFlash(); }
+    });
+  });
+
+  // A message with an Undo that lasts ten seconds. The Undo is a list of changes
+  // sent in order, each as an ordinary change with its own version check.
+  function offerUndo(text, ops, also) {
+    showFlash(text, { label: "Undo", run: function () { return runUndo(ops); } }, true, also);
+  }
+
+  function runUndo(ops) {
+    var chain = Promise.resolve(true);
+    ops.forEach(function (op) { chain = chain.then(function (ok) { return ok ? submit(op, {}) : false; }); });
+    return chain.then(function (ok) { return ok; });
+  }
+
+  /* ---------- text and editors ---------- */
+
+  // Bold and strike-through markers in stored text, drawn as styled text.
+  function drawMarks(into, text, multiline) {
+    into.textContent = "";
+    if (String(text) === "") { return; }
+    var lines = multiline ? String(text).split("\n") : [String(text)];
+    lines.forEach(function (line, index) {
+      var target = into;
+      if (multiline) { target = make("div"); into.appendChild(target); }
+      var pieces = core.parseMarks(line);
+      if (pieces.length === 0 && multiline) { target.appendChild(document.createElement("br")); }
+      pieces.forEach(function (piece) {
+        var node = document.createTextNode(piece.text);
+        if (piece.strike) { var s = document.createElement("s"); s.appendChild(node); node = s; }
+        if (piece.bold) { var b = document.createElement("b"); b.appendChild(node); node = b; }
+        target.appendChild(node);
+      });
+      void index;
+    });
+  }
+
+  // The stored text for what is in an editor: bold and strike-through as markers.
+  function readEditor(editor) {
+    var out = [];
+    function walk(node, bold, strike) {
+      node.childNodes.forEach(function (child) {
+        if (child.nodeType === 3) { out.push(child.nodeValue.replace(/\xa0/g, " ")); return; }
+        if (child.nodeType !== 1) { return; }
+        var name = child.nodeName;
+        if (name === "BR") { out.push("\n"); return; }
+        var style = child.style || {};
+        var isBold = name === "B" || name === "STRONG" || style.fontWeight === "bold" || Number(style.fontWeight) >= 600;
+        var isStrike = name === "S" || name === "STRIKE" || name === "DEL" || String(style.textDecoration + style.textDecorationLine).indexOf("line-through") !== -1;
+        var block = name === "DIV" || name === "P";
+        if (block && out.length > 0 && out[out.length - 1] !== "\n") { out.push("\n"); }
+        if (isBold && !bold) { out.push("**"); }
+        if (isStrike && !strike) { out.push("~~"); }
+        walk(child, bold || isBold, strike || isStrike);
+        if (isStrike && !strike) { out.push("~~"); }
+        if (isBold && !bold) { out.push("**"); }
+      });
+    }
+    walk(editor, false, false);
+    var text = out.join("");
+    // Empty markers left by deleting styled text.
+    text = text.replace(/\*\*\*\*|~~~~/g, "");
+    return editor.getAttribute("data-editor") === "multi" ? text.replace(/\n+$/, "") : text.replace(/\s*\n+\s*/g, " ");
+  }
+
+  // Keeps the empty look (the placeholder) when everything has been deleted.
+  function tidy(editor) {
+    if (editor.textContent === "" && editor.childNodes.length > 0) { editor.textContent = ""; }
+  }
+
+  var activeEditor = null;
+  document.addEventListener("focusin", function (event) {
+    var target = event.target;
+    if (target && target.matches && target.matches("[data-editor]")) { activeEditor = target; }
+  });
+
+  function format(command, panelEditor) {
+    var focused = document.activeElement && document.activeElement.matches && document.activeElement.matches("[data-editor]") ? document.activeElement : null;
+    var editor = focused || panelEditor;
+    if (!editor) { return; }
+    if (editor !== focused) { editor.focus(); }
+    try { document.execCommand("styleWithCSS", false, false); } catch (e) { /* older browsers */ }
+    document.execCommand(command, false, null);
+    syncFormatButtons();
+  }
+
+  function syncFormatButtons() {
+    var bold = false;
+    var strike = false;
+    var focused = document.activeElement && document.activeElement.matches && document.activeElement.matches("[data-editor]");
+    if (focused) {
+      try { bold = document.queryCommandState("bold"); strike = document.queryCommandState("strikeThrough"); } catch (e) { /* not available */ }
+    }
+    Array.prototype.forEach.call(document.querySelectorAll(".fmt-bold"), function (b) { b.setAttribute("aria-pressed", bold ? "true" : "false"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".fmt-strike"), function (b) { b.setAttribute("aria-pressed", strike ? "true" : "false"); });
+  }
+  document.addEventListener("selectionchange", syncFormatButtons);
+
+  // Plain text only comes in: no pasted styles, links or lists.
+  function wireEditor(editor) {
+    var single = editor.getAttribute("data-editor") === "single";
+    editor.addEventListener("paste", function (event) {
+      event.preventDefault();
+      var text = (event.clipboardData || window.clipboardData).getData("text/plain");
+      if (single) { text = text.replace(/\s*[\r\n]+\s*/g, " "); }
+      document.execCommand("insertText", false, text);
+    });
+    editor.addEventListener("drop", function (event) { event.preventDefault(); });
+    editor.addEventListener("beforeinput", function (event) {
+      var type = event.inputType || "";
+      if (type === "formatItalic" || type === "formatUnderline") { event.preventDefault(); }
+      if (single && (type === "insertParagraph" || type === "insertLineBreak")) { event.preventDefault(); }
+    });
+    editor.addEventListener("keydown", function (event) {
+      var key = (event.key || "").toLowerCase();
+      var mod = event.ctrlKey || event.metaKey;
+      if (mod && !event.shiftKey && !event.altKey && key === "b") { event.preventDefault(); format("bold", editor); }
+      else if (mod && event.shiftKey && !event.altKey && key === "x") { event.preventDefault(); format("strikeThrough", editor); }
+      else if (mod && (key === "i" || key === "u")) { event.preventDefault(); }
+    });
+    editor.addEventListener("input", function () { tidy(editor); });
+  }
+
+  /* ---------- the add bar ---------- */
+
+  var TYPE_LABEL = { task: "task", event: "event", note: "note" };
+  var TYPE_ICON = { task: "j-task", event: "j-event", note: "j-note" };
+  var TYPE_NAME = { task: "Task", event: "Event", note: "Note" };
+  var PREFIX = { ". ": "task", "o ": "event", "- ": "note" };
+  var addBars = {};
+
+  // One add bar. The list it adds to is asked for each time, so it follows the
+  // panel (the Month panel's bar adds to whichever day is open).
+  function buildAddBar(host, key, listKey) {
+    var state = { type: "task", prefixBackup: null };
+    var editor = make("div", "editor-line");
+    editor.setAttribute("contenteditable", "true");
+    editor.setAttribute("role", "textbox");
+    editor.setAttribute("aria-label", "New entry");
+    editor.setAttribute("data-editor", "single");
+    editor.setAttribute("spellcheck", "false");
+    editor.setAttribute("enterkeyhint", "enter");
+    host.appendChild(editor);
+
+    var tools = make("div", "addtools");
+    var buttons = {};
+    ["task", "event", "note"].forEach(function (type) {
+      var b = make("button", "type-button");
+      b.type = "button";
+      b.setAttribute("aria-label", TYPE_NAME[type]);
+      b.setAttribute("aria-pressed", "false");
+      b.title = TYPE_NAME[type] + " (Alt+" + (["task", "event", "note"].indexOf(type) + 1) + ")";
+      b.setAttribute("aria-keyshortcuts", "Alt+" + (["task", "event", "note"].indexOf(type) + 1));
+      b.appendChild(icon(TYPE_ICON[type]));
+      b.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+      b.addEventListener("click", function () { setType(type); editor.focus(); });
+      buttons[type] = b;
+      tools.appendChild(b);
+    });
+    tools.appendChild(make("span", "grow"));
+    var bold = make("button", "fmt-button fmt-bold");
+    bold.type = "button";
+    bold.setAttribute("aria-label", "Bold");
+    bold.setAttribute("aria-pressed", "false");
+    bold.title = "Bold (Ctrl+B)";
+    bold.setAttribute("aria-keyshortcuts", "Control+B Meta+B");
+    bold.innerHTML = "<b>B</b>";
+    var strike = make("button", "fmt-button fmt-strike");
+    strike.type = "button";
+    strike.setAttribute("aria-label", "Strike-through");
+    strike.setAttribute("aria-pressed", "false");
+    strike.title = "Strike-through (Ctrl+Shift+X)";
+    strike.setAttribute("aria-keyshortcuts", "Control+Shift+X Meta+Shift+X");
+    strike.innerHTML = '<span class="struck">S</span>';
+    [bold, strike].forEach(function (b) { b.addEventListener("pointerdown", function (event) { event.preventDefault(); }); });
+    bold.addEventListener("click", function () { format("bold", editor); });
+    strike.addEventListener("click", function () { format("strikeThrough", editor); });
+    tools.appendChild(bold);
+    tools.appendChild(strike);
+    host.appendChild(tools);
+
+    function setType(type) {
+      state.type = type;
+      Object.keys(buttons).forEach(function (t) { buttons[t].setAttribute("aria-pressed", t === type ? "true" : "false"); });
+      editor.setAttribute("data-placeholder", "Add " + (type === "event" ? "an " : "a ") + TYPE_LABEL[type]);
+    }
+    setType("task");
+
+    wireEditor(editor);
+
+    // A prefix typed on an empty line sets the type and is eaten. Backspace right
+    // after it gives the characters back, so a line that really starts with "o"
+    // is never lost.
+    editor.addEventListener("input", function () {
+      var text = readEditor(editor);
+      if (PREFIX[text] && state.prefixBackup === null) {
+        state.prefixBackup = text;
+        setType(PREFIX[text]);
+        editor.textContent = "";
+      } else if (text !== "") {
+        state.prefixBackup = null;
+      }
+    });
+
+    editor.addEventListener("keydown", function (event) {
+      if (event.altKey && !event.ctrlKey && !event.metaKey) {
+        var digit = { Digit1: "task", Digit2: "event", Digit3: "note" }[event.code];
+        if (digit) { event.preventDefault(); setType(digit); return; }
+      }
+      if (event.key === "Backspace" && state.prefixBackup !== null && readEditor(editor) === "") {
+        event.preventDefault();
+        // A no-break space, so the typing that follows is not swallowed by the
+        // browser collapsing a trailing space.
+        editor.textContent = state.prefixBackup.replace(/ $/, "\xa0");
+        state.prefixBackup = null;
+        var range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return;
+      }
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        add();
+      }
+    });
+
+    function add() {
+      var text = readEditor(editor);
+      if (core.cleanText(text) === "") { return; }
+      var list = listKey();
+      if (!list) { return; }
+      var type = state.type;
+      var id = newId();
+      editor.textContent = "";
+      state.prefixBackup = null;
+      submit({ op: "add", list: list, entry: { id: id, type: type, text: text } }, {
+        onFail: function () {
+          // Give back what was typed, if the line is still empty.
+          if (readEditor(editor) === "") { drawMarks(editor, text, false); }
+        }
+      });
+    }
+
+    addBars[key] = { editor: editor, setType: setType };
+    return addBars[key];
+  }
+
+  /* ---------- entries ---------- */
+
+  function destinationWords(entry, listKey) {
+    var to = core.parseList(entry.to);
+    if (!to) { return ""; }
+    if (to.kind === "day") {
+      if (to.date === today) { return "to Today"; }
+      if (to.date === tomorrow()) { return "to Tomorrow"; }
+      return "to " + shortDate(to.date);
+    }
+    var from = core.parseList(listKey);
+    return to.month === from.month ? "to Migrate" : "to " + monthName(to.month);
+  }
+
+  var STATE_WORDS = { open: "", done: "Done", migrated: "Moved forward", scheduled: "Scheduled", dropped: "Dropped" };
+
+  function bulletIcon(entry) {
+    if (entry.state === "done") { return "j-done"; }
+    if (entry.state === "migrated") { return "j-migrated"; }
+    if (entry.state === "scheduled") { return "j-scheduled"; }
+    return TYPE_ICON[entry.type];
+  }
+
+  function rowText(entry) { return core.plainText(entry.text); }
+
+  // One entry as a row. The state is told twice, by the shape of the bullet and
+  // by words, and the greyed states never change the colour by opacity.
+  function entryRow(listKey, entry) {
+    var li = make("li", "entry");
+    li.setAttribute("data-id", entry.id);
+    li.setAttribute("data-state", entry.state);
+    li.setAttribute("data-type", entry.type);
+    li.setAttribute("data-rev", String(entry.rev));
+    var editable = entry.state === "open" || entry.state === "done";
+    var open = ui.openMove && ui.openMove.list === listKey && ui.openMove.id === entry.id;
+    var picking = ui.picking && ui.picking.list === listKey && ui.picking.id === entry.id;
+    if (open) { li.setAttribute("data-open", "true"); }
+    if (picking) { li.setAttribute("data-picking", "true"); }
+
+    var main = make("div", "entry-main");
+    var bullet;
+    if (entry.type === "task" && editable) {
+      bullet = make("button", "bullet");
+      bullet.type = "button";
+      bullet.setAttribute("aria-label", (entry.state === "done" ? "Mark not done: " : "Mark done: ") + rowText(entry));
+      bullet.setAttribute("aria-pressed", entry.state === "done" ? "true" : "false");
+      bullet.addEventListener("click", function () {
+        var current = findEntry(listKey, entry.id);
+        if (!current) { return; }
+        submit({ op: "state", list: listKey, id: entry.id, rev: current.rev, state: current.state === "done" ? "open" : "done" }, {});
+      });
+    } else {
+      bullet = make("span", "bullet");
+      bullet.setAttribute("role", "img");
+      bullet.setAttribute("aria-label", TYPE_NAME[entry.type] + (STATE_WORDS[entry.state] ? ", " + STATE_WORDS[entry.state].toLowerCase() : ""));
+    }
+    bullet.appendChild(icon(bulletIcon(entry)));
+    main.appendChild(bullet);
+
+    var text = make("div", "entry-text");
+    drawMarks(text, entry.text, false);
+    if (editable) {
+      text.setAttribute("contenteditable", "true");
+      text.setAttribute("role", "textbox");
+      text.setAttribute("aria-label", "Entry text");
+      text.setAttribute("data-editor", "single");
+      text.setAttribute("spellcheck", "false");
+      wireEditor(text);
+      wireEntryEditing(text, listKey, entry);
+    }
+    main.appendChild(text);
+
+    var tail = make("div", "entry-tail");
+    if (entry.state === "migrated" || entry.state === "scheduled") {
+      tail.appendChild(make("span", "entry-note", destinationWords(entry, listKey)));
+    } else if (entry.state === "dropped") {
+      tail.appendChild(make("span", "entry-note", "Dropped"));
+    }
+    if (entry.state === "open") {
+      var more = make("button", "icon-button more");
+      more.type = "button";
+      more.setAttribute("aria-label", "Move this entry: " + rowText(entry));
+      more.setAttribute("aria-expanded", open ? "true" : "false");
+      more.title = "Move this entry";
+      more.appendChild(icon("j-more"));
+      more.addEventListener("click", function () {
+        var same = ui.openMove && ui.openMove.list === listKey && ui.openMove.id === entry.id;
+        ui.openMove = same ? null : { list: listKey, id: entry.id };
+        ui.picking = null;
+        renderAll();
+        if (!same) { focusWithin(listKey, entry.id, ".entry-actions button"); } else { focusWithin(listKey, entry.id, ".more"); }
+      });
+      tail.appendChild(more);
+    }
+    main.appendChild(tail);
+    li.appendChild(main);
+
+    if (entry.state === "open") {
+      li.appendChild(moveButtons(listKey, entry));
+      li.appendChild(datePicker(listKey, entry));
+    }
+    return li;
+  }
+
+  function focusWithin(listKey, id, selector) {
+    var row = document.querySelector('li.entry[data-id="' + id + '"]');
+    var target = row && row.querySelector(selector);
+    if (target) { target.focus(); }
+  }
+
+  function findEntry(listKey, id) {
+    return core.entriesOf(shown, listKey).filter(function (e) { return e.id === id; })[0] || null;
+  }
+
+  // Click the text to edit it where it is. Enter saves, Escape puts the old text
+  // back, and clearing the text deletes the entry, with an Undo.
+  function wireEntryEditing(editor, listKey, entry) {
+    var original = null;
+    var cancelled = false;
+    editor.addEventListener("focus", function () { original = readEditor(editor); cancelled = false; });
+    editor.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); editor.blur(); }
+      else if (event.key === "Escape") { event.preventDefault(); cancelled = true; drawMarks(editor, original === null ? entry.text : original, false); editor.blur(); }
+    });
+    editor.addEventListener("blur", function () {
+      if (original === null) { return; }
+      var typed = readEditor(editor);
+      var before = original;
+      original = null;
+      if (cancelled || typed === before) { return; }
+      if (core.cleanText(typed) === "") {
+        // Undo makes the entry again as a new one, because a removed entry keeps its id.
+        var removed = { type: entry.type, state: entry.state, text: entry.text };
+        submit({ op: "remove", list: listKey, id: entry.id, rev: entry.rev }, {
+          onFail: function () { restoreEditing(listKey, entry.id, typed); }
+        }).then(function (ok) {
+          if (ok) { offerUndo("Entry deleted.", [{ op: "add", list: listKey, entry: { id: newId(), type: removed.type, text: removed.text, state: removed.state } }]); }
+        });
+        return;
+      }
+      submit({ op: "edit", list: listKey, id: entry.id, rev: entry.rev, text: typed }, {
+        onFail: function () { restoreEditing(listKey, entry.id, typed); }
+      });
+    });
+  }
+
+  // After a refused edit the row shows the typed text again, still editable.
+  function restoreEditing(listKey, id, typed) {
+    var row = document.querySelector('li.entry[data-id="' + id + '"]');
+    var editor = row && row.querySelector(".entry-text[contenteditable]");
+    if (!editor) { return; }
+    drawMarks(editor, typed, false);
+    editor.focus();
+  }
+
+  function moveButtons(listKey, entry) {
+    var group = make("div", "entry-actions");
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Move this entry");
+    var targets = [
+      { word: "Today", list: core.dayList(today), how: "migrated" },
+      { word: "Tomorrow", list: core.dayList(tomorrow()), how: "migrated" },
+      { word: "Migrate", list: core.migrateList(thisMonth()), how: "migrated" }
+    ];
+    targets.forEach(function (target) {
+      if (target.list === listKey) { return; }
+      var b = make("button", "", target.word);
+      b.type = "button";
+      b.setAttribute("aria-label", target.word + ": " + rowText(entry));
+      b.addEventListener("click", function () { moveEntry(listKey, entry.id, target.list, target.how); });
+      group.appendChild(b);
+    });
+    var date = make("button", "", "Date");
+    date.type = "button";
+    date.setAttribute("aria-label", "Pick a date: " + rowText(entry));
+    date.addEventListener("click", function () {
+      ui.openMove = { list: listKey, id: entry.id };
+      ui.picking = { list: listKey, id: entry.id, month: viewMonth < thisMonth() ? thisMonth() : viewMonth };
+      renderAll();
+      focusWithin(listKey, entry.id, ".pick-day");
+    });
+    group.appendChild(date);
+    return group;
+  }
+
+  function moveEntry(listKey, id, target, how) {
+    var entry = findEntry(listKey, id);
+    if (!entry) { return; }
+    var op = { op: "move", from: listKey, to: target, how: how, items: [{ id: id, rev: entry.rev }] };
+    ui.openMove = null;
+    ui.picking = null;
+    submit(op, {}).then(function (ok) {
+      if (!ok) { return; }
+      var to = core.parseList(target);
+      var words = to.kind === "day" ? (to.date === today ? "Today" : to.date === tomorrow() ? "Tomorrow" : longDate(to.date)) : "Migrate";
+      // A move to a day says which day, and the message offers to open it, so a
+      // moved entry is never somewhere the person cannot see.
+      var open = to.kind === "day" ? { label: "Open day", run: function () { openDay(to.date); return true; } } : null;
+      offerUndo("Moved to " + words + ".", [undoOp(listKey, id, target)], open);
+    });
+  }
+
+  // The dates of a month as rows, from today on, inside the row that is being
+  // moved. Rows rather than a grid, so each is 44px tall and the full width.
+  function datePicker(listKey, entry) {
+    var picker = make("div", "date-pick");
+    var picking = ui.picking && ui.picking.list === listKey && ui.picking.id === entry.id ? ui.picking : null;
+    if (!picking) { return picker; }
+    var head = make("div", "pick-head");
+    var prev = make("button", "icon-button");
+    prev.type = "button";
+    prev.setAttribute("aria-label", "Previous month");
+    prev.disabled = picking.month <= thisMonth();
+    prev.appendChild(icon("i-chevron-left"));
+    prev.addEventListener("click", function () { picking.month = core.addMonths(picking.month, -1); renderAll(); focusWithin(listKey, entry.id, ".pick-head .icon-button:last-child"); });
+    var title = make("span", "pick-title", monthYear(picking.month));
+    var next = make("button", "icon-button");
+    next.type = "button";
+    next.setAttribute("aria-label", "Next month");
+    next.appendChild(icon("j-chevron-right"));
+    next.addEventListener("click", function () { picking.month = core.addMonths(picking.month, 1); renderAll(); focusWithin(listKey, entry.id, ".pick-head .icon-button:last-child"); });
+    head.appendChild(prev); head.appendChild(title); head.appendChild(next);
+    picker.appendChild(head);
+    var list = make("div", "pick-list");
+    var total = core.daysInMonth(picking.month);
+    for (var d = 1; d <= total; d += 1) {
+      var date = picking.month + "-" + (d < 10 ? "0" : "") + d;
+      if (date < today) { continue; }
+      list.appendChild(pickDay(listKey, entry, date));
+    }
+    picker.appendChild(list);
+    var done = make("button", "quiet", "Cancel");
+    done.type = "button";
+    done.addEventListener("click", function () { ui.picking = null; ui.openMove = null; renderAll(); focusWithin(listKey, entry.id, ".more"); });
+    picker.appendChild(done);
+    return picker;
+  }
+
+  function pickDay(listKey, entry, date) {
+    var b = make("button", "pick-day");
+    b.type = "button";
+    b.appendChild(make("span", "", fmtWeekday.format(utc(date)) + " " + shortDate(date)));
+    var word = date === today ? "Today" : date === tomorrow() ? "Tomorrow" : "";
+    if (word) { b.appendChild(make("span", "pick-word", word)); }
+    b.setAttribute("aria-label", "Schedule for " + longDate(date) + ": " + rowText(entry));
+    if (date === listKey.slice(4)) { b.disabled = true; }
+    b.addEventListener("click", function () { moveEntry(listKey, entry.id, core.dayList(date), "scheduled"); });
+    return b;
+  }
+
+  /* ---------- lists ---------- */
+
+  var EMPTY = {
+    today: function () { return "Nothing logged for " + longDate(today) + " yet. Type a task, an event or a note below."; },
+    tomorrow: function () { return "Nothing planned for " + longDate(tomorrow()) + " yet. Add a task or event below, or move one here from another list."; },
+    migrate: function () { return "No tasks waiting this month. Add one below, or choose Migrate on any entry to park it here."; },
+    day: function (date) { return "Nothing logged for " + longDate(date) + ". Type a task, an event or a note below."; }
+  };
+
+  // Draws a list. A row being edited stays exactly as it is, so a change that
+  // arrives from another device never takes the typing away.
+  // A row that has not changed is the same element as before, so a redraw after
+  // a save does not rebuild the whole list under the person's hand.
+  function rowSignature(listKey, entry) {
+    var open = ui.openMove && ui.openMove.list === listKey && ui.openMove.id === entry.id;
+    var picking = ui.picking && ui.picking.list === listKey && ui.picking.id === entry.id ? ui.picking.month : "";
+    return [entry.id, entry.type, entry.state, entry.rev, entry.text, entry.to || "", open ? "o" : "", picking, today].join("|");
+  }
+
+  // A moved or scheduled entry is kept in storage with its arrow and where it went,
+  // and is not shown in the list. A quiet line at the bottom of the panel says how
+  // many there are and opens and closes them. Closed until asked (22 October 2026).
+  function isMoved(entry) { return entry.state === "migrated" || entry.state === "scheduled"; }
+
+  function renderMoved(name, listKey, moved) {
+    var host = $("moved-" + name);
+    if (!host) { return; }
+    host.hidden = moved.length === 0;
+    var list = $("moved-list-" + name);
+    var open = moved.length > 0 && ui.movedOpen[listKey] === true;
+    var toggle = $("moved-toggle-" + name);
+    toggle.textContent = moved.length + " moved";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    list.hidden = !open;
+    list.textContent = "";
+    if (open) { moved.forEach(function (entry) { list.appendChild(entryRow(listKey, entry)); }); }
+  }
+
+  function movedListKey(name) {
+    if (name === "today") { return core.dayList(today); }
+    if (name === "tomorrow") { return core.dayList(tomorrow()); }
+    if (name === "migrate") { return core.migrateList(thisMonth()); }
+    return dayView ? core.dayList(dayView) : null;
+  }
+
+  ["today", "tomorrow", "migrate", "day"].forEach(function (name) {
+    $("moved-toggle-" + name).addEventListener("click", function () {
+      var key = movedListKey(name);
+      if (!key) { return; }
+      ui.movedOpen[key] = !ui.movedOpen[key];
+      renderAll();
+    });
+  });
+
+  function renderList(listEl, emptyEl, listKey, emptyText, movedName) {
+    var all = core.entriesOf(shown, listKey);
+    var entries = all.filter(function (e) { return !isMoved(e); });
+    renderMoved(movedName, listKey, all.filter(isMoved));
+    var active = document.activeElement;
+    var keep = null;
+    if (active && listEl.contains(active) && active.matches && active.matches(".entry-text[contenteditable]")) {
+      keep = active.closest("li.entry");
+    }
+    var before = {};
+    Array.prototype.forEach.call(listEl.children, function (row) { before[row.getAttribute("data-id")] = row; });
+    var rows = [];
+    var seen = false;
+    entries.forEach(function (entry) {
+      if (keep && keep.getAttribute("data-id") === entry.id) { rows.push(keep); seen = true; return; }
+      var signature = rowSignature(listKey, entry);
+      var held = before[entry.id];
+      if (held && held._signature === signature && !held.classList.contains("orphan")) { rows.push(held); return; }
+      var row = entryRow(listKey, entry);
+      row._signature = signature;
+      rows.push(row);
+    });
+    if (keep && !seen) { keep.classList.add("orphan"); rows.push(keep); }
+    listEl.textContent = "";
+    rows.forEach(function (row) { listEl.appendChild(row); });
+    emptyEl.hidden = entries.length > 0;
+    if (entries.length === 0) { emptyEl.textContent = emptyText; }
+  }
+
+  // Each panel draws itself and knows nothing of the others. Today carries the
+  // morning strip, Month carries the log of a date opened in it.
+  function renderToday() {
+    $("date-today").textContent = longDate(today);
+    renderList($("list-today"), $("empty-today"), core.dayList(today), EMPTY.today(), "today");
+    renderStrip();
+  }
+
+  function renderTomorrow() {
+    $("date-tomorrow").textContent = longDate(tomorrow());
+    renderList($("list-tomorrow"), $("empty-tomorrow"), core.dayList(tomorrow()), EMPTY.tomorrow(), "tomorrow");
+  }
+
+  function renderMigrate() {
+    $("date-migrate").textContent = monthYear(thisMonth());
+    renderList($("list-migrate"), $("empty-migrate"), core.migrateList(thisMonth()), EMPTY.migrate(), "migrate");
+  }
+
+  /* ---------- the morning strip ---------- */
+
+  function groupHeading(group, kind) {
+    var n = group.tasks.length;
+    var count = n + " open " + (n === 1 ? "task" : "tasks");
+    if (kind === "monthly") { return "From " + monthName(group.month) + ", " + count + " on Migrate"; }
+    return (group.date === core.addDays(today, -1) ? "From yesterday" : "From " + longDate(group.date)) + ", " + count;
+  }
+
+  function stripGroup(group, kind) {
+    var box = make("section", "strip-group");
+    box.setAttribute("aria-label", kind === "monthly" ? "Open tasks from last month" : "Open tasks from an earlier day");
+    box.setAttribute("data-kind", kind);
+    box.appendChild(make("p", "strip-head", groupHeading(group, kind)));
+    var destination = kind === "monthly" ? core.migrateList(thisMonth()) : core.dayList(today);
+    group.tasks.forEach(function (task) {
+      var row = make("div", "strip-row");
+      var bullet = make("span", "bullet");
+      bullet.setAttribute("role", "img");
+      bullet.setAttribute("aria-label", "Task");
+      bullet.appendChild(icon("j-task"));
+      row.appendChild(bullet);
+      var text = make("div", "strip-text");
+      drawMarks(text, task.text, false);
+      row.appendChild(text);
+      var buttons = make("div", "strip-buttons");
+      var bring = make("button", "primary", "Bring forward");
+      bring.type = "button";
+      bring.setAttribute("aria-label", "Bring forward: " + rowText(task));
+      bring.addEventListener("click", function () { bringForward(group, [task], destination); });
+      var drop = make("button", "", "Drop");
+      drop.type = "button";
+      drop.setAttribute("aria-label", "Drop: " + rowText(task));
+      drop.addEventListener("click", function () { dropTasks(group, [task]); });
+      buttons.appendChild(bring);
+      buttons.appendChild(drop);
+      row.appendChild(buttons);
+      box.appendChild(row);
+    });
+    if (group.tasks.length > 1) {
+      var all = make("button", "strip-foot", "Bring all forward");
+      all.type = "button";
+      all.addEventListener("click", function () { bringForward(group, group.tasks, destination); });
+      box.appendChild(all);
+    }
+    return box;
+  }
+
+  function stripRemaining() {
+    var g = core.stripFrom(stripFiles(), today);
+    return (g.daily ? g.daily.tasks.length : 0) + (g.monthly ? g.monthly.tasks.length : 0);
+  }
+
+  // Undoing a change names the revision the entry has now, as the page shows it,
+  // which is the one the shared rules gave it. The page never works it out.
+  function undoOp(listKey, id, toList) {
+    var now = findEntry(listKey, id);
+    var op = { op: "undo", list: listKey, id: id, rev: now ? now.rev : 1 };
+    if (toList) { op.toList = toList; }
+    return op;
+  }
+
+  function bringForward(group, tasks, destination) {
+    var items = tasks.map(function (t) { return { id: t.id, rev: t.rev }; });
+    submit({ op: "move", from: group.list, to: destination, how: "migrated", items: items }, {}).then(function (ok) {
+      if (!ok) { return; }
+      var undo = tasks.map(function (t) { return undoOp(group.list, t.id, destination); });
+      offerUndo(stripRemaining() === 0 ? "All handled." : "Brought forward.", undo);
+    });
+  }
+
+  function dropTasks(group, tasks) {
+    var items = tasks.map(function (t) { return { id: t.id, rev: t.rev }; });
+    submit({ op: "drop", list: group.list, items: items }, {}).then(function (ok) {
+      if (!ok) { return; }
+      var undo = tasks.map(function (t) { return undoOp(group.list, t.id, null); });
+      offerUndo(stripRemaining() === 0 ? "All handled." : "Dropped.", undo);
+    });
+  }
+
+  function renderStrip() {
+    var host = $("strip");
+    var groups = core.stripFrom(stripFiles(), today);
+    host.textContent = "";
+    if (groups.daily) { host.appendChild(stripGroup(groups.daily, "daily")); }
+    if (groups.monthly) { host.appendChild(stripGroup(groups.monthly, "monthly")); }
+    host.hidden = !(groups.daily || groups.monthly);
+  }
+
+  /* ---------- Month ---------- */
+
+  function dayEvents(day) {
+    return day.entries.filter(function (e) { return e.type === "event" && (e.state === "open" || e.state === "done"); });
+  }
+
+  function dateRow(date) {
+    var file = shown[core.monthOf(date)];
+    var day = file && file.days[date] ? file.days[date] : { line: "", lineRev: 0, entries: [] };
+    var li = make("li", "date-row");
+    li.setAttribute("data-date", date);
+    var mark = date === today ? "today" : date === tomorrow() ? "tomorrow" : "";
+    if (mark) { li.setAttribute("data-mark", mark); }
+
+    var open = make("button", "date-open");
+    open.type = "button";
+    open.setAttribute("aria-label", "Open the log for " + longDate(date));
+    open.appendChild(make("span", "num", String(+date.slice(8))));
+    open.appendChild(make("span", "wk", fmtWeekday.format(utc(date))));
+    open.addEventListener("click", function () { openDay(date); });
+    li.appendChild(open);
+    if (mark) { li.appendChild(make("span", "mark-word", mark === "today" ? "Today" : "Tomorrow")); }
+
+    var line = make("div", "line-text");
+    line.setAttribute("contenteditable", "true");
+    line.setAttribute("role", "textbox");
+    line.setAttribute("aria-label", "Calendar line for " + longDate(date));
+    line.setAttribute("data-editor", "single");
+    line.setAttribute("data-placeholder", "Add to " + shortDate(date));
+    line.setAttribute("spellcheck", "false");
+    drawMarks(line, day.line, false);
+    wireEditor(line);
+    wireLine(line, date, day);
+    li.appendChild(line);
+
+    var events = dayEvents(day);
+    if (events.length > 0) {
+      var span = make("span", "line-events", events.map(function (e) { return core.plainText(e.text); }).join("; "));
+      span.title = span.textContent;
+      li.appendChild(span);
+    }
+    var visible = core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length;
+    if (visible > 0) {
+      var chip = make("span", "chip", String(visible));
+      chip.setAttribute("aria-label", visible + (visible === 1 ? " entry" : " entries"));
+      li.appendChild(chip);
+    }
+    return li;
+  }
+
+  function dateSignature(date) {
+    var file = shown[core.monthOf(date)];
+    var day = file && file.days[date] ? file.days[date] : null;
+    var events = day ? dayEvents(day).map(function (e) { return e.id + e.rev; }).join(",") : "";
+    var visible = day ? core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length : 0;
+    return [date, today, day ? day.line : "", day ? day.lineRev : 0, visible, events].join("|");
+  }
+
+  function wireLine(editor, date, day) {
+    var original = null;
+    var cancelled = false;
+    editor.addEventListener("focus", function () { original = readEditor(editor); cancelled = false; });
+    editor.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") { event.preventDefault(); editor.blur(); }
+      else if (event.key === "Escape") { event.preventDefault(); cancelled = true; drawMarks(editor, original === null ? day.line : original, false); editor.blur(); }
+    });
+    editor.addEventListener("blur", function () {
+      if (original === null) { return; }
+      var typed = readEditor(editor);
+      var before = original;
+      original = null;
+      if (cancelled || typed === before) { return; }
+      var current = core.lineOf(shown, date);
+      submit({ op: "line", date: date, rev: day.lineRev, text: typed }, {
+        onFail: function () {
+          var row = document.querySelector('.date-row[data-date="' + date + '"] .line-text');
+          if (row) { drawMarks(row, typed, false); row.focus(); }
+        }
+      });
+      void current;
+    });
+  }
+
+  function renderMonth() {
+    var inDay = dayView !== null;
+    $("month-nav").hidden = inDay;
+    $("month-now").hidden = inDay || viewMonth === thisMonth();
+    $("day-head").hidden = !inDay;
+    $("day-view").hidden = !inDay;
+    $("addbar-day").hidden = !inDay;
+    if (!inDay) { $("moved-day").hidden = true; }
+    $("month-picker-wrap").hidden = inDay || !pickerOpen;
+    $("date-rows").hidden = inDay || pickerOpen;
+    $("month-title").textContent = monthYear(viewMonth);
+    $("month-title").setAttribute("aria-expanded", pickerOpen ? "true" : "false");
+    $("month-prev").setAttribute("aria-label", "Previous month: " + monthYear(core.addMonths(viewMonth, -1)));
+    $("month-next").setAttribute("aria-label", "Next month: " + monthYear(core.addMonths(viewMonth, 1)));
+    if (inDay) {
+      $("month-empty").hidden = true;
+      $("day-back-label").textContent = "Back to " + monthName(core.monthOf(dayView));
+      $("day-date").textContent = longDate(dayView);
+      renderList($("list-day"), $("empty-day"), core.dayList(dayView), EMPTY.day(dayView), "day");
+      return;
+    }
+    if (pickerOpen) { drawPicker(); $("month-empty").hidden = true; return; }
+    var list = $("date-rows");
+    var active = document.activeElement;
+    var keep = active && list.contains(active) && active.classList.contains("line-text") ? active.closest("li.date-row") : null;
+    var before = {};
+    Array.prototype.forEach.call(list.children, function (row) { before[row.getAttribute("data-date")] = row; });
+    var file = shown[viewMonth];
+    var total = core.daysInMonth(viewMonth);
+    var anything = false;
+    var made = [];
+    for (var d = 1; d <= total; d += 1) {
+      var date = viewMonth + "-" + (d < 10 ? "0" : "") + d;
+      if (core.dayHas(file, date)) { anything = true; }
+      if (keep && keep.getAttribute("data-date") === date) { made.push(keep); continue; }
+      var signature = dateSignature(date);
+      var held = before[date];
+      if (held && held._signature === signature) { made.push(held); continue; }
+      var row = dateRow(date);
+      row._signature = signature;
+      made.push(row);
+    }
+    list.textContent = "";
+    made.forEach(function (row) { list.appendChild(row); });
+    var empty = $("month-empty");
+    empty.hidden = anything;
+    if (!anything) { empty.textContent = "Nothing on the calendar for " + monthName(viewMonth) + " yet. Click a date to add a line, or open a date to log it."; }
+  }
+
+  function drawPicker() {
+    var year = pickerYear === null ? +viewMonth.slice(0, 4) : pickerYear;
+    $("year-label").textContent = String(year);
+    var host = $("month-picker");
+    host.textContent = "";
+    for (var m = 1; m <= 12; m += 1) {
+      var month = year + "-" + (m < 10 ? "0" : "") + m;
+      var b = make("button", "", fmtMonthShort.format(utc(month + "-01")));
+      b.type = "button";
+      b.setAttribute("aria-label", monthYear(month));
+      if (month === viewMonth) { b.setAttribute("aria-current", "true"); }
+      b.addEventListener("click", (function (target) { return function () { pickMonth(target); }; })(month));
+      host.appendChild(b);
+    }
+  }
+
+  function pickMonth(month) {
+    loadMonths([month]).then(function (ok) {
+      if (!ok) { return; }
+      viewMonth = month;
+      pickerOpen = false;
+      pickerYear = null;
+      renderAll();
+      scrollToToday();
+      $("month-title").focus();
+    });
+  }
+
+  function scrollToToday() {
+    var body = $("month-body");
+    if (!body) { return; }
+    if (viewMonth !== thisMonth()) { body.scrollTop = 0; return; }
+    var row = document.querySelector('.date-row[data-date="' + today + '"]');
+    // A panel that is not on screen (another phone tab) has no position yet.
+    if (row && row.offsetParent !== null) {
+      body.scrollTop = Math.max(0, row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 8);
+      monthPositioned = true;
+    }
+  }
+
+  function openDay(date) {
+    // Today and tomorrow have their own panels. There is only ever one editable
+    // copy of a list on screen, so a click goes there instead.
+    if (date === today || date === tomorrow()) {
+      var key = date === today ? "today" : "tomorrow";
+      showPanel(key);
+      var bar = addBars[key];
+      if (bar) { bar.editor.focus(); }
+      return;
+    }
+    loadMonths([core.monthOf(date)]).then(function (ok) {
+      if (!ok) { return; }
+      dayView = date;
+      history.pushState({ day: date }, "", "#d/" + date);
+      renderAll();
+      addBars.day.editor.focus();
+    });
+  }
+
+  function closeDay(fromHistory) {
+    if (dayView === null) { return; }
+    dayView = null;
+    if (!fromHistory && /^#d\//.test(location.hash)) { history.back(); }
+    renderAll();
+    scrollToToday();
+  }
+
+  window.addEventListener("popstate", function () {
+    var match = /^#d\/(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
+    if (match && core.isDate(match[1])) {
+      loadMonths([core.monthOf(match[1])]).then(function (ok) { if (ok) { dayView = match[1]; renderAll(); } });
+    } else {
+      closeDay(true);
+    }
+  });
+
+  $("day-back").addEventListener("click", function () { closeDay(false); });
+  $("panel-month").addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") { return; }
+    if (pickerOpen) { pickerOpen = false; renderAll(); $("month-title").focus(); }
+    else if (dayView !== null && event.target.closest && !event.target.closest("[contenteditable]")) { closeDay(false); }
+  });
+
+  function step(delta) {
+    var target = core.addMonths(viewMonth, delta);
+    loadMonths([target]).then(function (ok) { if (!ok) { return; } viewMonth = target; renderAll(); scrollToToday(); });
+  }
+  $("month-prev").addEventListener("click", function () { step(-1); });
+  $("month-next").addEventListener("click", function () { step(1); });
+  $("month-now").addEventListener("click", function () {
+    viewMonth = thisMonth();
+    renderAll();
+    scrollToToday();
+  });
+  $("month-title").addEventListener("click", function () {
+    pickerOpen = !pickerOpen;
+    pickerYear = +viewMonth.slice(0, 4);
+    renderAll();
+  });
+  $("year-prev").addEventListener("click", function () { pickerYear -= 1; drawPicker(); });
+  $("year-next").addEventListener("click", function () { pickerYear += 1; drawPicker(); });
+
+  /* ---------- Quick notes ---------- */
+
+  var quickEditor = $("quick-editor");
+  wireEditor(quickEditor);
+
+  function setQuickStatus(state, word) {
+    var status = $("quick-status");
+    if (!status) { return; }
+    status.setAttribute("data-state", state);
+    status.textContent = word;
+  }
+
+  quickEditor.addEventListener("input", function () {
+    quick.dirty = true;
+    quick.failed = false;
+    setQuickStatus("unsaved", "Not saved yet");
+    clearTimeout(quick.timer);
+    quick.timer = setTimeout(function () { saveQuick(); }, SAVE_DELAY_MS);
+  });
+  quickEditor.addEventListener("blur", function () { if (quick.dirty) { saveQuick(); } });
+
+  function saveQuick() {
+    clearTimeout(quick.timer);
+    quick.timer = null;
+    // A save already on its way is the one to wait for, so a caller that needs to
+    // know (sign out) gets the real answer and not a guess.
+    if (quick.saving) { return quick.promise; }
+    if (!quick.dirty || !signedIn) { return Promise.resolve(!quick.dirty); }
+    quick.saving = true;
+    var text = readEditor(quickEditor);
+    var gen = generation;
+    setQuickStatus("saving", "Saving");
+    quick.promise = request("/api/journal?part=quick", { method: "PUT", headers: { "Content-Type": "text/plain; charset=utf-8", "X-Base-Updated": quick.base }, body: text }).then(function (response) {
+      return readJson(response).then(function (body) { return { status: response.status, body: body }; });
+    }).then(function (answer) {
+      if (gen !== generation) { return false; }
+      quick.saving = false;
+      if (answer.status === 200) {
+        quick.base = answer.body.updatedAt;
+        // More was typed while this was on its way: save that too.
+        if (readEditor(quickEditor) !== text) { quick.dirty = true; quick.timer = setTimeout(saveQuick, SAVE_DELAY_MS); setQuickStatus("unsaved", "Not saved yet"); return false; }
+        quick.dirty = false;
+        setQuickStatus("saved", "Saved");
+        return true;
+      }
+      if (answer.status === 401) { return false; }
+      quick.failed = true;
+      setQuickStatus("failed", "Not saved");
+      if (answer.status === 409) {
+        showFlash(answer.body.error, { label: "Reload", run: function () { return reloadQuick(); } });
+      } else {
+        showFlash(answer.body && answer.body.error ? answer.body.error : NOT_CHANGED, null);
+      }
+      return false;
+    }).catch(function () {
+      if (gen !== generation) { return false; }
+      quick.saving = false;
+      quick.failed = true;
+      setQuickStatus("failed", "Not saved");
+      showFlash(NOT_CHANGED, null);
+      return false;
+    });
+    return quick.promise;
+  }
+
+  // After a clash the person chooses: reloading replaces what is typed with what
+  // the other device saved. Until they do, the typed text stays on screen.
+  function reloadQuick() {
+    return request("/api/journal?view=home&today=" + today).then(readJson).then(function (body) {
+      if (!body.quick || core.laterStamp(quick.base, body.quick.updatedAt)) { return false; }
+      quick.base = body.quick.updatedAt;
+      drawMarks(quickEditor, body.quick.text, true);
+      quick.dirty = false;
+      quick.failed = false;
+      setQuickStatus("saved", "Saved");
+      return true;
+    }).catch(function () { return false; });
+  }
+
+  function takeQuick(fresh) {
+    // Never replaces text that is being typed or that has not been saved, and never
+    // draws an older save over a newer one.
+    if (quick.dirty || quick.saving || document.activeElement === quickEditor) { return; }
+    if (!core.laterStamp(fresh.updatedAt, quick.base)) { return; }
+    quick.base = fresh.updatedAt;
+    drawMarks(quickEditor, fresh.text, true);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#panel-quick .fmt-button"), function (b) {
+    b.addEventListener("pointerdown", function (event) { event.preventDefault(); });
+    b.addEventListener("click", function () { format(b.classList.contains("fmt-bold") ? "bold" : "strikeThrough", quickEditor); });
+  });
+
+  /* ---------- panels and tabs ---------- */
+
+  var monthPositioned = false;
+
+  function showPanel(name) {
+    PANELS.forEach(function (key) {
+      var panel = $("panel-" + key);
+      if (panel) { panel.setAttribute("data-active", key === name ? "true" : "false"); }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#tabbar button"), function (b) {
+      b.setAttribute("aria-selected", b.getAttribute("data-panel") === name ? "true" : "false");
+    });
+    try { localStorage.setItem(TAB_KEY, name); } catch (e) { /* not saved */ }
+    if (name === "month" && !monthPositioned) { scrollToToday(); }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#tabbar button"), function (b) {
+    b.addEventListener("click", function () { showPanel(b.getAttribute("data-panel")); });
+  });
+
+  /* ---------- drawing everything ---------- */
+
+  function renderAll() {
+    if (!signedIn) { return; }
+    // A panel that is not on the page is skipped, so each one draws alone.
+    if ($("panel-today")) { renderToday(); }
+    if ($("panel-tomorrow")) { renderTomorrow(); }
+    if ($("panel-migrate")) { renderMigrate(); }
+    if ($("panel-month")) { renderMonth(); }
+  }
+
+  function buildBars() {
+    buildAddBar($("addbar-today"), "today", function () { return core.dayList(today); });
+    buildAddBar($("addbar-tomorrow"), "tomorrow", function () { return core.dayList(tomorrow()); });
+    buildAddBar($("addbar-migrate"), "migrate", function () { return core.migrateList(thisMonth()); });
+    buildAddBar($("addbar-day"), "day", function () { return dayView ? core.dayList(dayView) : null; });
+  }
+  buildBars();
+
+  /* ---------- loading and keeping up to date ---------- */
+
+  function applyHome(body, replaceQuick) {
+    takeMonths(body.months);
+    stripMonths = Object.keys(body.months);
+    recompute();
+    if (body.quick) {
+      if (replaceQuick) { quick.base = body.quick.updatedAt; drawMarks(quickEditor, body.quick.text, true); }
+      else { takeQuick(body.quick); }
+    }
+  }
+
+  function loadHome() {
+    var gen = generation;
+    return request("/api/journal?view=home&today=" + today).then(function (response) {
+      if (!response.ok) { throw new Error("home"); }
+      return readJson(response);
+    }).then(function (body) {
+      if (gen !== generation) { return false; }
+      applyHome(body, true);
+      return true;
+    });
+  }
+
+  // Asks again and draws what is new, unless something is half done on this
+  // page. It only ever redraws. It never moves, migrates or drops anything.
+  function refresh(force) {
+    if (!signedIn) { return Promise.resolve(false); }
+    var busy = pending.length > 0 || sending;
+    var editing = document.activeElement && document.activeElement.matches && document.activeElement.matches(".entry-text, .line-text");
+    if (!force && (busy || editing)) { return Promise.resolve(false); }
+    if (busy) { return Promise.resolve(false); }
+    var gen = generation;
+    var rolled = londonDate();
+    if (rolled !== today) { today = rolled; }
+    var extra = Object.keys(confirmed).filter(function (m) { return m !== thisMonth(); });
+    return request("/api/journal?view=home&today=" + today).then(function (response) {
+      if (!response.ok) { throw new Error("home"); }
+      return readJson(response);
+    }).then(function (body) {
+      if (gen !== generation || pending.length > 0 || sending) { return false; }
+      var others = extra.filter(function (m) { return !body.months[m]; });
+      applyHome(body, false);
+      if (others.length === 0) { return true; }
+      return request("/api/journal?view=months&months=" + others.slice(0, 5).join(",")).then(readJson).then(function (more) {
+        if (gen !== generation || pending.length > 0 || sending) { return false; }
+        takeMonths(more.months);
+        recompute();
+        return true;
+      });
+    }).then(function (ok) {
+      if (ok !== false) { lastRefresh = Date.now(); renderAll(); }
+      return ok !== false;
+    }).catch(function () { return false; });
+  }
+
+  function startPolling() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(function () {
+      if (document.visibilityState !== "visible") { return; }
+      refresh(false);
+    }, POLL_MS);
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && signedIn) { refresh(false); }
+    else if (document.visibilityState === "hidden" && quick.dirty) { saveQuick(); }
+  });
+  window.addEventListener("focus", function () { if (signedIn) { refresh(false); } });
+
+  /* ---------- sign in, sign out ---------- */
+
+  function show(name) {
+    $("boot").hidden = true;
+    $("login").hidden = name !== "login";
+    $("boot-main").hidden = name === "app";
+    $("app").hidden = name !== "app";
+    $("bar-actions").hidden = name !== "app";
+    $("sign-out").hidden = name !== "app";
+    $("tabbar").hidden = name !== "app";
+    signedIn = name === "app";
+  }
+
+  // Nothing but the wordmark and one line of text.
+  function showOnly(message) {
+    signedIn = false;
+    $("login").hidden = true;
+    $("app").hidden = true;
+    $("bar-actions").hidden = true;
+    $("sign-out").hidden = true;
+    $("tabbar").hidden = true;
+    hideFlash();
+    $("boot-main").hidden = false;
+    $("boot").textContent = message;
+    $("boot").hidden = false;
+  }
+
+  // Every entry, every typed character and every copy the page holds goes.
+  function clearContent() {
+    generation += 1;
+    clearTimeout(quick.timer);
+    clearInterval(pollTimer);
+    confirmed = {};
+    stripMonths = [];
+    pending = [];
+    shown = {};
+    sending = false;
+    dayView = null;
+    pickerOpen = false;
+    pickerYear = null;
+    monthPositioned = false;
+    ui = { openMove: null, picking: null, movedOpen: {} };
+    quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
+    activeEditor = null;
+    ["list-today", "list-tomorrow", "list-migrate", "list-day", "date-rows", "month-picker", "strip"].forEach(function (id) { $(id).textContent = ""; });
+    ["date-today", "date-tomorrow", "date-migrate", "day-date"].forEach(function (id) { $(id).textContent = ""; });
+    Object.keys(addBars).forEach(function (key) { addBars[key].editor.textContent = ""; });
+    quickEditor.textContent = "";
+    $("password").value = "";
+    $("flash-text").textContent = "";
+    ["empty-today", "empty-tomorrow", "empty-migrate", "empty-day", "month-empty"].forEach(function (id) { $(id).textContent = ""; });
+    setQuickStatus("saved", "Saved");
+    hideFlash();
+  }
+
+  function goToLogin() {
+    clearContent();
+    show("login");
+    $("password").focus();
+  }
+
+  $("login-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    var button = $("login-submit");
+    var errorEl = $("login-error");
+    button.disabled = true;
+    errorEl.hidden = true;
+    request("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: $("password").value })
+    }).then(function (response) {
+      button.disabled = false;
+      if (response.ok) { $("password").value = ""; start(); return; }
+      errorEl.textContent = "That password is incorrect.";
+      errorEl.hidden = false;
+      $("password").select();
+    }).catch(function () {
+      button.disabled = false;
+      errorEl.textContent = "Could not reach the server. Try again.";
+      errorEl.hidden = false;
+    });
+  });
+
+  // Sign out waits for what is on its way. If a change or the quick notes cannot
+  // be saved there is no offer to leave anyway: the person stays signed in with
+  // the text and the message on screen.
+  function signOut() {
+    var buttons = [$("sign-out")];
+    buttons.forEach(function (b) { b.disabled = true; });
+    var enable = function () { buttons.forEach(function (b) { b.disabled = false; }); };
+    Promise.all([drained(), quick.dirty ? saveQuick() : Promise.resolve(true)]).then(function (results) {
+      if (!results[1] && quick.dirty) { throw new Error("unsaved"); }
+      return fetch("/api/session", { method: "DELETE", credentials: "same-origin" });
+    }).then(function (response) {
+      enable();
+      if (!response.ok && response.status !== 401) { throw new Error("sign out"); }
+      history.replaceState(null, "", location.pathname);
+      goToLogin();
+    }).catch(function () {
+      enable();
+      showFlash("Could not sign out because something has not been saved. You are still signed in. Try again.", null);
+    });
+  }
+  $("sign-out").addEventListener("click", signOut);
+
+  // A browser may keep this page in its back-forward cache and show it again on
+  // Back exactly as it was left. So the page empties itself as it is left: what
+  // the cache keeps holds no entry and shows only the wordmark. On return it asks
+  // the server before showing anything.
+  window.addEventListener("pagehide", function () {
+    clearContent();
+    showOnly("Loading.");
+  });
+  window.addEventListener("pageshow", function (event) {
+    if (!event.persisted) { return; }
+    request("/api/session").then(function (response) {
+      if (response.ok) { start(); } else { goToLogin(); }
+    }).catch(function () { showOnly("Could not reach the server. Reload to try again."); });
+  });
+
+  function start() {
+    today = londonDate();
+    viewMonth = thisMonth();
+    var tab = "today";
+    try { tab = localStorage.getItem(TAB_KEY) || "today"; } catch (e) { /* the phone opens on Today */ }
+    if (PANELS.indexOf(tab) === -1) { tab = "today"; }
+    loadHome().then(function (ok) {
+      if (!ok) { return; }
+      show("app");
+      showPanel(tab);
+      renderAll();
+      scrollToToday();
+      startPolling();
+      var match = /^#d\/(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
+      if (match && core.isDate(match[1]) && match[1] !== today && match[1] !== tomorrow()) {
+        loadMonths([core.monthOf(match[1])]).then(function (loaded) { if (loaded) { dayView = match[1]; renderAll(); } });
+      }
+    }).catch(function () {
+      showOnly(NOT_LOADED);
+    });
+  }
+
+  // The date is checked as the window sits open, so the marks and the headings
+  // are right in the morning without a reload.
+  setInterval(function () {
+    if (!signedIn) { return; }
+    var now = londonDate();
+    if (now !== today) { refresh(true); }
+  }, 30000);
+
+  request("/api/session").then(function (response) {
+    if (response.ok) { start(); } else { goToLogin(); }
+  }).catch(function () {
+    $("boot").textContent = "Could not reach the server. Reload to try again.";
+  });
+})();
+</script>
+</body>
+</html>

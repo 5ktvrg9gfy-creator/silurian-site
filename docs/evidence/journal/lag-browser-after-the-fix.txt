@@ -1,0 +1,15 @@
+PASS adding: an entry that has been shown is never missing from a later look, though the window kept asking again
+PASS the edit made straight after an add was kept, not refused as a clash  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS the store has all five added entries, each once  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS a single move made exactly one copy in Tomorrow  ["Book the van"]
+PASS and the original is marked moved exactly once  ["migrated"]
+PASS Bring all forward made exactly one copy of each of yesterday's two tasks in Today  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS and yesterday's originals are each marked moved once
+PASS the screen agrees with the store once everything has settled: no entry missing, none twice  ["Order labels","Ring the supplier","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS no message about a failed save is left on screen  All handled.
+PASS the page threw nothing
+PASS older reads: an entry shown after a save is never replaced by an older read, though the window asked again every 400ms
+PASS older reads: all three entries are still on screen when it settles, each once  ["Older read one","Older read two","Older read three"]
+PASS older reads: the page threw nothing
+
+13 of 13 passed

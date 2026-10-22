@@ -272,13 +272,13 @@ class NotesPageFollowsTheSpudNotesLook(unittest.TestCase):
 
     # ---- icons and controls ----
 
-    def test_exactly_twelve_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
+    def test_exactly_thirteen_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
         symbols = re.findall(r"<symbol\b([^>]*)>", self.text)
         ids = sorted(re.search(r'id="([^"]+)"', attributes).group(1) for attributes in symbols)
         self.assertEqual(
             ids,
-            sorted(["i-archive", "i-bin", "i-chevron-left", "i-menu", "i-moon", "i-note", "i-pencil", "i-plus",
-                    "i-search", "i-sun", "i-tag", "i-unarchive"]),
+            sorted(["i-archive", "i-bin", "i-chevron-left", "i-journal", "i-menu", "i-moon", "i-note", "i-pencil",
+                    "i-plus", "i-search", "i-sun", "i-tag", "i-unarchive"]),
         )
         for attributes in symbols:
             for required in ('viewBox="0 0 24 24"', 'fill="none"', 'stroke="currentColor"', 'stroke-width="1.8"',
@@ -367,6 +367,13 @@ class NotesPageVersionFourMenuLabelsAndArchive(unittest.TestCase):
         self.assertEqual(order, sorted(order), "Notes, a rule, the labels, Edit labels, a rule, Archive.")
         for key in ("notes", "labels", "archive"):
             self.assertEqual(nav.count(f'data-key="{key}"'), 1, f"One {key} item.")
+        # Journal (journal design brief, section 7): the last item, after Archive, a plain link.
+        self.assertLess(nav.index('data-key="archive"'), nav.index('id="menu-journal"'))
+        self.assertLess(nav.index('id="menu-journal"'), nav.index('<div class="menu-foot">'))
+        self.assertEqual(nav.count('id="menu-journal"'), 1)
+        self.assertIn('<a class="menu-item" href="/journal/" id="menu-journal">', nav)
+        self.assertIn('<use href="#i-journal"></use></svg><span class="menu-text">Journal</span></a>', nav)
+        self.assertNotIn('data-key="journal"', nav, "A plain link: the notes script routes only the items with a key.")
         self.assertEqual(nav.count('<hr class="menu-rule">'), 3, "Two rules in the list, one above the phone-only footer.")
         self.assertNotRegex(nav, r"<h[1-6]\b")
         self.assertIn('<div id="menu-labels"></div>', nav, "With no labels nothing sits between the rules but Edit labels.")

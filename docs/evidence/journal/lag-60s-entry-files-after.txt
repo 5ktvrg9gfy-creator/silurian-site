@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: the stand-in really does what the documentation says, so the tests below are not vacuous
+ok 1 - the stand-in really does what the documentation says, so the tests below are not vacuous
+  ---
+  duration_ms: 28.960055
+  type: 'test'
+  ...
+# Subtest: a run of adds, each a second after the last, loses none and makes none twice
+ok 2 - a run of adds, each a second after the last, loses none and makes none twice
+  ---
+  duration_ms: 5.01677
+  type: 'test'
+  ...
+# Subtest: an edit and a tick straight after the add are not refused as a clash
+ok 3 - an edit and a tick straight after the add are not refused as a clash
+  ---
+  duration_ms: 3.788151
+  type: 'test'
+  ...
+# Subtest: a move straight after the add makes exactly one copy
+ok 4 - a move straight after the add makes exactly one copy
+  ---
+  duration_ms: 2.457825
+  type: 'test'
+  ...
+# Subtest: the same move sent again, and again, after the answer was lost, makes one copy
+ok 5 - the same move sent again, and again, after the answer was lost, makes one copy
+  ---
+  duration_ms: 5.318575
+  type: 'test'
+  ...
+# Subtest: Bring forward of several, sent twice, makes one copy of each
+ok 6 - Bring forward of several, sent twice, makes one copy of each
+  ---
+  duration_ms: 3.349777
+  type: 'test'
+  ...
+# Subtest: a move that crosses into another month, sent twice, makes one copy
+ok 7 - a move that crosses into another month, sent twice, makes one copy
+  ---
+  duration_ms: 2.026369
+  type: 'test'
+  ...
+# Subtest: a move, an undo and the same move again make one visible copy and meet nothing left behind
+ok 8 - a move, an undo and the same move again make one visible copy and meet nothing left behind
+  ---
+  duration_ms: 3.052982
+  type: 'test'
+  ...
+# Subtest: a calendar line saved twice in a row, and cleared, is not refused as a clash
+ok 9 - a calendar line saved twice in a row, and cleared, is not refused as a clash
+  ---
+  duration_ms: 2.400971
+  type: 'test'
+  ...
+# Subtest: a view read during the lag is shorter than the truth and is never wrong, and after the lag it is the truth
+ok 10 - a view read during the lag is shorter than the truth and is never wrong, and after the lag it is the truth
+  ---
+  duration_ms: 3.929568
+  type: 'test'
+  ...
+# Subtest: every change goes to an instance that remembers nothing, and none is lost or refused
+ok 11 - every change goes to an instance that remembers nothing, and none is lost or refused
+  ---
+  duration_ms: 2.73507
+  type: 'test'
+  ...
+# Subtest: two hundred changes, some sent twice and each to a different instance, end as a single device would have left them
+ok 12 - two hundred changes, some sent twice and each to a different instance, end as a single device would have left them
+  ---
+  duration_ms: 380.228871
+  type: 'test'
+  ...
+# Subtest: quick notes saved twice in a row by one instance are not refused, at 60 seconds of lag
+ok 13 - quick notes saved twice in a row by one instance are not refused, at 60 seconds of lag
+  ---
+  duration_ms: 0.892693
+  type: 'test'
+  ...
+# Subtest: quick notes saved through another instance while the store is a few seconds behind are not refused
+ok 14 - quick notes saved through another instance while the store is a few seconds behind are not refused
+  ---
+  duration_ms: 0.70479
+  type: 'test'
+  ...
+# Subtest: quick notes through another instance 60 seconds behind are refused as busy, losing nothing
+ok 15 - quick notes through another instance 60 seconds behind are refused as busy, losing nothing
+  ---
+  duration_ms: 1.049639
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 534.972836

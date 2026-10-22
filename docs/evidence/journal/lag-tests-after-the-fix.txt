@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: an add straight after an add keeps both, though the store still shows the file as it was
+ok 1 - an add straight after an add keeps both, though the store still shows the file as it was
+  ---
+  duration_ms: 30.85274
+  type: 'test'
+  ...
+# Subtest: a run of adds, each straight after the last, loses none
+ok 2 - a run of adds, each straight after the last, loses none
+  ---
+  duration_ms: 6.638065
+  type: 'test'
+  ...
+# Subtest: a change to an entry straight after it was added is not refused as a clash
+ok 3 - a change to an entry straight after it was added is not refused as a clash
+  ---
+  duration_ms: 3.767043
+  type: 'test'
+  ...
+# Subtest: a move straight after the add makes exactly one copy
+ok 4 - a move straight after the add makes exactly one copy
+  ---
+  duration_ms: 2.133448
+  type: 'test'
+  ...
+# Subtest: the same move sent again after the answer was lost is done once
+ok 5 - the same move sent again after the answer was lost is done once
+  ---
+  duration_ms: 3.371196
+  type: 'test'
+  ...
+# Subtest: Bring forward of several, sent twice, makes one copy of each
+ok 6 - Bring forward of several, sent twice, makes one copy of each
+  ---
+  duration_ms: 5.561503
+  type: 'test'
+  ...
+# Subtest: a move that crosses into another month, sent twice, makes one copy
+ok 7 - a move that crosses into another month, sent twice, makes one copy
+  ---
+  duration_ms: 1.546816
+  type: 'test'
+  ...
+# Subtest: a calendar line saved twice in a row is not refused as a clash
+ok 8 - a calendar line saved twice in a row is not refused as a clash
+  ---
+  duration_ms: 1.644997
+  type: 'test'
+  ...
+# Subtest: quick notes saved twice in a row are not refused as a clash
+ok 9 - quick notes saved twice in a row are not refused as a clash
+  ---
+  duration_ms: 3.811078
+  type: 'test'
+  ...
+# Subtest: a read during the lag is old, and says so by its revision, so a page can tell
+ok 10 - a read during the lag is old, and says so by its revision, so a page can tell
+  ---
+  duration_ms: 2.963586
+  type: 'test'
+  ...
+# Subtest: a change refused for good says so and writes nothing
+ok 11 - a change refused for good says so and writes nothing
+  ---
+  duration_ms: 1.187456
+  type: 'test'
+  ...
+# Subtest: another instance with nothing remembered waits for the store to catch up, and loses nothing
+ok 12 - another instance with nothing remembered waits for the store to catch up, and loses nothing
+  ---
+  duration_ms: 1.44058
+  type: 'test'
+  ...
+# Subtest: an instance that remembers what it wrote does not wait for a lagging store
+ok 13 - an instance that remembers what it wrote does not wait for a lagging store
+  ---
+  duration_ms: 2.633538
+  type: 'test'
+  ...
+# Subtest: what an instance remembers is only a shortcut: another instance's write is not overwritten
+ok 14 - what an instance remembers is only a shortcut: another instance's write is not overwritten
+  ---
+  duration_ms: 4.638658
+  type: 'test'
+  ...
+# Subtest: another instance asked to change an entry the first just added is not told it is a clash
+ok 15 - another instance asked to change an entry the first just added is not told it is a clash
+  ---
+  duration_ms: 2.334659
+  type: 'test'
+  ...
+# Subtest: quick notes saved through another instance, while the store lags, are not refused as a clash
+ok 16 - quick notes saved through another instance, while the store lags, are not refused as a clash
+  ---
+  duration_ms: 1.886387
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 156.717666

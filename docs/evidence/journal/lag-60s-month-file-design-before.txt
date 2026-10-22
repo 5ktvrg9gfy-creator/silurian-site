@@ -1,0 +1,170 @@
+TAP version 13
+# Subtest: an add straight after an add keeps both, though the store still shows the file as it was
+ok 1 - an add straight after an add keeps both, though the store still shows the file as it was
+  ---
+  duration_ms: 37.761553
+  type: 'test'
+  ...
+# Subtest: a run of adds, each straight after the last, loses none
+ok 2 - a run of adds, each straight after the last, loses none
+  ---
+  duration_ms: 6.661186
+  type: 'test'
+  ...
+# Subtest: a change to an entry straight after it was added is not refused as a clash
+ok 3 - a change to an entry straight after it was added is not refused as a clash
+  ---
+  duration_ms: 3.86799
+  type: 'test'
+  ...
+# Subtest: a move straight after the add makes exactly one copy
+ok 4 - a move straight after the add makes exactly one copy
+  ---
+  duration_ms: 2.389436
+  type: 'test'
+  ...
+# Subtest: the same move sent again after the answer was lost is done once
+ok 5 - the same move sent again after the answer was lost is done once
+  ---
+  duration_ms: 3.835426
+  type: 'test'
+  ...
+# Subtest: Bring forward of several, sent twice, makes one copy of each
+ok 6 - Bring forward of several, sent twice, makes one copy of each
+  ---
+  duration_ms: 5.323878
+  type: 'test'
+  ...
+# Subtest: a move that crosses into another month, sent twice, makes one copy
+ok 7 - a move that crosses into another month, sent twice, makes one copy
+  ---
+  duration_ms: 2.06488
+  type: 'test'
+  ...
+# Subtest: a calendar line saved twice in a row is not refused as a clash
+ok 8 - a calendar line saved twice in a row is not refused as a clash
+  ---
+  duration_ms: 1.772537
+  type: 'test'
+  ...
+# Subtest: quick notes saved twice in a row are not refused as a clash
+ok 9 - quick notes saved twice in a row are not refused as a clash
+  ---
+  duration_ms: 2.962966
+  type: 'test'
+  ...
+# Subtest: a read during the lag is old, and says so by its revision, so a page can tell
+ok 10 - a read during the lag is old, and says so by its revision, so a page can tell
+  ---
+  duration_ms: 3.764097
+  type: 'test'
+  ...
+# Subtest: a change refused for good says so and writes nothing
+ok 11 - a change refused for good says so and writes nothing
+  ---
+  duration_ms: 1.560969
+  type: 'test'
+  ...
+# Subtest: another instance with nothing remembered waits for the store to catch up, and loses nothing
+not ok 12 - another instance with nothing remembered waits for the store to catch up, and loses nothing
+  ---
+  duration_ms: 2.83584
+  type: 'test'
+  location: '/tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:164:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:172:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: an instance that remembers what it wrote does not wait for a lagging store
+ok 13 - an instance that remembers what it wrote does not wait for a lagging store
+  ---
+  duration_ms: 2.375658
+  type: 'test'
+  ...
+# Subtest: what an instance remembers is only a shortcut: another instance's write is not overwritten
+not ok 14 - what an instance remembers is only a shortcut: another instance's write is not overwritten
+  ---
+  duration_ms: 3.787077
+  type: 'test'
+  location: '/tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:188:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:197:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: another instance asked to change an entry the first just added is not told it is a clash
+not ok 15 - another instance asked to change an entry the first just added is not told it is a clash
+  ---
+  duration_ms: 1.451557
+  type: 'test'
+  location: '/tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:201:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the page holds revision 1 of the month, so a file older than that is a lagging read, not a clash
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:208:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: quick notes saved through another instance, while the store lags, are not refused as a clash
+not ok 16 - quick notes saved through another instance, while the store lags, are not refused as a clash
+  ---
+  duration_ms: 1.409391
+  type: 'test'
+  location: '/tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:212:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the page's base is the first save, so a read older than it is a lagging read
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/old3e5/notes-tests/journal-stale.test.js:219:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 12
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 175.979543
