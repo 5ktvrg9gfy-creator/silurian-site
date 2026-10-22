@@ -328,10 +328,17 @@ test("a damaged month file is never read as empty and never written over", async
 test("the journal has no scheduled work: no cron in vercel.json and no timer in the API", () => {
   const config = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
   assert.equal(config.crons, undefined);
+  let read = 0;
   for (const file of ["api/_lib/journal-api.js", "api/_lib/journal-store.js", "api/_lib/journal-live.js", "api/journal.js"]) {
-    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-    assert.ok(!/setTimeout|setInterval|Date\.now|new Date\(\)/.test(source.replace(/now\(\)/g, "")) || /now = \(\) => Date\.now\(\)/.test(source), file);
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1")
+      // The one default clock, which the signed-in check reads, is the only mention allowed.
+      .replace("now = () => Date.now()", "");
+    read += 1;
+    assert.ok(!/setTimeout|setInterval|setImmediate|queueMicrotask|Date\.now|new Date\(\)|process\.on\(/.test(source), `${file} has a timer or reads the time`);
   }
+  assert.equal(read, 4);
 });
 
 test("the journal API's only reading of the clock is the signed-in check and the quick notes stamp", () => {

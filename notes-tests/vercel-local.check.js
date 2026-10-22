@@ -37,6 +37,14 @@ const PUBLIC_FILES = [
   "forecast-risk.html",
   "forecastability.html",
   "index.html",
+  "journal/apple-touch-icon.png",
+  "journal/core.js",
+  "journal/icon-192.png",
+  "journal/icon-32.png",
+  "journal/icon-512-maskable.png",
+  "journal/icon-512.png",
+  "journal/index.html",
+  "journal/manifest.webmanifest",
   "logo-stone.svg",
   "notes/index.html",
   "privacy.html",
@@ -78,7 +86,7 @@ test("vercel build with the output directory set to public deploys the api funct
   assert.deepEqual(filesUnder(join(output, "static")), PUBLIC_FILES, "the deployed static files are exactly the allowlist");
 
   const functions = readdirSync(join(output, "functions", "api")).sort();
-  assert.deepEqual(functions, ["labels.func", "login.func", "note.func", "notes.func", "session.func"], "the five routes are deployed, and the library folder is not a route");
+  assert.deepEqual(functions, ["journal.func", "labels.func", "login.func", "note.func", "notes.func", "session.func"], "the six routes are deployed, and the library folder is not a route");
   for (const name of functions) {
     const config = JSON.parse(readFileSync(join(output, "functions", "api", name, ".vc-config.json"), "utf8"));
     assert.match(config.runtime, /^nodejs\d+\.x$/);
@@ -88,7 +96,9 @@ test("vercel build with the output directory set to public deploys the api funct
   const config = JSON.parse(readFileSync(join(output, "config.json"), "utf8"));
   const rewrite = config.routes.find((r) => r.dest === "/notes/index.html");
   assert.equal(rewrite && rewrite.src, "^/notes$");
-  const catchAll = config.routes.filter((r) => r.dest && !r.src.startsWith("^/notes") && !r.src.startsWith("^/api") && !r.handle);
+  const journalRewrite = config.routes.find((r) => r.dest === "/journal/index.html");
+  assert.equal(journalRewrite && journalRewrite.src, "^/journal$");
+  const catchAll = config.routes.filter((r) => r.dest && !r.src.startsWith("^/notes") && !r.src.startsWith("^/journal") && !r.src.startsWith("^/api") && !r.handle);
   assert.deepEqual(catchAll.map((r) => r.dest), ["/404.html"], "nothing else is routed anywhere but the 404 page");
 });
 
@@ -131,7 +141,8 @@ test("Vercel's own Node wrapper runs the named method exports of every route", {
     const session = await startRoute(devServer, "api/session.js", password);
     const note = await startRoute(devServer, "api/note.js", password);
     const notes = await startRoute(devServer, "api/notes.js", password);
-    running.push(login, session, note, notes);
+    const journal = await startRoute(devServer, "api/journal.js", password);
+    running.push(login, session, note, notes, journal);
 
     // Every exported method answers through the handler, not a default 404 or 405.
     const id = "a".repeat(32);
@@ -148,6 +159,12 @@ test("Vercel's own Node wrapper runs the named method exports of every route", {
       const response = await fetch(route.url + path, { method, body: method === "GET" || method === "DELETE" ? undefined : "x" });
       assert.equal(response.status, 401, `${method} ${route.url.split(":").pop()}`);
       assert.deepEqual(await response.json(), { error: "Sign in to see your notes." });
+    }
+    // The journal route answers its three methods through Vercel's wrapper, behind the same gate.
+    for (const [method, path] of [["GET", "/?view=home&today=2026-10-22"], ["POST", "/"], ["PUT", "/?part=quick"]]) {
+      const response = await fetch(journal.url + path, { method, body: method === "GET" ? undefined : "x" });
+      assert.equal(response.status, 401, `journal ${method}`);
+      assert.deepEqual(await response.json(), { error: "Sign in to see your journal." });
     }
 
     // Sign in over real HTTP, then use the cookie, with no storage involved.

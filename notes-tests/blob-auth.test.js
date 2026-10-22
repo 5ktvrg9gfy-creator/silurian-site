@@ -25,6 +25,8 @@ import { fileURLToPath } from "node:url";
 import { MockAgent, getGlobalDispatcher, setGlobalDispatcher } from "undici";
 import * as blob from "@vercel/blob";
 import { createBlobStore } from "../api/_lib/store.js";
+import { createJournalStore } from "../api/_lib/journal-store.js";
+import { emptyMonth } from "../journal/core.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 // Lowercase, because the private read goes to <store id>.private.blob.vercel-storage.com
@@ -211,6 +213,35 @@ test("the adapter works with only what Vercel provides, and every request carrie
     if (request.origin === "https://vercel.com") {
       assert.equal(request.headers["x-vercel-blob-store-id"], STORE_ID, `${request.method} ${request.path} names the store`);
     }
+  }
+});
+
+test("the journal adapter reaches the store the same way, creates without overwriting, and writes against the version it read", async () => {
+  const store = createJournalStore(blob);
+  const before = requests.length;
+  assert.equal(await store.writeMonth("2026-10", emptyMonth(), null), true);
+  const read = await store.readMonth("2026-10");
+  assert.equal(read.exists, true);
+  assert.equal(await store.writeMonth("2026-10", { ...emptyMonth(), rev: 1 }, read.tag), true);
+  assert.deepEqual(await store.months(), ["2026-10"]);
+  const mine = requests.slice(before);
+
+  const puts = mine.filter((r) => r.method === "PUT" && r.origin === "https://vercel.com");
+  assert.equal(puts.length, 2, "two writes were made");
+  for (const put of puts) {
+    assert.equal(new URL(put.path, "https://vercel.com").searchParams.get("pathname"), "journal/month/2026-10.json");
+    assert.equal(header(put, "x-vercel-blob-access"), "private");
+    assert.equal(header(put, "x-add-random-suffix"), "0");
+  }
+  assert.equal(header(puts[0], "x-allow-overwrite"), "0", "a first write cannot replace a file");
+  assert.equal(header(puts[0], "x-if-match"), undefined);
+  assert.equal(header(puts[1], "x-if-match"), read.tag, "a later write names the version that was read");
+  assert.equal(header(puts[1], "x-allow-overwrite"), "1");
+  assert.ok(requests.slice(before).some((r) => r.method === "GET" && /[?&]prefix=journal%2Fmonth%2F|[?&]prefix=journal\/month\//.test(r.path)), "months are listed under journal/month/ only");
+
+  for (const request of mine) {
+    const auth = request.headers.authorization || request.headers.Authorization;
+    assert.equal(auth, `Bearer ${IDENTITY_TOKEN}`, `${request.method} ${request.path} authenticates with the identity token`);
   }
 });
 

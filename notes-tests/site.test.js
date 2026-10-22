@@ -34,7 +34,7 @@ function existingUrls() {
 
 const sourceMatches = (source, path) => new RegExp(`^${source}$`).test(path);
 
-test("vercel.json only touches /notes", () => {
+test("vercel.json only touches /notes and /journal", () => {
   assert.deepEqual(
     Object.keys(config).sort(),
     ["$schema", "buildCommand", "headers", "outputDirectory", "regions", "rewrites"],
@@ -42,9 +42,14 @@ test("vercel.json only touches /notes", () => {
   );
   assert.equal(config.outputDirectory, "public", "only the allowlisted folder is served");
   const sources = [...config.rewrites.map((r) => r.source), ...config.headers.map((h) => h.source)];
-  assert.ok(sources.length >= 3, "the rules were read");
-  for (const source of sources) assert.match(source, /^\/notes(\/\(\.\*\))?$/, `${source} is a /notes rule`);
-  assert.deepEqual(config.rewrites, [{ source: "/notes", destination: "/notes/index.html" }]);
+  assert.ok(sources.length >= 6, "the rules were read");
+  for (const source of sources) assert.match(source, /^\/(notes|journal)(\/\(\.\*\))?$/, `${source} is a /notes or /journal rule`);
+  assert.ok(sources.some((s) => s.startsWith("/journal")), "the journal rules were read");
+  assert.deepEqual(config.rewrites, [
+    { source: "/notes", destination: "/notes/index.html" },
+    { source: "/journal", destination: "/journal/index.html" },
+  ]);
+  assert.equal(config.crons, undefined, "no scheduled work: nothing moves by itself");
 });
 
 // The notes functions are the only functions this project has, so the region
@@ -105,9 +110,9 @@ test("the page loads no analytics and nothing from outside the site", () => {
   assert.ok(html.includes('href="/tokens.css"'), "styled from the site's tokens");
 });
 
-test("the API folder holds exactly the notes and labels routes, and the library is not a route", () => {
+test("the API folder holds exactly the notes, labels and journal routes, and the library is not a route", () => {
   const entries = readdirSync(join(ROOT, "api")).sort();
-  assert.deepEqual(entries, ["_lib", "labels.js", "login.js", "note.js", "notes.js", "session.js"]);
+  assert.deepEqual(entries, ["_lib", "journal.js", "labels.js", "login.js", "note.js", "notes.js", "session.js"]);
   for (const name of readdirSync(join(ROOT, "api", "_lib"))) {
     assert.ok(statSync(join(ROOT, "api", "_lib", name)).isFile());
   }
@@ -131,4 +136,64 @@ test("the page takes its type sizes from its own variables and has no dash", () 
   assert.ok(sizes.length >= 8, `${sizes.length} font-size declarations read`);
   for (const size of sizes) assert.match(size, /^(?:var\(--notes-size-(?:12|13|14|15|18|30)\))$/, `font-size ${size}`);
   assert.ok(!/[\u2013\u2014]/.test(html), "no em or en dash in the page");
+});
+
+// ---------- the journal page, served beside notes ----------
+
+test("the journal page is reached by /journal and /journal/, and by nothing that already exists", () => {
+  assert.ok(existsSync(join(ROOT, "journal", "index.html")));
+  assert.ok(sourceMatches("/journal", "/journal"));
+  assert.ok(sourceMatches("/journal/(.*)", "/journal/"));
+  assert.ok(!existsSync(join(ROOT, "journal.html")), "no root page, which the marketing page scans would pick up");
+});
+
+test("the journal page carries noindex and nofollow as a tag, and the title and install tags the brief names", () => {
+  const html = read("journal/index.html");
+  assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
+  assert.match(html, /<title>Journal<\/title>/);
+  assert.match(html, /<link rel="manifest" href="\/journal\/manifest\.webmanifest">/);
+  assert.match(html, /<meta name="theme-color" content="#faf8f5" media="\(prefers-color-scheme: light\)">/);
+  assert.match(html, /<meta name="theme-color" content="#262422" media="\(prefers-color-scheme: dark\)">/);
+  assert.match(html, /<meta name="apple-mobile-web-app-capable" content="yes">/);
+  assert.match(html, /<meta name="apple-mobile-web-app-title" content="Journal">/);
+});
+
+test("nothing on the marketing site links to /journal, and there is no sitemap to list it", () => {
+  for (const file of [...EXISTING_PAGES, "tokens.css", "logo-stone.svg", "forecast-app/static/index.html"]) {
+    const text = read(file);
+    assert.ok(!/["'(=]\s*\/?journal(\/|["')#?\s>]|\.html)/i.test(text), `${file} links to the journal`);
+  }
+});
+
+test("the journal page loads no analytics and nothing from outside the site, and its script comes from the site", () => {
+  const html = read("journal/index.html");
+  assert.ok(!html.includes("_vercel"), "no Vercel analytics script");
+  assert.ok(!/\b(?:src|href)=["']https?:/i.test(html), "no external src or href");
+  assert.ok(!/\bfetch\(\s*["']https?:/i.test(html));
+  assert.ok(!/\bimport\s*\(/.test(html), "no dynamic import");
+  const imports = [...html.matchAll(/^\s*import\b[^;]*from\s+"([^"]+)"/gm)].map((m) => m[1]);
+  assert.deepEqual(imports, ["/journal/core.js"], "the one rules file, served with the page");
+  assert.ok(html.includes('href="/tokens.css"'), "the Archivo font face");
+});
+
+test("the journal page takes its type sizes from the notes variables and has no dash", () => {
+  const html = read("journal/index.html");
+  const sizes = [...html.matchAll(/font-size:\s*([^;]+);/g)].map((m) => m[1].trim());
+  assert.ok(sizes.length >= 8, `${sizes.length} font-size declarations read`);
+  for (const size of sizes) assert.match(size, /^(?:var\(--notes-size-(?:12|13|14|15|18|30)\))$/, `font-size ${size}`);
+  for (const file of ["journal/index.html", "journal/core.js", "journal/manifest.webmanifest", "api/_lib/journal-api.js", "api/_lib/journal-store.js"]) {
+    assert.ok(!/[\u2013\u2014]/.test(read(file)), `no em or en dash in ${file}`);
+  }
+});
+
+test("the manifest names the app, stays inside its scope and lists real icons", () => {
+  const manifest = JSON.parse(read("journal/manifest.webmanifest"));
+  assert.equal(manifest.name, "Journal");
+  assert.equal(manifest.short_name, "Journal");
+  assert.equal(manifest.display, "standalone");
+  assert.ok(manifest.start_url.startsWith(manifest.scope), "a start address outside the scope fails the install test");
+  assert.equal(manifest.theme_color, "#faf8f5");
+  assert.equal(manifest.background_color, "#faf8f5");
+  for (const icon of manifest.icons) assert.ok(existsSync(join(ROOT, icon.src.slice(1))), `${icon.src} exists`);
+  assert.ok(manifest.icons.some((i) => i.purpose === "maskable"));
 });

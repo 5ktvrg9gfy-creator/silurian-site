@@ -38,6 +38,14 @@ PUBLIC_FILES = frozenset(
         "assets/fonts/OFL.txt",
         "assets/hero-stone.svg",
         "notes/index.html",
+        "journal/index.html",
+        "journal/core.js",
+        "journal/manifest.webmanifest",
+        "journal/icon-32.png",
+        "journal/icon-192.png",
+        "journal/icon-512.png",
+        "journal/icon-512-maskable.png",
+        "journal/apple-touch-icon.png",
     }
 )
 
@@ -87,9 +95,9 @@ class MarketingDeployAllowlist(unittest.TestCase):
         self.assertEqual(config.get("outputDirectory"), "public")
         for key in ("builds", "routes", "redirects", "cleanUrls", "trailingSlash"):
             self.assertNotIn(key, config, f"vercel.json sets {key}, which can change what is served")
-        # The notes page is the one path with rules of its own, and nothing else is.
+        # The notes page and the journal are the only paths with rules of their own.
         for rule in (*config.get("rewrites", []), *config.get("headers", [])):
-            self.assertRegex(rule["source"], r"^/notes(/\(\.\*\))?$", f"{rule['source']} is not a /notes rule")
+            self.assertRegex(rule["source"], r"^/(notes|journal)(/\(\.\*\))?$", f"{rule['source']} is not a /notes or /journal rule")
         gitignore = (REPOSITORY / ".gitignore").read_text(encoding="utf-8").splitlines()
         self.assertIn("public/", gitignore, "the build output must never be committed")
         self.assertNotIn("public", {name.split("/")[0] for name in tracked_files()})
