@@ -125,3 +125,64 @@ On the branch Preview of the `silurian-site` project, at `/journal`, on the Wind
 12. **The Vercel checks.** The `silurian-site` project should show the Preview deployed with six functions. Assay's project is untouched by this change.
 
 After the merge, the same steps on Production, and record the merge commit in `PROJECT_HANDOFF.md`.
+
+---
+
+# Update, 22 October 2026: what the Preview found, and the fix
+
+The product owner's Preview checks passed, including installing it in Edge and the two device conflict message. Two problems, both fixed here. **Not merged.**
+
+## 1. Entries disappeared, and one move showed twice
+
+**Cause.** The real Blob store returned reads older than the writes just made. The page drew those reads over newer data (a refresh on focus, on the 45 second timer or after a save), and a change that reached an old file was applied on an old base. The local stand-in returns a write at once, so no test or browser run could see it.
+
+**Fix, in four parts, each held by a test.**
+
+1. **A read never wins over a newer save, on the page.** A month file's `rev` only goes up. The page replaces its copy of a month only with one that is not older (`core.isNewer`) and drops any refresh that began before one of its own saves finished. Quick notes do the same by their time (`core.laterStamp`).
+2. **A change never lands on an old file, on the server.** Every change says which revision of each month the page holds. If the store shows an older file the server waits (a tenth of a second, then longer, about six seconds in all) and tries again. An instance remembers what it last wrote for a minute and continues from the etag the write gave back, so a run of changes through one instance does not wait; this is only a shortcut, because a write still goes against an etag, and if another instance has written since the write is refused, the shortcut is dropped and the change tried again.
+3. **A single move makes exactly one copy.** A repeat of a change that already happened (the same copy id and target, or the revision one past the one it started from) is recognised as done, for a move, a drop, an edit, a tick, a delete, an undo and a calendar line. The page sends a change it could not send again as the very same change, three more times, 1.5, 3 and 5 seconds apart, before it gives up and says nothing was changed. A repeat after a lost answer therefore never makes a second copy, whether or not a refresh landed in between.
+4. **A first write that fails oddly is a refusal if the file is there now.** If the package words a create-versus-exists refusal differently from how the code expects, the code now checks whether the file exists before treating it as an error.
+
+**Tests, and each was shown to fail on the previous commit `a215b15`.**
+
+* `notes-tests/journal-stale.test.js`, **16 tests** against a store whose reads return the file as it was five seconds ago: an add straight after an add; a run of five adds; a change straight after the add; a move straight after the add; the same move sent twice after the answer was lost; Bring forward of three sent twice; a move into another month sent twice; a calendar line twice in a row; quick notes twice in a row; a lagging read that says so by its revision; a change refused for good that waits, then gives up inside eight seconds; another instance that remembers nothing; an instance that remembers and does not wait; what an instance remembers not overwriting another instance's write; an edit through another instance straight after an add; quick notes through another instance. **Run on `a215b15` with the new test files copied in: 14 failed of 14** (the file was 14 tests at that point, two were added later for cross-instance cases that the first version of the fix left to a shortcut). Output: `docs/evidence/journal/lag-tests-before-the-fix.txt`; after: `lag-tests-after-the-fix.txt`, 16 of 16.
+* Three more tests in `journal-core.test.js`: a repeat of every kind of change changes nothing, a repeated move whose copy went missing makes the copy again and only the copy, and `isNewer` and `laterStamp`.
+* `docs/evidence/journal/browser-check-journal-lag.mjs`, **13 checks**, about two minutes, real time, a store that lags five seconds, a cold server instance for every request, the window asking again every 700ms, five adds, an edit straight after the last, one move and Bring all forward with the first answer to each move lost, then a second part in which every read answers with the journal as it was before the window's last saves. **On `a215b15` the first part fails at once** (an entry shown is missing from a later look, and the move step cannot find its entry; `lag-browser-before-the-fix.txt`), and **with the old page on the new server the second part fails both its checks** (`lag-browser-older-reads-before-the-fix.txt`, 10 of 12). After: **13 of 13** (`lag-browser-after-the-fix.txt`).
+* The static page tests `test_a_refresh_never_replaces_data_newer_than_the_last_save_on_this_device` and `test_a_change_that_could_not_be_sent_is_sent_again_as_the_very_same_change`.
+
+**What this does not prove.** That the real store behaves like the stand-in. The stand-in returns reads from five seconds ago after a write and honours a write against an etag. If the real store is slower than six seconds, a burst of changes can fail with the "could not save" message after the retries, with nothing lost or doubled. The Preview steps below are the proof.
+
+**A finding about the first version of the fix, kept on the record.** The first version made every change wait for the previous write to become visible, so five adds took thirty seconds on a store that lags five seconds. The page showed them at once, so it was not visible, but the saves were slow and a burst would have hit the limit. The remembered-write shortcut removed the wait for the common case (one instance) and left the wait for a cold instance.
+
+## Does notes have the same exposure? Yes, in two ways. Not changed in this branch.
+
+* **A list read is drawn over memory with no version comparison** (`notes/index.html`, the list answer replaces `mem.all` when no change is in flight). A read that began before a save and ends after, or a lagging read, can put an older list on screen. It is a display defect and not a loss: the next read corrects it, and the note itself is not changed.
+* **A note save checks the version, then writes, as two steps with nothing between them** (`api/_lib/notes-api.js`, the `PUT` handler: `store.meta(id)`, a comparison with `X-Base-Updated`, then an unconditional `store.write`). If a read of the note's metadata returns an older version that equals the one the page started from, while another device has saved a newer one, the check passes and the newer save is overwritten. The same happens with two saves close enough together to interleave, with no lag at all. This is a possible lost update, and it is the more serious of the two. The fix is the one used here: a write conditional on the etag it read, and a version that only goes up. It would be its own branch and its own brief.
+
+## 2. Ruling: moved entries are hidden behind a quiet line
+
+Recorded as a product owner ruling dated 22 October 2026 in `CLAUDE.md` section 9e and in `docs/journal-open-questions.md`. A moved or scheduled entry stays in storage with its arrow and destination and is not drawn in the list. A quiet line at the bottom of each panel (Today, Tomorrow, Migrate, and the day log in Month), "N moved", shown only when N is 1 or more, opens and closes them, greyed with their arrows as before. Closed by default. A dropped task stays in the list. Month's count chip counts what the log shows. Held by `test_moved_entries_are_hidden_behind_a_quiet_line_that_opens_and_closes_them` and by checks in the browser run; the screenshots `week-1280-moved-open-*` and `week-375-moved-open-*` show it open.
+
+## What ran for this update
+
+* `npm test`: **185 before this update, 204 after, all pass.**
+* `forecast-app` suite: **385 before, 388 after, all pass.**
+* `browser-check-journal.mjs`: **213 of 213** (208 before; the moved line replaced several rows with checks of the line, and a clash check had to change, below).
+* `browser-check-journal-lag.mjs`: 13 of 13.
+* `npm run test:vercel`: ran, passes.
+* Deliberate breakages: **67 of 67 caught** (`breakages.py`, which now also runs `journal-stale.test.js`), **7 of 7 caught in the browser** (`breakages-browser.py`). Two of the browser breaks were not caught on the first try, because the first lag run answered every request from one instance and so hid them; making the server cold and losing the first answer to each move made both visible, and both are now caught.
+* Not run: the notes browser checks again (notes is not touched by this update), the Preview, a real Blob store, Edge, Safari, a real iPad.
+
+**An existing check changed, and why.** The two device check had one device tick an entry from an old copy and expected a clash. The device that had already ticked made the same change, which the fixed server now treats as already done (Q17), so the check now makes the other device edit the text instead, which is still a clash.
+
+## Preview steps that retest adding, moving and Bring forward over at least a minute
+
+On the branch Preview, at `/journal`, on the PC. Keep the window open and in front for the whole minute.
+
+1. **Adding.** In Today add five tasks one after another, about two seconds apart, with nothing else open. Watch for a full minute. **Pass:** all five stay, none disappears at any moment, none doubles. Then reload: all five are there.
+2. **Straight after adding.** Add a task and, within a second, click its text and add a word, then Enter. **Pass:** no "This changed on another device" message, and the new text is kept after a reload.
+3. **Moving.** Move one of the five to Tomorrow with More, Tomorrow. **Pass:** it leaves the list at once, the bottom of Today shows "1 moved" (closed), and Tomorrow has exactly one copy. Press "1 moved": the original shows greyed with a right arrow and "to Tomorrow". Keep watching for a minute: still one copy in Tomorrow, still "1 moved". Reload: the same.
+4. **Move again, then the same on Migrate.** Move another with Migrate and one with Date to the 28th (a left arrow). **Pass:** "3 moved" in Today, one copy of each in its place, no doubles after a minute and a reload.
+5. **Bring forward.** Open an earlier date in Month (the 20th), add two tasks, reload. The strip shows "From Tuesday 20 October, 2 open tasks". Press Bring forward on one, wait ten seconds, then Bring all forward on the other. **Pass:** each task has exactly one copy at the bottom of Today. Wait a minute with the window in front: no copy doubles, none disappears. Reload: the same.
+6. **Two devices, a minute.** Add an entry on the iPad while the PC window stays in front. **Pass:** it appears on the PC within about a minute, and nothing the PC showed goes missing while it waits.
+7. **If anything disappears or doubles.** Do not retry. Note the time, what you did and what you saw, and tell me. A change that cannot be saved after the page's retries says "Could not save that change. Nothing was changed. Try again." and the entry goes back, which is correct and is the thing to report if it happens often.

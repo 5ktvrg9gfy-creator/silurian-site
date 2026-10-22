@@ -412,3 +412,73 @@ test("the page and the server predict the same revisions: the same change twice 
   assert.deepEqual(make(), make());
   assert.equal(make()[OCT].days[today].entries[0].rev, 4, "three changes after the add: the revision the page will predict");
 });
+
+test("a change sent again after its answer was lost has already happened, and changes nothing a second time", () => {
+  const f = files(OCT, NOV);
+  const list = core.dayList(today);
+  const id = add(f, list, "Once only");
+  const ops = [
+    { op: "edit", list, id, rev: 1, text: "Edited once" },
+    { op: "state", list, id, rev: 2, state: "done" },
+  ];
+  for (const op of ops) {
+    assert.notDeepEqual(core.applyOp(f, op).changed, []);
+    const after = snapshot(f);
+    const repeat = core.applyOp(f, op);
+    assert.equal(repeat.error, undefined, op.op + " again");
+    assert.deepEqual(repeat.changed, [], op.op + " again writes nothing");
+    assert.equal(snapshot(f), after, op.op + " again changes nothing");
+  }
+  // a delete of what is already gone is done
+  core.applyOp(f, { op: "remove", list, id, rev: 3 });
+  assert.deepEqual(core.applyOp(f, { op: "remove", list, id, rev: 3 }).changed, []);
+
+  const a = add(f, list, "Drop me");
+  const drop = { op: "drop", list, items: [{ id: a, rev: 1 }] };
+  core.applyOp(f, drop);
+  assert.deepEqual(core.applyOp(f, drop).changed, [], "drop again");
+  assert.equal(entry(f, list, a).rev, 2);
+
+  const b = add(f, list, "Move me");
+  const move = { op: "move", from: list, to: core.migrateList(NOV), how: "migrated", items: [{ id: b, rev: 1, copyId: newId() }] };
+  core.applyOp(f, move);
+  const moved = snapshot(f);
+  assert.deepEqual(core.applyOp(f, move).changed, [], "move again");
+  assert.equal(snapshot(f), moved, "one copy, one mark");
+  assert.equal(f[NOV].migrate.length, 1);
+
+  const undo = { op: "undo", list, id: b, rev: 2, toList: core.migrateList(NOV) };
+  core.applyOp(f, undo);
+  assert.deepEqual(core.applyOp(f, undo).changed, [], "undo again");
+
+  const line = { op: "line", date: today, rev: 0, text: "Dentist" };
+  core.applyOp(f, line);
+  assert.deepEqual(core.applyOp(f, line).changed, [], "a line saved again");
+});
+
+test("a repeated move whose copy went missing makes the copy again, and only the copy", () => {
+  const f = files(OCT);
+  const list = core.dayList(today);
+  const id = add(f, list, "Lost copy");
+  const copyId = newId();
+  const move = { op: "move", from: list, to: core.dayList("2026-10-23"), how: "migrated", items: [{ id, rev: 1, copyId }] };
+  core.applyOp(f, move);
+  f[OCT].days["2026-10-23"].entries.length = 0;
+  const repair = core.applyOp(f, move);
+  assert.equal(repair.error, undefined);
+  assert.equal(core.entriesOf(f, core.dayList("2026-10-23")).length, 1);
+  assert.equal(entry(f, list, id).rev, 2, "the original is not marked a second time");
+});
+
+test("a store showing an older file never replaces a newer one, and equal is the same file", () => {
+  const newer = { ...core.emptyMonth(), rev: 5 };
+  assert.equal(core.isNewer(newer, { ...core.emptyMonth(), rev: 4 }), false);
+  assert.equal(core.isNewer(newer, { ...core.emptyMonth(), rev: 5 }), true);
+  assert.equal(core.isNewer(newer, { ...core.emptyMonth(), rev: 6 }), true);
+  assert.equal(core.isNewer(undefined, { ...core.emptyMonth(), rev: 1 }), true);
+  assert.equal(core.laterStamp("2026-10-22T09:00:01.000Z", "2026-10-22T09:00:00.000Z"), true);
+  assert.equal(core.laterStamp("2026-10-22T09:00:00.000Z", "2026-10-22T09:00:01.000Z"), false);
+  assert.equal(core.laterStamp("2026-10-22T09:00:00.000Z", "none"), true);
+  assert.equal(core.laterStamp("none", "2026-10-22T09:00:00.000Z"), false);
+  assert.equal(core.laterStamp("none", "none"), false);
+});

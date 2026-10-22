@@ -59,11 +59,74 @@ export function journalMemoryStore() {
   };
 }
 
-export function buildJournal({ password = freshSecret("pw"), store = journalMemoryStore(), now = NOW, env } = {}) {
+// A store whose reads lag behind its writes, as an eventually consistent store
+// can: for lagMs after a write, a read returns what the file was lagMs ago (or
+// no file at all). Writes are strongly consistent, as a write against an etag is:
+// one made against an old version is refused. `now` says what time it is, so a
+// test can move the clock with a fake sleep and a browser run can use the real one.
+const assert_ok = (v) => { if (!v) throw new Error("preload refused"); };
+
+export function staleJournalStore({ lagMs = 5000, now = () => Date.now() } = {}) {
+  const inner = journalMemoryStore();
+  const timeline = new Map();   // month -> [{ at, json, tag }] in write order
+  const quickTimeline = [];
+  const seen = (list) => {
+    const visible = list.filter((v) => v.at <= now() - lagMs);
+    return visible.length ? visible[visible.length - 1] : null;
+  };
+  const store = {
+    ...inner,
+    inner,
+    lagMs,
+    async readMonth(month) {
+      const view = seen(timeline.get(month) || []);
+      if (!view) return { file: emptyMonth(), tag: null };
+      return { file: normaliseMonth(JSON.parse(view.json)), tag: view.tag, exists: true };
+    },
+    async writeMonth(month, file, tag) {
+      const ok = await inner.writeMonth(month, file, tag);
+      if (ok) {
+        const held = inner.files.get(month);
+        if (!timeline.has(month)) timeline.set(month, []);
+        timeline.get(month).push({ at: now(), json: held.json, tag: held.tag });
+        // Like the real package, a write answers with the etag it made.
+        return held.tag;
+      }
+      return ok;
+    },
+    // Puts a file in the store as if it had been there long enough to be read.
+    async preload(month, file) {
+      const held = inner.files.get(month);
+      assert_ok(await inner.writeMonth(month, file, held ? held.tag : null));
+      const now2 = inner.files.get(month);
+      if (!timeline.has(month)) timeline.set(month, []);
+      timeline.get(month).push({ at: now() - lagMs - 1, json: now2.json, tag: now2.tag });
+    },
+    async readQuick() {
+      const view = seen(quickTimeline);
+      return view ? { text: view.text, updatedAt: view.updatedAt, tag: view.tag } : { text: "", updatedAt: "none", tag: null };
+    },
+    async writeQuick(text, updatedAt, tag) {
+      const ok = await inner.writeQuick(text, updatedAt, tag);
+      if (ok) {
+        quickTimeline.push({ at: now(), text, updatedAt, tag: inner.state.quick.tag });
+        return inner.state.quick.tag;
+      }
+      return ok;
+    },
+  };
+  return store;
+}
+
+export function buildJournal({ password = freshSecret("pw"), store, lagMs, now = NOW, env } = {}) {
   const clock = { now };
+  const held = store ?? (lagMs ? staleJournalStore({ lagMs, now: () => clock.now }) : journalMemoryStore());
   const environment = env ?? (password === null ? {} : { [ENVIRONMENT_VARIABLE]: password });
-  const api = createJournalApi({ store, env: environment, now: () => clock.now });
-  return { api, store, password, clock, cookie: password === null ? undefined : signedInCookie(password) };
+  const sleeps = [];
+  // A fake pause moves the clock instead of waiting, so a lagging store catches up.
+  const sleep = async (ms) => { sleeps.push(ms); clock.now += ms; };
+  const api = createJournalApi({ store: held, env: environment, now: () => clock.now, sleep });
+  return { api, store: held, password, clock, sleeps, env: environment, cookie: password === null ? undefined : signedInCookie(password) };
 }
 
 export function send(handler, { method = "GET", path = "/api/journal", cookie, body, headers = {} } = {}) {

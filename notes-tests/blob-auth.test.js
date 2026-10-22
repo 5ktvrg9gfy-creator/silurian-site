@@ -219,10 +219,11 @@ test("the adapter works with only what Vercel provides, and every request carrie
 test("the journal adapter reaches the store the same way, creates without overwriting, and writes against the version it read", async () => {
   const store = createJournalStore(blob);
   const before = requests.length;
-  assert.equal(await store.writeMonth("2026-10", emptyMonth(), null), true);
+  // A write answers with the etag the package gave it, so the next change can go on from it.
+  assert.equal(await store.writeMonth("2026-10", emptyMonth(), null), '"e"');
   const read = await store.readMonth("2026-10");
   assert.equal(read.exists, true);
-  assert.equal(await store.writeMonth("2026-10", { ...emptyMonth(), rev: 1 }, read.tag), true);
+  assert.equal(await store.writeMonth("2026-10", { ...emptyMonth(), rev: 1 }, read.tag), '"e"');
   assert.deepEqual(await store.months(), ["2026-10"]);
   const mine = requests.slice(before);
 

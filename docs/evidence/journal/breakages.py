@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-NODE = ["node", "--test", "notes-tests/journal-core.test.js", "notes-tests/journal-api.test.js", "notes-tests/site.test.js", "notes-tests/gate.test.js"]
+NODE = ["node", "--test", "notes-tests/journal-core.test.js", "notes-tests/journal-api.test.js", "notes-tests/journal-stale.test.js", "notes-tests/site.test.js", "notes-tests/gate.test.js"]
 PY = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_journal_page.py"]
 PY_ALLOW = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_marketing_deploy_allowlist.py"]
 PY_NOTES = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_notes_page.py"]
@@ -40,7 +40,7 @@ CASES = [
     ("the rules: a move forgets to leave the arrow on the original", "journal/core.js", "        entry.state = op.how;\n", "        entry.state = entry.state;\n", ["node"]),
     ("the rules: an edit stops checking the revision", "journal/core.js", "if (!live || entry.rev !== op.rev ||", "if (!live ||", ["node"]),
     ("the rules: a move lands at the top of the target, not the bottom", "journal/core.js", "        target.push({ id: item.copyId,", "        target.unshift({ id: item.copyId,", ["node"]),
-    ("the rules: a move of several is no longer all or nothing", "journal/core.js", "      if (entries.some(({ entry, item }) => !entry || entry.rev !== item.rev || entry.state !== \"open\")) {", "      if (false) {", ["node"]),
+    ("the rules: a move of several is no longer all or nothing", "journal/core.js", "      if (entries.some((x) => !done(x) && (!x.entry || x.entry.rev !== x.item.rev || x.entry.state !== \"open\"))) {", "      if (false) {", ["node"]),
     ("the rules: Undo takes back a copy that has been ticked", "journal/core.js", "if (!copy || copy.rev !== 1 || copy.state !== \"open\") {", "if (!copy) {", ["node"]),
     ("the rules: the strip offers events and notes", "journal/core.js", "export const isOpenTask = (entry) => entry.type === \"task\" && entry.state === \"open\";", "export const isOpenTask = (entry) => entry.state === \"open\";", ["node"]),
     ("the rules: the strip stops at yesterday and misses Friday", "journal/core.js", "const dates = Object.keys(file.days).filter((d) => d < before).sort().reverse();", "const dates = Object.keys(file.days).filter((d) => d === core_yesterday(before)).sort().reverse();\n  function core_yesterday(d) { return addDays(d, -1); }", ["node"]),
@@ -49,7 +49,7 @@ CASES = [
     ("the API: Quick notes lose the gate", "api/_lib/journal-api.js", "    PUT: guarded(async (request) => {", "    PUT: (async (request) => {", ["node"]),
     ("the API: a 401 answer is no longer no-store", "api/_lib/journal-api.js", "  \"Cache-Control\": \"no-store\",", "  \"Cache-Control\": \"max-age=60\",", ["node"]),
     ("the API: reading writes", "api/_lib/journal-api.js", "        const { files } = await loadMonths(months);\n        return reply(200, { today,", "        const { files, tags } = await loadMonths(months);\n        await store.writeMonth(thisMonth, files[thisMonth], tags[thisMonth]);\n        return reply(200, { today,", ["node"]),
-    ("the API: a write ignores the version it read", "api/_lib/journal-api.js", "await store.writeMonth(month, files[month], tags[month])", "await store.writeMonth(month, files[month], null)", ["node"]),
+    ("the API: a write ignores the version it read", "api/_lib/journal-api.js", "await putMonth(month, files[month], tags[month])", "await putMonth(month, files[month], null)", ["node"]),
     ("the API: a refused move leaves its copies behind", "api/_lib/journal-api.js", "if (op.op === \"move\" && attempt > 0) await takeBackCopies(op);", "", ["node"]),
     ("the API: the quick notes version check is gone", "api/_lib/journal-api.js", "if (current.updatedAt !== base) return fail(409,", "if (false) return fail(409,", ["node"]),
     ("the API: a timer is added", "api/_lib/journal-api.js", "const MAX_TRIES = 6;", "const MAX_TRIES = 6;\nsetInterval(() => {}, 1000).unref();", ["node"]),
@@ -86,6 +86,22 @@ CASES = [
     ("the page: an em dash in a message", "journal/index.html", "\"Entry deleted.\"", "\"Entry deleted &mdash; done.\"", ["page"]),
     ("the page: a wrong theme colour in the title bar tag", "journal/index.html", "<meta name=\"theme-color\" content=\"#262422\" media=\"(prefers-color-scheme: dark)\">", "<meta name=\"theme-color\" content=\"#000000\" media=\"(prefers-color-scheme: dark)\">", ["page"]),
     ("the page: a Bring forward and Drop all", "journal/index.html", "      var all = make(\"button\", \"strip-foot\", \"Bring all forward\");", "      var all = make(\"button\", \"strip-foot\", \"Drop all\");", ["page"]),
+    ("the lag: a read older than the page's copy replaces it", "journal/index.html", "      if (core.isNewer(confirmed[m], months[m])) { confirmed[m] = months[m]; }", "      confirmed[m] = months[m];", ["page"]),
+    ("the lag: a look that began before a save is no longer dropped", "journal/index.html", "      if (gen !== generation || pending.length > 0 || sending || seq !== saveSeq) { return false; }\n      var others", "      if (gen !== generation || pending.length > 0 || sending) { return false; }\n      var others", ["page"]),
+    ("the lag: a change no longer says which revision the page holds", "journal/index.html", "Object.assign({}, item.op, { known: known })", "item.op", ["page"]),
+    ("the lag: a change that could not be sent is not sent again", "journal/index.html", "(answer.status === 0 || answer.status >= 500) && tries < RETRY_MS.length && gen === generation", "false", ["page"]),
+    ("the lag: older quick notes replace newer", "journal/index.html", "    if (!core.laterStamp(fresh.updatedAt, quick.base)) { return; }", "    if (fresh.updatedAt === quick.base) { return; }", ["page"]),
+    ("the lag: a repeat of a move makes a second copy", "journal/core.js", "        entry && entry.state === op.how && entry.to === op.to && entry.toId === item.copyId && entry.rev === item.rev + 1;", "        false;", ["node"]),
+    ("the lag: a repeat of an edit is a clash", "journal/core.js", "((op.op === \"edit\" && entry.text === cleanText(op.text)) ||", "((false) ||", ["node"]),
+    ("the lag: the API applies a change on a file older than the page's", "api/_lib/journal-api.js", "      const behind = months.some((month) => files[month].rev < known[month]);", "      const behind = false;", ["node"]),
+    ("the lag: the API gives up at once instead of waiting", "api/_lib/journal-api.js", "      if (attempt >= WAITS_MS.length) return fail(503, MESSAGES.busy);\n      await sleep(WAITS_MS[attempt]);", "      return fail(503, MESSAGES.busy);", ["node"]),
+    ("the lag: the API forgets what it wrote", "api/_lib/journal-api.js", "    if (typeof written === \"string\") recent.set(month,", "    if (false) recent.set(month,", ["node"]),
+    ("the lag: the API keeps what it wrote after the store has newer", "api/_lib/journal-api.js", "if (now() - kept.at > RECENT_MS || kept.file.rev <= file.rev) recent.delete(month);", "if (now() - kept.at > RECENT_MS) recent.delete(month);", ["node"]),
+    ("the lag: quick notes wait for nothing", "api/_lib/journal-api.js", "        const behind = laterStamp(base, current.updatedAt);", "        const behind = false;", ["node"]),
+    ("the moved line: moved entries show in the list again", "journal/index.html", "    var entries = all.filter(function (e) { return !isMoved(e); });", "    var entries = all;", ["page"]),
+    ("the moved line: it opens by itself", "journal/index.html", "    var open = moved.length > 0 && ui.movedOpen[listKey] === true;", "    var open = moved.length > 0 && ui.movedOpen[listKey] !== false;", ["page"]),
+    ("the moved line: it shows with nothing moved", "journal/index.html", "    host.hidden = moved.length === 0;", "    host.hidden = false;", ["page"]),
+    ("the moved line: the count is worded differently", "journal/index.html", "    toggle.textContent = moved.length + \" moved\";", "    toggle.textContent = \"Moved: \" + moved.length;", ["page"]),
     ("the manifest: the start address leaves the scope", "journal/manifest.webmanifest", "\"start_url\": \"/journal/\"", "\"start_url\": \"/journal\"", ["node", "page"]),
     ("the notes page: the Journal item goes", "notes/index.html", "<a class=\"menu-item\" href=\"/journal/\" id=\"menu-journal\">", "<a class=\"menu-item\" href=\"/journal/\" id=\"menu-jrnl\">", ["notes"]),
 ]

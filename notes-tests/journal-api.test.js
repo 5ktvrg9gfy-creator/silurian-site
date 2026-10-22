@@ -289,7 +289,8 @@ test("a move across months writes the copy first and then the original, and a re
   assert.deepEqual(t.store.writes.slice(before), ["2026-11", "2026-10"]);
   assert.equal((await entryOf(t, from, id)).state, "migrated");
   assert.equal((await entryOf(t, to, copyId)).text, "Carry me");
-  assert.equal((await post(t, op)).status, 409, "the same move again is stale, not a second copy");
+  assert.equal((await post(t, op)).status, 200, "the same move again has already happened: done, not a clash");
+  assert.equal((await post(t, { ...op, items: [{ id, rev: 1, copyId: newId() }] })).status, 409, "a different move of the same entry from the same revision is a clash, not a second copy");
   assert.equal((await (await months(t, "2026-11")).json()).months["2026-11"].migrate.length, 1);
 });
 
@@ -333,19 +334,22 @@ test("the journal has no scheduled work: no cron in vercel.json and no timer in 
     const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/(^|[^:])\/\/.*$/gm, "$1")
-      // The one default clock, which the signed-in check reads, is the only mention allowed.
-      .replace("now = () => Date.now()", "");
+      // The one default clock, which the signed-in check reads, and the one default
+      // pause, which a change uses to wait for a lagging store, are the only mentions.
+      .replace("now = () => Date.now()", "")
+      .replace("sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))", "");
     read += 1;
     assert.ok(!/setTimeout|setInterval|setImmediate|queueMicrotask|Date\.now|new Date\(\)|process\.on\(/.test(source), `${file} has a timer or reads the time`);
   }
   assert.equal(read, 4);
 });
 
-test("the journal API's only reading of the clock is the signed-in check and the quick notes stamp", () => {
+test("the journal API's only reading of the clock is the signed-in check, the quick notes stamp and the age of what it last wrote", () => {
   const source = readFileSync(new URL("../api/_lib/journal-api.js", import.meta.url), "utf8");
-  const uses = source.match(/\bnow\(\)/g) ?? [];
-  assert.equal(uses.length, 3, "the default clock, signedIn() and the quick notes stamp, and nothing that could decide a move");
-  assert.ok(source.includes("now = () => Date.now()"));
+  const lines = source.split("\n").filter((line) => /\bnow\(\)/.test(line) && !line.trim().startsWith("//"));
+  assert.ok(lines.length >= 5, `${lines.length} uses found`);
+  const allowed = [/now = \(\) => Date\.now\(\)/, /requestIsSignedIn\(request, env, now\(\)\)/, /Math\.max\(now\(\)/, /RECENT_MS/, /at: now\(\)/];
+  for (const line of lines) assert.ok(allowed.some((pattern) => pattern.test(line)), `a reading of the clock that decides something: ${line.trim()}`);
   assert.ok(!/\btoday\b[^;]*now\(\)/.test(source));
 });
 

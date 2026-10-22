@@ -120,6 +120,14 @@ export function normaliseMonth(raw) {
 
 export const cloneMonth = (file) => JSON.parse(JSON.stringify(file));
 
+// Versions only go up. A file read from the store may be older than one this
+// device has already seen (a store can show a file as it was a few seconds ago),
+// and an older file must never replace a newer one. Equal is the same file.
+export const isNewer = (current, incoming) => !current || (incoming && incoming.rev >= current.rev);
+
+// Quick notes carry a time as their version; "none" is before any save.
+export const laterStamp = (a, b) => a !== "none" && (b === "none" || a > b);
+
 // Entries of a list, for reading. A day with nothing in it has no entry in the
 // file, so this answers an empty list for it.
 export function entriesOf(files, key) {
@@ -302,6 +310,17 @@ export function applyOp(files, op) {
       const month = parseList(op.list).month;
       const list = listFor(files, op.list);
       const entry = find(list, op.id);
+      // The same change sent again after its answer was lost has already happened.
+      // Deleting what is already gone is done, not a clash.
+      const repeat =
+        (op.op === "remove" && !entry) ||
+        (entry && entry.rev === op.rev + 1 &&
+          ((op.op === "edit" && entry.text === cleanText(op.text)) ||
+           (op.op === "state" && entry.type === "task" && entry.state === op.state)));
+      if (repeat) {
+        dropEmptyDays(files[month]);
+        return { changed: [], created: [] };
+      }
       const live = entry && (entry.state === "open" || entry.state === "done");
       if (!live || entry.rev !== op.rev || (op.op === "state" && entry.type !== "task")) {
         dropEmptyDays(files[month]);
@@ -328,14 +347,17 @@ export function applyOp(files, op) {
       const month = parseList(op.list).month;
       const list = listFor(files, op.list);
       const entries = op.items.map((item) => ({ item, entry: find(list, item.id) }));
-      if (entries.some(({ item, entry }) => !entry || entry.rev !== item.rev || entry.type !== "task" || entry.state !== "open")) {
+      const done = ({ item, entry }) => entry && entry.state === "dropped" && entry.rev === item.rev + 1;
+      if (entries.some((x) => !done(x) && (!x.entry || x.entry.rev !== x.item.rev || x.entry.type !== "task" || x.entry.state !== "open"))) {
         dropEmptyDays(files[month]);
         return stale();
       }
-      for (const { entry } of entries) {
+      const todo = entries.filter((x) => !done(x));
+      for (const { entry } of todo) {
         entry.state = "dropped";
         entry.rev += 1;
       }
+      if (todo.length === 0) return { changed: [], created: [] };
       touch(files[month]);
       return { changed: [month], created: [] };
     }
@@ -347,12 +369,16 @@ export function applyOp(files, op) {
       const target = listFor(files, op.to);
       const clean = () => { dropEmptyDays(files[from.month]); dropEmptyDays(files[to.month]); };
       const entries = op.items.map((item) => ({ item, entry: find(source, item.id) }));
-      if (entries.some(({ entry, item }) => !entry || entry.rev !== item.rev || entry.state !== "open")) {
+      // An item whose move already happened (the same copy id, the same target) is
+      // done: a repeat of a change whose answer was lost makes no second copy.
+      const done = ({ item, entry }) =>
+        entry && entry.state === op.how && entry.to === op.to && entry.toId === item.copyId && entry.rev === item.rev + 1;
+      if (entries.some((x) => !done(x) && (!x.entry || x.entry.rev !== x.item.rev || x.entry.state !== "open"))) {
         clean();
         return stale();
       }
       // A copy that is already there was made by an earlier try of this same
-      // change, so it is kept and not made again.
+      // change, so it is kept and not made again. One that is missing is made.
       const fresh = entries.filter(({ item }) => !find(target, item.copyId));
       if (target.length + fresh.length > MAX_ENTRIES_PER_LIST) {
         clean();
@@ -361,21 +387,28 @@ export function applyOp(files, op) {
       for (const { entry, item } of fresh) {
         target.push({ id: item.copyId, type: entry.type, state: "open", text: entry.text, rev: 1 });
       }
-      for (const { entry, item } of entries) {
+      const todo = entries.filter((x) => !done(x));
+      for (const { entry, item } of todo) {
         entry.state = op.how;
         entry.to = op.to;
         entry.toId = item.copyId;
         entry.rev += 1;
       }
       clean();
-      touch(files[from.month]);
+      const created = op.items.map((i) => i.copyId);
+      if (todo.length === 0 && fresh.length === 0) return { changed: [], created };
       const changed = [];
-      if (fresh.length > 0 && to.month !== from.month) {
+      if (fresh.length > 0) {
         touch(files[to.month]);
-        changed.push(to.month);
+        if (to.month !== from.month) changed.push(to.month);
       }
-      changed.push(from.month);
-      return { changed, created: op.items.map((i) => i.copyId) };
+      if (todo.length > 0) {
+        if (to.month === from.month && fresh.length > 0) { /* one file, touched once above */ } else { touch(files[from.month]); }
+        changed.push(from.month);
+      } else if (to.month === from.month) {
+        changed.push(from.month);
+      }
+      return { changed, created };
     }
 
     case "undo": {
@@ -383,6 +416,11 @@ export function applyOp(files, op) {
       const source = listFor(files, op.list);
       const entry = find(source, op.id);
       const movable = entry && (entry.state === "migrated" || entry.state === "scheduled");
+      // Already undone: a repeat after a lost answer.
+      if (entry && entry.state === "open" && entry.rev === op.rev + 1 && entry.to === undefined) {
+        dropEmptyDays(files[from.month]);
+        return { changed: [], created: [] };
+      }
       if (!entry || entry.rev !== op.rev || !(movable || entry.state === "dropped")) {
         dropEmptyDays(files[from.month]);
         return stale();
@@ -421,8 +459,9 @@ export function applyOp(files, op) {
       const month = monthOf(op.date);
       const file = files[month];
       const day = file.days[op.date] || { line: "", lineRev: 0, entries: [] };
-      if (day.lineRev !== op.rev) return stale();
       const text = cleanText(op.text);
+      if (day.lineRev === op.rev + 1 && day.line === text) return { changed: [], created: [] };
+      if (day.lineRev !== op.rev) return stale();
       if (text === day.line) return { changed: [], created: [] };
       day.line = text;
       day.lineRev += 1;

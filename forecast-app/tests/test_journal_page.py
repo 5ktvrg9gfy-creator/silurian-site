@@ -360,6 +360,29 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         self.assertIn(".mark-word { flex: none; font-size: var(--notes-size-12); font-weight: 600; color: var(--notes-strong); }", self.style)
         self.assertNotRegex(self.style, r'\.date-row\[data-mark="(?:today|tomorrow)"\][^{]*\{[^}]*--notes-muted')
 
+    def test_moved_entries_are_hidden_behind_a_quiet_line_that_opens_and_closes_them(self) -> None:
+        # Ruled by the product owner on 22 October 2026, after the Preview: a moved entry is
+        # kept in storage with its arrow and destination and is not shown in the list. A quiet
+        # line at the bottom of each panel, "N moved", only when N is 1 or more, opens and
+        # closes them, greyed with their arrows. Closed by default.
+        for name in ("today", "tomorrow", "migrate", "day"):
+            self.assertRegex(self.text, rf'<div class="moved" id="moved-{name}" hidden>\s*<button type="button" class="moved-toggle quiet" id="moved-toggle-{name}" aria-expanded="false" aria-controls="moved-list-{name}"></button>\s*<ul class="entries moved-list" id="moved-list-{name}" hidden></ul>')
+        self.assertEqual(len(re.findall(r'class="moved"', self.text)), 4, "One line for each panel that has a list.")
+        draw = function_body(self.text, "renderMoved")
+        self.assertIn('host.hidden = moved.length === 0;', draw, "Only when there is one or more.")
+        self.assertIn('toggle.textContent = moved.length + " moved";', draw)
+        self.assertIn('var open = moved.length > 0 && ui.movedOpen[listKey] === true;', draw, "Closed until asked.")
+        self.assertIn('list.hidden = !open;', draw)
+        self.assertIn("entryRow(listKey, entry)", draw, "The same greyed rows with their arrows as before.")
+        render = function_body(self.text, "renderList")
+        self.assertIn("var entries = all.filter(function (e) { return !isMoved(e); });", render, "The list itself holds no moved entry.")
+        self.assertIn('function isMoved(entry) { return entry.state === "migrated" || entry.state === "scheduled"; }', self.text)
+        self.assertIn("movedOpen: {}", self.text)
+        self.assertIn(".moved-toggle { min-height: 32px; padding: 0 8px; border: 0; background: transparent; color: var(--notes-muted); font-size: var(--notes-size-13); font-weight: 600; }", self.style)
+        self.assertIn(".moved-toggle { min-height: 44px; }", self.style, "44px for a finger.")
+        # The count chip in Month counts what the log shows.
+        self.assertIn("day.entries.filter(function (e) { return !isMoved(e); }).length", self.text)
+
     def test_each_panel_draws_itself_and_is_skipped_when_it_is_not_there(self) -> None:
         # CLAUDE.md section 5: every new output is a self-contained panel. The browser check
         # takes the other four away and draws each alone; this holds the shape that allows it.
@@ -434,6 +457,29 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
             if re.search(r"\brev\b", line):
                 self.assertNotRegex(line, r"\+\s*\d|\+\+|-\s*\d", f"A revision is worked out in the page: {line.strip()}")
         self.assertNotRegex(self.script, r"\b(?:state|type)\s*=\s*[\"'](?:done|migrated|scheduled|dropped)[\"']")
+
+    def test_a_refresh_never_replaces_data_newer_than_the_last_save_on_this_device(self) -> None:
+        # Found on the Preview, 22 October 2026: a read older than a save was drawn over it.
+        take = function_body(self.script, "takeMonths")
+        self.assertIn("core.isNewer(confirmed[m], months[m])", take, "An older file never replaces a newer one.")
+        refresh = function_body(self.script, "refresh")
+        self.assertIn("var seq = saveSeq;", refresh)
+        self.assertEqual(refresh.count("seq !== saveSeq"), 2, "A look that began before a save is dropped, in both places it could land.")
+        self.assertIn("saveSeq += 1;", function_body(self.script, "pump"))
+        self.assertIn("core.laterStamp(fresh.updatedAt, quick.base)", function_body(self.script, "takeQuick"), "Quick notes too.")
+        # Every change says which revision of each month the page holds, so the server can tell a lagging read.
+        send = function_body(self.script, "sendChange")
+        self.assertIn("known[m] = confirmed[m].rev;", send)
+        self.assertIn("Object.assign({}, item.op, { known: known })", send)
+
+    def test_a_change_that_could_not_be_sent_is_sent_again_as_the_very_same_change(self) -> None:
+        send = function_body(self.script, "sendChange")
+        self.assertIn("var RETRY_MS = [1500, 3000, 5000];", self.script)
+        self.assertIn("(answer.status === 0 || answer.status >= 500) && tries < RETRY_MS.length", send)
+        self.assertIn("sendChange(item, gen, tries + 1)", send, "The same item, so the same copy ids.")
+        self.assertNotIn("newId()", send, "A retry makes no new id.")
+        self.assertNotIn("copyId", send)
+        self.assertIn("setTimeout(resolve, ms)", function_body(self.script, "pause"))
 
     def test_dates_are_londons_and_the_server_never_decides_what_today_is(self) -> None:
         self.assertIn('timeZone: "Europe/London"', self.script)

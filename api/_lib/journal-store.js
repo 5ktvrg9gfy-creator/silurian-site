@@ -53,14 +53,23 @@ export function createJournalStore(sdk) {
     }
   }
 
-  // True when written, false when another write got there first.
+  // The new etag (or true) when written, false when another write got there first.
   async function putConditional(path, body, tag) {
     const options = { access: "private", addRandomSuffix: false, contentType: JSON_TYPE };
     try {
-      await sdk.put(path, body, tag === null ? { ...options, allowOverwrite: false } : { ...options, allowOverwrite: true, ifMatch: tag });
-      return true;
+      const result = await sdk.put(path, body, tag === null ? { ...options, allowOverwrite: false } : { ...options, allowOverwrite: true, ifMatch: tag });
+      // The etag of what was just written, so the next change can continue from it
+      // without reading the store again; true when the package gives none.
+      return result && typeof result.etag === "string" ? result.etag : true;
     } catch (error) {
       if (isRefused(error)) return false;
+      // A first write that failed for a reason the package words differently: if
+      // the file is there now, someone else created it first, which is a refusal.
+      if (tag === null) {
+        let there = false;
+        try { there = Boolean(await getPrivate(path)); } catch { there = false; }
+        if (there) return false;
+      }
       throw error;
     }
   }

@@ -1,0 +1,15 @@
+FAIL adding: an entry that has been shown is never missing from a later look, though the window kept asking again
+      first missing look shows: []
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#list-today li.entry').filter({ hasText: 'Book the van' }).locator('.more')[22m
+
+    at /tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/docs/evidence/journal/browser-check-journal-lag.mjs:81:28 {
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.0

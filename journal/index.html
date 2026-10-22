@@ -605,6 +605,11 @@
   .status[data-state="saved"]::before { background: var(--notes-good); }
   .status[data-state="unsaved"]::before { background: var(--notes-warn); }
   .status[data-state="failed"]::before { background: var(--notes-bad); }
+  .moved { flex: none; border-top: 1px solid var(--notes-line-soft); padding: 0 8px; }
+  .moved-toggle { min-height: 32px; padding: 0 8px; border: 0; background: transparent; color: var(--notes-muted); font-size: var(--notes-size-13); font-weight: 600; }
+  .moved-toggle:hover { background: var(--notes-hover); }
+  .moved-list { max-height: 9rem; overflow-y: auto; padding: 0 0 8px; }
+  @media (pointer: coarse) { .moved-toggle { min-height: 44px; } }
   .quick-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
   .quick-editor { min-height: 100%; border: 0; background: var(--notes-field); white-space: pre-wrap; }
   @media (min-width: 761px) and (max-width: 999px) { .quick-editor { min-height: 160px; } }
@@ -701,6 +706,10 @@
           <p class="empty" id="empty-day" role="status" hidden></p>
         </div>
       </div>
+      <div class="moved" id="moved-day" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-day" aria-expanded="false" aria-controls="moved-list-day"></button>
+        <ul class="entries moved-list" id="moved-list-day" hidden></ul>
+      </div>
       <div class="addbar" id="addbar-day" hidden></div>
     </section>
 
@@ -714,6 +723,10 @@
         <ul class="entries" id="list-today"></ul>
         <p class="empty" id="empty-today" role="status" hidden></p>
       </div>
+      <div class="moved" id="moved-today" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-today" aria-expanded="false" aria-controls="moved-list-today"></button>
+        <ul class="entries moved-list" id="moved-list-today" hidden></ul>
+      </div>
       <div class="addbar" id="addbar-today"></div>
     </section>
 
@@ -726,6 +739,10 @@
         <ul class="entries" id="list-tomorrow"></ul>
         <p class="empty" id="empty-tomorrow" role="status" hidden></p>
       </div>
+      <div class="moved" id="moved-tomorrow" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-tomorrow" aria-expanded="false" aria-controls="moved-list-tomorrow"></button>
+        <ul class="entries moved-list" id="moved-list-tomorrow" hidden></ul>
+      </div>
       <div class="addbar" id="addbar-tomorrow"></div>
     </section>
 
@@ -737,6 +754,10 @@
       <div class="panel-body">
         <ul class="entries" id="list-migrate"></ul>
         <p class="empty" id="empty-migrate" role="status" hidden></p>
+      </div>
+      <div class="moved" id="moved-migrate" hidden>
+        <button type="button" class="moved-toggle quiet" id="moved-toggle-migrate" aria-expanded="false" aria-controls="moved-list-migrate"></button>
+        <ul class="entries moved-list" id="moved-list-migrate" hidden></ul>
       </div>
       <div class="addbar" id="addbar-migrate"></div>
     </section>
@@ -886,13 +907,14 @@ import * as core from "/journal/core.js";
   var pending = [];        // changes shown at once and not yet confirmed
   var shown = {};          // confirmed with the pending changes applied: what is on screen
   var sending = false;
+  var saveSeq = 0;         // counts confirmed saves, so a look that began before one is dropped
   var generation = 0;      // bumped when the page empties, so a late answer is ignored
   var signedIn = false;
   var viewMonth = thisMonth();
   var dayView = null;      // a date opened in the Month panel, or null
   var pickerOpen = false;
   var pickerYear = null;
-  var ui = { openMove: null, picking: null };   // { list, id }
+  var ui = { openMove: null, picking: null, movedOpen: {} };   // openMove and picking are { list, id }; movedOpen is by list
   var quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
   var stripMonths = [];    // the months the last load sent: the strip looks only there
   var lastRefresh = 0;
@@ -912,8 +934,13 @@ import * as core from "/journal/core.js";
     pending.forEach(function (item) { core.applyOp(shown, item.op); });
   }
 
+  // A month from the server replaces this device's copy only if it is not older.
+  // A store can show a file as it was a few seconds ago, and an old read must never
+  // draw over a newer save. The versions only go up, so older is always stale.
   function takeMonths(months) {
-    Object.keys(months || {}).forEach(function (m) { confirmed[m] = months[m]; });
+    Object.keys(months || {}).forEach(function (m) {
+      if (core.isNewer(confirmed[m], months[m])) { confirmed[m] = months[m]; }
+    });
   }
 
   /* ---------- talking to the server ---------- */
@@ -973,18 +1000,41 @@ import * as core from "/journal/core.js";
     });
   }
 
+  var RETRY_MS = [1500, 3000, 5000];
+
+  function pause(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // One request for the change, tried again, as the very same change, if it could
+  // not be sent or the server could not finish it. The server treats a repeat of a
+  // change that already happened as done, so a retry never makes a second copy.
+  function sendChange(item, gen, tries) {
+    var known = {};
+    core.monthsFor(item.op).forEach(function (m) { if (confirmed[m]) { known[m] = confirmed[m].rev; } });
+    var body = JSON.stringify(Object.assign({}, item.op, { known: known }));
+    return request("/api/journal", { method: "POST", headers: { "Content-Type": "application/json" }, body: body }).then(function (response) {
+      return readJson(response).then(function (answer) { return { status: response.status, body: answer }; });
+    }).catch(function () {
+      return { status: 0, body: {} };
+    }).then(function (answer) {
+      var again = (answer.status === 0 || answer.status >= 500) && tries < RETRY_MS.length && gen === generation;
+      if (!again) { return answer; }
+      return pause(RETRY_MS[tries]).then(function () { return gen === generation ? sendChange(item, gen, tries + 1) : answer; });
+    });
+  }
+
   function pump() {
     if (sending || pending.length === 0 || !signedIn) { return; }
     sending = true;
     var item = pending[0];
     var gen = generation;
-    request("/api/journal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item.op) }).then(function (response) {
-      return readJson(response).then(function (body) { return { status: response.status, body: body }; });
-    }).then(function (answer) {
+    sendChange(item, gen, 0).then(function (answer) {
       if (gen !== generation) { return; }
       sending = false;
       if (answer.status === 200) {
         takeMonths(answer.body.months);
+        saveSeq += 1;
         pending.shift();
         recompute();
         renderAll();
@@ -994,10 +1044,6 @@ import * as core from "/journal/core.js";
       }
       if (answer.status === 401) { return; }
       refused(answer.status === 409 ? (answer.body.code === "undo" ? "undo" : "stale") : "error", pending.splice(0, pending.length));
-    }).catch(function () {
-      if (gen !== generation) { return; }
-      sending = false;
-      refused("error", pending.splice(0, pending.length));
     });
   }
 
@@ -1570,8 +1616,45 @@ import * as core from "/journal/core.js";
     return [entry.id, entry.type, entry.state, entry.rev, entry.text, entry.to || "", open ? "o" : "", picking, today].join("|");
   }
 
-  function renderList(listEl, emptyEl, listKey, emptyText) {
-    var entries = core.entriesOf(shown, listKey);
+  // A moved or scheduled entry is kept in storage with its arrow and where it went,
+  // and is not shown in the list. A quiet line at the bottom of the panel says how
+  // many there are and opens and closes them. Closed until asked (22 October 2026).
+  function isMoved(entry) { return entry.state === "migrated" || entry.state === "scheduled"; }
+
+  function renderMoved(name, listKey, moved) {
+    var host = $("moved-" + name);
+    if (!host) { return; }
+    host.hidden = moved.length === 0;
+    var list = $("moved-list-" + name);
+    var open = moved.length > 0 && ui.movedOpen[listKey] === true;
+    var toggle = $("moved-toggle-" + name);
+    toggle.textContent = moved.length + " moved";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    list.hidden = !open;
+    list.textContent = "";
+    if (open) { moved.forEach(function (entry) { list.appendChild(entryRow(listKey, entry)); }); }
+  }
+
+  function movedListKey(name) {
+    if (name === "today") { return core.dayList(today); }
+    if (name === "tomorrow") { return core.dayList(tomorrow()); }
+    if (name === "migrate") { return core.migrateList(thisMonth()); }
+    return dayView ? core.dayList(dayView) : null;
+  }
+
+  ["today", "tomorrow", "migrate", "day"].forEach(function (name) {
+    $("moved-toggle-" + name).addEventListener("click", function () {
+      var key = movedListKey(name);
+      if (!key) { return; }
+      ui.movedOpen[key] = !ui.movedOpen[key];
+      renderAll();
+    });
+  });
+
+  function renderList(listEl, emptyEl, listKey, emptyText, movedName) {
+    var all = core.entriesOf(shown, listKey);
+    var entries = all.filter(function (e) { return !isMoved(e); });
+    renderMoved(movedName, listKey, all.filter(isMoved));
     var active = document.activeElement;
     var keep = null;
     if (active && listEl.contains(active) && active.matches && active.matches(".entry-text[contenteditable]")) {
@@ -1601,18 +1684,18 @@ import * as core from "/journal/core.js";
   // morning strip, Month carries the log of a date opened in it.
   function renderToday() {
     $("date-today").textContent = longDate(today);
-    renderList($("list-today"), $("empty-today"), core.dayList(today), EMPTY.today());
+    renderList($("list-today"), $("empty-today"), core.dayList(today), EMPTY.today(), "today");
     renderStrip();
   }
 
   function renderTomorrow() {
     $("date-tomorrow").textContent = longDate(tomorrow());
-    renderList($("list-tomorrow"), $("empty-tomorrow"), core.dayList(tomorrow()), EMPTY.tomorrow());
+    renderList($("list-tomorrow"), $("empty-tomorrow"), core.dayList(tomorrow()), EMPTY.tomorrow(), "tomorrow");
   }
 
   function renderMigrate() {
     $("date-migrate").textContent = monthYear(thisMonth());
-    renderList($("list-migrate"), $("empty-migrate"), core.migrateList(thisMonth()), EMPTY.migrate());
+    renderList($("list-migrate"), $("empty-migrate"), core.migrateList(thisMonth()), EMPTY.migrate(), "migrate");
   }
 
   /* ---------- the morning strip ---------- */
@@ -1745,9 +1828,10 @@ import * as core from "/journal/core.js";
       span.title = span.textContent;
       li.appendChild(span);
     }
-    if (day.entries.length > 0) {
-      var chip = make("span", "chip", String(day.entries.length));
-      chip.setAttribute("aria-label", day.entries.length + (day.entries.length === 1 ? " entry" : " entries"));
+    var visible = day.entries.filter(function (e) { return !isMoved(e); }).length;
+    if (visible > 0) {
+      var chip = make("span", "chip", String(visible));
+      chip.setAttribute("aria-label", visible + (visible === 1 ? " entry" : " entries"));
       li.appendChild(chip);
     }
     return li;
@@ -1757,7 +1841,8 @@ import * as core from "/journal/core.js";
     var file = shown[core.monthOf(date)];
     var day = file && file.days[date] ? file.days[date] : null;
     var events = day ? dayEvents(day).map(function (e) { return e.id + e.rev; }).join(",") : "";
-    return [date, today, day ? day.line : "", day ? day.lineRev : 0, day ? day.entries.length : 0, events].join("|");
+    var visible = day ? day.entries.filter(function (e) { return !isMoved(e); }).length : 0;
+    return [date, today, day ? day.line : "", day ? day.lineRev : 0, visible, events].join("|");
   }
 
   function wireLine(editor, date, day) {
@@ -1792,6 +1877,7 @@ import * as core from "/journal/core.js";
     $("day-head").hidden = !inDay;
     $("day-view").hidden = !inDay;
     $("addbar-day").hidden = !inDay;
+    if (!inDay) { $("moved-day").hidden = true; }
     $("month-picker-wrap").hidden = inDay || !pickerOpen;
     $("date-rows").hidden = inDay || pickerOpen;
     $("month-title").textContent = monthYear(viewMonth);
@@ -1802,7 +1888,7 @@ import * as core from "/journal/core.js";
       $("month-empty").hidden = true;
       $("day-back-label").textContent = "Back to " + monthName(core.monthOf(dayView));
       $("day-date").textContent = longDate(dayView);
-      renderList($("list-day"), $("empty-day"), core.dayList(dayView), EMPTY.day(dayView));
+      renderList($("list-day"), $("empty-day"), core.dayList(dayView), EMPTY.day(dayView), "day");
       return;
     }
     if (pickerOpen) { drawPicker(); $("month-empty").hidden = true; return; }
@@ -2004,7 +2090,7 @@ import * as core from "/journal/core.js";
   // the other device saved. Until they do, the typed text stays on screen.
   function reloadQuick() {
     return request("/api/journal?view=home&today=" + today).then(readJson).then(function (body) {
-      if (!body.quick) { return false; }
+      if (!body.quick || core.laterStamp(quick.base, body.quick.updatedAt)) { return false; }
       quick.base = body.quick.updatedAt;
       drawMarks(quickEditor, body.quick.text, true);
       quick.dirty = false;
@@ -2015,9 +2101,10 @@ import * as core from "/journal/core.js";
   }
 
   function takeQuick(fresh) {
-    // Never replaces text that is being typed or that has not been saved.
+    // Never replaces text that is being typed or that has not been saved, and never
+    // draws an older save over a newer one.
     if (quick.dirty || quick.saving || document.activeElement === quickEditor) { return; }
-    if (fresh.updatedAt === quick.base) { return; }
+    if (!core.laterStamp(fresh.updatedAt, quick.base)) { return; }
     quick.base = fresh.updatedAt;
     drawMarks(quickEditor, fresh.text, true);
   }
@@ -2099,6 +2186,7 @@ import * as core from "/journal/core.js";
     if (!force && (busy || editing)) { return Promise.resolve(false); }
     if (busy) { return Promise.resolve(false); }
     var gen = generation;
+    var seq = saveSeq;
     var rolled = londonDate();
     if (rolled !== today) { today = rolled; }
     var extra = Object.keys(confirmed).filter(function (m) { return m !== thisMonth(); });
@@ -2106,12 +2194,13 @@ import * as core from "/journal/core.js";
       if (!response.ok) { throw new Error("home"); }
       return readJson(response);
     }).then(function (body) {
-      if (gen !== generation || pending.length > 0 || sending) { return false; }
+      // A look that began before a save of this device finished is older than that save.
+      if (gen !== generation || pending.length > 0 || sending || seq !== saveSeq) { return false; }
       var others = extra.filter(function (m) { return !body.months[m]; });
       applyHome(body, false);
       if (others.length === 0) { return true; }
       return request("/api/journal?view=months&months=" + others.slice(0, 5).join(",")).then(readJson).then(function (more) {
-        if (gen !== generation || pending.length > 0 || sending) { return false; }
+        if (gen !== generation || pending.length > 0 || sending || seq !== saveSeq) { return false; }
         takeMonths(more.months);
         recompute();
         return true;
@@ -2177,7 +2266,7 @@ import * as core from "/journal/core.js";
     pickerOpen = false;
     pickerYear = null;
     monthPositioned = false;
-    ui = { openMove: null, picking: null };
+    ui = { openMove: null, picking: null, movedOpen: {} };
     quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
     activeEditor = null;
     ["list-today", "list-tomorrow", "list-migrate", "list-day", "date-rows", "month-picker", "strip"].forEach(function (id) { $(id).textContent = ""; });

@@ -23,9 +23,11 @@ import {
   MAX_QUICK_BYTES,
   addDays,
   applyOp,
+  cloneMonth,
   discardCopies,
   isDate,
   isMonth,
+  laterStamp,
   monthOf,
   monthsFor,
   parseList,
@@ -46,6 +48,12 @@ export const MESSAGES = {
 };
 
 const MAX_JSON_BYTES = 64 * 1024;
+// How long a change waits, and tries again, when the store shows a file older than
+// the one the page already holds, or a write is refused because the file moved on.
+// A store can show a file as it was a few seconds ago; a change made on that old
+// file would be lost or refused, so it waits for the file to catch up. The waits add
+// up to a little over six seconds, inside the time a function may run.
+const WAITS_MS = [100, 200, 400, 800, 1600, 3200];
 const MAX_TRIES = 6;
 // Months sent with the first load: this month, the month tomorrow falls in and
 // up to three earlier months that have a file, for the morning strip.
@@ -67,7 +75,7 @@ const fail = (status, message, extra = {}) => reply(status, { error: message, ..
 
 const STATUS = { stale: 409, undo: 409, limit: 422, invalid: 400 };
 
-export function createJournalApi({ store, env, now = () => Date.now() }) {
+export function createJournalApi({ store, env, now = () => Date.now(), sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   const signedIn = (request) => requestIsSignedIn(request, env, now());
 
   // Every route starts here, before it looks at anything else.
@@ -95,15 +103,39 @@ export function createJournalApi({ store, env, now = () => Date.now() }) {
     }
   }
 
+  // What this instance last wrote, for a minute. A store can show a file as it was a
+  // few seconds ago, so a read straight after a write may be older than the write.
+  // This instance knows what it wrote, and the etag to continue from, so a run of
+  // changes does not wait for the store to catch up. It is only ever a shortcut: a
+  // write still goes against an etag, so if another instance has written since, the
+  // write is refused, the shortcut is dropped and the change is tried again.
+  const recent = new Map();
+  let recentQuick = null;
+  const RECENT_MS = 60 * 1000;
+
   async function loadMonths(months) {
     const read = await Promise.all(months.map((month) => store.readMonth(month)));
     const files = {};
     const tags = {};
     months.forEach((month, index) => {
-      files[month] = read[index].file;
-      tags[month] = read[index].tag;
+      let { file, tag } = read[index];
+      const kept = recent.get(month);
+      if (kept) {
+        if (now() - kept.at > RECENT_MS || kept.file.rev <= file.rev) recent.delete(month);
+        else { file = cloneMonth(kept.file); tag = kept.tag; }
+      }
+      files[month] = file;
+      tags[month] = tag;
     });
     return { files, tags };
+  }
+
+  // Writes a month and remembers what was written.
+  async function putMonth(month, file, tag) {
+    const written = await store.writeMonth(month, file, tag);
+    if (typeof written === "string") recent.set(month, { file: cloneMonth(file), tag: written, at: now() });
+    else recent.delete(month);
+    return Boolean(written);
   }
 
   const view = (files, months) => Object.fromEntries(months.map((month) => [month, files[month]]));
@@ -115,30 +147,45 @@ export function createJournalApi({ store, env, now = () => Date.now() }) {
     return new Date(Math.max(now(), floor)).toISOString();
   }
 
+  // The revisions of each month the page already holds, from the change itself.
+  // A file older than that was read from a store that is behind.
+  function knownRevisions(op, months) {
+    const known = {};
+    const given = op.known && typeof op.known === "object" && !Array.isArray(op.known) ? op.known : {};
+    for (const month of months) known[month] = Number.isInteger(given[month]) && given[month] > 0 ? given[month] : 0;
+    return known;
+  }
+
   async function change(op) {
     const months = monthsFor(op);
-    for (let attempt = 0; attempt < MAX_TRIES; attempt += 1) {
+    const known = knownRevisions(op, months);
+    for (let attempt = 0; ; attempt += 1) {
       const { files, tags } = await loadMonths(months);
-      const result = applyOp(files, op);
-      if (result.error) {
-        // A move that wrote its copies on an earlier try and was then refused
-        // takes the copies back, so a refusal leaves nothing behind.
-        if (op.op === "move" && attempt > 0) await takeBackCopies(op);
-        const current = attempt > 0 ? (await loadMonths(months)).files : files;
-        return fail(STATUS[result.error.code] || 400, result.error.message, { code: result.error.code, months: view(current, months) });
-      }
-      if (result.changed.length === 0) return reply(200, { ok: true, created: result.created, months: view(files, months) });
-
-      let written = true;
-      for (const month of result.changed) {
-        if (!(await store.writeMonth(month, files[month], tags[month]))) {
-          written = false;
-          break;
+      // Never apply a change on a file older than the page's own copy.
+      const behind = months.some((month) => files[month].rev < known[month]);
+      if (!behind) {
+        const result = applyOp(files, op);
+        if (result.error) {
+          // A move that wrote its copies on an earlier try and was then refused
+          // takes the copies back, so a refusal leaves nothing behind.
+          if (op.op === "move" && attempt > 0) await takeBackCopies(op);
+          const current = attempt > 0 ? (await loadMonths(months)).files : files;
+          return fail(STATUS[result.error.code] || 400, result.error.message, { code: result.error.code, months: view(current, months) });
         }
+        if (result.changed.length === 0) return reply(200, { ok: true, created: result.created, months: view(files, months) });
+
+        let written = true;
+        for (const month of result.changed) {
+          if (!(await putMonth(month, files[month], tags[month]))) {
+            written = false;
+            break;
+          }
+        }
+        if (written) return reply(200, { ok: true, created: result.created, months: view(files, months) });
       }
-      if (written) return reply(200, { ok: true, created: result.created, months: view(files, months) });
+      if (attempt >= WAITS_MS.length) return fail(503, MESSAGES.busy);
+      await sleep(WAITS_MS[attempt]);
     }
-    return fail(503, MESSAGES.busy);
   }
 
   async function takeBackCopies(op) {
@@ -147,7 +194,7 @@ export function createJournalApi({ store, env, now = () => Date.now() }) {
       const { files, tags } = await loadMonths([target]);
       const removed = discardCopies(files, op.to, op.items.map((i) => i.copyId));
       if (removed === 0) return;
-      if (await store.writeMonth(target, files[target], tags[target])) return;
+      if (await putMonth(target, files[target], tags[target])) return;
     }
   }
 
@@ -206,11 +253,29 @@ export function createJournalApi({ store, env, now = () => Date.now() }) {
       const base = request.headers.get("x-base-updated");
       if (!base) return fail(400, MESSAGES.quickMissingVersion);
 
-      for (let attempt = 0; attempt < MAX_TRIES; attempt += 1) {
-        const current = await store.readQuick();
-        if (current.updatedAt !== base) return fail(409, MESSAGES.quickChanged, { updatedAt: current.updatedAt });
-        const updatedAt = nextStamp(current.updatedAt);
-        if (await store.writeQuick(text, updatedAt, current.tag)) return reply(200, { updatedAt });
+      for (let attempt = 0; ; attempt += 1) {
+        let current = await store.readQuick();
+        if (recentQuick) {
+          if (now() - recentQuick.at > RECENT_MS || !laterStamp(recentQuick.updatedAt, current.updatedAt)) recentQuick = null;
+          else current = { text: recentQuick.text, updatedAt: recentQuick.updatedAt, tag: recentQuick.tag };
+        }
+        // Already saved: the same text sent again after the answer was lost.
+        if (current.text === text && current.updatedAt !== "none" && current.updatedAt !== base && !laterStamp(base, current.updatedAt)) {
+          return reply(200, { updatedAt: current.updatedAt });
+        }
+        const behind = laterStamp(base, current.updatedAt);
+        if (!behind) {
+          if (current.updatedAt !== base) return fail(409, MESSAGES.quickChanged, { updatedAt: current.updatedAt });
+          const updatedAt = nextStamp(current.updatedAt);
+          const written = await store.writeQuick(text, updatedAt, current.tag);
+          if (written) {
+            recentQuick = typeof written === "string" ? { text, updatedAt, tag: written, at: now() } : null;
+            return reply(200, { updatedAt });
+          }
+          recentQuick = null;
+        }
+        if (attempt >= WAITS_MS.length) break;
+        await sleep(WAITS_MS[attempt]);
       }
       return fail(503, MESSAGES.busy);
     }),

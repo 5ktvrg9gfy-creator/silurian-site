@@ -326,17 +326,25 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   eq('and says it is open', await row.locator('.more').getAttribute('aria-expanded'), 'true');
   await row.locator('.entry-actions button', { hasText: 'Tomorrow' }).click();
   await page.waitForSelector('#flash:not([hidden])');
-  eq('Tomorrow: the original stays with a right arrow and says where it went', await cell(page, 'today', 'Chase the invoice').evaluate((li) => [li.dataset.state, li.querySelector('use').getAttribute('href'), li.querySelector('.entry-note').textContent]), ['migrated', '#j-migrated', 'to Tomorrow']);
+  eq('Tomorrow: the moved entry is no longer in the list', await cell(page, 'today', 'Chase the invoice').count(), 0);
+  eq('and a quiet line at the bottom of the panel says "1 moved", closed', [await page.textContent('#moved-toggle-today'), await page.getAttribute('#moved-toggle-today', 'aria-expanded'), await page.locator('#moved-list-today').isHidden()], ['1 moved', 'false', true]);
+  await page.click('#moved-toggle-today');
+  const movedRow = page.locator('#moved-list-today li.entry');
+  eq('opening it shows the original with a right arrow and where it went', await movedRow.evaluate((li) => [li.dataset.state, li.querySelector('use').getAttribute('href'), li.querySelector('.entry-note').textContent]), ['migrated', '#j-migrated', 'to Tomorrow']);
+  eq('and says it is open', await page.getAttribute('#moved-toggle-today', 'aria-expanded'), 'true');
   eq('and a copy is at the bottom of Tomorrow', await texts(page, 'tomorrow'), ['Chase the invoice']);
   eq('the message says what happened and offers Undo', [await page.textContent('#flash-text'), await page.textContent('#flash-action')], ['Moved to Tomorrow.', 'Undo']);
-  const grey = await cell(page, 'today', 'Chase the invoice').evaluate((li) => { const t = getComputedStyle(li.querySelector('.entry-text')); return { colour: t.color, opacity: getComputedStyle(li).opacity, strike: t.textDecorationLine }; });
+  const grey = await movedRow.evaluate((li) => { const t = getComputedStyle(li.querySelector('.entry-text')); return { colour: t.color, opacity: getComputedStyle(li).opacity, strike: t.textDecorationLine }; });
   check('greyed by colour, never by opacity, and not struck', grey.opacity === '1' && grey.strike === 'none' && grey.colour !== 'rgb(47, 45, 43)', JSON.stringify(grey));
-  check('a moved entry has no move controls and cannot be edited', (await cell(page, 'today', 'Chase the invoice').locator('.more, .entry-actions, [contenteditable]').count()) === 0);
+  check('a moved entry has no move controls and cannot be edited', (await movedRow.locator('.more, .entry-actions, [contenteditable]').count()) === 0);
+  await shot(page, 'moved-open-1280-light');
+  await page.click('#moved-toggle-today');
+  check('pressing the line again closes it', await page.locator('#moved-list-today').isHidden());
   await sleep(300);
   eq('the server agrees: arrow, destination, and the copy at revision 1', [storedDay().entries[0].state, storedDay().entries[0].to, storedDay(TOMORROW).entries[0].rev], ['migrated', 'day:' + TOMORROW, 1]);
   await page.click('#flash-action');
   await page.waitForFunction(() => document.querySelectorAll('#list-tomorrow li.entry').length === 0);
-  eq('Undo opens the original again and takes the copy away', [await cell(page, 'today', 'Chase the invoice').getAttribute('data-state'), await rows(page, 'tomorrow').count()], ['open', 0]);
+  eq('Undo opens the original again, takes the copy away, and the moved line goes', [await cell(page, 'today', 'Chase the invoice').getAttribute('data-state'), await rows(page, 'tomorrow').count(), await page.locator('#moved-today').isHidden()], ['open', 0, true]);
   await sleep(300);
   eq('on the server too, and the emptied day is gone', [storedDay().entries[0].state, stored().days[TOMORROW]], ['open', undefined]);
 
@@ -357,7 +365,9 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   check('and the day the entry is already on is not offered', await again.locator('.pick-day').first().isDisabled());
   await again.locator('.pick-day', { hasText: 'Wed 28 Oct' }).click();
   await page.waitForSelector('#flash:not([hidden])');
-  eq('scheduling gives a left arrow and "to 28 Oct"', await cell(page, 'today', 'Chase the invoice').evaluate((li) => [li.dataset.state, li.querySelector('use').getAttribute('href'), li.querySelector('.entry-note').textContent]), ['scheduled', '#j-scheduled', 'to 28 Oct']);
+  await page.click('#moved-toggle-today');
+  eq('scheduling gives a left arrow and "to 28 Oct", shown in the moved line', await page.locator('#moved-list-today li.entry', { hasText: 'Chase the invoice' }).evaluate((li) => [li.dataset.state, li.querySelector('use').getAttribute('href'), li.querySelector('.entry-note').textContent]), ['scheduled', '#j-scheduled', 'to 28 Oct']);
+  eq('the moved line counts moved and scheduled together (the event moved earlier and this)', await page.textContent('#moved-toggle-today'), '2 moved');
   eq('the message says Scheduled', await page.textContent('#flash-text'), 'Scheduled for 28 Oct.');
   await sleep(300);
   eq('the copy is in that day\'s log on the server', storedDay('2026-10-28').entries.map((e) => [e.text, e.state, e.rev]), [['Chase the invoice', 'open', 1]]);
@@ -379,7 +389,7 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   await shot(page, 'hover-1920-light');
   await row.locator('.entry-actions button', { hasText: 'Migrate' }).click();
   await page.waitForFunction(() => document.querySelectorAll('#list-migrate li.entry').length === 1);
-  check('one click moves it', (await cell(page, 'today', 'Chase the invoice').getAttribute('data-state')) === 'migrated');
+  check('one click moves it', (await cell(page, 'today', 'Chase the invoice').count()) === 0 && (await page.textContent('#moved-toggle-today')) === '1 moved');
   await shot(page, 'moved-by-hover-1920-light');
   await context.close();
 }
@@ -674,13 +684,14 @@ const strip = (page) => page.locator('#strip');
   eq('Reload shows the PC\'s version', await B.page.locator('#list-today .entry-text').first().innerText(), 'Shared entry (edited on the PC)');
 
   // B ticks from an old copy: refused, and the tick is taken back on screen.
-  await A.page.locator('#list-today .bullet').first().click();
+  const aAgain = A.page.locator('#list-today .entry-text').first();
+  await aAgain.click(); await A.page.keyboard.press('End'); await A.page.keyboard.type(' again'); await A.page.keyboard.press('Enter');
   await sleep(400);
   const tick = B.page.locator('#list-today .bullet').first();
   await tick.click();
   await B.page.waitForSelector('#flash:not([hidden])');
   await B.page.waitForFunction(() => document.querySelector('#list-today li.entry').dataset.state === 'open' || document.querySelector('#list-today li.entry').dataset.state === 'done');
-  eq('a tick from an old copy is refused and writes nothing', [storedDay().entries[0].state, storedDay().entries[0].rev], ['done', 3]);
+  eq('a tick from an old copy is refused and writes nothing', [storedDay().entries[0].state, storedDay().entries[0].rev], ['open', 3]);
   check('and the iPad shows the message', (await B.page.textContent('#flash-text')).startsWith('This changed on another device'));
   await shot(B.page, 'conflict-1280-light');
 
@@ -693,7 +704,7 @@ const strip = (page) => page.locator('#strip');
   await B.page.waitForFunction(() => document.querySelectorAll('#list-today li.entry').length === 2, null, { timeout: 6000 });
   await A.page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await A.page.waitForFunction(() => document.querySelectorAll('#list-tomorrow li.entry').length === 1, null, { timeout: 6000 });
-  eq('entries added on two devices both survive and both screens catch up when the window gets focus', [await texts(B.page, 'today'), await texts(A.page, 'tomorrow')], [['Shared entry (edited on the PC)', 'Added on the PC'], ['Added on the iPad']]);
+  eq('entries added on two devices both survive and both screens catch up when the window gets focus', [await texts(B.page, 'today'), await texts(A.page, 'tomorrow')], [['Shared entry (edited on the PC) again', 'Added on the PC'], ['Added on the iPad']]);
   void id;
   await A.context.close(); await B.context.close();
 }
@@ -968,6 +979,12 @@ async function showcase() {
       await signIn(page);
       await sleep(300);
       await shot(page, `week-${width}-${scheme}`);
+      if (width === 1280 || width === 375) {
+        await page.click('#moved-toggle-today');
+        await sleep(150);
+        await shot(page, `week-${width}-moved-open-${scheme}`);
+        await page.click('#moved-toggle-today');
+      }
       if (width === 900) await page.screenshot({ path: `${SHOTS}/week-900-${scheme}-full-page.png`, fullPage: true });
       if (phone) {
         for (const tab of ['month', 'tomorrow', 'migrate', 'quick']) {
@@ -1005,7 +1022,7 @@ async function showcase() {
   await showcase();
   const expectations = {
     month: async (page) => (await page.locator('.date-row').count()) === 31,
-    today: async (page) => (await page.locator('#list-today li.entry').count()) === 9 && (await page.locator('#strip .strip-group').count()) === 2,
+    today: async (page) => (await page.locator('#list-today li.entry').count()) === 7 && (await page.textContent('#moved-toggle-today')) === '2 moved' && (await page.locator('#strip .strip-group').count()) === 2,
     tomorrow: async (page) => (await page.locator('#list-tomorrow li.entry').count()) === 3,
     migrate: async (page) => (await page.locator('#list-migrate li.entry').count()) === 4,
     quick: async (page) => (await page.locator('#quick-editor').innerText()).startsWith('Ring Tom'),

@@ -1,0 +1,300 @@
+TAP version 13
+# Subtest: an add straight after an add keeps both, though the store still shows the file as it was
+not ok 1 - an add straight after an add keeps both, though the store still shows the file as it was
+  ---
+  duration_ms: 34.360921
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:24:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the second add must not be refused because the store is behind
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:30:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: a run of adds, each straight after the last, loses none
+not ok 2 - a run of adds, each straight after the last, loses none
+  ---
+  duration_ms: 3.581152
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:34:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    B
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:39:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a change to an entry straight after it was added is not refused as a clash
+not ok 3 - a change to an entry straight after it was added is not refused as a clash
+  ---
+  duration_ms: 3.737934
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:45:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the entry exists at revision 1, whatever a lagging read shows
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:51:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a move straight after the add makes exactly one copy
+not ok 4 - a move straight after the add makes exactly one copy
+  ---
+  duration_ms: 2.851931
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:57:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:64:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the same move sent again after the answer was lost is done once
+not ok 5 - the same move sent again after the answer was lost is done once
+  ---
+  duration_ms: 4.196425
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:70:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a repeat of a change that already happened is not a clash
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:78:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Bring forward of several, sent twice, makes one copy of each
+not ok 6 - Bring forward of several, sent twice, makes one copy of each
+  ---
+  duration_ms: 2.438379
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:87:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading '2026-10')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:94:37)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a move that crosses into another month, sent twice, makes one copy
+not ok 7 - a move that crosses into another month, sent twice, makes one copy
+  ---
+  duration_ms: 3.59563
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:104:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:112:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a calendar line saved twice in a row is not refused as a clash
+not ok 8 - a calendar line saved twice in a row is not refused as a clash
+  ---
+  duration_ms: 1.796272
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:118:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:123:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: quick notes saved twice in a row are not refused as a clash
+not ok 9 - quick notes saved twice in a row are not refused as a clash
+  ---
+  duration_ms: 3.152425
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:127:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the stored version is the first save, whatever a lagging read shows
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:134:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a read during the lag is old, and says so by its revision, so a page can tell
+not ok 10 - a read during the lag is old, and says so by its revision, so a page can tell
+  ---
+  duration_ms: 3.533408
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:138:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:146:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a change refused for good says so and writes nothing
+not ok 11 - a change refused for good says so and writes nothing
+  ---
+  duration_ms: 1.330293
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:152:1'
+  failureType: 'testCodeFailure'
+  error: 'it waited and tried again before giving up'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:160:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: another instance with nothing remembered waits for the store to catch up, and loses nothing
+not ok 12 - another instance with nothing remembered waits for the store to catch up, and loses nothing
+  ---
+  duration_ms: 1.949994
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:164:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:172:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: an instance that remembers what it wrote does not wait for a lagging store
+not ok 13 - an instance that remembers what it wrote does not wait for a lagging store
+  ---
+  duration_ms: 1.996743
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:177:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading '2026-10')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:182:41)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: what an instance remembers is only a shortcut: another instance's write is not overwritten
+not ok 14 - what an instance remembers is only a shortcut: another instance's write is not overwritten
+  ---
+  duration_ms: 3.126302
+  type: 'test'
+  location: '/tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:188:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/claude-0/-home-user-silurian-site/79cce586-571f-55bd-8d1b-6deb905ee190/scratchpad/before/notes-tests/journal-stale.test.js:197:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 0
+# fail 14
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 172.368255
