@@ -9,6 +9,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { createNotesApi } from '../../../api/_lib/notes-api.js';
 import { ENVIRONMENT_VARIABLE } from '../../../api/_lib/gate.js';
+import { memoryStore } from '../../../notes-tests/helpers.js';
 
 const require = createRequire('/opt/node22/lib/node_modules/');
 const { chromium } = require('playwright');
@@ -18,20 +19,9 @@ const SHOTS = process.env.SHOTS_DIR || '/tmp/notes-shots';
 mkdirSync(SHOTS, { recursive: true });
 const password = 'pw-' + randomBytes(12).toString('hex');
 
-const notes = new Map();
-let labelsFile = null;
-const store = {
-  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true })); },
-  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
-  async text(id) { const n = notes.get(id); return n ? n.bytes : null; },
-  async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
-  async meta(id) { const n = notes.get(id); return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
-  async writeMeta(id, meta) { notes.get(id).meta = meta; },
-  async readLabels() { return labelsFile ? structuredClone(labelsFile) : null; },
-  async writeLabels(file) { labelsFile = structuredClone(file); },
-  async write(id, bytes, meta) { notes.set(id, { bytes: new Uint8Array(bytes), meta }); },
-  async remove(id) { notes.delete(id); },
-};
+// The shared in-memory store, which keeps the same promises as the Blob adapter.
+const store = memoryStore();
+const notes = store.notes;
 const api = createNotesApi({ store, env: { [ENVIRONMENT_VARIABLE]: password } });
 const routes = { '/api/login': { POST: api.login }, '/api/session': { GET: api.session }, '/api/notes': api.collection, '/api/labels': api.labels, '/api/note': api.item };
 const types = { '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.ttf': 'font/ttf' };

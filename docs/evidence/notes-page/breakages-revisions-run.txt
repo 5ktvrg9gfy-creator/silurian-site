@@ -1,0 +1,48 @@
+base: every suite is green before any break
+
+CAUGHT store: the next revision of a note may overwrite one that exists
+         3 failed: a note is written private, as a new revision, text first and the small file second, and never overwritten; another device makes the next revision between this request's check and its create: the create is refused and nothing is overwritten; revisions are never overwritten: no put in all of that asked to
+CAUGHT store: a text file may be overwritten
+         2 failed: a note is written private, as a new revision, text first and the small file second, and never overwritten; revisions are never overwritten: no put in all of that asked to
+CAUGHT store: a version newer than the listing shows is not looked for
+         1 failed: the same holds when the listing is 60 seconds behind, so the newer save is not in it
+CAUGHT store: the same save sent again is not recognised
+         2 failed: the same save sent again produces no second revision, through any instance; two hundred saves, changes and deletes, some sent twice, each to an instance that remembers nothing, end as one device would have left them
+CAUGHT store: a note made before revisions is not read
+         1 failed: a note made before revisions reads as its first revision, and the first save after it makes revision 1
+CAUGHT store: a revision is deleted the moment it is superseded
+         3 failed: a note made before revisions, with no small file or a damaged one, still lists as Untitled and a save repairs it; the same save sent again produces no second revision, through any instance; old revisions are deleted only once a newer one has been listed for over 60 seconds, and never the newest
+CAUGHT store: the newest revision is deleted with the rest
+         4 failed: old revisions are deleted only once a newer one has been listed for over 60 seconds, and never the newest; a save tidies its own note, a text file nobody uses goes after two minutes, and a removed note keeps its last revision; two hundred saves, changes and deletes, some sent twice, each to an instance that remembers nothing, end as one device would have left them ...
+CAUGHT store: the text the newest revision uses is not counted as used
+         3 failed: old revisions are deleted only once a newer one has been listed for over 60 seconds, and never the newest; a save tidies its own note, a text file nobody uses goes after two minutes, and a removed note keeps its last revision; two hundred saves, changes and deletes, some sent twice, each to an instance that remembers nothing, end as one device would have left them
+CAUGHT store: a text file left by a lost save goes at once
+         1 failed: a save tidies its own note, a text file nobody uses goes after two minutes, and a removed note keeps its last revision
+CAUGHT store: a removed note is not reported as gone
+         5 failed: the adapter works with only what Vercel provides, and every request carries the identity token and store ID; delete makes a removed revision, the note leaves the list, and the page is told it is gone; a note deleted on another device is not brought back by a save from a copy of it ...
+CAUGHT store: the index trusts a tag that does not change with the revision
+         6 failed: the adapter works with only what Vercel provides, and every request carries the identity token and store ID; a save tidies its own note, a text file nobody uses goes after two minutes, and a removed note keeps its last revision; the list never shows an older version of a note than one the server has made, and a stale index cannot ...
+CAUGHT store: the label list is changed from any version
+         2 failed: another device changes the label list between this request's check and its create: refused, not written over; the label list sits outside the notes prefix, so the notes listing never sees it
+CAUGHT store: the same label change sent again is not recognised
+         1 failed: a repeated label change makes no second revision of the label list and gives back the same label
+CAUGHT api: a save does not say which version it started from when it looks for the note
+         1 failed: the same holds when the listing is 60 seconds behind, so the newer save is not in it
+CAUGHT api: a save sent again after its answer was lost is a clash
+         2 failed: the same save sent again produces no second revision, through any instance; two hundred saves, changes and deletes, some sent twice, each to an instance that remembers nothing, end as one device would have left them
+CAUGHT api: a label change is made whatever the store says
+         1 failed: another device changes the label list between this request's check and its create: refused, not written over
+CAUGHT api: a text save is said to be made whatever the store says
+         1 failed: another device makes the next revision between this request's check and its create: the create is refused and nothing is overwritten
+CAUGHT store: a refused create of a revision is taken as made
+         32 failed: the adapter works with only what Vercel provides, and every request carries the identity token and store ID; a note is written private, as a new revision, text first and the small file second, and never overwritten; the list pages through every note and drops nothing at a page boundary ...
+CAUGHT page: the list from the server replaces the rows held
+         2 failed: test_the_list_from_the_server_is_put_together_with_the_rows_held; device C made a note, and the older list it is then shown does not take it away  ["Alpha v2 from A"]
+CAUGHT page: an older copy of the open note replaces the newer
+         1 failed: test_no_older_copy_replaces_a_newer_one_in_memory_or_on_screen
+CAUGHT page: a note this page deleted is brought back by an older list
+         2 failed: test_the_list_from_the_server_is_put_together_with_the_rows_held; device C deleted a note, and the older list, which still has it, does not bring it back  ["Charlie made on C","Bravo v2 on C","Alpha v2 from A"]
+CAUGHT page: an older row replaces a newer one in memory
+         1 failed: test_no_older_copy_replaces_a_newer_one_in_memory_or_on_screen
+
+22 of 22 deliberate breaks were caught

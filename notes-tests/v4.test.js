@@ -421,30 +421,46 @@ function fakeSdk() {
   };
 }
 
-test("the labels file sits outside the notes prefix, so the notes listing never sees it", async () => {
+test("the label list sits outside the notes prefix, so the notes listing never sees it", async () => {
   const sdk = fakeSdk();
   const store = createBlobStore(sdk);
-  await store.writeLabels({ labels: [{ id: "a".repeat(32), name: "Work" }], updatedAt: "2026-10-20T10:00:00.000Z" });
-  await store.write("b".repeat(32), Buffer.from("A note"), { title: "A note", updatedAt: "2026-10-20T10:01:00.000Z", labels: [], archived: false });
-  assert.ok(sdk.files.has("labels.json"));
+  assert.deepEqual(await store.writeLabels({ labels: [{ id: "a".repeat(32), name: "Work" }], updatedAt: "2026-10-20T10:00:00.000Z" }, "none", "c:Work", "a".repeat(32)), { ok: true });
+  assert.deepEqual(await store.write("b".repeat(32), Buffer.from("A note"), { title: "A note", updatedAt: "2026-10-20T10:01:00.000Z", labels: [], archived: false }, null, "t:x"), { ok: true, updatedAt: "2026-10-20T10:01:00.000Z" });
+  assert.ok(sdk.files.has("labels/1.json"), "a revision of the label list, never overwritten");
   assert.ok(![...sdk.files.keys()].some((p) => p.startsWith("notes/labels")));
   assert.deepEqual((await store.list()).map((n) => n.id), ["b".repeat(32)]);
   assert.deepEqual(await store.readLabels(), { labels: [{ id: "a".repeat(32), name: "Work" }], updatedAt: "2026-10-20T10:00:00.000Z" });
+  // A label list made before revisions is read as revision 0, and the first change after it is revision 1.
+  const old = fakeSdk();
+  old.files.set("labels.json", { bytes: Buffer.from(JSON.stringify({ labels: [{ id: "d".repeat(32), name: "Old" }], updatedAt: "2026-10-19T10:00:00.000Z" })), uploadedAt: new Date(NOW) });
+  const oldStore = createBlobStore(old);
+  assert.deepEqual((await oldStore.readLabels()).labels, [{ id: "d".repeat(32), name: "Old" }]);
+  assert.deepEqual(await oldStore.writeLabels({ labels: [], updatedAt: "2026-10-20T10:00:00.000Z" }, "2026-10-19T10:00:00.000Z", "d:x"), { ok: true });
+  assert.ok(old.files.has("labels.json") && old.files.has("labels/1.json"), "the old file is not rewritten");
+  assert.deepEqual(await oldStore.writeLabels({ labels: [], updatedAt: "2026-10-20T10:01:00.000Z" }, "2026-10-19T10:00:00.000Z", "d:y"), { ok: false }, "a change from the old version is refused");
 });
 
-test("labels and archived change the small file only, and a damaged labels file is never read as empty", async () => {
+test("labels and archived make a new small file that names the same text, and a damaged label list is never read as empty", async () => {
   const sdk = fakeSdk();
   const store = createBlobStore(sdk);
   const id = "c".repeat(32);
-  await store.write(id, Buffer.from("Text"), { title: "Text", updatedAt: "2026-10-20T10:00:00.000Z", labels: [], archived: false });
-  const textBefore = Buffer.from(sdk.files.get(`notes/${id}.txt`).bytes).toString();
-  await store.writeMeta(id, { title: "Text", updatedAt: "2026-10-20T10:05:00.000Z", labels: ["a".repeat(32)], archived: true });
-  assert.equal(Buffer.from(sdk.files.get(`notes/${id}.txt`).bytes).toString(), textBefore);
+  await store.write(id, Buffer.from("Text"), { title: "Text", updatedAt: "2026-10-20T10:00:00.000Z", labels: [], archived: false }, null, "t:x");
+  const first = JSON.parse(sdk.files.get(`notes/${id}.1.json`).bytes.toString());
+  const textBefore = Buffer.from(sdk.files.get(`notes/${id}.${first.text}.txt`).bytes).toString();
+  const filesBefore = sdk.files.size;
+  const done = await store.writeMeta(id, { title: "Text", updatedAt: "2026-10-20T10:05:00.000Z", labels: ["a".repeat(32)], archived: true }, "2026-10-20T10:00:00.000Z", "m:y");
+  assert.equal(done.ok, true);
+  assert.equal(sdk.files.size, filesBefore + 1, "one new small file and no new text file");
+  assert.equal(JSON.parse(sdk.files.get(`notes/${id}.2.json`).bytes.toString()).text, first.text, "it names the text the note already had");
+  assert.equal(Buffer.from(sdk.files.get(`notes/${id}.${first.text}.txt`).bytes).toString(), textBefore);
   assert.deepEqual(await store.meta(id), { title: "Text", updatedAt: "2026-10-20T10:05:00.000Z", labels: ["a".repeat(32)], archived: true });
   assert.equal(await store.meta("d".repeat(32)), null);
 
-  sdk.files.set("labels.json", { bytes: Buffer.from("{ not json"), uploadedAt: new Date(NOW) });
-  await assert.rejects(() => store.readLabels(), /unreadable/);
+  for (const path of ["labels.json", "labels/1.json"]) {
+    const broken = fakeSdk();
+    broken.files.set(path, { bytes: Buffer.from("{ not json"), uploadedAt: new Date(NOW) });
+    await assert.rejects(() => createBlobStore(broken).readLabels(), undefined, path);
+  }
   assert.equal(await createBlobStore(fakeSdk()).readLabels(), null, "no file at all is no labels");
 });
 

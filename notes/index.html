@@ -901,7 +901,7 @@
   // while the server is asked again. It starts empty, is filled only from
   // answers the server has given, and is dropped on sign out, on a 401 and when
   // the page is left.
-  var mem = { all: null, opened: {} };
+  var mem = { all: null, opened: {}, gone: {} };   // gone: notes this page deleted, whatever an older list still shows
   var OPENED_KEPT = 20;
   // A change on its way to the server, by note id, and how many there are, so a
   // note opened again waits for its change and a refresh cannot undo it.
@@ -999,7 +999,7 @@
 
   function forgetMemory() {
     memoryGeneration += 1;
-    mem = { all: null, opened: {} };
+    mem = { all: null, opened: {}, gone: {} };
     inFlight = {};
     changesInFlight = 0;
     shownSig = "";
@@ -1031,12 +1031,33 @@
   // before the first list has arrived.
   function remember(item) {
     if (mem.all === null) { return; }
+    var held = mem.all.filter(function (n) { return n.id === item.id; })[0];
+    if (held && held.updatedAt > item.updatedAt) { return; }   // never an older copy over a newer one
     var kept = mem.all.filter(function (n) { return n.id !== item.id; });
     kept.push({ id: item.id, title: item.title, updatedAt: item.updatedAt, labels: (item.labels || []).slice(), archived: item.archived === true });
     mem.all = kept;
   }
 
+  // The list from the server put together with the rows already held: the newer
+  // version of each note wins, and a row is dropped only for a note the server says
+  // is gone or this page deleted. A list that is older than a save of this page, or
+  // missing a note this page has made, never draws over it.
+  function mergeList(current, incoming, gone) {
+    var removed = {};
+    (gone || []).forEach(function (id) { removed[id] = true; });
+    Object.keys(mem.gone).forEach(function (id) { removed[id] = true; });
+    var byId = {};
+    (current || []).forEach(function (n) { if (!removed[n.id]) { byId[n.id] = n; } });
+    incoming.forEach(function (n) {
+      if (removed[n.id]) { return; }
+      var held = byId[n.id];
+      if (!held || n.updatedAt >= held.updatedAt) { byId[n.id] = n; }
+    });
+    return Object.keys(byId).map(function (id) { return byId[id]; });
+  }
+
   function forget(id) {
+    mem.gone[id] = true;
     if (mem.all !== null) { mem.all = mem.all.filter(function (n) { return n.id !== id; }); }
     delete mem.opened[id];
     shownSig = "";
@@ -1044,6 +1065,8 @@
 
   // The notes opened most recently, text and version, to open again at once.
   function rememberOpened(id, entry) {
+    // Never an older copy over a newer one.
+    if (mem.opened[id] && mem.opened[id].version > entry.version) { entry = mem.opened[id]; }
     delete mem.opened[id];
     mem.opened[id] = entry;
     var ids = Object.keys(mem.opened);
@@ -1629,7 +1652,7 @@
         // An answer that was asked for before a change of the user's own was
         // sent does not know about it. The change refreshes the list itself.
         if (changesInFlight > 0 && painted) { return; }
-        if (changesInFlight === 0) { mem.all = data.notes; }
+        if (changesInFlight === 0) { mem.all = mergeList(mem.all, data.notes, data.gone); }
       }
       // A label that no longer exists shows the Notes list.
       if (query === "" && listView.kind === "label" && !labelById(listView.id)) {
@@ -1639,7 +1662,7 @@
         loadList(reveal, flash);
         return;
       }
-      var rows = query === "" ? rowsFrom(data.notes, listView.kind, listView.id) : data.notes;
+      var rows = query === "" ? rowsFrom(changesInFlight === 0 ? mem.all : data.notes, listView.kind, listView.id) : data.notes;
       paintList(rows, query, reveal && !painted, painted ? null : flash);
     }).catch(function (error) {
       if (seq !== searchSeq || gen !== memoryGeneration || currentView === "login") { return; }
@@ -1926,7 +1949,8 @@
       if (gen !== memoryGeneration) { return; }
       rememberOpened(id, loaded);
       if (navigation !== routeSeq || currentView !== "edit" || note.id !== id) { return; }
-      if (loaded.version === note.version) { return; }
+      // Only a newer version replaces what is on screen. A read can be older.
+      if (loaded.version <= note.version) { return; }
       if (isDirty() || note.saving || note.conflict !== null || note.failed || note.tooLarge) { return; }
       note.version = loaded.version;
       note.serverLabels = loaded.labels.slice();
@@ -1962,7 +1986,8 @@
     }).then(function (loaded) {
       if (navigation !== routeSeq || gen !== memoryGeneration) { return; }
       rememberOpened(id, loaded);
-      openEditor(id, loaded.text, loaded.version, { labels: loaded.labels, archived: loaded.archived });
+      var best = mem.opened[id];   // the newer of what arrived and what the page already held
+      openEditor(id, best.text, best.version, { labels: best.labels, archived: best.archived });
     }).catch(function () {
       // A 401 has already gone to sign in. Anything else goes to the list.
       if (navigation !== routeSeq || currentView === "login") { return; }

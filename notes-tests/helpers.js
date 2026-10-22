@@ -9,16 +9,20 @@ export const freshSecret = (label) => `${label}-${randomBytes(12).toString("hex"
 
 export const NOW = Date.parse("2026-10-01T12:00:00Z");
 
-// An in-memory stand-in for the note store, with the same four calls.
+// An in-memory stand-in for the note store, with the same calls and the same
+// promises as the Blob adapter: a save is made only on top of the version it
+// started from, and the same save sent again is recognised and makes nothing new.
+// (The adapter's own way of keeping revisions is held by notes-tests/revisions.test.js.)
 export function memoryStore() {
   const notes = new Map();
   const state = { labelsFile: null };
   const held = (n) => ({ labels: n.meta.labels || [], archived: n.meta.archived === true });
+  const open = (n) => ({ title: n.meta.title, updatedAt: n.meta.updatedAt, ...held(n) });
   return {
     notes,
     state,
     async list() {
-      return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, ...held(n) }));
+      return Object.assign([...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, ...held(n) })), { gone: [] });
     },
     async read(id) {
       const n = notes.get(id);
@@ -34,19 +38,43 @@ export function memoryStore() {
     },
     async meta(id) {
       const n = notes.get(id);
-      return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, ...held(n) } : null;
+      return n ? open(n) : null;
     },
-    async write(id, bytes, meta) {
-      notes.set(id, { bytes: new Uint8Array(bytes), meta });
+    async repeat(id, base, fp) {
+      const n = notes.get(id);
+      return n && n.last && n.last.from === base && n.last.fp === fp ? { updatedAt: n.meta.updatedAt } : null;
     },
-    async writeMeta(id, meta) {
-      notes.get(id).meta = meta;
+    async write(id, bytes, meta, base, fp) {
+      const n = notes.get(id);
+      if (base === null ? n : !n) return { ok: false, current: n ? open(n) : null };
+      if (base !== null && n.meta.updatedAt !== base) {
+        return n.last && n.last.from === base && n.last.fp === fp ? { ok: true, updatedAt: n.meta.updatedAt, repeated: true } : { ok: false, current: open(n) };
+      }
+      notes.set(id, { bytes: new Uint8Array(bytes), meta, last: { from: base, fp } });
+      return { ok: true, updatedAt: meta.updatedAt };
+    },
+    async writeMeta(id, meta, base, fp) {
+      const n = notes.get(id);
+      if (!n) return { ok: false, current: null };
+      if (n.meta.updatedAt !== base) {
+        return n.last && n.last.from === base && n.last.fp === fp ? { ok: true, updatedAt: n.meta.updatedAt, repeated: true } : { ok: false, current: open(n) };
+      }
+      n.meta = meta;
+      n.last = { from: base, fp };
+      return { ok: true, updatedAt: meta.updatedAt };
     },
     async readLabels() {
-      return state.labelsFile ? structuredClone(state.labelsFile) : null;
+      return state.labelsFile ? structuredClone({ labels: state.labelsFile.labels, updatedAt: state.labelsFile.updatedAt }) : null;
     },
-    async writeLabels(file) {
-      state.labelsFile = structuredClone(file);
+    async labelsRepeat(base, fp) {
+      const f = state.labelsFile;
+      return f && f.from === base && f.fp === fp ? { labels: structuredClone(f.labels), updatedAt: f.updatedAt, created: f.created || null } : null;
+    },
+    async writeLabels(file, base, fp, created = null) {
+      const version = state.labelsFile ? state.labelsFile.updatedAt : "none";
+      if (version !== base) return { ok: false };
+      state.labelsFile = { ...structuredClone(file), from: base, fp, created };
+      return { ok: true };
     },
     async remove(id) {
       notes.delete(id);

@@ -264,3 +264,7 @@ Reported by the product owner, not run by the build session. Every step passed: 
 7. Open the journal on the iPad: the same entries, nothing missing. Add on the iPad and see it on the PC within about a minute.
 8. Open /notes and check the notes menu has Journal as its last item and notes behaves as before.
 9. If anything disappears or doubles, do not retry; note the time and report it.
+
+## Production check passed, 22 October 2026
+
+The product owner ran all nine steps of the Production check list above on https://www.silurianconsulting.co.uk/journal (merge commit `ca1e8bfeaf58f3141c9ef5d08441f8852b991ab9`), including uninstalling the Preview app and installing the live one in Edge and on the iPad. Reported by the product owner, not run by the build session.

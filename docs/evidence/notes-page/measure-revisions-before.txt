@@ -1,0 +1,9 @@
+create a note                                  2 requests {"put":2}
+open a note (cold instance)                    2 requests {"get":2}
+save a note (cold instance)                    4 requests {"head":1,"get":1,"put":2}
+archive a note (cold instance)                 3 requests {"head":1,"get":1,"put":1}
+the list, index current (cold instance)        5 requests {"list":1,"get":3,"put":1}
+the list again                                 2 requests {"list":1,"get":1}
+the label list (cold instance)                 1 requests {"get":1}
+add a label (cold instance)                    2 requests {"get":1,"put":1}
+delete a note (cold instance)                  2 requests {"del":2}
