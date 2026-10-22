@@ -186,3 +186,65 @@ On the branch Preview, at `/journal`, on the PC. Keep the window open and in fro
 5. **Bring forward.** Open an earlier date in Month (the 20th), add two tasks, reload. The strip shows "From Tuesday 20 October, 2 open tasks". Press Bring forward on one, wait ten seconds, then Bring all forward on the other. **Pass:** each task has exactly one copy at the bottom of Today. Wait a minute with the window in front: no copy doubles, none disappears. Reload: the same.
 6. **Two devices, a minute.** Add an entry on the iPad while the PC window stays in front. **Pass:** it appears on the PC within about a minute, and nothing the PC showed goes missing while it waits.
 7. **If anything disappears or doubles.** Do not retry. Note the time, what you did and what you saw, and tell me. A change that cannot be saved after the page's retries says "Could not save that change. Nothing was changed. Try again." and the entry goes back, which is correct and is the thing to report if it happens often.
+
+---
+
+# Update 2, 22 October 2026: the second Preview retest failed, and the storage was rebuilt
+
+Preview retest of the branch at `3e5d4fc` failed. The product owner added several tasks and all vanished after a refresh, moved a task to a date and could not see where it went, and saw "Could not save that change. Nothing was changed. Try again." with Today then showing nothing logged. **Not merged.**
+
+## Why the first fix could not work
+
+The first fix kept one file per month and made every change a read, a change and a write of that shared file, with waits for the store to catch up. A shared file read and written back loses a change on any store that can serve an old copy of a file after it was overwritten, however long the code waits, because a change made from the old copy writes the old copy back. The adapter already read with `useCache: false` and the real store still lost entries, which is the evidence that the read-modify-write on a shared file was the problem and not only the cache.
+
+## What the Vercel documentation says, and what I could and could not read
+
+* The Blob documentation (https://vercel.com/docs/vercel-blob), as returned by a search of it: when you delete or update (overwrite) a blob, the change "may take up to 60 seconds to propagate through our cache". Browsers continue serving their own cached copy unless the URL changes.
+* The changelog, "Vercel Blob now supports consistent reads on private storage" (https://vercel.com/changelog/vercel-blob-now-supports-consistent-reads-on-private-storage): readers might see the cached version for up to 60 seconds, and `useCache: false` on `get()` reads the latest write. The documentation recommends treating blobs as immutable, with a new pathname per version, instead of updating one.
+* The installed SDK (`node_modules/@vercel/blob/dist/index.d.ts`) says the same about `useCache` (bypasses the CDN cache and reads from origin storage), `cacheControlMaxAge` (default one month, not lower than one minute) and `allowOverwrite` (an upload to an existing path fails unless it is on).
+* **What I could not do:** open the documentation pages themselves. The build sandbox blocks vercel.com (`getaddrinfo ENOTFOUND` from the fetch tool and a 403 on the proxy tunnel from `curl`), so the quotations above come from search results of those pages and not from reading them. The SDK comments were read directly.
+
+## The new storage
+
+* `journal/e/YYYY-MM/<entry id>.<rev>.json`, one file per entry revision; `journal/l/YYYY-MM/<date>.<rev>.json`, one per calendar line revision; `journal/quick.json`, Quick notes. **No entry or line file is ever overwritten**: each is created only where nothing is, with `allowOverwrite: false`, and the create is the version check.
+* **Add** creates revision 1 and reads nothing. **Edit, tick, delete, drop** read that one entry at the revision the page names, by its path, and create the next revision. A delete is a revision with the state `removed`. **Move and Bring forward** create the copy as its own entry, whose id is worked out from the original's id, the revision it was copied at and the destination (`core.copyIdFor`), then the original's next revision with the arrow and the destination. The same move sent twice, from the page or from another device, therefore makes the same copy. If the original's next revision is taken by another device, the server reads it and decides again: the same move is done, any other is a 409, and a copy made by this call and then not used is taken back by creating its removed revision.
+* A view is a listing of a month's entry files, the highest revision of each, read sixteen at a time; the adapter keeps what it has read by path, because a file's content never changes.
+* **The page** puts what the server says together with what it holds, entry by entry (`core.mergeMonth`): the higher revision wins and nothing is dropped because a read lacks it, so a read that is older, shorter or missing a file a listing has not caught up with cannot draw over a save. The `saveSeq` guard, `isNewer`, the revisions the page sent with every change and the six second wait for entries are gone.
+* The page says when an entry was made (`at`, from the page's clock, which sets its place in the list); it no longer chooses copy ids; Undo of a delete makes the entry again as a new one, because a removed entry keeps its id.
+* **A move to a day now says which day**, "Moved to Wednesday 28 October.", with Undo and a new **Open day** button in the message bar. This replaces "Scheduled for 28 Oct.".
+
+## Not changed
+
+* Notes. Not touched in this branch; its exposure is recorded under update 1.
+* Quick notes: one overwritten file, as instructed, still with the wait and the remembered write (Q19). Under a 60 second stale store a save through another instance is answered busy after about six seconds, with nothing lost.
+* The notes browser checks were not run again, because notes is not changed.
+
+## The 60 second stand-in, and what it proves
+
+`journalMemoryStore` and `staleJournalStore` in `notes-tests/journal-helpers.js`. The stand-in serves an overwritten file as it was for 60 seconds (here that is Quick notes, the only overwritten file), and, as a harder case than the documentation promises, leaves a file made in the last 60 seconds out of a listing. Creates are strongly consistent, as a create of a path nobody has is.
+
+* **The old design fails under it.** The previous commit's own lag tests with the lag set to 60 seconds: 4 of 16 fail, every one a change that reaches an instance that did not write the file before it (`lag-60s-month-file-design-before.txt`). The 5 second tests had passed only because six seconds of waiting covered five.
+* **The new design passes**: `journal-stale.test.js` 15 of 15 (`lag-60s-entry-files-after.txt`). Adds a second apart, an edit and a tick straight after an add, a move straight after an add, the same move sent three times through three instances, Bring forward sent twice through two instances, a move into another month sent twice, a move then an undo then the same move again, calendar lines saved and cleared in turn, a view during the lag, every change to an instance that remembers nothing, and **two hundred random changes (add, edit, tick, delete, drop, move of one or two entries, undo), some sent twice, each to a different instance, checked after every change against a model of one device**. None of it waits (`sleeps` is empty) and none of it reads a listing.
+* Under the first part an add made no read at all and one new file; an edit read one file and made one.
+
+## What ran for this update
+
+* `npm test`: **204 before, 216 after, all pass.**
+* `forecast-app` suite: **388 before, 391 after, all pass.**
+* `browser-check-journal.mjs`: **214 of 214** (213 before; the delete check now sees a removed revision, and the date move checks the message and Open day).
+* `browser-check-journal-lag.mjs` (rewritten: a 60 second stale store and listing, a cold server, five adds two seconds apart, an edit straight after, a move to Tomorrow, Bring all forward, Migrate then Date to the 28th with the message and Open day, with the first answer to each move lost, waits past the 60 seconds, a second device, then older reads of the whole list): **21 of 21** (`lag-browser-60s-after.txt`, about three and a half minutes).
+* `npm run test:vercel`: ran, passes (the build deploys the six functions; the route files run under Vercel's own wrapper).
+* Deliberate breakages, **new storage rules only**, as instructed (`breakages.py`, 30 cases; the 67 earlier ones are in git history at `3e5d4fc` and were not run again): **30 of 30 caught** (`breakages-storage-run.txt`). Two were not caught the first time: a damaged file read as missing, because the test used the in-memory stand-in and so never ran the real adapter (a test of the adapter against a damaged file was added), and one case whose text matched two places and so broke nothing until it was made specific. `breakages-browser.py` (4 cases for the browser run): **4 of 4 caught** (`breakages-browser-run.txt`; one by the run stopping early, which counts as red).
+* Not run: the Preview, a real Blob store, Edge, Safari, a real iPad. **What the stand-in cannot show:** that a create of a path is read back at once on the real store, that `list` with `mode: "folded"` returns the month folders as the SDK says, and how long a cold load of a busy month takes.
+
+## Preview steps (the same, with step 4 changed for the new message)
+
+On the branch Preview, at `/journal`, on the PC, window in front for the whole minute.
+
+1. **Adding.** Add five tasks in Today, about two seconds apart. Watch for a full minute. **Pass:** all five stay, none disappears, none doubles. Reload: all five are there.
+2. **Straight after adding.** Add a task and within a second click its text and add a word, then Enter. **Pass:** no "This changed on another device" message; the text is kept after a reload.
+3. **Moving.** More, Tomorrow on one. **Pass:** it leaves the list, the bottom of Today shows "1 moved", Tomorrow has exactly one copy; after a minute and a reload, the same.
+4. **Move through Migrate, then to a date.** Move one with Migrate, then from the Migrate panel use Date and pick the 28th. **Pass:** the message says "Moved to Wednesday 28 October." with Undo and Open day; Open day shows that day with the entry in it; after a minute and a reload, one copy of each in its place.
+5. **Bring forward.** Open an earlier date, add two tasks, reload. Press Bring forward on one, wait ten seconds, then Bring all forward on the other. **Pass:** exactly one copy of each at the bottom of Today, none doubling or disappearing over a minute, the same after a reload.
+6. **Two devices.** Add an entry on the iPad with the PC in front. **Pass:** it appears on the PC within about a minute and nothing the PC showed goes missing while it waits.
+7. **If anything disappears or doubles.** Do not retry. Note the time, what you did and what you saw, and report it.

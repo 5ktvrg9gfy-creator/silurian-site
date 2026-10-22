@@ -1,0 +1,64 @@
+base: every suite is green before any break
+
+CAUGHT rules: an add starts by reading the entry it is about to make
+         3 failed: an add reads nothing first, and an edit reads only the entry it changes and creates exactly one file; an add starts from nothing and reads nothing, and no list is read to be counted; a run of adds, each a second after the last, loses none and makes none twice
+CAUGHT rules: a copy's id ignores the revision it was copied at
+         3 failed: undo puts a moved entry back and takes the copy away, only while the copy is untouched; a copy's id is worked out from the entry, its revision and the place, and nothing else; a move, an undo and the same move again make one visible copy and meet nothing left behind
+CAUGHT rules: a copy's id is chosen at random each time
+         15 failed: a move across months makes the copy first and then marks the original, and a repeat does not copy twice; Bring forward of several tasks makes one copy of each, once, however many times it is sent; a move leaves the original in place with its arrow and puts a copy at the bottom of the target ...
+CAUGHT rules: a removal deletes the entry instead of making a removed revision
+         4 failed: an entry deleted on another device cannot be changed from a stale copy; edit and remove: a removed entry stays as a removed revision and is not shown; two views put together never lose an entry, and the higher revision of each wins ...
+CAUGHT rules: a change writes every entry of the view, not only what changed
+         8 failed: a move across months makes the copy first and then marks the original, and a repeat does not copy twice; Bring forward of several tasks makes one copy of each, once, however many times it is sent; what a change wrote is exactly the entries and lines it made new or moved on a revision ...
+CAUGHT rules: a day with a line revision is dropped when it holds nothing else
+         1 failed: a calendar line saved twice in a row, and cleared, is not refused as a clash
+CAUGHT rules: a view shows the lowest revision of an entry
+         9 failed: a month view is built from stored entries in the order they were made, and the highest revision of an entry is the one shown; an edit and a tick straight after the add are not refused as a clash; a move straight after the add makes exactly one copy ...
+CAUGHT rules: a repeat of a move is not recognised, so it copies again
+         8 failed: a move across months makes the copy first and then marks the original, and a repeat does not copy twice; Bring forward of several tasks makes one copy of each, once, however many times it is sent; a change sent again after its answer was lost has already happened, and changes nothing a second time ...
+CAUGHT rules: an undo refuses a copy that an earlier try already removed
+         1 failed: a move, an undo and the same move again make one visible copy and meet nothing left behind
+CAUGHT merge: an entry the other view lacks is dropped
+         1 failed: two views put together never lose an entry, and the higher revision of each wins
+CAUGHT merge: a lower revision replaces a higher one
+         1 failed: two views put together never lose an entry, and the higher revision of each wins
+CAUGHT merge: the page replaces its copy with the read
+         1 failed: test_a_refresh_never_replaces_or_drops_what_the_page_holds
+CAUGHT API: the copy is made after the original, not before
+         2 failed: a move across months that is refused after its first try takes its copy back; a move across months makes the copy first and then marks the original, and a repeat does not copy twice
+CAUGHT API: a refused move leaves its copy behind
+         2 failed: a move across months that is refused after its first try takes its copy back; a move across months makes the copy first and then marks the original, and a repeat does not copy twice
+CAUGHT API: a change reads the whole month first
+         2 failed: an add reads nothing first, and an edit reads only the entry it changes and creates exactly one file; a run of adds, each a second after the last, loses none and makes none twice
+CAUGHT API: a create that is refused is taken as made
+         8 failed: every answer, success or failure, says no-store and noindex; a stale revision is refused with 409, writes nothing and returns the current month; two devices changing the same entry: the second is refused and the first stands ...
+CAUGHT API: a change waits for the store
+         7 failed: no change to an entry or a line ever waits: the only pause in the API is the quick notes one; a run of adds, each a second after the last, loses none and makes none twice; an edit and a tick straight after the add are not refused as a clash ...
+CAUGHT API: the entry a change starts from is found through a listing
+         9 failed: an add reads nothing first, and an edit reads only the entry it changes and creates exactly one file; an edit and a tick straight after the add are not refused as a clash; a move straight after the add makes exactly one copy ...
+CAUGHT API: an undo reads only the copy's first revision
+         1 failed: two hundred changes, some sent twice and each to a different instance, end as a single device would have left them
+CAUGHT store: an entry file may be overwritten
+         2 failed: the journal adapter reaches the store the same way, and creates each entry revision without overwriting; the Blob adapter creates each entry revision private and without overwriting, and reads without the CDN
+CAUGHT store: a read may come from the cache
+         1 failed: the Blob adapter creates each entry revision private and without overwriting, and reads without the CDN
+CAUGHT store: a file that cannot change is read again every time
+         1 failed: a file that cannot change is read once: the second read of the same revision does not go to the store
+CAUGHT store: a listing reads the lowest revision of an entry
+         2 failed: the journal adapter reaches the store the same way, and creates each entry revision without overwriting; a month is listed, the highest revision of each entry is the only one read, and a month with nothing is empty
+CAUGHT store: journal entries are made under notes/
+         5 failed: the journal adapter reaches the store the same way, and creates each entry revision without overwriting; journal entries never appear in the notes list, the notes index or notes search; the notes API never lists, reads or deletes under journal/ ...
+CAUGHT store: a damaged file reads as if it were not there
+         1 failed: the Blob adapter refuses a damaged file instead of reading it as one that is not there
+CAUGHT store: a month is taken from the wrong place in the path
+         5 failed: the journal adapter reaches the store the same way, and creates each entry revision without overwriting; the Blob adapter creates each entry revision private and without overwriting, and reads without the CDN; a month is listed, the highest revision of each entry is the only one read, and a month with nothing is empty ...
+CAUGHT page: the page chooses a copy id again
+         1 failed: test_the_page_says_when_an_entry_was_made_and_never_chooses_a_copy_id
+CAUGHT page: Undo of a delete makes the entry again under its old id
+         1 failed: test_undo_of_a_delete_makes_a_new_entry_because_a_removed_entry_keeps_its_id
+CAUGHT page: a move to a day no longer offers Open day
+         1 failed: test_a_move_to_a_day_says_which_day_and_offers_to_open_it
+CAUGHT page: a change no longer says when an entry was made
+         1 failed: test_the_page_says_when_an_entry_was_made_and_never_chooses_a_copy_id
+
+30 of 30 deliberate breaks were caught

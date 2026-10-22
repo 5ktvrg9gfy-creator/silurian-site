@@ -6,32 +6,36 @@
 // the password, the cookie or a storage token.
 //
 // The rules of a change live in journal/core.js and are applied there. This
-// file reads the months a change needs, asks core to apply it, and writes the
-// result back against the version it read. Nothing moves, migrates or drops
-// unless a request says so: there is no scheduled work and no clock-driven
-// change anywhere in this file.
+// file reads only the entries a change starts from (each named by its id and the
+// revision the page started from), asks core to apply the change, and creates the
+// files it made. It never reads a whole month to change one entry, and never
+// rewrites a file shared with others. Nothing moves, migrates or drops unless a
+// request says so: there is no scheduled work and no clock-driven change anywhere
+// in this file.
 //
-// Version checks, in two layers. Every write is conditional on the file's own
-// version (its etag), so a write from another device in between makes this one
-// fail and be tried again against the newer file. And every change to an
-// existing entry or calendar line names the revision it started from, so if
-// another device changed that entry or line, nothing is written and the answer
-// is a 409 with the current months. Two devices never overwrite each other.
+// The version check is the create. A change to an entry creates the next
+// revision of that one entry, and a create is refused if that revision already
+// exists, so a change made from an out of date copy writes nothing and the answer
+// is a 409 with what is there now. The same change sent again finds its own
+// result already there, recognises it as the same change and is answered as done.
+// Two devices never overwrite each other, and no read of a file that is only ever
+// created can be older than the file.
 
 import { requestIsSignedIn } from "./gate.js";
 import {
   MAX_QUICK_BYTES,
   addDays,
   applyOp,
-  cloneMonth,
-  discardCopies,
   isDate,
   isMonth,
   laterStamp,
   monthOf,
   monthsFor,
+  needs,
   parseList,
   validateOp,
+  viewFrom,
+  writesFor,
 } from "../../journal/core.js";
 
 export const MESSAGES = {
@@ -48,13 +52,13 @@ export const MESSAGES = {
 };
 
 const MAX_JSON_BYTES = 64 * 1024;
-// How long a change waits, and tries again, when the store shows a file older than
-// the one the page already holds, or a write is refused because the file moved on.
-// A store can show a file as it was a few seconds ago; a change made on that old
-// file would be lost or refused, so it waits for the file to catch up. The waits add
-// up to a little over six seconds, inside the time a function may run.
-const WAITS_MS = [100, 200, 400, 800, 1600, 3200];
-const MAX_TRIES = 6;
+// Quick notes are the one overwritten file, so they are the one place that still
+// waits and tries again when the store shows a version older than the one the page
+// holds. Entries and lines never do: they are only ever created.
+// An undo asks how far a copy has got, one revision at a time, and a copy that
+// has been changed more times than this is treated as touched.
+const MAX_PROBE = 64;
+const QUICK_WAITS_MS = [100, 200, 400, 800, 1600, 3200];
 // Months sent with the first load: this month, the month tomorrow falls in and
 // up to three earlier months that have a file, for the morning strip.
 const EARLIER_MONTHS = 3;
@@ -73,7 +77,7 @@ function reply(status, body) {
 
 const fail = (status, message, extra = {}) => reply(status, { error: message, ...extra });
 
-const STATUS = { stale: 409, undo: 409, limit: 422, invalid: 400 };
+const STATUS = { stale: 409, undo: 409, invalid: 400 };
 
 export function createJournalApi({ store, env, now = () => Date.now(), sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   const signedIn = (request) => requestIsSignedIn(request, env, now());
@@ -103,42 +107,25 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
     }
   }
 
-  // What this instance last wrote, for a minute. A store can show a file as it was a
-  // few seconds ago, so a read straight after a write may be older than the write.
-  // This instance knows what it wrote, and the etag to continue from, so a run of
-  // changes does not wait for the store to catch up. It is only ever a shortcut: a
-  // write still goes against an etag, so if another instance has written since, the
-  // write is refused, the shortcut is dropped and the change is tried again.
-  const recent = new Map();
+  // What this instance last wrote to the quick notes, for a minute. A store can
+  // show an overwritten file as it was a few seconds ago, so a read straight after
+  // a write may be older than the write. It is only ever a shortcut: a write still
+  // goes against an etag.
   let recentQuick = null;
   const RECENT_MS = 60 * 1000;
 
-  async function loadMonths(months) {
-    const read = await Promise.all(months.map((month) => store.readMonth(month)));
-    const files = {};
-    const tags = {};
-    months.forEach((month, index) => {
-      let { file, tag } = read[index];
-      const kept = recent.get(month);
-      if (kept) {
-        if (now() - kept.at > RECENT_MS || kept.file.rev <= file.rev) recent.delete(month);
-        else { file = cloneMonth(kept.file); tag = kept.tag; }
-      }
-      files[month] = file;
-      tags[month] = tag;
-    });
-    return { files, tags };
-  }
-
-  // Writes a month and remembers what was written.
-  async function putMonth(month, file, tag) {
-    const written = await store.writeMonth(month, file, tag);
-    if (typeof written === "string") recent.set(month, { file: cloneMonth(file), tag: written, at: now() });
-    else recent.delete(month);
-    return Boolean(written);
-  }
-
+  const clone = (value) => JSON.parse(JSON.stringify(value));
   const view = (files, months) => Object.fromEntries(months.map((month) => [month, files[month]]));
+
+  // The months as views, built from what is stored: a listing of each month's
+  // entry files and its calendar lines.
+  async function loadMonths(months) {
+    const [entries, lines] = await Promise.all([
+      Promise.all(months.map((month) => store.entriesOfMonth(month))),
+      Promise.all(months.map((month) => store.linesOfMonth(month))),
+    ]);
+    return viewFrom(months, entries.flat(), lines.flat());
+  }
 
   // A time for a quick notes save that is never equal to or earlier than the one
   // already stored.
@@ -147,55 +134,111 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
     return new Date(Math.max(now(), floor)).toISOString();
   }
 
-  // The revisions of each month the page already holds, from the change itself.
-  // A file older than that was read from a store that is behind.
-  function knownRevisions(op, months) {
-    const known = {};
-    const given = op.known && typeof op.known === "object" && !Array.isArray(op.known) ? op.known : {};
-    for (const month of months) known[month] = Number.isInteger(given[month]) && given[month] > 0 ? given[month] : 0;
-    return known;
+  // The stored records a change starts from, as { records: [{ list, entry }],
+  // lines: [{ date, rev, text }] }. Only what the change names is read.
+  async function startingPoint(op) {
+    const records = [];
+    const lines = [];
+    for (const need of needs(op)) {
+      const found = await store.readEntry(need.list, need.id, need.rev);
+      if (found) records.push(found);
+    }
+    if (op.op === "line" && op.rev > 0) {
+      const line = await store.readLine(op.date, op.rev);
+      if (line) lines.push(line);
+    }
+    // An undo also needs the copy it takes back, at the latest revision made of
+    // it: untouched is revision 1 with nothing after it.
+    if (op.op === "undo" && records.length === 1) {
+      const entry = records[0].entry;
+      if ((entry.state === "migrated" || entry.state === "scheduled") && entry.to === op.toList) {
+        let rev = 1;
+        let latest = null;
+        for (; rev <= MAX_PROBE; rev += 1) {
+          const found = await store.readEntry(entry.to, entry.toId, rev);
+          if (!found) break;
+          latest = found;
+        }
+        if (latest) records.push(latest);
+      }
+    }
+    return { records, lines };
+  }
+
+  const putRecord = (records, record) => {
+    const at = records.findIndex((r) => r.entry.id === record.entry.id);
+    if (at < 0) records.push(record);
+    else if (record.entry.rev > records[at].entry.rev) records[at] = record;
+  };
+
+  // Takes back copies of a move that this call made and the move then could not
+  // use, by creating the copy's removed revision. The create is refused if anyone
+  // has made a revision of it since, and then the copy is left, as their work.
+  async function takeBackCopies(copies, files) {
+    const used = new Set();
+    for (const file of Object.values(files)) {
+      const entries = [...file.migrate, ...Object.values(file.days).flatMap((d) => d.entries)];
+      for (const e of entries) if (e.toId) used.add(e.toId);
+    }
+    for (const { list, entry } of copies) {
+      if (!used.has(entry.id)) await store.createEntry(list, { ...entry, state: "removed", rev: entry.rev + 1 });
+    }
   }
 
   async function change(op) {
     const months = monthsFor(op);
-    const known = knownRevisions(op, months);
-    for (let attempt = 0; ; attempt += 1) {
-      const { files, tags } = await loadMonths(months);
-      // Never apply a change on a file older than the page's own copy.
-      const behind = months.some((month) => files[month].rev < known[month]);
-      if (!behind) {
-        const result = applyOp(files, op);
-        if (result.error) {
-          // A move that wrote its copies on an earlier try and was then refused
-          // takes the copies back, so a refusal leaves nothing behind.
-          if (op.op === "move" && attempt > 0) await takeBackCopies(op);
-          const current = attempt > 0 ? (await loadMonths(months)).files : files;
-          return fail(STATUS[result.error.code] || 400, result.error.message, { code: result.error.code, months: view(current, months) });
-        }
-        if (result.changed.length === 0) return reply(200, { ok: true, created: result.created, months: view(files, months) });
-
-        let written = true;
-        for (const month of result.changed) {
-          if (!(await putMonth(month, files[month], tags[month]))) {
-            written = false;
-            break;
-          }
-        }
-        if (written) return reply(200, { ok: true, created: result.created, months: view(files, months) });
+    const { records, lines } = await startingPoint(op);
+    const primary = op.list || op.from;
+    const madeCopies = [];
+    const MAX_ROUNDS = 5 + (op.items ? op.items.length : 1);
+    for (let round = 0; round < MAX_ROUNDS; round += 1) {
+      const files = viewFrom(months, records, lines);
+      const before = clone(files);
+      const result = applyOp(files, op);
+      if (result.error) {
+        if (op.op === "move") await takeBackCopies(madeCopies, files);
+        return fail(STATUS[result.error.code] || 400, result.error.message, { code: result.error.code, months: view(files, months) });
       }
-      if (attempt >= WAITS_MS.length) return fail(503, MESSAGES.busy);
-      await sleep(WAITS_MS[attempt]);
+      const writes = writesFor(before, files);
+      if (writes.entries.length === 0 && writes.lines.length === 0) {
+        return reply(200, { ok: true, created: result.created, months: view(files, months) });
+      }
+      // Copies and removals in another list first, so that a failure between two
+      // creates leaves a duplicate and never an entry that is lost from view.
+      const ordered = [...writes.entries].sort((a, b) => Number(a.list === primary) - Number(b.list === primary));
+      let clash = null;
+      for (const w of ordered) {
+        const made = await store.createEntry(w.list, w.entry);
+        if (made) {
+          putRecord(records, w);
+          if (w.entry.rev === 1 && op.op === "move") madeCopies.push(w);
+          continue;
+        }
+        // A copy that was already there was made by an earlier try of this same change.
+        if (op.op === "move" && w.entry.rev === 1 && w.list === op.to) {
+          const existing = await store.readEntry(w.list, w.entry.id, 1);
+          if (existing) { putRecord(records, existing); continue; }
+        }
+        // Something is at that revision already: read it and decide again from it.
+        const there = await store.readEntry(w.list, w.entry.id, w.entry.rev);
+        if (!there) throw new Error("journal revision refused and not readable");
+        putRecord(records, there);
+        clash = true;
+        break;
+      }
+      if (!clash) {
+        for (const line of writes.lines) {
+          if (await store.createLine(line.date, line.rev, line.text)) { lines.push(line); continue; }
+          const there = await store.readLine(line.date, line.rev);
+          if (!there) throw new Error("journal revision refused and not readable");
+          lines.push(there);
+          clash = true;
+          break;
+        }
+      }
+      if (!clash) return reply(200, { ok: true, created: result.created, months: view(viewFrom(months, records, lines), months) });
     }
-  }
-
-  async function takeBackCopies(op) {
-    const target = parseList(op.to).month;
-    for (let attempt = 0; attempt < MAX_TRIES; attempt += 1) {
-      const { files, tags } = await loadMonths([target]);
-      const removed = discardCopies(files, op.to, op.items.map((i) => i.copyId));
-      if (removed === 0) return;
-      if (await putMonth(target, files[target], tags[target])) return;
-    }
+    return fail(503, MESSAGES.busy);
   }
 
   return {
@@ -208,7 +251,7 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
         if (months.length < 1 || months.length > MAX_MONTHS_PER_READ || !months.every(isMonth) || new Set(months).size !== months.length) {
           return fail(400, MESSAGES.badRequest);
         }
-        const { files } = await loadMonths(months);
+        const files = await loadMonths(months);
         return reply(200, { months: view(files, months) });
       }
 
@@ -222,7 +265,7 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
         const [onFile, quick] = await Promise.all([store.months(), store.readQuick()]);
         const earlier = onFile.filter((m) => m < thisMonth).slice(0, EARLIER_MONTHS);
         const months = [...wanted, ...earlier];
-        const { files } = await loadMonths(months);
+        const files = await loadMonths(months);
         return reply(200, { today, months: view(files, months), quick: { text: quick.text, updatedAt: quick.updatedAt } });
       }
 
@@ -274,8 +317,8 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
           }
           recentQuick = null;
         }
-        if (attempt >= WAITS_MS.length) break;
-        await sleep(WAITS_MS[attempt]);
+        if (attempt >= QUICK_WAITS_MS.length) break;
+        await sleep(QUICK_WAITS_MS[attempt]);
       }
       return fail(503, MESSAGES.busy);
     }),

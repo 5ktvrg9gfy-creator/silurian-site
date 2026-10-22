@@ -26,7 +26,6 @@ import { MockAgent, getGlobalDispatcher, setGlobalDispatcher } from "undici";
 import * as blob from "@vercel/blob";
 import { createBlobStore } from "../api/_lib/store.js";
 import { createJournalStore } from "../api/_lib/journal-store.js";
-import { emptyMonth } from "../journal/core.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 // Lowercase, because the private read goes to <store id>.private.blob.vercel-storage.com
@@ -117,6 +116,11 @@ before(() => {
     .reply(
       onRequest((options) => {
         const pathname = new URL(options.path, "https://vercel.com").searchParams.get("pathname");
+        // A create that may not overwrite is refused where a file is. The wording is
+        // not one the adapter matches, so it must find out for itself.
+        if (header(options, "x-allow-overwrite") === "0" && files.has(pathname)) {
+          return { statusCode: 400, data: JSON.stringify({ error: { code: "bad_request", message: "Something is at that pathname" } }) };
+        }
         files.set(pathname, {
           bytes: Buffer.from(options.body),
           contentType: header(options, "x-content-type") || "application/octet-stream",
@@ -216,34 +220,53 @@ test("the adapter works with only what Vercel provides, and every request carrie
   }
 });
 
-test("the journal adapter reaches the store the same way, creates without overwriting, and writes against the version it read", async () => {
+test("the journal adapter reaches the store the same way, and creates each entry revision without overwriting", async () => {
   const store = createJournalStore(blob);
   const before = requests.length;
-  // A write answers with the etag the package gave it, so the next change can go on from it.
-  assert.equal(await store.writeMonth("2026-10", emptyMonth(), null), '"e"');
-  const read = await store.readMonth("2026-10");
-  assert.equal(read.exists, true);
-  assert.equal(await store.writeMonth("2026-10", { ...emptyMonth(), rev: 1 }, read.tag), '"e"');
-  assert.deepEqual(await store.months(), ["2026-10"]);
+  const list = "day:2026-10-22";
+  const id = "a".repeat(32);
+  const entry = { id, type: "task", state: "open", text: "Order labels", rev: 1, order: 5 };
+  assert.equal(await store.createEntry(list, entry), true, "created");
+  assert.equal(await store.createEntry(list, { ...entry, text: "Another text" }), false, "a second create of the same revision is refused, and the adapter finds that out for itself");
+  const fresh = createJournalStore(blob);
+  assert.equal((await fresh.readEntry(list, id, 1)).entry.text, "Order labels", "what is there is what was made first");
+  assert.equal(await fresh.createEntry(list, { ...entry, rev: 2, text: "Edited" }), true);
+  assert.equal(await fresh.createLine("2026-10-22", 1, "Dentist"), true);
+  assert.deepEqual((await createJournalStore(blob).entriesOfMonth("2026-10")).map((e) => [e.entry.text, e.entry.rev]), [["Edited", 2]]);
+  assert.deepEqual((await createJournalStore(blob).linesOfMonth("2026-10")).map((l) => l.text), ["Dentist"]);
+  await createJournalStore(blob).months();   // the stand-in does not fold folders, so this only shows the call is made the same way
   const mine = requests.slice(before);
 
   const puts = mine.filter((r) => r.method === "PUT" && r.origin === "https://vercel.com");
-  assert.equal(puts.length, 2, "two writes were made");
+  assert.equal(puts.length, 4, "four creates, one of them refused");
+  assert.deepEqual(puts.map((p) => new URL(p.path, "https://vercel.com").searchParams.get("pathname")), [
+    `journal/e/2026-10/${id}.1.json`, `journal/e/2026-10/${id}.1.json`, `journal/e/2026-10/${id}.2.json`, "journal/l/2026-10/2026-10-22.1.json",
+  ]);
   for (const put of puts) {
-    assert.equal(new URL(put.path, "https://vercel.com").searchParams.get("pathname"), "journal/month/2026-10.json");
     assert.equal(header(put, "x-vercel-blob-access"), "private");
     assert.equal(header(put, "x-add-random-suffix"), "0");
+    assert.equal(header(put, "x-allow-overwrite"), "0", "no entry or line file is ever overwritten");
+    assert.equal(header(put, "x-if-match"), undefined, "so there is no etag to match");
   }
-  assert.equal(header(puts[0], "x-allow-overwrite"), "0", "a first write cannot replace a file");
-  assert.equal(header(puts[0], "x-if-match"), undefined);
-  assert.equal(header(puts[1], "x-if-match"), read.tag, "a later write names the version that was read");
-  assert.equal(header(puts[1], "x-allow-overwrite"), "1");
-  assert.ok(requests.slice(before).some((r) => r.method === "GET" && /[?&]prefix=journal%2Fmonth%2F|[?&]prefix=journal\/month\//.test(r.path)), "months are listed under journal/month/ only");
+  assert.ok(mine.some((r) => r.method === "GET" && /[?&]prefix=journal%2Fe%2F2026-10%2F|[?&]prefix=journal\/e\/2026-10\//.test(r.path)), "a month is listed under its own prefix only");
 
   for (const request of mine) {
     const auth = request.headers.authorization || request.headers.Authorization;
     assert.equal(auth, `Bearer ${IDENTITY_TOKEN}`, `${request.method} ${request.path} authenticates with the identity token`);
   }
+});
+
+test("the journal's quick notes are the one overwritten file, against the version that was read", async () => {
+  const store = createJournalStore(blob);
+  const before = requests.length;
+  assert.equal(await store.writeQuick("one", "2026-10-22T09:00:00.000Z", null), '"e"');
+  const read = await store.readQuick();
+  assert.equal(await store.writeQuick("two", "2026-10-22T09:01:00.000Z", read.tag), '"e"');
+  const puts = requests.slice(before).filter((r) => r.method === "PUT" && r.origin === "https://vercel.com");
+  assert.equal(header(puts[0], "x-allow-overwrite"), "0", "a first write cannot replace a file");
+  assert.equal(header(puts[1], "x-if-match"), read.tag, "a later write names the version that was read");
+  assert.equal(header(puts[1], "x-allow-overwrite"), "1");
+  for (const put of puts) assert.equal(new URL(put.path, "https://vercel.com").searchParams.get("pathname"), "journal/quick.json");
 });
 
 test("without BLOB_STORE_ID the adapter cannot reach the store, so the test above depends on it", async () => {

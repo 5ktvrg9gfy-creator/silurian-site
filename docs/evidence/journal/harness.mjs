@@ -23,9 +23,9 @@ const types = {
   '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain',
 };
 
-export async function startServer({ port = 8771, lagMs = 0, pageFile = process.env.JOURNAL_PAGE_FILE, coldInstances = false } = {}) {
+export async function startServer({ port = 8771, lagMs = 0, listLagMs = 0, pageFile = process.env.JOURNAL_PAGE_FILE, coldInstances = false } = {}) {
   const password = 'pw-' + randomBytes(12).toString('hex');
-  const journalStore = lagMs ? staleJournalStore({ lagMs }) : journalMemoryStore();
+  const journalStore = lagMs || listLagMs ? staleJournalStore({ lagMs, listLagMs }) : journalMemoryStore();
   const notesStore = memoryStore();
   const env = { [ENVIRONMENT_VARIABLE]: password };
   const notes = createNotesApi({ store: notesStore, env });

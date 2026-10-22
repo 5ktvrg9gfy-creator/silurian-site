@@ -1,7 +1,13 @@
-"""Proves the browser check can fail, for the three promises a unit test cannot see.
+"""Proves the browser run for the new storage can fail.
 
-Each case breaks one journal file, runs docs/evidence/journal/browser-check-journal.mjs,
-lists the checks that went red, and puts the file back. Run from the repository root:
+This is the round after the Preview retest of 22 October 2026 (one file per entry
+revision), so it holds only the breaks for that storage. The earlier cases, for sign
+out, the strip timer and the clash message, are in the git history of this file
+(commit 3e5d4fc) and were not run again.
+
+Each case breaks one journal file, runs docs/evidence/journal/browser-check-journal-lag.mjs
+(about three minutes each, in real time), lists the checks that went red, and puts
+the file back. Run from the repository root:
 
     python docs/evidence/journal/breakages-browser.py
 """
@@ -11,19 +17,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 CASES = [
-    ("sign out keeps the month files in memory", "journal/index.html", "    confirmed = {};\n    stripMonths = [];", "    stripMonths = [];"),
-    ("a timer brings the strip forward by itself", "journal/index.html", "  setInterval(function () {\n    if (!signedIn) { return; }", "  setInterval(function () {\n    if (signedIn && stripRemaining() > 0) { var g = core.stripFrom(stripFiles(), today).daily; if (g) { bringForward(g, g.tasks, core.dayList(today)); } }\n    if (!signedIn) { return; }"),
-    ("a clash is accepted: the edit check is gone from the rules", "journal/core.js", "if (!live || entry.rev !== op.rev ||", "if (!live ||"),
-    ("a refused change leaves the optimistic change on screen", "journal/index.html", "  function refused(kind, dropped) {\n    pending.length = 0;\n    recompute();", "  function refused(kind, dropped) {\n    pending.length = 0;"),
-    ("an older read replaces a newer save", "journal/index.html", "      if (core.isNewer(confirmed[m], months[m])) { confirmed[m] = months[m]; }", "      confirmed[m] = months[m];", "lag"),
-    ("the API applies a change on a file older than the page's", "api/_lib/journal-api.js", "      const behind = months.some((month) => files[month].rev < known[month]);", "      const behind = false;", "lag"),
-    ("a repeat of a move makes a second copy", "journal/core.js", "        entry && entry.state === op.how && entry.to === op.to && entry.toId === item.copyId && entry.rev === item.rev + 1;", "        false;", "lag"),
+    ("the page replaces its copy with every read, so a read that lacks or predates a save wins", "journal/index.html", "      confirmed[m] = core.mergeMonth(confirmed[m], months[m]);", "      confirmed[m] = months[m];"),
+    ("the API finds the entry a change starts from through a listing, which lags 60 seconds", "api/_lib/journal-api.js", "      const found = await store.readEntry(need.list, need.id, need.rev);\n      if (found) records.push(found);", "      const listed = await store.entriesOfMonth(parseList(need.list).month);\n      const found = listed.find((r) => r.entry.id === need.id);\n      if (found) records.push(found);"),
+    ("a repeat of a move is not recognised, so it copies again", "journal/core.js", "        entry && entry.state === op.how && entry.to === op.to && entry.toId === copyId && entry.rev === item.rev + 1;", "        false;"),
+    ("a move to a day no longer offers Open day", "journal/index.html", "offerUndo(\"Moved to \" + words + \".\", [undoOp(listKey, id, target)], open);", "offerUndo(\"Moved to \" + words + \".\", [undoOp(listKey, id, target)], null);"),
 ]
 import sys
 only = sys.argv[1:]
 for case in CASES:
     what, file, find, replace = case[:4]
-    script = "docs/evidence/journal/browser-check-journal-lag.mjs" if len(case) > 4 else "docs/evidence/journal/browser-check-journal.mjs"
+    script = "docs/evidence/journal/browser-check-journal-lag.mjs"
     if only and not any(word in what for word in only):
         continue
     path = ROOT / file

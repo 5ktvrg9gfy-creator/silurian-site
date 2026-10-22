@@ -381,7 +381,7 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         self.assertIn(".moved-toggle { min-height: 32px; padding: 0 8px; border: 0; background: transparent; color: var(--notes-muted); font-size: var(--notes-size-13); font-weight: 600; }", self.style)
         self.assertIn(".moved-toggle { min-height: 44px; }", self.style, "44px for a finger.")
         # The count chip in Month counts what the log shows.
-        self.assertIn("day.entries.filter(function (e) { return !isMoved(e); }).length", self.text)
+        self.assertIn("core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length", self.text)
 
     def test_each_panel_draws_itself_and_is_skipped_when_it_is_not_there(self) -> None:
         # CLAUDE.md section 5: every new output is a self-contained panel. The browser check
@@ -458,19 +458,47 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
                 self.assertNotRegex(line, r"\+\s*\d|\+\+|-\s*\d", f"A revision is worked out in the page: {line.strip()}")
         self.assertNotRegex(self.script, r"\b(?:state|type)\s*=\s*[\"'](?:done|migrated|scheduled|dropped)[\"']")
 
-    def test_a_refresh_never_replaces_data_newer_than_the_last_save_on_this_device(self) -> None:
-        # Found on the Preview, 22 October 2026: a read older than a save was drawn over it.
+    def test_a_refresh_never_replaces_or_drops_what_the_page_holds(self) -> None:
+        # Found on the Preview, 22 October 2026, twice: a read older than a save was drawn over it,
+        # and then entries vanished on a refresh. What the server says is put together with what the
+        # page holds, entry by entry, and the higher revision wins.
         take = function_body(self.script, "takeMonths")
-        self.assertIn("core.isNewer(confirmed[m], months[m])", take, "An older file never replaces a newer one.")
-        refresh = function_body(self.script, "refresh")
-        self.assertIn("var seq = saveSeq;", refresh)
-        self.assertEqual(refresh.count("seq !== saveSeq"), 2, "A look that began before a save is dropped, in both places it could land.")
-        self.assertIn("saveSeq += 1;", function_body(self.script, "pump"))
+        self.assertIn("confirmed[m] = core.mergeMonth(confirmed[m], months[m]);", take, "Never a replacement.")
+        self.assertNotIn("= months[m]", take.replace("core.mergeMonth(confirmed[m], months[m])", ""))
+        self.assertNotIn("saveSeq", self.script, "No guard on a save count: the merge needs none.")
+        self.assertNotIn("isNewer", self.script)
+        core = (JOURNAL / "core.js").read_text(encoding="utf-8")
+        merge = function_body(core, "mergeMonth")
+        self.assertIn("e.rev > held.rev", merge, "The higher revision wins.")
+        self.assertNotIn(".splice(", merge, "and nothing is dropped because a read lacks it.")
+        self.assertNotIn("filter(", merge)
         self.assertIn("core.laterStamp(fresh.updatedAt, quick.base)", function_body(self.script, "takeQuick"), "Quick notes too.")
-        # Every change says which revision of each month the page holds, so the server can tell a lagging read.
+        # A change carries no remembered revisions of months: the server reads only what it names.
         send = function_body(self.script, "sendChange")
-        self.assertIn("known[m] = confirmed[m].rev;", send)
-        self.assertIn("Object.assign({}, item.op, { known: known })", send)
+        self.assertNotIn("known", send)
+        self.assertIn("var body = JSON.stringify(item.op);", send)
+
+    def test_the_page_says_when_an_entry_was_made_and_never_chooses_a_copy_id(self) -> None:
+        submit = function_body(self.script, "submit")
+        self.assertIn('if ((op.op === "add" || op.op === "move") && op.at === undefined) { op.at = Date.now(); }', submit)
+        self.assertNotIn("copyId", self.script, "A copy's id is worked out from the entry, its revision and the place, by the shared rules.")
+        core = (JOURNAL / "core.js").read_text(encoding="utf-8")
+        self.assertIn("export function copyIdFor(id, rev, to)", core)
+
+    def test_undo_of_a_delete_makes_a_new_entry_because_a_removed_entry_keeps_its_id(self) -> None:
+        self.assertIn("entry: { id: newId(), type: removed.type, text: removed.text, state: removed.state }", self.script)
+        self.assertNotIn("removed.id", self.script)
+
+    def test_a_move_to_a_day_says_which_day_and_offers_to_open_it(self) -> None:
+        move = function_body(self.script, "moveEntry")
+        self.assertIn(': longDate(to.date)', move, "Wednesday 28 October, not 28 Oct.")
+        self.assertIn('offerUndo("Moved to " + words + ".", [undoOp(listKey, id, target)], open);', move)
+        self.assertIn('{ label: "Open day", run: function () { openDay(to.date); return true; } }', move)
+        self.assertIn('<button type="button" id="flash-also" hidden></button>', self.text, "A second button in the message bar, beside Undo.")
+        flash = function_body(self.script, "showFlash")
+        self.assertIn("second.hidden = !also;", flash)
+        self.assertIn('$("flash-also").addEventListener("click"', self.script)
+        self.assertNotIn("Scheduled for", self.text, "One wording for a move.")
 
     def test_a_change_that_could_not_be_sent_is_sent_again_as_the_very_same_change(self) -> None:
         send = function_body(self.script, "sendChange")
@@ -618,7 +646,7 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
             '" yet. Click a date to add a line, or open a date to log it."',
             '"Nothing on the calendar for "',
             'data-placeholder="Type anything here. It has no date and stays until you delete it."',
-            '"Entry deleted."', '"All handled."', '"Brought forward."', '"Dropped."', '"Moved to "', '"Scheduled for "',
+            '"Entry deleted."', '"All handled."', '"Brought forward."', '"Dropped."', '"Moved to "', '"Open day"',
             '"Could not save that change. Nothing was changed. Try again."',
             '"Could not load your journal. Check your connection and reload."',
             '"Add to "', '"Back to "',
@@ -643,7 +671,7 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
     def test_a_message_with_an_undo_lasts_ten_seconds_and_a_clash_stays_until_dismissed(self) -> None:
         self.assertIn("var UNDO_MS = 10000;", self.script)
         self.assertIn("if (autoHide) { flashTimer = setTimeout(hideFlash, UNDO_MS); }", self.script)
-        self.assertIn("showFlash(text, { label: \"Undo\", run: function () { return runUndo(ops); } }, true);", self.script)
+        self.assertIn("showFlash(text, { label: \"Undo\", run: function () { return runUndo(ops); } }, true, also);", self.script)
         self.assertNotIn("true);", re.search(r"showFlash\(core\.MESSAGES\.stale.*", self.script).group(0))
 
 

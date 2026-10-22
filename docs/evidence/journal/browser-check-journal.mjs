@@ -40,15 +40,24 @@ async function signInForSeeding() {
   const login = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: server.password }) });
   cookie = login.headers.get('set-cookie').split(';')[0];
 }
+let seedAt = 1_790_000_000_000;
 async function seed(list, text, type = 'task', state) {
   const id = newId();
-  const made = await http('POST', '/api/journal', { op: 'add', list, entry: { id, type, text, ...(state ? { state } : {}) } });
+  const made = await http('POST', '/api/journal', { op: 'add', list, at: (seedAt += 1000), entry: { id, type, text, ...(state ? { state } : {}) } });
   if (made.status !== 200) throw new Error('seed ' + made.status);
   return id;
 }
-const reset = () => { server.journalStore.files.clear(); server.journalStore.writes.length = 0; server.journalStore.state.quick = null; server.journalStore.state.hook = null; };
-const stored = (month = OCT) => JSON.parse(server.journalStore.files.get(month).json);
-const storedDay = (date = TODAY) => (stored(date.slice(0, 7)).days[date] || { entries: [], line: '' });
+const reset = () => { const s = server.journalStore; s.entries.clear(); s.lines.clear(); s.creates.length = 0; s.state.quick = null; s.state.hook = null; };
+// What is really stored, built from the entry and line files, removed entries included.
+const stored = (month = OCT) => {
+  const s = server.journalStore;
+  const records = [...s.entries.values()].map((h) => core.normaliseEntryFile(JSON.parse(h.json))).filter((r) => core.parseList(r.list).month === month);
+  const lines = [...s.lines.values()].map((h) => core.normaliseLineFile(JSON.parse(h.json))).filter((l) => l.date.startsWith(month));
+  return core.viewFrom([month], records, lines)[month];
+};
+// A day as stored, without the entries that were removed.
+const storedDay = (date = TODAY) => { const d = stored(date.slice(0, 7)).days[date] || { entries: [], line: '', lineRev: 0 }; return { ...d, entries: core.liveEntries(d.entries) }; };
+const writes = () => server.journalStore.creates.length;
 
 /* ---------- the page ---------- */
 
@@ -261,11 +270,11 @@ async function boxes(page) {
   await page.waitForSelector('#flash:not([hidden])');
   eq('clearing the text deletes the entry, with a message and an Undo', [await page.textContent('#flash-text'), await page.textContent('#flash-action'), await rows(page, 'today').count()], ['Entry deleted.', 'Undo', 0]);
   await sleep(300);
-  eq('the server has no entry and no empty day', stored().days[TODAY], undefined);
+  eq('the server holds it as a removed revision, so another device learns it is gone', [storedDay().entries.length, stored().days[TODAY].entries.map((e) => [e.state, e.rev])], [0, [['removed', 3]]]);
   await page.click('#flash-action');
   await page.waitForFunction(() => document.querySelectorAll('#list-today li.entry').length === 1);
   await sleep(300);
-  eq('Undo brings it back with its text', [(await texts(page, 'today'))[0], storedDay().entries.map((e) => e.text)], ['Draft wording final', ['Draft wording final']]);
+  eq('Undo brings it back with its text, as a new entry', [(await texts(page, 'today'))[0], storedDay().entries.map((e) => e.text)], ['Draft wording final', ['Draft wording final']]);
   void id;
   await context.close();
 }
@@ -346,7 +355,7 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   await page.waitForFunction(() => document.querySelectorAll('#list-tomorrow li.entry').length === 0);
   eq('Undo opens the original again, takes the copy away, and the moved line goes', [await cell(page, 'today', 'Chase the invoice').getAttribute('data-state'), await rows(page, 'tomorrow').count(), await page.locator('#moved-today').isHidden()], ['open', 0, true]);
   await sleep(300);
-  eq('on the server too, and the emptied day is gone', [storedDay().entries[0].state, stored().days[TOMORROW]], ['open', undefined]);
+  eq('on the server too, and the copy is removed from tomorrow', [storedDay().entries[0].state, storedDay(TOMORROW).entries.length], ['open', 0]);
 
   // events and notes move too
   const event = cell(page, 'today', 'Supplier call');
@@ -368,7 +377,10 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   await page.click('#moved-toggle-today');
   eq('scheduling gives a left arrow and "to 28 Oct", shown in the moved line', await page.locator('#moved-list-today li.entry', { hasText: 'Chase the invoice' }).evaluate((li) => [li.dataset.state, li.querySelector('use').getAttribute('href'), li.querySelector('.entry-note').textContent]), ['scheduled', '#j-scheduled', 'to 28 Oct']);
   eq('the moved line counts moved and scheduled together (the event moved earlier and this)', await page.textContent('#moved-toggle-today'), '2 moved');
-  eq('the message says Scheduled', await page.textContent('#flash-text'), 'Scheduled for 28 Oct.');
+  eq('the message says which day, in full, and offers Undo and Open day', [await page.textContent('#flash-text'), await page.textContent('#flash-action'), await page.textContent('#flash-also')], ['Moved to Wednesday 28 October.', 'Undo', 'Open day']);
+  await page.click('#flash-also');
+  await page.waitForSelector('#day-view:not([hidden])');
+  eq('Open day opens that day, with the moved entry in it', [await page.textContent('#day-date'), await texts(page, 'day'), await page.locator('#flash').isHidden()], ['Wednesday 28 October', ['Chase the invoice'], true]);
   await sleep(300);
   eq('the copy is in that day\'s log on the server', storedDay('2026-10-28').entries.map((e) => [e.text, e.state, e.rev]), [['Chase the invoice', 'open', 1]]);
   await context.close();
@@ -533,18 +545,18 @@ const strip = (page) => page.locator('#strip');
   await seed(core.dayList(YESTERDAY), 'Ask about pallets', 'note');
   const done = await seed(core.dayList(YESTERDAY), 'Already done');
   await http('POST', '/api/journal', { op: 'state', list: core.dayList(YESTERDAY), id: done, rev: 1, state: 'done' });
-  const before = server.journalStore.writes.length;
+  const before = writes();
   const { context, page } = await open({ width: 1280, height: 800 });
   await signIn(page);
   await sleep(1200);
   eq('the strip is at the top of Today with a heading that says whose tasks and how many', [await strip(page).isVisible(), await strip(page).locator('.strip-head').allInnerTexts()], [true, ['From yesterday, 2 open tasks']]);
   eq('it offers open tasks only: no event, no note, no ticked task', await strip(page).locator('.strip-text').allInnerTexts(), ['Chase the invoice', 'Book the van']);
   eq('each task has Bring forward and Drop, and there is one Bring all forward and no Drop all', [await strip(page).locator('.strip-buttons button').allInnerTexts(), await strip(page).locator('.strip-foot').allInnerTexts()], [['Bring forward', 'Drop', 'Bring forward', 'Drop'], ['Bring all forward']]);
-  check('opening the journal moved, migrated and dropped nothing: no write happened', server.journalStore.writes.length === before, `${server.journalStore.writes.length} writes against ${before}`);
+  check('opening the journal moved, migrated and dropped nothing: no write happened', writes() === before, `${writes()} writes against ${before}`);
   // Ten minutes go by on the page's clock: every timer it has fires many times.
   await context.clock.fastForward(10 * 60 * 1000);
   await sleep(500);
-  check('ten minutes of timers later: still nothing moved, migrated or dropped, and the strip is still waiting', server.journalStore.writes.length === before && (await strip(page).locator('.strip-row').count()) === 2, `${server.journalStore.writes.length} writes against ${before}`);
+  check('ten minutes of timers later: still nothing moved, migrated or dropped, and the strip is still waiting', writes() === before && (await strip(page).locator('.strip-row').count()) === 2, `${writes()} writes against ${before}`);
   await shot(page, 'strip-1280-light');
   const primary = await strip(page).locator('.strip-buttons button').first().evaluate((x) => getComputedStyle(x).backgroundColor);
   check('Bring forward is the primary button, in the accent', primary === 'rgb(236, 105, 23)', primary);
@@ -608,16 +620,16 @@ const strip = (page) => page.locator('#strip');
   await seed(core.dayList(TODAY), 'Left open at the end of the day');
   const { context, page } = await open({ width: 1280, height: 800 });
   await signIn(page);
-  const before = server.journalStore.writes.length;
+  const before = writes();
   await context.clock.setSystemTime(new Date('2026-10-23T00:10:00+01:00'));
   await context.clock.fastForward(60000);
   await page.waitForFunction(() => document.getElementById('date-today').textContent === 'Friday 23 October', null, { timeout: 8000 });
   eq('overnight the headings and marks move on by themselves', [await page.textContent('#date-tomorrow'), await page.locator('.date-row[data-mark="today"]').getAttribute('data-date')], ['Saturday 24 October', '2026-10-23']);
   eq('and the open task is offered in the strip, as yesterday\'s', await strip(page).locator('.strip-head, .strip-text').allInnerTexts(), ['From yesterday, 1 open task', 'Left open at the end of the day']);
-  check('and nothing was moved, migrated or dropped by the date changing', server.journalStore.writes.length === before);
+  check('and nothing was moved, migrated or dropped by the date changing', writes() === before);
   await context.clock.fastForward(10 * 60 * 1000);
   await sleep(500);
-  check('and ten more minutes of timers move nothing either, with the strip still waiting', server.journalStore.writes.length === before && (await strip(page).locator('.strip-row').count()) === 1);
+  check('and ten more minutes of timers move nothing either, with the strip still waiting', writes() === before && (await strip(page).locator('.strip-row').count()) === 1);
   await context.close();
 }
 
@@ -948,8 +960,8 @@ async function showcase() {
   await seed(day, 'Supplier call at 14:00', 'event');
   await seed(day, 'Ask Toni about the ~~label~~ proof', 'note');
   await http('POST', '/api/journal', { op: 'state', list: day, id: id.qa, rev: 1, state: 'done' });
-  await http('POST', '/api/journal', { op: 'move', from: day, to: tomorrow, how: 'migrated', items: [{ id: id.van, rev: 1, copyId: newId() }] });
-  await http('POST', '/api/journal', { op: 'move', from: day, to: core.dayList('2026-10-28'), how: 'scheduled', items: [{ id: id.licence, rev: 1, copyId: newId() }] });
+  await http('POST', '/api/journal', { op: 'move', from: day, to: tomorrow, how: 'migrated', items: [{ id: id.van, rev: 1 }], at: (seedAt += 1000) });
+  await http('POST', '/api/journal', { op: 'move', from: day, to: core.dayList('2026-10-28'), how: 'scheduled', items: [{ id: id.licence, rev: 1 }], at: (seedAt += 1000) });
   await http('POST', '/api/journal', { op: 'drop', list: day, items: [{ id: id.sop, rev: 1 }] });
   await seed(tomorrow, 'Dentist at 09:30', 'event');
   await seed(tomorrow, 'Prepare the supplier meeting pack');

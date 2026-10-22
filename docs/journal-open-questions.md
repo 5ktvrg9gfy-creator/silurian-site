@@ -1,6 +1,6 @@
 # Journal: open questions
 
-Each: what it blocks, the default the design brief uses, and the cost if wrong. Brief: `docs/briefs/journal-design-brief.md`. Answers by the product owner are recorded under each question. **Two waiting: Q16 and Q17, raised by the build on 22 October 2026 while fixing what the Preview found.** Q9 to Q15 were answered the same day.
+Each: what it blocks, the default the design brief uses, and the cost if wrong. Brief: `docs/briefs/journal-design-brief.md`. Answers by the product owner are recorded under each question. **Two waiting: Q18 and Q19, raised by the build on 22 October 2026 while rebuilding the storage after the second Preview retest.** Q9 to Q15 were answered the same day. Q16 is superseded by Q18 and Q17 is accepted.
 
 ## Decision, not a question: desktop layout
 
@@ -50,6 +50,7 @@ Blocks: nothing. The design brief (section 10) sketched a file per date, a file 
 Default built: `journal/month/YYYY-MM.json` holds a month's calendar lines, daily logs and Migrate list, and `journal/quick.json` holds Quick notes. Month needs every day of the month at once, so one file is one read, where a file per day is up to thirty one.
 Cost if wrong: every change rewrites a small file (tens of kilobytes at most), and two devices changing the same month at the same moment contend for one file. A lost race is retried against the newer file, so it costs a retry and never a change. Moving to a file per day later is a migration the page would not notice.
 **Answer: default accepted, 22 October 2026.** One file per month.
+**Superseded the same day by Q18, and the cost line above was wrong.** It said a lost race "costs a retry and never a change". On the real store it cost entries: a shared file read from an old copy and written back loses what came after the copy. The second Preview retest showed it. This note stays on the record.
 
 **Q10. The strip looks back through three earlier months at most.**
 Blocks: nothing.
@@ -94,14 +95,26 @@ Ruled by the product owner on 22 October 2026, after the Preview, and recorded i
 ## Waiting
 
 **Q16. A change waits up to about six seconds when the store is behind, and the page retries a change it could not send.**
-Blocks: nothing. Raised while fixing what the Preview found: entries vanished a few seconds after being added, and one move showed twice, because reads from the real store were older than the writes just made.
-Default built: every change tells the server which revision of the month the page holds. If the store shows an older file, the server waits (a tenth of a second, then longer, to about six seconds in all) and tries again, and does not apply the change on the old file. An instance remembers what it last wrote for a minute, so a run of changes through the same instance does not wait at all. If the store is still behind after the waits the server answers "busy", and the page sends the very same change again up to three more times, a second and a half, three and five seconds apart, before it gives up, puts the screen back and says nothing was changed. A change sent again is recognised as already done, so it never makes a second copy. The page shows each change at once, so none of this waits on the screen.
-Cost if wrong: on a store that is behind by several seconds and a function that restarts between changes, a change can take about six seconds to save, and a burst of changes takes longer. Giving up sooner shows the "could not save" message sooner. Nothing is lost or doubled either way.
+**Superseded, 22 October 2026, by Q18.** The second Preview retest failed with this in place (entries vanished on a refresh and "Could not save that change" showed), because a month shared by every entry, read and written back, loses a change on a store that can serve an old copy of an overwritten file, however the timing is handled. The waits, the revisions the page told the server it held and the remembered writes are removed for entries and lines. They stay only for Quick notes (Q19), the one file that is still overwritten. The page still sends a change it could not send again as the very same change, three more times, a second and a half, three and five seconds apart.
 
 **Q17. Two devices that make the same change are not a clash.**
 Blocks: nothing.
-Default built: a change that has already happened is recognised by the revision it started from, so two devices both ticking the same task, both dropping it, both deleting it or both saving the same text end up agreeing without a clash message. Two devices moving the same entry are still a clash, because each move has its own copy id, and a different change to the same entry is still refused. This is the price of making a retry safe: a retry and a second device making the same change cannot be told apart.
+Default built: a change that has already happened is recognised by the revision it started from, so two devices both ticking the same task, both dropping it, both deleting it or both saving the same text end up agreeing without a clash message. Two devices moving the same entry to the same place are no longer a clash either, because the copy's id is now worked out from the entry, its revision and the place, so both moves make the same copy and the second finds it done. Two devices moving it to different places are still a clash, and the copy the loser made is taken back. A different change to the same entry is still refused. This is the price of making a retry safe: a retry and a second device making the same change cannot be told apart.
 Cost if wrong: the second device is not told that the first got there first when both wanted the same result. If a message is wanted there, retries would need an id of their own.
+**Answer: accepted, 22 October 2026.**
+
+**Q18. One file per entry revision, never overwritten, instead of one file per month. Replaces Q9 (one file per month) and Q16.**
+Blocks: nothing. Done on the specification lead's instruction after the second Preview retest, 22 October 2026, with one deviation from the wording that needs the product owner's word.
+Instruction followed: one file per entry under `journal/`, named by a stable entry id; an add writes one new file and reads nothing first; a move or Bring forward makes the copy as its own file with an id worked out from the original's id and the destination, so a retry cannot make a second copy; views are built from a listing; Quick notes stay one file with the note rule; the six second wait and the stale-read workarounds are gone for entries; the version check on a single entry stays; a move to a day says so in the message bar with an Open day button.
+**The deviation.** The instruction says a move updates the original entry's own file. Built: a change makes the entry's **next revision as a new file** (`<id>.<rev>.json`) and never overwrites the file it started from. Why: Vercel's Blob documentation says an overwritten blob "may take up to 60 seconds to propagate through our cache". An overwrite in place, even of one entry's own file, can therefore be read as it was a minute ago, and an edit or a move made from that old copy is then refused as a clash or applied on old data. That is the failure on the Preview, only smaller. A file that is only ever created has no old copy to read. The create is also the version check, so a conflict is a refused create, with no etag to carry. I could not read the documentation page from the build sandbox (the host is blocked), so the quotation comes from a search of the page and its changelog; the SDK's own comments in `node_modules/@vercel/blob` confirm `useCache` and `allowOverwrite`.
+Cost if wrong: more files (one per revision, a few hundred bytes each; a removed entry stays as a small file) and a listing per month; a cold first load of a month reads one file per entry in it, sixteen at a time, and a warm instance reads each file once, because a file's content never changes. If in-place overwrite of one entry's file is wanted after all, the create becomes a conditional overwrite and the 60 seconds of exposure comes back for edits made within a minute of each other on different instances.
+**Answer: waiting.**
+
+**Q19. Quick notes are still one overwritten file, and still wait up to about six seconds for the store.**
+Blocks: nothing. The instruction says Quick notes stay one file with the note rule.
+Default built: exactly that. They are the one thing the journal still overwrites, so they are exposed to an old read as notes is, and they keep the wait and the remembered write for it. On a store a few seconds behind a save through another instance still goes through. On a store a full 60 seconds behind, a save through an instance that did not make the previous one is answered "busy" after about six seconds, with nothing lost and the text still on the page (`journal-stale.test.js` shows both).
+Cost if wrong: a Quick notes save can be refused as busy, and a clash message can appear when none is due, in the minute after a save from another device. If that matters, Quick notes become revision files too, with the newest the one shown, and "one file" is given up.
+**Answer: waiting.**
 
 ## Assumed, not asked (all accepted, 22 October 2026)
 

@@ -1,0 +1,8 @@
+CAUGHT the page replaces its copy with every read, so a read that lacks or predates a save wins
+         the run stopped early: Node.js v22.22.0
+CAUGHT the API finds the entry a change starts from through a listing, which lags 60 seconds
+         moving to Tomorrow: the moved line says "1 moved" and the entry is hidden from the list  0 moved
+CAUGHT a repeat of a move is not recognised, so it copies again
+         moving to Tomorrow: the moved line says "1 moved" and the entry is hidden from the list  0 moved
+CAUGHT a move to a day no longer offers Open day
+         moving to a date: the message names the day in full and has Undo and Open day  Moved to Wednesday 28 October.

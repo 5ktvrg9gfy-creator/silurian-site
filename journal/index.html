@@ -652,6 +652,7 @@
   <p id="flash-text"></p>
   <div class="flash-actions">
     <button type="button" id="flash-action" hidden></button>
+    <button type="button" id="flash-also" hidden></button>
     <button type="button" class="quiet" id="flash-close">Dismiss</button>
   </div>
 </div>
@@ -907,7 +908,6 @@ import * as core from "/journal/core.js";
   var pending = [];        // changes shown at once and not yet confirmed
   var shown = {};          // confirmed with the pending changes applied: what is on screen
   var sending = false;
-  var saveSeq = 0;         // counts confirmed saves, so a look that began before one is dropped
   var generation = 0;      // bumped when the page empties, so a late answer is ignored
   var signedIn = false;
   var viewMonth = thisMonth();
@@ -921,6 +921,7 @@ import * as core from "/journal/core.js";
   var pollTimer = null;
   var flashTimer = null;
   var flashRun = null;
+  var flashAlso = null;   // the second button of the message bar, or null
 
   function stripFiles() {
     var files = {};
@@ -934,12 +935,14 @@ import * as core from "/journal/core.js";
     pending.forEach(function (item) { core.applyOp(shown, item.op); });
   }
 
-  // A month from the server replaces this device's copy only if it is not older.
-  // A store can show a file as it was a few seconds ago, and an old read must never
-  // draw over a newer save. The versions only go up, so older is always stale.
+  // What the server says is put together with what this device holds, entry by
+  // entry: the higher revision of each entry and each line wins, and nothing is
+  // dropped because a read lacks it. A read can be shorter or older than a save
+  // this device has made, and it never draws over it. A removal arrives as a
+  // revision, not as an absence.
   function takeMonths(months) {
     Object.keys(months || {}).forEach(function (m) {
-      if (core.isNewer(confirmed[m], months[m])) { confirmed[m] = months[m]; }
+      confirmed[m] = core.mergeMonth(confirmed[m], months[m]);
     });
   }
 
@@ -983,6 +986,9 @@ import * as core from "/journal/core.js";
   // confirmed, with the message.
   function submit(op, hooks) {
     hooks = hooks || {};
+    // The time an entry is made, which sets where it sits in its list. The page
+    // says it, as it says the date, and the same change sent again says the same.
+    if ((op.op === "add" || op.op === "move") && op.at === undefined) { op.at = Date.now(); }
     return loadMonths(core.monthsFor(op)).then(function (ok) {
       if (!ok) { if (hooks.onFail) { hooks.onFail("error"); } return false; }
       var trial = {};
@@ -1010,9 +1016,7 @@ import * as core from "/journal/core.js";
   // not be sent or the server could not finish it. The server treats a repeat of a
   // change that already happened as done, so a retry never makes a second copy.
   function sendChange(item, gen, tries) {
-    var known = {};
-    core.monthsFor(item.op).forEach(function (m) { if (confirmed[m]) { known[m] = confirmed[m].rev; } });
-    var body = JSON.stringify(Object.assign({}, item.op, { known: known }));
+    var body = JSON.stringify(item.op);
     return request("/api/journal", { method: "POST", headers: { "Content-Type": "application/json" }, body: body }).then(function (response) {
       return readJson(response).then(function (answer) { return { status: response.status, body: answer }; });
     }).catch(function () {
@@ -1034,7 +1038,6 @@ import * as core from "/journal/core.js";
       sending = false;
       if (answer.status === 200) {
         takeMonths(answer.body.months);
-        saveSeq += 1;
         pending.shift();
         recompute();
         renderAll();
@@ -1074,14 +1077,18 @@ import * as core from "/journal/core.js";
 
   /* ---------- the message bar ---------- */
 
-  function showFlash(text, action, autoHide) {
+  function showFlash(text, action, autoHide, also) {
     clearTimeout(flashTimer);
     $("flash-text").textContent = text;
     flashRun = action ? action.run : null;
+    flashAlso = also ? also.run : null;
     var button = $("flash-action");
     button.hidden = !action;
     button.textContent = action ? action.label : "";
     button.disabled = false;
+    var second = $("flash-also");
+    second.hidden = !also;
+    second.textContent = also ? also.label : "";
     $("flash").hidden = false;
     if (autoHide) { flashTimer = setTimeout(hideFlash, UNDO_MS); }
   }
@@ -1090,9 +1097,15 @@ import * as core from "/journal/core.js";
     clearTimeout(flashTimer);
     $("flash").hidden = true;
     flashRun = null;
+    flashAlso = null;
   }
 
   $("flash-close").addEventListener("click", hideFlash);
+  $("flash-also").addEventListener("click", function () {
+    var run = flashAlso;
+    hideFlash();
+    if (run) { run(); }
+  });
   $("flash-action").addEventListener("click", function () {
     var run = flashRun;
     if (!run) { return; }
@@ -1105,8 +1118,8 @@ import * as core from "/journal/core.js";
 
   // A message with an Undo that lasts ten seconds. The Undo is a list of changes
   // sent in order, each as an ordinary change with its own version check.
-  function offerUndo(text, ops) {
-    showFlash(text, { label: "Undo", run: function () { return runUndo(ops); } }, true);
+  function offerUndo(text, ops, also) {
+    showFlash(text, { label: "Undo", run: function () { return runUndo(ops); } }, true, also);
   }
 
   function runUndo(ops) {
@@ -1481,11 +1494,12 @@ import * as core from "/journal/core.js";
       original = null;
       if (cancelled || typed === before) { return; }
       if (core.cleanText(typed) === "") {
-        var removed = { id: entry.id, type: entry.type, state: entry.state, text: entry.text };
+        // Undo makes the entry again as a new one, because a removed entry keeps its id.
+        var removed = { type: entry.type, state: entry.state, text: entry.text };
         submit({ op: "remove", list: listKey, id: entry.id, rev: entry.rev }, {
           onFail: function () { restoreEditing(listKey, entry.id, typed); }
         }).then(function (ok) {
-          if (ok) { offerUndo("Entry deleted.", [{ op: "add", list: listKey, entry: { id: removed.id, type: removed.type, text: removed.text, state: removed.state } }]); }
+          if (ok) { offerUndo("Entry deleted.", [{ op: "add", list: listKey, entry: { id: newId(), type: removed.type, text: removed.text, state: removed.state } }]); }
         });
         return;
       }
@@ -1537,15 +1551,17 @@ import * as core from "/journal/core.js";
   function moveEntry(listKey, id, target, how) {
     var entry = findEntry(listKey, id);
     if (!entry) { return; }
-    var op = { op: "move", from: listKey, to: target, how: how, items: [{ id: id, rev: entry.rev, copyId: newId() }] };
+    var op = { op: "move", from: listKey, to: target, how: how, items: [{ id: id, rev: entry.rev }] };
     ui.openMove = null;
     ui.picking = null;
     submit(op, {}).then(function (ok) {
       if (!ok) { return; }
       var to = core.parseList(target);
-      var words = to.kind === "day" ? (to.date === today ? "Today" : to.date === tomorrow() ? "Tomorrow" : shortDate(to.date)) : "Migrate";
-      var text = how === "scheduled" ? "Scheduled for " + words + "." : "Moved to " + words + ".";
-      offerUndo(text, [undoOp(listKey, id, target)]);
+      var words = to.kind === "day" ? (to.date === today ? "Today" : to.date === tomorrow() ? "Tomorrow" : longDate(to.date)) : "Migrate";
+      // A move to a day says which day, and the message offers to open it, so a
+      // moved entry is never somewhere the person cannot see.
+      var open = to.kind === "day" ? { label: "Open day", run: function () { openDay(to.date); return true; } } : null;
+      offerUndo("Moved to " + words + ".", [undoOp(listKey, id, target)], open);
     });
   }
 
@@ -1761,7 +1777,7 @@ import * as core from "/journal/core.js";
   }
 
   function bringForward(group, tasks, destination) {
-    var items = tasks.map(function (t) { return { id: t.id, rev: t.rev, copyId: newId() }; });
+    var items = tasks.map(function (t) { return { id: t.id, rev: t.rev }; });
     submit({ op: "move", from: group.list, to: destination, how: "migrated", items: items }, {}).then(function (ok) {
       if (!ok) { return; }
       var undo = tasks.map(function (t) { return undoOp(group.list, t.id, destination); });
@@ -1828,7 +1844,7 @@ import * as core from "/journal/core.js";
       span.title = span.textContent;
       li.appendChild(span);
     }
-    var visible = day.entries.filter(function (e) { return !isMoved(e); }).length;
+    var visible = core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length;
     if (visible > 0) {
       var chip = make("span", "chip", String(visible));
       chip.setAttribute("aria-label", visible + (visible === 1 ? " entry" : " entries"));
@@ -1841,7 +1857,7 @@ import * as core from "/journal/core.js";
     var file = shown[core.monthOf(date)];
     var day = file && file.days[date] ? file.days[date] : null;
     var events = day ? dayEvents(day).map(function (e) { return e.id + e.rev; }).join(",") : "";
-    var visible = day ? day.entries.filter(function (e) { return !isMoved(e); }).length : 0;
+    var visible = day ? core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length : 0;
     return [date, today, day ? day.line : "", day ? day.lineRev : 0, visible, events].join("|");
   }
 
@@ -1903,7 +1919,7 @@ import * as core from "/journal/core.js";
     var made = [];
     for (var d = 1; d <= total; d += 1) {
       var date = viewMonth + "-" + (d < 10 ? "0" : "") + d;
-      if (file && file.days[date]) { anything = true; }
+      if (core.dayHas(file, date)) { anything = true; }
       if (keep && keep.getAttribute("data-date") === date) { made.push(keep); continue; }
       var signature = dateSignature(date);
       var held = before[date];
@@ -2186,7 +2202,6 @@ import * as core from "/journal/core.js";
     if (!force && (busy || editing)) { return Promise.resolve(false); }
     if (busy) { return Promise.resolve(false); }
     var gen = generation;
-    var seq = saveSeq;
     var rolled = londonDate();
     if (rolled !== today) { today = rolled; }
     var extra = Object.keys(confirmed).filter(function (m) { return m !== thisMonth(); });
@@ -2194,13 +2209,12 @@ import * as core from "/journal/core.js";
       if (!response.ok) { throw new Error("home"); }
       return readJson(response);
     }).then(function (body) {
-      // A look that began before a save of this device finished is older than that save.
-      if (gen !== generation || pending.length > 0 || sending || seq !== saveSeq) { return false; }
+      if (gen !== generation || pending.length > 0 || sending) { return false; }
       var others = extra.filter(function (m) { return !body.months[m]; });
       applyHome(body, false);
       if (others.length === 0) { return true; }
       return request("/api/journal?view=months&months=" + others.slice(0, 5).join(",")).then(readJson).then(function (more) {
-        if (gen !== generation || pending.length > 0 || sending || seq !== saveSeq) { return false; }
+        if (gen !== generation || pending.length > 0 || sending) { return false; }
         takeMonths(more.months);
         recompute();
         return true;
