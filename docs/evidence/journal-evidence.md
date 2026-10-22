@@ -248,3 +248,19 @@ On the branch Preview, at `/journal`, on the PC, window in front for the whole m
 5. **Bring forward.** Open an earlier date, add two tasks, reload. Press Bring forward on one, wait ten seconds, then Bring all forward on the other. **Pass:** exactly one copy of each at the bottom of Today, none doubling or disappearing over a minute, the same after a reload.
 6. **Two devices.** Add an entry on the iPad with the PC in front. **Pass:** it appears on the PC within about a minute and nothing the PC showed goes missing while it waits.
 7. **If anything disappears or doubles.** Do not retry. Note the time, what you did and what you saw, and report it.
+
+## Preview retest of `a4dbcfc`: passed, 22 October 2026
+
+Reported by the product owner, not run by the build session. Every step passed: five adds two seconds apart held through a minute and a reload; an edit straight after an add with no clash; a move to Tomorrow with "1 moved"; Migrate and Date moves with the new confirmation and Open day; Bring forward with exactly one copy; two devices with nothing lost. Q18 (revision files) accepted as the product owner's choice; Q19 (Quick notes still one overwritten file) accepted for now. Approved to merge by pull request pinned to the reviewed head.
+
+## Production check list for the product owner
+
+1. Uninstall the Preview app in Edge (Edge menu, Apps, Manage apps, Journal, Uninstall).
+2. Open https://www.silurianconsulting.co.uk/journal, sign in with the notes password, and install it from Edge (the install icon in the address bar, or Apps, Install this site as an app).
+3. Add three tasks two seconds apart; wait a minute; reload. All three stay, none doubles.
+4. Edit one straight after adding it: no "changed on another device" message.
+5. Move one to Tomorrow ("1 moved", one copy in Tomorrow). Move one through Migrate then Date to a later day: the message names the day with Undo and Open day.
+6. If an earlier day has open tasks, press Bring forward: exactly one copy each.
+7. Open the journal on the iPad: the same entries, nothing missing. Add on the iPad and see it on the PC within about a minute.
+8. Open /notes and check the notes menu has Journal as its last item and notes behaves as before.
+9. If anything disappears or doubles, do not retry; note the time and report it.

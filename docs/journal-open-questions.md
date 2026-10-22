@@ -1,6 +1,6 @@
 # Journal: open questions
 
-Each: what it blocks, the default the design brief uses, and the cost if wrong. Brief: `docs/briefs/journal-design-brief.md`. Answers by the product owner are recorded under each question. **Two waiting: Q18 and Q19, raised by the build on 22 October 2026 while rebuilding the storage after the second Preview retest.** Q9 to Q15 were answered the same day. Q16 is superseded by Q18 and Q17 is accepted.
+Each: what it blocks, the default the design brief uses, and the cost if wrong. Brief: `docs/briefs/journal-design-brief.md`. Answers by the product owner are recorded under each question. **None waiting. Q18 and Q19, raised on 22 October 2026 while rebuilding the storage, were answered the same day.** Q9 to Q15 were answered the same day. Q16 is superseded by Q18 and Q17 is accepted.
 
 ## Decision, not a question: desktop layout
 
@@ -108,13 +108,13 @@ Blocks: nothing. Done on the specification lead's instruction after the second P
 Instruction followed: one file per entry under `journal/`, named by a stable entry id; an add writes one new file and reads nothing first; a move or Bring forward makes the copy as its own file with an id worked out from the original's id and the destination, so a retry cannot make a second copy; views are built from a listing; Quick notes stay one file with the note rule; the six second wait and the stale-read workarounds are gone for entries; the version check on a single entry stays; a move to a day says so in the message bar with an Open day button.
 **The deviation.** The instruction says a move updates the original entry's own file. Built: a change makes the entry's **next revision as a new file** (`<id>.<rev>.json`) and never overwrites the file it started from. Why: Vercel's Blob documentation says an overwritten blob "may take up to 60 seconds to propagate through our cache". An overwrite in place, even of one entry's own file, can therefore be read as it was a minute ago, and an edit or a move made from that old copy is then refused as a clash or applied on old data. That is the failure on the Preview, only smaller. A file that is only ever created has no old copy to read. The create is also the version check, so a conflict is a refused create, with no etag to carry. I could not read the documentation page from the build sandbox (the host is blocked), so the quotation comes from a search of the page and its changelog; the SDK's own comments in `node_modules/@vercel/blob` confirm `useCache` and `allowOverwrite`.
 Cost if wrong: more files (one per revision, a few hundred bytes each; a removed entry stays as a small file) and a listing per month; a cold first load of a month reads one file per entry in it, sixteen at a time, and a warm instance reads each file once, because a file's content never changes. If in-place overwrite of one entry's file is wanted after all, the create becomes a conditional overwrite and the 60 seconds of exposure comes back for edits made within a minute of each other on different instances.
-**Answer: waiting.**
+**Answer: accepted, 22 October 2026.** Revision files are the product owner's choice.
 
 **Q19. Quick notes are still one overwritten file, and still wait up to about six seconds for the store.**
 Blocks: nothing. The instruction says Quick notes stay one file with the note rule.
 Default built: exactly that. They are the one thing the journal still overwrites, so they are exposed to an old read as notes is, and they keep the wait and the remembered write for it. On a store a few seconds behind a save through another instance still goes through. On a store a full 60 seconds behind, a save through an instance that did not make the previous one is answered "busy" after about six seconds, with nothing lost and the text still on the page (`journal-stale.test.js` shows both).
 Cost if wrong: a Quick notes save can be refused as busy, and a clash message can appear when none is due, in the minute after a save from another device. If that matters, Quick notes become revision files too, with the newest the one shown, and "one file" is given up.
-**Answer: waiting.**
+**Answer: accepted for now, 22 October 2026.**
 
 ## Assumed, not asked (all accepted, 22 October 2026)
 
