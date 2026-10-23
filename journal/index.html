@@ -724,6 +724,59 @@
   .year-bar span { font-weight: 700; color: var(--notes-strong); }
   .day-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
 
+  /* ---------- Month: past days and multi-day spans ---------- */
+
+  #month-body { position: relative; }
+  .date-row { position: relative; }
+  /* A day before today is quiet: its number, weekday, line and events are muted. */
+  .date-row[data-past="true"] .date-open .num,
+  .date-row[data-past="true"] .date-open .wk,
+  .date-row[data-past="true"] .line-text,
+  .date-row[data-past="true"] .line-events,
+  .date-row[data-past="true"] .span-range { color: var(--notes-muted); }
+
+  /* A span is one entry. Its words are on the first day, followed by where it ends,
+     and a 2px bar runs down the days after, in a lane of its own, ending in a foot.
+     Words and events on a spanned day indent past the lanes in use (the gutter). */
+  .span-gutter { flex: none; width: calc(var(--lanes, 0) * 14px); }
+  .span-bar { position: absolute; top: 0; bottom: 0; left: calc(72px + var(--lane, 0) * 14px); width: 14px; cursor: pointer; }
+  .span-bar::before { content: ""; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; background: var(--notes-ink); }
+  .span-bar[data-foot="true"]::before { bottom: 50%; }
+  .span-bar[data-foot="true"]::after { content: ""; position: absolute; top: calc(50% - 2px); left: 6px; width: 10px; height: 2px; background: var(--notes-ink); }
+  .date-row[data-past="true"] .span-bar::before, .date-row[data-past="true"] .span-bar::after { background: var(--notes-muted); }
+  .span-bar[data-selected="true"]::before, .span-bar[data-selected="true"]::after { background: var(--notes-strong); }
+  .date-row[data-selected-span="true"] { background: var(--notes-hover); }
+  .line-text[data-span-id] { flex: 0 1 auto; }
+  .span-range { flex: none; margin-left: 4px; font-size: var(--notes-size-13); color: var(--notes-muted); white-space: nowrap; }
+  .date-row[data-mark="today"] .span-range { color: var(--notes-ink); }
+  .date-row[data-lead="true"] .line-events { margin-left: auto; }
+  .date-row[data-lead="true"] .chip { margin-left: auto; }
+  .date-row[data-lead="true"] .line-events + .chip { margin-left: 0; }
+
+  /* The handle at the right of a line with words: drag down to run it over more days. */
+  .span-handle { display: inline-flex; visibility: hidden; flex: none; width: 24px; height: 24px; min-height: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--notes-icon); cursor: ns-resize; touch-action: none; }
+  .span-handle .icon { width: 18px; height: 18px; }
+  @media (hover: hover) and (pointer: fine) {
+    .date-row:hover .span-handle, .span-handle:focus-visible { visibility: visible; }
+    .span-handle:hover { background: var(--notes-hover); }
+  }
+  @media (pointer: coarse) { .span-handle { display: none; } }
+  .date-row[data-spanning="true"]:not([data-mark="today"]) { background: var(--notes-hover); }
+  .span-preview { position: absolute; z-index: 4; width: 2px; pointer-events: none; background-image: repeating-linear-gradient(to bottom, var(--notes-ink) 0, var(--notes-ink) 6px, transparent 6px, transparent 10px); }
+  .span-pill { position: fixed; z-index: 60; padding: 4px 8px; border-radius: 6px; background: var(--notes-strong); color: var(--notes-ground); font-size: var(--notes-size-13); font-weight: 600; line-height: 1.3; white-space: nowrap; pointer-events: none; }
+  html[data-span-dragging="true"], html[data-span-dragging="true"] * { cursor: ns-resize !important; user-select: none; }
+
+  /* The Until button, on the line being edited, and always there for a finger. */
+  .span-until { display: none; flex: none; min-height: 44px; padding: 0 8px; gap: 4px; font-size: var(--notes-size-13); }
+  .date-row:focus-within .span-until[data-text="true"], .date-row[data-until-open="true"] .span-until[data-text="true"] { display: inline-flex; }
+  @media (pointer: coarse) { .span-until[data-text="true"] { display: inline-flex; } }
+  .until-menu { position: fixed; z-index: 50; width: 240px; max-height: min(70vh, 480px); overflow-y: auto; padding: 4px; border: 1px solid var(--notes-line); border-radius: 8px; background: var(--notes-panel); }
+  .until-menu button { display: flex; justify-content: space-between; width: 100%; min-height: 44px; border: 0; background: transparent; text-align: left; }
+  .until-menu button:hover { background: var(--notes-hover); }
+  .until-menu button[aria-checked="true"] { background: var(--notes-selected); color: var(--notes-strong); }
+  .until-menu .pick-head { padding: 0 0 4px; }
+  .until-menu .pick-list { max-height: 264px; }
+
   /* ---------- Quick notes ---------- */
 
   .quick-tools { display: flex; align-items: center; gap: 4px; }
@@ -752,6 +805,8 @@
   <symbol id="j-scheduled" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 12H7M11 8l-4 4 4 4"/></symbol>
   <symbol id="j-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h.01M12 12h.01M18 12h.01"/></symbol>
   <symbol id="j-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="j-span-handle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="j-until" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14v14H5zM5 10h14M9 3v4M15 3v4"/></symbol>
   <symbol id="i-bin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
   <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
@@ -1159,6 +1214,10 @@ import * as core from "/journal/core.js";
   var confirmed = {};      // month -> the file as the server last said it is
   var pending = [];        // changes shown at once and not yet confirmed
   var shown = {};          // confirmed with the pending changes applied: what is on screen
+  var spansConfirmed = {}; // span id -> the span as the server last said it is
+  var spansShown = {};     // those with the pending span changes applied: what is on screen
+  var selectedSpan = null; // the id of the span whose bar was clicked
+  var spanDrag = null;     // the handle drag in progress
   var sending = false;
   var generation = 0;      // bumped when the page empties, so a late answer is ignored
   var signedIn = false;
@@ -1184,7 +1243,20 @@ import * as core from "/journal/core.js";
   function recompute() {
     shown = {};
     Object.keys(confirmed).forEach(function (m) { shown[m] = core.cloneMonth(confirmed[m]); });
-    pending.forEach(function (item) { core.applyOp(shown, item.op); });
+    spansShown = core.cloneSpans(spansConfirmed);
+    pending.forEach(function (item) {
+      if (core.isSpanOp(item.op)) { core.applySpanOp(spansShown, item.op); }
+      else { core.applyOp(shown, item.op); }
+    });
+  }
+
+  // Spans from the server are put together with the page's: the higher revision
+  // of each wins, and a removal arrives as a revision, not as an absence.
+  function takeSpans(list) {
+    if (!Array.isArray(list)) { return; }
+    var incoming = {};
+    list.forEach(function (span) { incoming[span.id] = span; });
+    spansConfirmed = core.mergeSpans(spansConfirmed, incoming);
   }
 
   // What the server says is put together with what this device holds, entry by
@@ -1223,6 +1295,7 @@ import * as core from "/journal/core.js";
     }).then(function (body) {
       if (gen !== generation) { return false; }
       takeMonths(body.months);
+      takeSpans(body.spans);
       recompute();
       return true;
     }).catch(function () {
@@ -1241,6 +1314,20 @@ import * as core from "/journal/core.js";
     // The time an entry is made, which sets where it sits in its list. The page
     // says it, as it says the date, and the same change sent again says the same.
     if ((op.op === "add" || op.op === "move") && op.at === undefined) { op.at = Date.now(); }
+    if (core.isSpanOp(op)) {
+      // A span is not in any month. The same rules are applied to the page's copy.
+      var spanTrial = core.cloneSpans(spansShown);
+      var spanResult = core.applySpanOp(spanTrial, op);
+      if (spanResult.error) {
+        refused("stale", [{ hooks: hooks }]);
+        return Promise.resolve(false);
+      }
+      pending.push({ op: op, hooks: hooks });
+      recompute();
+      renderAll();
+      pump();
+      return Promise.resolve(true);
+    }
     return loadMonths(core.monthsFor(op)).then(function (ok) {
       if (!ok) { if (hooks.onFail) { hooks.onFail("error"); } return false; }
       var trial = {};
@@ -1290,6 +1377,7 @@ import * as core from "/journal/core.js";
       sending = false;
       if (answer.status === 200) {
         takeMonths(answer.body.months);
+        takeSpans(answer.body.spans);
         pending.shift();
         recompute();
         renderAll();
@@ -2167,13 +2255,53 @@ import * as core from "/journal/core.js";
     return day.entries.filter(function (e) { return e.type === "event" && (e.state === "open" || e.state === "done"); });
   }
 
-  function dateRow(date) {
+  /* ---------- Month rows, and spans ---------- */
+
+  var fmtWeekdayLong = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", timeZone: "UTC" });
+  var monthLayout = { rows: {}, overflow: [] };   // how the viewed month shows its spans
+  var untilMenu = null;                           // { date, view, month } while the Until menu is open
+  var EMPTY_ROW = { texts: [], bars: [], lanes: 0 };
+
+  function weekdayDay(date) { return fmtWeekday.format(utc(date)) + " " + (+date.slice(8)); }
+
+  // Where a span ends, as it is written after the words: "Thu 12", with the month
+  // when that is another month.
+  function endWords(span, month) {
+    var words = weekdayDay(span.end);
+    return core.monthOf(span.end) === month ? words : words + " " + fmtMonthShort.format(utc(span.end));
+  }
+
+  // For a screen reader: "Possible Germany, Monday 9 to Thursday 12 November".
+  function spanLabel(span) {
+    var sameMonth = core.monthOf(span.start) === core.monthOf(span.end);
+    var from = sameMonth ? fmtWeekdayLong.format(utc(span.start)) : longDate(span.start);
+    return core.plainText(span.text) + ", " + from + " to " + longDate(span.end);
+  }
+
+  function spanRangeText(lead, month) {
+    return (lead.continued ? "continued, to " : "to ") + endWords(lead.span, month);
+  }
+
+  function rowSignatureOf(rowSpan) {
+    return JSON.stringify([
+      rowSpan.texts.map(function (t) { return [t.span.id, t.span.rev, t.span.start, t.span.end, t.span.text, t.continued]; }),
+      rowSpan.bars.map(function (b) { return [b.id, b.lane, b.foot, b.top, b.day, b.total]; }),
+      rowSpan.lanes
+    ]);
+  }
+
+  function dateRow(date, rowSpan) {
+    rowSpan = rowSpan || EMPTY_ROW;
     var file = shown[core.monthOf(date)];
     var day = file && file.days[date] ? file.days[date] : { line: "", lineRev: 0, entries: [] };
+    var lead = rowSpan.texts.length > 0 ? rowSpan.texts[0] : null;
     var li = make("li", "date-row");
     li.setAttribute("data-date", date);
+    if (date < today) { li.setAttribute("data-past", "true"); }
     var mark = date === today ? "today" : date === tomorrow() ? "tomorrow" : "";
     if (mark) { li.setAttribute("data-mark", mark); }
+    if (lead) { li.setAttribute("data-lead", "true"); li.setAttribute("data-lead-span", lead.span.id); }
+    li.style.setProperty("--lanes", String(rowSpan.lanes));
 
     var open = make("button", "date-open");
     open.type = "button";
@@ -2182,26 +2310,47 @@ import * as core from "/journal/core.js";
     open.appendChild(make("span", "wk", fmtWeekday.format(utc(date))));
     open.addEventListener("click", function () { openDay(date); });
     li.appendChild(open);
+    var gutter = make("span", "span-gutter");
+    gutter.setAttribute("aria-hidden", "true");
+    li.appendChild(gutter);
     if (mark) { li.appendChild(make("span", "mark-word", mark === "today" ? "Today" : "Tomorrow")); }
 
     var line = make("div", "line-text");
     line.setAttribute("contenteditable", "true");
     line.setAttribute("role", "textbox");
-    line.setAttribute("aria-label", "Calendar line for " + longDate(date));
     line.setAttribute("data-editor", "single");
     line.setAttribute("data-placeholder", "Add to " + shortDate(date));
     line.setAttribute("spellcheck", "true");
     line.setAttribute("lang", "en-GB");
-    drawMarks(line, day.line, false);
-    wireEditor(line);
-    wireLine(line, date, day);
+    if (lead) {
+      // The words of a span, on its first day and on the 1st of a month it runs into.
+      line.setAttribute("data-span-id", lead.span.id);
+      var here = rowSpan.bars.filter(function (b) { return b.id === lead.span.id; })[0];
+      line.setAttribute("aria-label", lead.continued && here
+        ? core.plainText(lead.span.text) + " continues, day " + here.day + " of " + here.total
+        : spanLabel(lead.span));
+      drawMarks(line, lead.span.text, false);
+      wireEditor(line);
+      wireSpanLine(line, lead.span.id);
+    } else {
+      line.setAttribute("aria-label", "Calendar line for " + longDate(date));
+      drawMarks(line, day.line, false);
+      wireEditor(line);
+      wireLine(line, date, day);
+    }
     li.appendChild(line);
+    if (lead) { li.appendChild(make("span", "span-range", spanRangeText(lead, core.monthOf(date)))); }
 
-    var events = dayEvents(day);
-    if (events.length > 0) {
-      var span = make("span", "line-events", events.map(function (e) { return core.plainText(e.text); }).join("; "));
-      span.title = span.textContent;
-      li.appendChild(span);
+    // Everything else a row can hold, as muted words after the line: a plain line
+    // that is not the span's own words, the other spans on the row, and the events.
+    var extras = [];
+    if (lead && day.line !== "" && day.line !== lead.span.text) { extras.push(core.plainText(day.line)); }
+    rowSpan.texts.slice(1).forEach(function (t) { extras.push(core.plainText(t.span.text) + " (" + spanRangeText(t, core.monthOf(date)) + ")"); });
+    dayEvents(day).forEach(function (e) { extras.push(core.plainText(e.text)); });
+    if (extras.length > 0) {
+      var tail = make("span", "line-events", extras.join("; "));
+      tail.title = tail.textContent;
+      li.appendChild(tail);
     }
     var visible = core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length;
     if (visible > 0) {
@@ -2209,16 +2358,469 @@ import * as core from "/journal/core.js";
       chip.setAttribute("aria-label", visible + (visible === 1 ? " entry" : " entries"));
       li.appendChild(chip);
     }
+
+    // The bars of the spans that run through this day, and what a screen reader hears of them.
+    rowSpan.bars.forEach(function (b) {
+      var bar = make("span", "span-bar");
+      bar.setAttribute("aria-hidden", "true");
+      bar.setAttribute("data-span-id", b.id);
+      bar.style.setProperty("--lane", String(b.lane));
+      if (b.foot) { bar.setAttribute("data-foot", "true"); }
+      bar.addEventListener("click", function () { selectSpan(b.id); });
+      li.appendChild(bar);
+      var span = spansShown[b.id];
+      if (span) { li.appendChild(make("span", "sr-only", core.plainText(span.text) + " continues, day " + b.day + " of " + b.total)); }
+    });
+
+    // The handle and the Until button, on a row with words.
+    var foot = rowSpan.bars.filter(function (b) { return b.foot; })[0] || null;
+    var hasText = Boolean(lead) || day.line !== "";
+    // A line with words has the handle. On a span it is on the last day, not the first.
+    if (foot || (!lead && day.line !== "")) { li.appendChild(spanHandle(date, foot ? foot.id : null)); }
+    li.appendChild(untilButton(date, lead ? lead.span : null, hasText));
+    if (untilMenu && untilMenu.date === date) { li.setAttribute("data-until-open", "true"); }
     return li;
   }
 
-  function dateSignature(date) {
+  function dateSignature(date, rowSpan) {
     var file = shown[core.monthOf(date)];
     var day = file && file.days[date] ? file.days[date] : null;
     var events = day ? dayEvents(day).map(function (e) { return e.id + e.rev; }).join(",") : "";
     var visible = day ? core.liveEntries(day.entries).filter(function (e) { return !isMoved(e); }).length : 0;
-    return [date, today, day ? day.line : "", day ? day.lineRev : 0, visible, events].join("|");
+    return [date, today, day ? day.line : "", day ? day.lineRev : 0, visible, events, rowSignatureOf(rowSpan || EMPTY_ROW), untilMenu && untilMenu.date === date ? "u" : ""].join("|");
   }
+
+  /* ---------- editing the words of a span ---------- */
+
+  function wireSpanLine(editor, id) {
+    var original = null;
+    var cancelled = false;
+    editor.addEventListener("focus", function () { original = readEditor(editor); cancelled = false; });
+    editor.addEventListener("input", function () {
+      if (selectedSpan !== null) { selectedSpan = null; markSelected(); }
+    });
+    editor.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") { event.preventDefault(); editor.blur(); }
+      else if (event.key === "Escape") {
+        event.preventDefault();
+        cancelled = true;
+        var held = spansShown[id];
+        drawMarks(editor, original === null ? (held ? held.text : "") : original, false);
+        selectedSpan = null;
+        markSelected();
+        editor.blur();
+      } else if (event.key === "Delete" && selectedSpan === id && String(window.getSelection()) === editor.textContent) {
+        // The whole span is selected (its bar was clicked): Delete takes it all away.
+        event.preventDefault();
+        cancelled = true;
+        editor.blur();
+        removeSpan(id);
+      }
+    });
+    editor.addEventListener("blur", function () {
+      if (original === null) { return; }
+      var typed = readEditor(editor);
+      var before = original;
+      original = null;
+      if (cancelled || typed === before) { return; }
+      var span = spansShown[id];
+      if (!span || span.state !== "open") { return; }
+      // Clearing the words takes the whole span away, with an Undo.
+      if (typed === "") { removeSpan(id); return; }
+      submit({ op: "spanEdit", id: id, rev: span.rev, text: typed }, {
+        onFail: function () {
+          var row = document.querySelector('.line-text[data-span-id="' + id + '"]');
+          if (row) { drawMarks(row, typed, false); row.focus(); }
+        }
+      });
+    });
+  }
+
+  function removeSpan(id) {
+    var span = spansShown[id];
+    if (!span || span.state !== "open") { return; }
+    var kept = { start: span.start, end: span.end, text: span.text };
+    selectedSpan = null;
+    submit({ op: "spanRemove", id: id, rev: span.rev }, {}).then(function (ok) {
+      if (!ok) { return; }
+      // Undo makes the span again as a new one: a removed span keeps its id.
+      offerUndo("Span deleted.", [{ op: "spanAdd", span: { id: newId(), start: kept.start, end: kept.end, text: kept.text } }]);
+    });
+  }
+
+  function markSelected() {
+    Array.prototype.forEach.call(document.querySelectorAll(".span-bar"), function (bar) {
+      if (selectedSpan !== null && bar.getAttribute("data-span-id") === selectedSpan) { bar.setAttribute("data-selected", "true"); }
+      else { bar.removeAttribute("data-selected"); }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".date-row[data-lead-span]"), function (row) {
+      if (selectedSpan !== null && row.getAttribute("data-lead-span") === selectedSpan) { row.setAttribute("data-selected-span", "true"); }
+      else { row.removeAttribute("data-selected-span"); }
+    });
+  }
+
+  // Clicking a bar selects the whole span and puts the cursor in its words, which
+  // are on the first day (or on the 1st when it has run in from an earlier month).
+  function selectSpan(id) {
+    var span = spansShown[id];
+    if (!span || span.state !== "open") { return; }
+    var focusWords = function () {
+      var editor = document.querySelector('.line-text[data-span-id="' + id + '"]');
+      if (!editor) { return false; }
+      selectedSpan = id;
+      editor.focus();
+      var range = document.createRange();
+      range.selectNodeContents(editor);
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      markSelected();
+      return true;
+    };
+    if (focusWords()) { return; }
+    // Its words are not in this month's list (they are shown with another span's):
+    // go to the month it starts in.
+    var month = core.monthOf(span.start);
+    loadMonths([month]).then(function (ok) {
+      if (!ok) { return; }
+      viewMonth = month;
+      renderAll();
+      focusWords();
+    });
+  }
+
+  /* ---------- making, resizing and ending a span ---------- */
+
+  // A line becomes a span: the span is made first, then the line is cleared, so
+  // a failure between the two leaves the words twice and never loses them.
+  function makeSpan(date, end) {
+    var line = core.lineOf(shown, date);
+    if (line.text === "") { return; }
+    var id = core.spanIdFor(date, line.rev);
+    submit({ op: "spanAdd", span: { id: id, start: date, end: end, text: line.text } }, {}).then(function (ok) {
+      if (!ok) { return; }
+      submit({ op: "line", date: date, rev: line.rev, text: "" }, {});
+    });
+  }
+
+  function resizeSpan(id, end) {
+    var span = spansShown[id];
+    if (!span || span.state !== "open" || end === span.end) { return; }
+    if (end <= span.start) { justThisDay(id); return; }
+    if (core.daysBetween(span.start, end) + 1 > core.MAX_SPAN_DAYS) {
+      showFlash("A span can cover 366 days at most.", null, true);
+      return;
+    }
+    submit({ op: "spanEdit", id: id, rev: span.rev, end: end }, {});
+  }
+
+  // The span goes and its words stay as the line: the line is written first, then
+  // the span is removed, so a failure between the two leaves the words twice.
+  function justThisDay(id) {
+    var span = spansShown[id];
+    if (!span || span.state !== "open") { return; }
+    var line = core.lineOf(shown, span.start);
+    var text = span.text;
+    if (line.text !== "" && line.text !== span.text) {
+      text = line.text + "; " + span.text;
+      if (core.cleanText(text).length > core.MAX_LINE) {
+        showFlash("That day already has a line, and both together are too long. Shorten the line first.", null, true);
+        return;
+      }
+    }
+    selectedSpan = null;
+    var ask = function () { return submit({ op: "spanRemove", id: id, rev: span.rev }, {}); };
+    if (text === line.text) { ask(); return; }
+    submit({ op: "line", date: span.start, rev: line.rev, text: text }, {}).then(function (ok) { if (ok) { ask(); } });
+  }
+
+  /* ---------- the handle: dragging a span out or in with a mouse ---------- */
+
+  function spanHandle(date, spanId) {
+    var handle = make("button", "span-handle");
+    handle.type = "button";
+    handle.tabIndex = -1;
+    handle.setAttribute("draggable", "false");
+    var words = spanId && spansShown[spanId] ? core.plainText(spansShown[spanId].text) : core.plainText(core.lineOf(shown, date).text);
+    handle.setAttribute("aria-label", "Drag to set the last day of: " + words);
+    handle.appendChild(icon("j-span-handle"));
+    handle.addEventListener("pointerdown", function (event) {
+      if (event.pointerType === "mouse" && event.button !== 0) { return; }
+      var span = spanId ? spansShown[spanId] : null;
+      beginSpanDrag(event, handle, { date: date, start: span ? span.start : date, end: span ? span.end : date, spanId: spanId });
+    });
+    return handle;
+  }
+
+  function monthRows() { return Array.prototype.slice.call($("date-rows").children); }
+
+  // The row the pointer is on, or the first or last when it is above or below the list.
+  function rowAt(y) {
+    var rows = monthRows();
+    if (rows.length === 0) { return null; }
+    for (var i = 0; i < rows.length; i += 1) {
+      var box = rows[i].getBoundingClientRect();
+      if (y >= box.top && y < box.bottom) { return rows[i]; }
+    }
+    return y < rows[0].getBoundingClientRect().top ? rows[0] : rows[rows.length - 1];
+  }
+
+  function beginSpanDrag(event, handle, info) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (spanDrag) { endSpanDrag(false); }
+    var pill = make("div", "span-pill");
+    pill.setAttribute("aria-hidden", "true");
+    document.body.appendChild(pill);
+    var bar = make("div", "span-preview");
+    bar.setAttribute("aria-hidden", "true");
+    $("month-body").appendChild(bar);
+    spanDrag = { handle: handle, pointer: event.pointerId, start: info.start, end: info.end, spanId: info.spanId, target: info.end, pill: pill, bar: bar };
+    document.documentElement.setAttribute("data-span-dragging", "true");
+    try { handle.setPointerCapture(event.pointerId); } catch (e) { /* the move events still arrive */ }
+    handle.addEventListener("pointermove", onSpanMove);
+    handle.addEventListener("pointerup", onSpanUp);
+    handle.addEventListener("pointercancel", onSpanCancel);
+    document.addEventListener("keydown", onSpanKey, true);
+    updateSpanDrag(event.clientX, event.clientY);
+  }
+
+  function onSpanMove(event) { if (spanDrag) { updateSpanDrag(event.clientX, event.clientY); } }
+  function onSpanUp() { endSpanDrag(true); }
+  function onSpanCancel() { endSpanDrag(false); }
+  function onSpanKey(event) {
+    if (event.key === "Escape" && spanDrag) { event.preventDefault(); event.stopPropagation(); endSpanDrag(false); }
+  }
+
+  function updateSpanDrag(x, y) {
+    var body = $("month-body");
+    var frame = body.getBoundingClientRect();
+    // Near the top or bottom of the panel, the list moves under the pointer.
+    if (y > frame.bottom - 28) { body.scrollTop += 14; }
+    else if (y < frame.top + 28) { body.scrollTop -= 14; }
+    var row = rowAt(y);
+    if (!row) { return; }
+    var date = row.getAttribute("data-date");
+    // Snapped to a whole day, and never above the first day.
+    spanDrag.target = date > spanDrag.start ? date : spanDrag.start;
+    var first = null;
+    var last = null;
+    monthRows().forEach(function (r) {
+      var d = r.getAttribute("data-date");
+      var inside = d > spanDrag.start && d <= spanDrag.target;
+      if (inside) { r.setAttribute("data-spanning", "true"); if (!first) { first = r; } last = r; }
+      else { r.removeAttribute("data-spanning"); }
+    });
+    var bar = spanDrag.bar;
+    if (first && last) {
+      var f = first.getBoundingClientRect();
+      var l = last.getBoundingClientRect();
+      bar.hidden = false;
+      bar.style.top = (f.top - frame.top + body.scrollTop) + "px";
+      bar.style.height = (l.bottom - f.top) + "px";
+      bar.style.left = (f.left - frame.left + 72 + Math.min(monthLayout.rows[spanDrag.target] ? monthLayout.rows[spanDrag.target].lanes : 0, 2) * 14 + 6) + "px";
+    } else {
+      bar.hidden = true;
+    }
+    var pill = spanDrag.pill;
+    if (spanDrag.target === spanDrag.start) {
+      pill.textContent = "Just this day";
+      pill.hidden = spanDrag.spanId === null;
+    } else {
+      pill.textContent = "Until " + weekdayDay(spanDrag.target);
+      pill.hidden = false;
+    }
+    pill.style.left = (x + 14) + "px";
+    pill.style.top = (y + 14) + "px";
+  }
+
+  function endSpanDrag(commit) {
+    var drag = spanDrag;
+    if (!drag) { return; }
+    spanDrag = null;
+    drag.handle.removeEventListener("pointermove", onSpanMove);
+    drag.handle.removeEventListener("pointerup", onSpanUp);
+    drag.handle.removeEventListener("pointercancel", onSpanCancel);
+    document.removeEventListener("keydown", onSpanKey, true);
+    try { drag.handle.releasePointerCapture(drag.pointer); } catch (e) { /* already let go */ }
+    document.documentElement.removeAttribute("data-span-dragging");
+    drag.pill.remove();
+    drag.bar.remove();
+    monthRows().forEach(function (r) { r.removeAttribute("data-spanning"); });
+    if (!commit) { return; }
+    if (drag.spanId) {
+      // On a span: up shortens, down lengthens, and the first day is no span at all.
+      if (drag.target === drag.start) { justThisDay(drag.spanId); }
+      else { resizeSpan(drag.spanId, drag.target); }
+    } else if (drag.target !== drag.start) {
+      makeSpan(drag.start, drag.target);
+    }
+  }
+
+  /* ---------- the Until button and its menu: keyboard and touch ---------- */
+
+  function untilButton(date, span, hasText) {
+    var button = make("button", "span-until");
+    button.type = "button";
+    button.setAttribute("data-text", hasText ? "true" : "false");
+    var words = span ? core.plainText(span.text) : core.plainText(core.lineOf(shown, date).text);
+    button.setAttribute("aria-label", "Until, for: " + words);
+    button.setAttribute("aria-haspopup", "menu");
+    button.setAttribute("aria-expanded", untilMenu && untilMenu.date === date ? "true" : "false");
+    button.appendChild(icon("j-until"));
+    button.appendChild(make("span", "", "Until"));
+    button.addEventListener("click", function () {
+      if (untilMenu && untilMenu.date === date) { closeUntilMenu(true); } else { openUntilMenu(date); }
+    });
+    return button;
+  }
+
+  // The words and the days of the line the menu is for, from what is on screen.
+  function untilContext(date) {
+    var lead = (monthLayout.rows[date] || EMPTY_ROW).texts[0] || null;
+    if (lead) { return { span: lead.span, start: lead.span.start, end: lead.span.end }; }
+    return { span: null, start: date, end: date };
+  }
+
+  function openUntilMenu(date) {
+    closeUntilMenu(false);
+    var context = untilContext(date);
+    untilMenu = { date: date, view: "days", month: null };
+    var row = document.querySelector('.date-row[data-date="' + date + '"]');
+    if (row) { row.setAttribute("data-until-open", "true"); }
+    drawUntilMenu(context, true);
+  }
+
+  function closeUntilMenu(focusBack) {
+    var held = untilMenu;
+    // The button is focused while its row still shows it, then the row lets go.
+    if (held && focusBack) {
+      var button = document.querySelector('.date-row[data-date="' + held.date + '"] .span-until');
+      if (button) { button.focus(); }
+    }
+    untilMenu = null;
+    var node = document.getElementById("until-menu");
+    if (node) { node.remove(); }
+    Array.prototype.forEach.call(document.querySelectorAll(".date-row[data-until-open]"), function (r) { r.removeAttribute("data-until-open"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".span-until[aria-expanded]"), function (b) { b.setAttribute("aria-expanded", "false"); });
+  }
+
+  function untilItem(label, picked, checked, extra) {
+    var item = make("button", "", "");
+    item.type = "button";
+    item.setAttribute("role", "menuitemradio");
+    item.setAttribute("aria-checked", checked ? "true" : "false");
+    item.appendChild(make("span", "", label));
+    if (extra) { item.appendChild(make("span", "pick-word", extra)); }
+    if (checked) { item.appendChild(make("span", "pick-word", "✓")); }
+    item.addEventListener("click", picked);
+    return item;
+  }
+
+  function drawUntilMenu(context, focusFirst) {
+    var old = document.getElementById("until-menu");
+    if (old) { old.remove(); }
+    var date = untilMenu.date;
+    var menu = make("div", "until-menu");
+    menu.id = "until-menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Until when");
+    var choose = function (end) { closeUntilMenu(false); chooseUntil(date, context, end); };
+    if (untilMenu.view === "days") {
+      menu.appendChild(untilItem("Just this day", function () { choose(context.start); }, context.end === context.start));
+      var inWeek = false;
+      for (var n = 1; n <= 7; n += 1) {
+        var day = core.addDays(context.start, n);
+        if (day === context.end) { inWeek = true; }
+        menu.appendChild(untilItem(weekdayDay(day) + " " + fmtMonthShort.format(utc(day)), (function (d) { return function () { choose(d); }; })(day), day === context.end));
+      }
+      var later = untilItem("Later date…", function () {
+        untilMenu.view = "dates";
+        untilMenu.month = core.monthOf(context.end > core.addDays(context.start, 7) ? context.end : core.addDays(context.start, 8));
+        drawUntilMenu(context, true);
+      }, !inWeek && context.end !== context.start, !inWeek && context.end !== context.start ? weekdayDay(context.end) : "");
+      menu.appendChild(later);
+    } else {
+      var head = make("div", "pick-head");
+      var prev = make("button", "icon-button");
+      prev.type = "button";
+      prev.setAttribute("aria-label", "Previous month");
+      prev.appendChild(icon("i-chevron-left"));
+      prev.addEventListener("click", function () { untilMenu.month = core.addMonths(untilMenu.month, -1); drawUntilMenu(context, false); });
+      var next = make("button", "icon-button");
+      next.type = "button";
+      next.setAttribute("aria-label", "Next month");
+      next.appendChild(icon("j-chevron-right"));
+      next.addEventListener("click", function () { untilMenu.month = core.addMonths(untilMenu.month, 1); drawUntilMenu(context, false); });
+      head.appendChild(prev);
+      head.appendChild(make("span", "pick-title", monthYear(untilMenu.month)));
+      head.appendChild(next);
+      menu.appendChild(head);
+      var list = make("div", "pick-list");
+      var last = core.addDays(context.start, core.MAX_SPAN_DAYS - 1);
+      for (var d = 1; d <= core.daysInMonth(untilMenu.month); d += 1) {
+        var target = untilMenu.month + "-" + (d < 10 ? "0" : "") + d;
+        if (target <= context.start || target > last) { continue; }
+        var entry = untilItem(weekdayDay(target) + " " + fmtMonthShort.format(utc(target)), (function (t) { return function () { choose(t); }; })(target), target === context.end);
+        entry.setAttribute("aria-label", "Until " + longDate(target));
+        list.appendChild(entry);
+      }
+      menu.appendChild(list);
+      var back = untilItem("Back", function () { untilMenu.view = "days"; drawUntilMenu(context, true); }, false);
+      back.setAttribute("role", "menuitem");
+      back.removeAttribute("aria-checked");
+      menu.appendChild(back);
+    }
+    menu.addEventListener("keydown", function (event) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll("button:not([disabled])"));
+      var at = items.indexOf(document.activeElement);
+      if (event.key === "ArrowDown") { event.preventDefault(); items[(at + 1) % items.length].focus(); }
+      else if (event.key === "ArrowUp") { event.preventDefault(); items[(at - 1 + items.length) % items.length].focus(); }
+      else if (event.key === "Home") { event.preventDefault(); items[0].focus(); }
+      else if (event.key === "End") { event.preventDefault(); items[items.length - 1].focus(); }
+      else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeUntilMenu(true); }
+      else if (event.key === "Tab") { closeUntilMenu(false); }
+    });
+    document.body.appendChild(menu);
+    placeUntilMenu();
+    if (focusFirst) {
+      var ticked = menu.querySelector('[aria-checked="true"]');
+      (ticked || menu.querySelector("button")).focus();
+    }
+    var button = document.querySelector('.date-row[data-date="' + date + '"] .span-until');
+    if (button) { button.setAttribute("aria-expanded", "true"); }
+  }
+
+  // Under the button, or above it when there is no room below.
+  function placeUntilMenu() {
+    var menu = document.getElementById("until-menu");
+    if (!menu || !untilMenu) { return; }
+    var button = document.querySelector('.date-row[data-date="' + untilMenu.date + '"] .span-until');
+    if (!button) { closeUntilMenu(false); return; }
+    var box = button.getBoundingClientRect();
+    var height = menu.offsetHeight;
+    var below = box.bottom + 4;
+    var top = below + height > window.innerHeight - 8 ? Math.max(8, box.top - 4 - height) : below;
+    menu.style.top = top + "px";
+    menu.style.left = Math.max(8, Math.min(box.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8)) + "px";
+  }
+
+  function chooseUntil(date, context, end) {
+    if (end === context.start) {
+      if (context.span) { justThisDay(context.span.id); }
+      return;
+    }
+    if (context.span) { resizeSpan(context.span.id, end); }
+    else { makeSpan(date, end); }
+  }
+
+  document.addEventListener("pointerdown", function (event) {
+    if (!untilMenu) { return; }
+    if (event.target.closest && (event.target.closest("#until-menu") || event.target.closest(".span-until"))) { return; }
+    closeUntilMenu(false);
+  }, true);
+  window.addEventListener("resize", function () { placeUntilMenu(); });
+  $("month-body").addEventListener("scroll", function () { placeUntilMenu(); });
 
   function wireLine(editor, date, day) {
     var original = null;
@@ -2270,25 +2872,34 @@ import * as core from "/journal/core.js";
     var list = $("date-rows");
     var active = document.activeElement;
     var keep = active && list.contains(active) && active.classList.contains("line-text") ? active.closest("li.date-row") : null;
+    var refocus = active && list.contains(active) && active.classList.contains("span-until") ? active.closest("li.date-row").getAttribute("data-date") : null;
     var before = {};
     Array.prototype.forEach.call(list.children, function (row) { before[row.getAttribute("data-date")] = row; });
     var file = shown[viewMonth];
     var total = core.daysInMonth(viewMonth);
     var anything = false;
     var made = [];
+    monthLayout = core.layoutSpans(spansShown, viewMonth);
     for (var d = 1; d <= total; d += 1) {
       var date = viewMonth + "-" + (d < 10 ? "0" : "") + d;
-      if (core.dayHas(file, date)) { anything = true; }
+      var rowSpan = monthLayout.rows[date];
+      if (core.dayHas(file, date) || rowSpan.texts.length > 0) { anything = true; }
       if (keep && keep.getAttribute("data-date") === date) { made.push(keep); continue; }
-      var signature = dateSignature(date);
+      var signature = dateSignature(date, rowSpan);
       var held = before[date];
       if (held && held._signature === signature) { made.push(held); continue; }
-      var row = dateRow(date);
+      var row = dateRow(date, rowSpan);
       row._signature = signature;
       made.push(row);
     }
     list.textContent = "";
     made.forEach(function (row) { list.appendChild(row); });
+    markSelected();
+    if (untilMenu) { placeUntilMenu(); }
+    if (refocus) {
+      var again = document.querySelector('.date-row[data-date="' + refocus + '"] .span-until');
+      if (again) { again.focus(); }
+    }
     var empty = $("month-empty");
     empty.hidden = anything;
     if (!anything) { empty.textContent = "Nothing on the calendar for " + monthName(viewMonth) + " yet. Click a date to add a line, or open a date to log it."; }
@@ -2532,6 +3143,7 @@ import * as core from "/journal/core.js";
 
   function applyHome(body, replaceQuick) {
     takeMonths(body.months);
+    takeSpans(body.spans);
     stripMonths = Object.keys(body.months);
     recompute();
     if (body.quick) {
@@ -2575,6 +3187,7 @@ import * as core from "/journal/core.js";
       return request("/api/journal?view=months&months=" + others.slice(0, 5).join(",")).then(readJson).then(function (more) {
         if (gen !== generation || pending.length > 0 || sending) { return false; }
         takeMonths(more.months);
+        takeSpans(more.spans);
         recompute();
         return true;
       });
@@ -2634,6 +3247,12 @@ import * as core from "/journal/core.js";
     stripMonths = [];
     pending = [];
     shown = {};
+    spansConfirmed = {};
+    spansShown = {};
+    selectedSpan = null;
+    if (spanDrag) { endSpanDrag(false); }
+    closeUntilMenu(false);
+    monthLayout = { rows: {}, overflow: [] };
     sending = false;
     dayView = null;
     pickerOpen = false;

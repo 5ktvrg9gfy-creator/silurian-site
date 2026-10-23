@@ -47,7 +47,7 @@ async function seed(list, text, type = 'task', state) {
   if (made.status !== 200) throw new Error('seed ' + made.status);
   return id;
 }
-const reset = () => { const s = server.journalStore; s.entries.clear(); s.lines.clear(); s.creates.length = 0; s.state.quick = null; s.state.hook = null; };
+const reset = () => { const s = server.journalStore; s.entries.clear(); s.lines.clear(); s.spanFiles.clear(); s.creates.length = 0; s.state.quick = null; s.state.hook = null; };
 // What is really stored, built from the entry and line files, removed entries included.
 const stored = (month = OCT) => {
   const s = server.journalStore;
@@ -1419,6 +1419,415 @@ const inPage = () => {
     await context.close();
   }
   check(`keyboard moves: ${seen} buttons were measured, so the check saw something`, seen === 21, String(seen));
+}
+
+/* =====================================================================
+   21. Past days, and every text pair on Month, its hover and the Peels, as live
+   ===================================================================== */
+{
+  reset();
+  await http('POST', '/api/journal', { op: 'line', date: '2026-10-15', rev: 0, text: 'Past line' });
+  await http('POST', '/api/journal', { op: 'line', date: '2026-10-26', rev: 0, text: 'Future line' });
+  await seed(core.dayList('2026-10-15'), 'Past event', 'event');
+  await seed(core.dayList('2026-10-26'), 'Future event', 'event');
+  await seed(core.dayList(TODAY), 'Something today');
+  const lum = (c) => { const [r, g, b] = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const ratioOf = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  const hexRgb = (hex) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+  let measured = 0;
+  const table = [];
+  for (const scheme of ['light', 'dark']) {
+    const { context, page } = await open({ width: 1280, height: 1500 }, { colorScheme: scheme });
+    await signIn(page);
+    const colours = await page.evaluate(() => {
+      const v = (el, name) => getComputedStyle(el).getPropertyValue(name).trim();
+      const root = getComputedStyle(document.documentElement);
+      return { muted: root.getPropertyValue('--notes-muted').trim(), ink: root.getPropertyValue('--notes-ink').trim(), strong: root.getPropertyValue('--notes-strong').trim() };
+    });
+    const rgbOf = async (selector) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).color);
+    const mutedRgb = await page.evaluate(() => { const e = document.createElement('i'); e.style.color = 'var(--notes-muted)'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; });
+    const inkRgb = await page.evaluate(() => { const e = document.createElement('i'); e.style.color = 'var(--notes-ink)'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; });
+    const strongRgb = await page.evaluate(() => { const e = document.createElement('i'); e.style.color = 'var(--notes-strong)'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; });
+    const colour = (date, part) => rgbOf(`.date-row[data-date="${date}"] ${part}`);
+    eq(`${scheme}: a past day's number, weekday, line and event text are all muted`, [await colour('2026-10-15', '.date-open .num'), await colour('2026-10-15', '.date-open .wk'), await colour('2026-10-15', '.line-text'), await colour('2026-10-15', '.line-events')], [mutedRgb, mutedRgb, mutedRgb, mutedRgb]);
+    eq(`${scheme}: a day from today on is unchanged: strong number, muted weekday, ink line and events`, [await colour('2026-10-26', '.date-open .num'), await colour('2026-10-26', '.date-open .wk'), await colour('2026-10-26', '.line-text'), await colour('2026-10-26', '.line-events')], [strongRgb, mutedRgb, inkRgb, inkRgb]);
+    eq(`${scheme}: Today and Tomorrow are marked as before`, [await page.locator('.date-row[data-mark="today"]').count(), await page.locator('.date-row[data-mark="tomorrow"]').count(), await page.locator('.date-row[data-past]').count()], [1, 1, 21]);
+    // Every text pair on the Month panel, as drawn, with its fill, for the report.
+    const pairs = await page.evaluate(({ src, today: todayDate, tomorrow: tomorrowDate }) => {
+      const h = (new Function('return (' + src + ')()'))();
+      const out = [];
+      const grab = (kind, date) => {
+        const li = document.querySelector(`.date-row[data-date="${date}"]`);
+        for (const [label, sel] of [['number', '.date-open .num'], ['weekday', '.date-open .wk'], ['line', '.line-text'], ['events', '.line-events'], ['mark word', '.mark-word'], ['count', '.chip']]) {
+          const el = li.querySelector(sel);
+          if (el) out.push({ kind, label, ratio: h.ratio(getComputedStyle(el).color, h.fillOf(el)) });
+        }
+      };
+      grab('past', '2026-10-15'); grab('ordinary', '2026-10-26'); grab('today', todayDate); grab('tomorrow', tomorrowDate);
+      return out;
+    }, { src: inPage.toString(), today: TODAY, tomorrow: TOMORROW });
+    pairs.forEach((p) => { measured += 1; table.push(`${scheme}\tMonth ${p.kind}\t${p.label}\t${p.ratio.toFixed(2)}`); });
+    check(`${scheme}: ${pairs.length} Month row text pairs measured as drawn, every one 4.5:1 or more`, pairs.length >= 14 && pairs.every((p) => p.ratio >= 4.5), JSON.stringify(pairs.filter((p) => p.ratio < 4.5)));
+    // Hover: the date button takes the hover fill, and its text stays readable.
+    await page.locator('.date-row[data-date="2026-10-15"] .date-open').hover();
+    const hover = await page.evaluate((src) => {
+      const h = (new Function('return (' + src + ')()'))();
+      const b = document.querySelector('.date-row[data-date="2026-10-15"] .date-open');
+      return ['.num', '.wk'].map((sel) => ({ sel, ratio: h.ratio(getComputedStyle(b.querySelector(sel)).color, getComputedStyle(b).backgroundColor) }));
+    }, inPage.toString());
+    hover.forEach((x) => { measured += 1; table.push(`${scheme}\tMonth past, hovered\t${x.sel.slice(1)}\t${x.ratio.toFixed(2)}`); });
+    check(`${scheme}: a past day while its date is hovered is 4.5:1 or more`, hover.every((x) => x.ratio >= 4.5), JSON.stringify(hover));
+    // The variable pairs behind them, read from the live page: Month, its hover and selected fills, and each Peel.
+    const live = await page.evaluate(() => {
+      const out = {};
+      for (const [name, id] of [['Month', 'panel-month'], ['Today Peel', 'panel-today'], ['Tomorrow Peel', 'panel-tomorrow'], ['Migrate Peel', 'panel-migrate'], ['Quick notes', 'panel-quick']]) {
+        const cs = getComputedStyle(document.getElementById(id));
+        const v = (n) => cs.getPropertyValue(n).trim();
+        out[name] = { ink: v('--notes-ink'), strong: v('--notes-strong'), muted: v('--notes-muted'), icon: v('--notes-icon'), bad: v('--notes-bad'), panel: v('--notes-panel'), hover: v('--notes-hover'), selected: v('--notes-selected'), field: v('--notes-field') };
+      }
+      return out;
+    });
+    const hexLum = (hex) => lum(hexRgb(hex));
+    const hexRatio = (a, b) => { const [x, y] = [hexLum(a), hexLum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+    let variablePairs = 0;
+    let underFloor = [];
+    for (const [panel, c] of Object.entries(live)) {
+      for (const fg of ['ink', 'strong', 'muted', 'icon']) {
+        for (const bg of ['panel', 'hover', 'selected', 'field']) {
+          const ratio = hexRatio(c[fg], c[bg]);
+          variablePairs += 1; measured += 1;
+          table.push(`${scheme}\t${panel}\t${fg} on ${bg}\t${ratio.toFixed(2)}`);
+          // The pairs the page never sets: muted on a selected fill, and on a hover for a Peel (ink takes over there).
+          const used = !(fg === 'muted' && bg === 'selected') && !(fg === 'muted' && bg === 'hover' && panel.includes('Peel'));
+          const floor = fg === 'icon' ? 3 : 4.5;
+          if (used && ratio < floor) underFloor.push(`${panel} ${fg} on ${bg} ${ratio.toFixed(2)}`);
+        }
+      }
+    }
+    check(`${scheme}: ${variablePairs} text and icon pairs on Month, its hover, the three Peels and Quick notes read from the live page, none used under its floor`, variablePairs === 5 * 16 && underFloor.length === 0, underFloor.join(' | '));
+    check(`${scheme}: no page errors`, page.errors.length === 0, page.errors.join(' | '));
+    await shot(page, `month-past-${scheme}`);
+    await context.close();
+  }
+  check(`past days: ${measured} pairs were measured in all, so the check saw something`, measured > 150, String(measured));
+  console.log('RATIOS\n' + table.map((l) => 'RATIO\t' + l).join('\n'));
+}
+
+/* =====================================================================
+   22. Multi-day spans
+   ===================================================================== */
+{
+  const until = async (fn, ms = 5000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return true; await sleep(60); } return false; };
+  const spanFiles = () => server.journalStore.spanFiles.size;
+  const latest = () => { const out = new Map(); for (const [k, h] of server.journalStore.spanFiles) { const f = core.normaliseSpanFile(JSON.parse(h.json)); if (!out.has(f.id) || f.rev > out.get(f.id).rev) out.set(f.id, f); } return [...out.values()]; };
+  const liveSpans = () => latest().filter((x) => x.state === 'open');
+  const rowOf = (page, d) => page.locator(`.date-row[data-date="${d}"]`);
+  const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  const lineAt = async (date, text) => http('POST', '/api/journal', { op: 'line', date, rev: 0, text });
+  const bigPage = async (extra = {}, view = { width: 1280, height: 1500 }) => { const o = await open(view, extra); await signIn(o.page); return o; };
+  async function dragFrom(page, fromDate, toDate, { release = true, steps = 6 } = {}) {
+    await rowOf(page, fromDate).hover();
+    const hb = await rowOf(page, fromDate).locator('.span-handle').boundingBox();
+    const x = hb.x + hb.width / 2;
+    await page.mouse.move(x, hb.y + hb.height / 2);
+    await page.mouse.down();
+    const t = await rowOf(page, toDate).boundingBox();
+    await page.mouse.move(x, t.y + t.height / 2, { steps });
+    if (release) await page.mouse.up();
+    return x;
+  }
+
+  /* ----- making a span with a mouse ----- */
+  reset();
+  await lineAt('2026-10-26', 'Possible Germany');
+  {
+    const { context, page } = await bigPage();
+    await rowOf(page, '2026-10-26').hover();
+    check('hovering a line with words shows a 24px handle at its right', await rowOf(page, '2026-10-26').locator('.span-handle').isVisible() && (await rowOf(page, '2026-10-26').locator('.span-handle').boundingBox()).width === 24);
+    eq('a line with no words has no handle to show', await rowOf(page, '2026-10-27').locator('.span-handle').count(), 0);
+    await dragFrom(page, '2026-10-26', '2026-10-29', { release: false });
+    const dragging = await page.evaluate(() => ({
+      pill: document.querySelector('.span-pill') && document.querySelector('.span-pill').textContent,
+      rows: [...document.querySelectorAll('.date-row[data-spanning]')].map((r) => r.getAttribute('data-date')),
+      dashed: document.querySelector('.span-preview') ? getComputedStyle(document.querySelector('.span-preview')).backgroundImage.includes('repeating-linear-gradient') : false,
+      width: document.querySelector('.span-preview') ? getComputedStyle(document.querySelector('.span-preview')).width : null,
+      fill: [...document.querySelectorAll('.date-row[data-spanning]')].map((r) => getComputedStyle(r).backgroundColor),
+      hover: (() => { const e = document.createElement('i'); e.style.background = 'var(--notes-hover)'; document.body.appendChild(e); const c = getComputedStyle(e).backgroundColor; e.remove(); return c; })(),
+    }));
+    eq('dragging down: a pill reads "Until Thu 29"', dragging.pill, 'Until Thu 29');
+    eq('and the days in range snap day by day', dragging.rows, ['2026-10-27', '2026-10-28', '2026-10-29']);
+    check('they take the hover fill, with a dashed 2px bar', dragging.dashed && dragging.width === '2px' && dragging.fill.every((c) => c === dragging.hover), JSON.stringify(dragging));
+    await shot(page, 'span-drag');
+    await page.keyboard.press('Escape');
+    await page.mouse.up();
+    await sleep(400);
+    check('Esc cancels: nothing is made, the preview and the pill are gone, the line is as it was', spanFiles() === 0 && (await page.locator('.span-pill, .span-preview').count()) === 0 && (await rowOf(page, '2026-10-27').locator('.span-bar').count()) === 0 && (await rowOf(page, '2026-10-26').locator('.line-text').innerText()) === 'Possible Germany');
+    await dragFrom(page, '2026-10-26', '2026-10-26');
+    await sleep(400);
+    check('releasing on the first day makes no span, and says nothing', spanFiles() === 0 && server.journalStore.lines.size === 1 && (await page.locator('#flash').isHidden()));
+    const writesBefore = writes();
+    await dragFrom(page, '2026-10-26', '2026-10-29');
+    check('releasing on Thursday makes one span', await until(() => spanFiles() === 1));
+    await until(() => server.journalStore.lines.size === 2);
+    const made = liveSpans()[0];
+    eq('it is one file, from the 26th to the 29th, with the line\'s words', [made.rev, made.start, made.end, made.text], [1, '2026-10-26', '2026-10-29', 'Possible Germany']);
+    eq('and the line is cleared, after the span was made', [[...server.journalStore.creates].filter((c) => c.startsWith('span:') || c.startsWith('line:')).slice(writesBefore ? 0 : 0).slice(-2).map((c) => c.split(':')[0]), storedDay('2026-10-26').line], [['span', 'line'], '']);
+    eq('the first day has the words and "to Thu 29" in muted, no bar', await page.evaluate(() => { const r = document.querySelector('.date-row[data-date="2026-10-26"]'); return [r.querySelector('.line-text').innerText, r.querySelector('.span-range').innerText, r.querySelectorAll('.span-bar').length, getComputedStyle(r.querySelector('.span-range')).color === (() => { const e = document.createElement('i'); e.style.color = 'var(--notes-ink)'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; })()]; }).then((a) => [a[0], a[1], a[2]]), ['Possible Germany', 'to Thu 29', 0]);
+    eq('a 2px bar runs down each following day, with a foot on the last only', await page.evaluate(() => ['27', '28', '29', '30'].map((d) => { const r = document.querySelector(`.date-row[data-date="2026-10-${d}"]`); const b = r.querySelector('.span-bar'); return b ? [getComputedStyle(b, '::before').width, b.hasAttribute('data-foot')] : null; })), [['2px', false], ['2px', false], ['2px', true], null]);
+    check('a past day\'s bar is muted and a future day\'s is ink', await page.evaluate(() => { const c = (v) => { const e = document.createElement('i'); e.style.color = v; document.body.appendChild(e); const x = getComputedStyle(e).color; e.remove(); return x; }; return getComputedStyle(document.querySelector('.date-row[data-date="2026-10-27"] .span-bar'), '::before').backgroundColor === c('var(--notes-ink)'); }));
+    eq('a screen reader hears the first day as a range and the next days as continuing', await page.evaluate(() => [document.querySelector('.date-row[data-date="2026-10-26"] .line-text').getAttribute('aria-label'), ...['27', '28', '29'].map((d) => document.querySelector(`.date-row[data-date="2026-10-${d}"] .sr-only`).textContent)]),
+      ['Possible Germany, Monday 26 to Thursday 29 October', 'Possible Germany continues, day 2 of 4', 'Possible Germany continues, day 3 of 4', 'Possible Germany continues, day 4 of 4']);
+    await shot(page, 'span-made');
+
+    /* ----- edit the words once ----- */
+    const before = spanFiles();
+    const words = rowOf(page, '2026-10-26').locator('.line-text');
+    await words.click();
+    await page.keyboard.press('Control+A');
+    await page.keyboard.type('Germany trip');
+    await page.keyboard.press('Enter');
+    check('editing the words on the first day is one new revision of the one span', await until(() => spanFiles() === before + 1) && liveSpans().length === 1 && liveSpans()[0].text === 'Germany trip' && liveSpans()[0].rev === 2);
+    eq('and nothing was written into a day', server.journalStore.lines.size, 2);
+
+    /* ----- resize with the handle ----- */
+    await dragFrom(page, '2026-10-29', '2026-10-31');
+    check('on a span the handle is on the last day, and dragging down lengthens it', await until(() => liveSpans()[0].end === '2026-10-31'));
+    await dragFrom(page, '2026-10-31', '2026-10-28');
+    check('dragging up shortens it', await until(() => liveSpans()[0].end === '2026-10-28'));
+    eq('the same one span, with a revision for each change', [liveSpans().length, liveSpans()[0].rev], [1, 4]);
+    eq('the handle is not on the first day of a span', await rowOf(page, '2026-10-26').locator('.span-handle').count(), 0);
+    const afterResize = writes();
+    // The entry drag is a separate drag and is untouched by all of this.
+    await seed(core.dayList(TODAY), 'Entry to move');
+    await page.reload();
+    await page.waitForSelector('#app:not([hidden])');
+    await page.locator('#list-today li.entry').first().waitFor();
+    const entry = page.locator('#list-today li.entry').first();
+    const eb = await entry.locator('.bullet').boundingBox();
+    const dropRow = await rowOf(page, '2026-10-27').boundingBox();
+    const spansBefore = JSON.stringify(latest());
+    await page.mouse.move(eb.x + 10, eb.y + 10); await page.mouse.down();
+    await page.mouse.move(dropRow.x + 120, dropRow.y + 10, { steps: 8 });
+    await page.mouse.move(dropRow.x + 123, dropRow.y + 12, { steps: 2 });
+    await sleep(300);
+    eq('an entry dragged over a spanned date line still takes the selected fill', await rowOf(page, '2026-10-27').getAttribute('data-drop'), 'true');
+    await page.mouse.up();
+    await page.waitForSelector('#flash:not([hidden])');
+    check('and still moves to that date, without touching the span', (await page.textContent('#flash-text')) === 'Moved to Tuesday 27 October.' && JSON.stringify(latest()) === spansBefore && storedDay('2026-10-27').entries.length === 1);
+    void afterResize;
+    // And a handle drag never moves an entry.
+    const entriesBefore = server.journalStore.entries.size;
+    await dragFrom(page, '2026-10-28', '2026-10-29');
+    await until(() => liveSpans()[0].end === '2026-10-29');
+    eq('a handle drag moves no entry', server.journalStore.entries.size, entriesBefore);
+    check('no page errors', page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+
+  /* ----- the Until button and its menu, by keyboard ----- */
+  reset();
+  await lineAt('2026-10-26', 'Site visit');
+  {
+    const { context, page } = await bigPage();
+    await page.mouse.move(2, 2);
+    await page.keyboard.press('Tab');
+    await rowOf(page, '2026-10-26').locator('.line-text').focus();
+    const until = rowOf(page, '2026-10-26').locator('.span-until');
+    check('the Until button shows on the line being edited, 44px tall, with a calendar icon', await until.isVisible() && (await until.boundingBox()).height >= 44 && (await until.locator('use').getAttribute('href')) === '#j-until');
+    await page.keyboard.press('Tab');
+    eq('Tab reaches it', await page.evaluate(() => document.activeElement.className), 'span-until');
+    await page.keyboard.press('Enter');
+    const menu = page.locator('#until-menu');
+    await menu.waitFor();
+    const items = await menu.locator('button').allInnerTexts();
+    eq('Enter opens the menu: Just this day, the next 7 days, then Later date', [items[0], items.length, items[8].startsWith('Later date')], ['Just this day\n✓', 9, true]);
+    check('every row is 44px tall', (await menu.locator('button').evaluateAll((b) => b.map((x) => x.getBoundingClientRect().height))).every((h) => h >= 44));
+    eq('the current end is ticked: Just this day', await menu.locator('[aria-checked="true"]').innerText().then((t) => t.split('\n')[0]), 'Just this day');
+    await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown');
+    eq('arrows move', await page.evaluate(() => document.activeElement.innerText.split('\n')[0]), 'Tue 27 Oct'.replace('Tue 27', 'Tue 27') && (await menu.locator('button').nth(2).innerText()).split('\n')[0]);
+    await page.keyboard.press('Escape');
+    check('Esc closes it and the focus goes back to the button', (await page.locator('#until-menu').count()) === 0 && (await page.evaluate(() => document.activeElement.className)) === 'span-until' && spanFiles() === 0);
+    await page.keyboard.press('Enter');
+    await menu.waitFor();
+    await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    check('Enter on a day sets it: a span to that day is made', await until_(() => liveSpans().length === 1) && liveSpans()[0].end === '2026-10-29' && liveSpans()[0].start === '2026-10-26');
+    await until_(() => rowOf(page, '2026-10-26').locator('.span-range').count().then((n) => n === 1));
+    await sleep(600);   // the answer has arrived and the row is drawn again
+    await rowOf(page, '2026-10-26').locator('.line-text').focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    await menu.waitFor();
+    eq('reopened, the span\'s end is the ticked row', await menu.locator('[aria-checked="true"]').innerText().then((t) => t.split('\n')[0]), 'Thu 29 Oct');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.locator('#until-menu .pick-day, #until-menu [aria-label^="Until "]').first().waitFor();
+    check('Later date opens a date picker', (await page.locator('#until-menu .pick-head').count()) === 1 && (await page.locator('#until-menu [aria-label^="Until "]').count()) > 5);
+    await page.locator('#until-menu [aria-label="Until Friday 6 November"]').click();
+    check('a later date in the next month sets the end there', await until_(() => liveSpans()[0].end === '2026-11-06') && liveSpans().length === 1);
+    await sleep(600);
+    await rowOf(page, '2026-10-26').locator('.line-text').focus();
+    await page.keyboard.press('Tab'); await page.keyboard.press('Enter');
+    await menu.waitFor();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Enter');
+    await until_(() => liveSpans().length === 0);
+    eq('Just this day removes the span and keeps the line', [liveSpans().length, storedDay('2026-10-26').line], [0, 'Site visit']);
+    eq('and the line is back on screen, with no bar', await page.evaluate(() => [document.querySelector('.date-row[data-date="2026-10-26"] .line-text').innerText, document.querySelectorAll('.span-bar').length]), ['Site visit', 0]);
+    check('no page errors', page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+
+  /* ----- touch: the iPad ----- */
+  reset();
+  await lineAt('2026-10-26', 'Site visit');
+  {
+    const { context, page } = await bigPage({ hasTouch: true, isMobile: true }, { width: 1024, height: 1366 });
+    const row = rowOf(page, '2026-10-26');
+    check('the Until button is always visible for a finger, 44px tall, and there is no drag handle', await row.locator('.span-until').isVisible() && (await row.locator('.span-until').boundingBox()).height >= 44 && !(await row.locator('.span-handle').isVisible()));
+    check('a line with no words has no Until button to show', (await rowOf(page, '2026-10-27').locator('.span-until').isVisible()) === false);
+    await row.locator('.span-until').tap();
+    await page.locator('#until-menu').waitFor();
+    check('the menu has 44px rows', (await page.locator('#until-menu button').evaluateAll((b) => b.map((x) => x.getBoundingClientRect().height))).every((h) => h >= 44));
+    await page.locator('#until-menu button').nth(3).tap();
+    check('tapping a day makes the span', await until_(() => liveSpans().length === 1) && liveSpans()[0].end === '2026-10-29');
+    await shot(page, 'span-ipad');
+    check('no page errors', page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+  async function until_(fn, ms = 5000) { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return true; await sleep(60); } return false; }
+
+  /* ----- a span across the month end ----- */
+  reset();
+  await lineAt('2026-10-29', 'Possible Germany');
+  {
+    const { context, page } = await bigPage();
+    const t = (await (await page.request.get(server.base + '/api/session')).status());
+    void t;
+    await rowOf(page, '2026-10-29').locator('.span-until').waitFor({ state: 'attached' });
+    await rowOf(page, '2026-10-29').locator('.line-text').focus();
+    await page.keyboard.press('Tab'); await page.keyboard.press('Enter');
+    await page.locator('#until-menu button').last().press('Enter');
+    await page.locator('#until-menu [aria-label="Until Tuesday 3 November"]').click();
+    await until_(() => liveSpans().length === 1);
+    eq('the span is made from the 29th to 3 November, in one file', [liveSpans()[0].start, liveSpans()[0].end, spanFiles()], ['2026-10-29', '2026-11-03', 1]);
+    eq('in October the bar runs off the end of the month with no foot', await page.evaluate(() => ['30', '31'].map((d) => { const b = document.querySelector(`.date-row[data-date="2026-10-${d}"] .span-bar`); return [Boolean(b), b && b.hasAttribute('data-foot')]; })), [[true, false], [true, false]]);
+    eq('and "to Tue 3 Nov" says where it ends, with the month', await rowOf(page, '2026-10-29').locator('.span-range').innerText(), 'to Tue 3 Nov');
+    await page.click('#month-next');
+    await page.waitForSelector('.date-row[data-date="2026-11-01"]');
+    await until_(() => rowOf(page, '2026-11-01').locator('.span-range').count().then((n) => n === 1));
+    eq('November repeats the words on the 1st, "continued, to Tue 3"', await rowOf(page, '2026-11-01').evaluate((r) => [r.querySelector('.line-text').innerText, r.querySelector('.span-range').innerText]), ['Possible Germany', 'continued, to Tue 3']);
+    eq('with the bar from the top of the 1st and a foot on the 3rd', await page.evaluate(() => ['01', '02', '03', '04'].map((d) => { const b = document.querySelector(`.date-row[data-date="2026-11-${d}"] .span-bar`); return b ? b.hasAttribute('data-foot') : null; })), [false, false, true, null]);
+    eq('the 1st reads as continuing, day 4 of 6', await rowOf(page, '2026-11-01').locator('.line-text').getAttribute('aria-label'), 'Possible Germany continues, day 4 of 6');
+    await shot(page, 'span-month-end');
+    // Editing the words on the continued 1st changes it everywhere.
+    const before = spanFiles();
+    await rowOf(page, '2026-11-01').locator('.line-text').click();
+    await page.keyboard.press('Control+A');
+    await page.keyboard.type('Germany all week');
+    await page.keyboard.press('Enter');
+    check('editing the continued 1st is one new revision of the same span', await until_(() => spanFiles() === before + 1) && liveSpans().length === 1 && liveSpans()[0].text === 'Germany all week');
+    await page.click('#month-prev');
+    await page.waitForSelector('.date-row[data-date="2026-10-29"]');
+    await until_(() => rowOf(page, '2026-10-29').locator('.line-text').innerText().then((t) => t === 'Germany all week'));
+    eq('and October shows the new words too', await rowOf(page, '2026-10-29').locator('.line-text').innerText(), 'Germany all week');
+    check('no page errors', page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+
+  /* ----- delete, with Undo, and select by the bar ----- */
+  reset();
+  {
+    const idA = newId();
+    await http('POST', '/api/journal', { op: 'spanAdd', span: { id: idA, start: '2026-10-26', end: '2026-10-29', text: 'Possible Germany' } });
+    const { context, page } = await bigPage();
+    await rowOf(page, '2026-10-27').locator('.span-bar').click();
+    check('clicking the bar on a later day selects the span and puts the cursor in the first day\'s words', await page.evaluate(() => document.activeElement.classList.contains('line-text') && document.activeElement.closest('.date-row').getAttribute('data-date') === '2026-10-26' && document.querySelectorAll('.span-bar[data-selected="true"]').length === 3));
+    await page.keyboard.press('Delete');
+    await page.waitForSelector('#flash:not([hidden])');
+    eq('Delete with the span selected removes the whole span and says so, with Undo', [await page.textContent('#flash-text'), await page.textContent('#flash-action'), await page.locator('.span-bar').count()], ['Span deleted.', 'Undo', 0]);
+    check('it is a removed revision in the same span file series', await until_(() => latest()[0].state === 'removed') && latest()[0].id === idA && latest()[0].rev === 2);
+    await page.click('#flash-action');
+    check('Undo makes the span again as a new one', await until_(() => liveSpans().length === 1) && liveSpans()[0].id !== idA && liveSpans()[0].start === '2026-10-26' && liveSpans()[0].end === '2026-10-29' && liveSpans()[0].text === 'Possible Germany');
+    eq('and the bars are back', await page.locator('.span-bar').count(), 3);
+    // Clearing the text does the same.
+    await rowOf(page, '2026-10-26').locator('.line-text').click();
+    await page.keyboard.press('Control+A');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('#flash:not([hidden])');
+    eq('clearing the text removes the whole span, with the same message', [await page.textContent('#flash-text'), liveSpans().length === 0 || await until_(() => liveSpans().length === 0)], ['Span deleted.', true]);
+    check('no page errors', page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+
+  /* ----- lanes ----- */
+  reset();
+  {
+    const ids = {};
+    for (const [name, start, end] of [['One', '2026-10-05', '2026-10-12'], ['Two', '2026-10-06', '2026-10-10'], ['Three', '2026-10-07', '2026-10-09'], ['Four', '2026-10-08', '2026-10-11']]) {
+      ids[name] = newId();
+      await http('POST', '/api/journal', { op: 'spanAdd', span: { id: ids[name], start, end, text: 'Span ' + name } });
+    }
+    await seed(core.dayList('2026-10-09'), 'An event that day', 'event');
+    const { context, page } = await bigPage();
+    const lane = (d, name) => page.evaluate(([date, id]) => { const b = document.querySelector(`.date-row[data-date="${date}"] .span-bar[data-span-id="${id}"]`); return b ? b.style.getPropertyValue('--lane') : null; }, [d, ids[name]]);
+    eq('overlapping spans take lanes 0, 1 and 2', [await lane('2026-10-09', 'One'), await lane('2026-10-09', 'Two'), await lane('2026-10-09', 'Three')], ['0', '1', '2']);
+    eq('the fourth is a normal line with its range and has no bar', [await lane('2026-10-09', 'Four'), await rowOf(page, '2026-10-08').locator('.line-text').innerText(), await rowOf(page, '2026-10-08').locator('.span-range').innerText()], [null, 'Span Four', 'to Sun 11']);
+    const bars = await page.evaluate(() => [...document.querySelectorAll('.date-row[data-date="2026-10-09"] .span-bar')].map((b) => b.getBoundingClientRect().left));
+    check('the bars are 14px apart', bars.length === 3 && Math.abs(bars[1] - bars[0] - 14) < 1 && Math.abs(bars[2] - bars[1] - 14) < 1, JSON.stringify(bars));
+    const geometry = await page.evaluate(() => { const r = document.querySelector('.date-row[data-date="2026-10-09"]'); const text = r.querySelector('.line-events').getBoundingClientRect().left; const rightmost = Math.max(...[...r.querySelectorAll('.span-bar')].map((b) => b.getBoundingClientRect().left + 8)); const plain = document.querySelector('.date-row[data-date="2026-10-20"] .line-text').getBoundingClientRect().left; const lead = document.querySelector('.date-row[data-date="2026-10-09"] .span-gutter').getBoundingClientRect().width; return { text, rightmost, plain, lead }; });
+    check('events on a spanned day indent past the lanes in use', geometry.lead === 42 && geometry.text > geometry.rightmost, JSON.stringify(geometry));
+    await shot(page, 'span-lanes');
+    check('no page errors', page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+
+  /* ----- two devices, a retry and a clash ----- */
+  reset();
+  {
+    const idA = newId();
+    await http('POST', '/api/journal', { op: 'spanAdd', span: { id: idA, start: '2026-10-26', end: '2026-10-29', text: 'Possible Germany' } });
+    const one = await bigPage();
+    const two = await bigPage();
+    // Device one edits.
+    await rowOf(one.page, '2026-10-26').locator('.line-text').click();
+    await one.page.keyboard.press('Control+A'); await one.page.keyboard.type('From device one'); await one.page.keyboard.press('Enter');
+    await until_(() => liveSpans()[0].rev === 2);
+    // Device two, still holding the first revision, edits.
+    await rowOf(two.page, '2026-10-26').locator('.line-text').click();
+    await two.page.keyboard.press('Control+A'); await two.page.keyboard.type('From device two'); await two.page.keyboard.press('Enter');
+    await two.page.waitForSelector('#flash:not([hidden])');
+    eq('the second device is told, in the plain message, with a Reload button', [await two.page.textContent('#flash-text'), await two.page.textContent('#flash-action')], [core.MESSAGES.stale, 'Reload']);
+    eq('its typed words are kept on screen', await rowOf(two.page, '2026-10-26').locator('.line-text').innerText(), 'From device two');
+    check('nothing was replaced and no second span was made', liveSpans().length === 1 && liveSpans()[0].text === 'From device one' && liveSpans()[0].rev === 2 && spanFiles() === 2);
+    await two.page.click('#flash-action');
+    await until_(() => rowOf(two.page, '2026-10-26').locator('.line-text').innerText().then((t) => t === 'From device one'));
+    eq('Reload shows what the other device saved', await rowOf(two.page, '2026-10-26').locator('.line-text').innerText(), 'From device one');
+    // A resize that clashes with a delete.
+    await rowOf(one.page, '2026-10-26').locator('.line-text').click();
+    await one.page.keyboard.press('Control+A'); await one.page.keyboard.press('Backspace'); await one.page.keyboard.press('Enter');
+    await until_(() => liveSpans().length === 0);
+    await dragFrom(two.page, '2026-10-29', '2026-10-30');
+    await two.page.waitForSelector('#flash:not([hidden])');
+    check('a resize of a span that was deleted on the other device is refused the same way', (await two.page.textContent('#flash-text')) === core.MESSAGES.stale && liveSpans().length === 0);
+    const real = [...one.page.errors, ...two.page.errors].filter((e) => !/409/.test(e));   // the refusals are the point of this check
+    check('no page errors on either device, apart from the two refusals', real.length === 0, real.join(' | '));
+    await one.context.close(); await two.context.close();
+  }
+  {
+    // A retry: the answer to the first make is lost and the window sends it again.
+    reset();
+    await lineAt('2026-10-26', 'Possible Germany');
+    server.control.loseFirstAnswers = '"spanAdd"';
+    const { context, page } = await bigPage();
+    await dragFrom(page, '2026-10-26', '2026-10-29');
+    await until_(() => spanFiles() === 1 && server.journalStore.lines.size === 2, 12000);
+    await sleep(800);
+    server.control.loseFirstAnswers = '';
+    eq('a lost answer and a retry make one span, not two', [spanFiles(), liveSpans().length, storedDay('2026-10-26').line], [1, 1, '']);
+    await context.close();
+  }
 }
 
 /* The rest of the checks continue below. */

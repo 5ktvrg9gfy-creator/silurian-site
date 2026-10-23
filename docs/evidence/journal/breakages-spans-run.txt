@@ -1,0 +1,62 @@
+base: the Node tests and the page tests are green before any break
+
+CAUGHT rules: a span may end the day it starts  [node]
+         3 failed: a span needs two or more days, at most 366, and words; add, edit the text, resize, remove: each adds one to the revision and a repeat is done; a span longer than 366 days, or one day long, is refused before anything is written
+CAUGHT rules: a span may be 400 days  [node, page]
+         3 failed: a span needs two or more days, at most 366, and words; a span longer than 366 days, or one day long, is refused before anything is written; test_what_a_row_says_in_words_and_to_a_screen_reader
+CAUGHT rules: the id ignores the line's revision  [node]
+         1 failed: an id made from the line is the same every time and differs by day and revision
+CAUGHT rules: an edit does not check the revision it started from  [node]
+         5 failed: add, edit the text, resize, remove: each adds one to the revision and a repeat is done; two devices: the second edit from the same revision is refused with the plain message and the first stays; two devices that race to the same revision: the create is refused, nothing is replaced, and the loser is told ...
+CAUGHT rules: a repeated edit is a clash, not done  [node]
+         4 failed: add, edit the text, resize, remove: each adds one to the revision and a repeat is done; the same add, edit and remove sent again make no second span and no new revision; a race between two devices making the very same change is done, not refused ...
+CAUGHT rules: a repeated add is a second span  [node]
+         1 failed: add, edit the text, resize, remove: each adds one to the revision and a repeat is done
+CAUGHT rules: four lanes, not three  [node, page]
+         2 failed: a fourth span on a day is an ordinary line with its range, with no bar; test_what_a_row_says_in_words_and_to_a_screen_reader
+CAUGHT rules: a continued span has no bar from the top  [node]
+         2 failed: at the month end the bar runs off with no foot, and the next month repeats the words with the bar from the top; a span that starts on the last day of the month has its words there and no bar until the next month
+CAUGHT rules: every day has a foot  [node]
+         2 failed: a span puts its words on the first day and a bar with a foot on each day after; at the month end the bar runs off with no foot, and the next month repeats the words with the bar from the top
+MISSED rules: a span with a damaged file is read as if it were fine  [node]
+         0 failed: 
+CAUGHT storage: the span file name has no revision and is overwritten  [node, page]
+         2 failed: spans never reach notes: the journal keeps them under its own prefix on the real adapter, created and never overwritten; test_spans_are_stored_by_id_alone_under_their_own_prefix_and_never_overwritten
+CAUGHT storage: a span is put under the entries' prefix  [node, page]
+         2 failed: spans never reach notes: the journal keeps them under its own prefix on the real adapter, created and never overwritten; test_spans_are_stored_by_id_alone_under_their_own_prefix_and_never_overwritten
+CAUGHT api: a refused create of a span is taken as made  [node]
+         5 failed: two devices: the second edit from the same revision is refused with the plain message and the first stays; two devices that race to the same revision: the create is refused, nothing is replaced, and the loser is told; a change to a span that was removed on another device is refused as a clash ...
+CAUGHT api: the months view leaves the spans out  [node, page]
+         4 failed: the months and home views carry the spans that touch them, removed ones included, and no others; spans never reach notes: the journal keeps them under its own prefix on the real adapter, created and never overwritten; a view read during the lag is shorter than the truth and never wrong, and after the lag it is the truth ...
+CAUGHT page: a past day is not marked past  [page, browser]
+         5 failed: test_a_past_day_is_muted_in_its_number_weekday_line_and_events; light: a past day's number, weekday, line and event text are all muted  got ["rgb(26, 25, 24)","rgb(102, 97, 95)","rgb(47, 45, 43)","rgb(47, 45, 43)"] wanted ["rgb(102, 97, 95)","rgb(102, 97, 95)","rgb(102, 97, 95)","rgb(102, 97, 95)"]; light: Today and Tomorrow are marked as before  got [1,1,0] wanted [1,1,21] ...
+CAUGHT page: the line is cleared before the span is made  [page, browser]
+         2 failed: test_making_and_unmaking_a_span_are_two_ordered_changes_so_a_failure_leaves_a_duplicate_never_a_loss; and the line is cleared, after the span was made  got [["line","span"],""] wanted [["span","line"],""]
+CAUGHT page: just this day removes the span before the line is written back  [page]
+         1 failed: test_making_and_unmaking_a_span_are_two_ordered_changes_so_a_failure_leaves_a_duplicate_never_a_loss
+CAUGHT page: the handle drag can start an entry drag  [page]
+         1 failed: test_the_handle_is_24px_hover_only_for_a_mouse_never_for_a_finger_and_is_not_an_html_drag
+CAUGHT page: releasing on the first day makes a span  [page, browser]
+         2 failed: test_a_handle_drag_snaps_by_day_shows_a_dashed_bar_and_a_pill_and_esc_cancels; releasing on the first day makes no span, and says nothing
+CAUGHT page: Esc does not cancel a handle drag  [page, browser]
+         2 failed: test_a_handle_drag_snaps_by_day_shows_a_dashed_bar_and_a_pill_and_esc_cancels; Esc cancels: nothing is made, the preview and the pill are gone, the line is as it was
+CAUGHT page: Just this day does not end the span  [browser]
+         2 failed: Just this day removes the span and keeps the line  got [1,""] wanted [0,"Site visit"]; and the line is back on screen, with no bar  got ["Site visit",5] wanted ["Site visit",0]
+CAUGHT page: clicking a bar selects nothing  [browser]
+         1 failed: clicking the bar on a later day selects the span and puts the cursor in the first day's words
+CAUGHT page: Delete with the span selected does nothing  [page, browser]
+         2 failed: test_a_span_is_one_entry_edited_in_one_place_and_ended_by_delete_clearing_or_just_this_day; the run stopped early
+CAUGHT page: Undo of a span delete reuses the removed span's id  [page, browser]
+         3 failed: test_a_span_is_one_entry_edited_in_one_place_and_ended_by_delete_clearing_or_just_this_day; Undo makes the span again as a new one; and the bars are back  got 0 wanted 3
+CAUGHT page: words do not indent past the lanes  [browser]
+         1 failed: events on a spanned day indent past the lanes in use  {"text":247.1875,"rightmost":129,"plain":97,"lead":0}
+CAUGHT page: the handle shows for a finger too  [page]
+         1 failed: test_the_handle_is_24px_hover_only_for_a_mouse_never_for_a_finger_and_is_not_an_html_drag
+CAUGHT page: Until menu rows are 36px  [page, browser]
+         3 failed: test_the_until_button_and_menu_are_44px_and_work_by_keyboard; every row is 44px tall; the menu has 44px rows
+CAUGHT page: a refused change draws over the typed words  [page, browser]
+         2 failed: test_the_page_uses_the_shared_span_rules_and_holds_spans_nowhere_but_in_memory; Reload shows what the other device saved  got "From device two" wanted "From device one"
+CAUGHT page: the Today row's range is muted on the selected fill  [page]
+         1 failed: test_every_pair_on_a_past_day_a_span_bar_and_the_pill_holds_its_floor_in_both_themes
+
+28 of 29 deliberate breaks were caught

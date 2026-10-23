@@ -20,6 +20,7 @@ const browser = await chromium.launch();
 const results = [];
 const check = (name, ok, detail = '') => { results.push({ name, ok }); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? '  ' + detail : '')); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const eq = (name, actual, expected) => check(name, JSON.stringify(actual) === JSON.stringify(expected), JSON.stringify(actual) === JSON.stringify(expected) ? '' : `got ${JSON.stringify(actual)} wanted ${JSON.stringify(expected)}`);
 const TODAY = '2026-10-22';
 const TOMORROW = '2026-10-23';
 const YESTERDAY = '2026-10-21';
@@ -228,6 +229,72 @@ await context.close();
   check('older reads: all three entries are still on screen when it settles, each once', JSON.stringify(final.filter((t) => typed.includes(t))) === JSON.stringify(typed), JSON.stringify(final));
   check('older reads: the page threw nothing', errors2.length === 0, errors2.join(' | '));
   server.control.staleGets = false;
+  await other.close();
+}
+
+/* =====================================================================
+   Spans: make, edit, resize and delete while the store is 60 seconds behind
+   ===================================================================== */
+{
+  const other = await browser.newContext({ viewport: { width: 1280, height: 1500 } });
+  await other.clock.install({ time: NOW });
+  const page3 = await other.newPage();
+  const errors3 = [];
+  page3.on('pageerror', (e) => errors3.push(e.message));
+  await page3.goto(BASE + '/journal');
+  await page3.fill('#password', server.password);
+  await page3.click('#login-submit');
+  await page3.waitForSelector('#app:not([hidden])');
+  // A line that has been in the store long enough to be listed.
+  await server.journalStore.createLine('2026-10-27', 1, 'Possible Germany');
+  server.journalStore.lines.get('2026-10-27|1').at = Date.now() - 2 * LAG;
+  await page3.reload();
+  await page3.waitForSelector('#app:not([hidden])');
+  const rowOf = (d) => page3.locator(`.date-row[data-date="${d}"]`);
+  // The window keeps asking again, as it does on focus and every 45 seconds.
+  let asking3 = true;
+  (async () => { while (asking3) { await page3.evaluate(() => window.dispatchEvent(new Event('focus'))).catch(() => {}); await sleep(500); } })();
+  const barsOf = () => page3.evaluate(() => ({ text: (document.querySelector('.date-row[data-date="2026-10-27"] .line-text') || {}).innerText, bars: document.querySelectorAll('.span-bar').length }));
+  const spansNow = () => { const out = new Map(); for (const [k, h] of server.journalStore.spanFiles) { const f = core.normaliseSpanFile(JSON.parse(h.json)); if (!out.has(f.id) || f.rev > out.get(f.id).rev) out.set(f.id, f); } return [...out.values()]; };
+  const waitFor = async (fn, ms = 8000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return true; await sleep(100); } return false; };
+  const drag = async (from, to) => {
+    await rowOf(from).hover();
+    const hb = await rowOf(from).locator('.span-handle').boundingBox();
+    const x = hb.x + hb.width / 2;
+    await page3.mouse.move(x, hb.y + hb.height / 2); await page3.mouse.down();
+    const t = await rowOf(to).boundingBox();
+    await page3.mouse.move(x, t.y + t.height / 2, { steps: 5 }); await page3.mouse.up();
+  };
+  const shownBars = [];
+  let sampling3 = true;
+  (async () => { while (sampling3) { shownBars.push(await barsOf().catch(() => null)); await sleep(250); } })();
+  await drag('2026-10-27', '2026-10-30');
+  check('spans, 60 seconds behind: making one by the handle is saved and shown', await waitFor(() => spansNow().length === 1 && spansNow()[0].end === '2026-10-30') && (await waitFor(async () => (await barsOf()).bars === 3)));
+  await rowOf('2026-10-27').locator('.line-text').click();
+  await page3.keyboard.press('Control+A'); await page3.keyboard.type('Germany trip'); await page3.keyboard.press('Enter');
+  check('editing the words straight after is saved, not refused as a clash', await waitFor(() => spansNow()[0].text === 'Germany trip' && spansNow()[0].rev === 2));
+  await drag('2026-10-30', '2026-10-31');
+  check('lengthening straight after is saved', await waitFor(() => spansNow()[0].end === '2026-10-31' && spansNow()[0].rev === 3));
+  await drag('2026-10-31', '2026-10-29');
+  check('and shortening', await waitFor(() => spansNow()[0].end === '2026-10-29' && spansNow()[0].rev === 4));
+  await sleep(2500);
+  sampling3 = false;
+  await sleep(400);
+  const lostBars = shownBars.filter(Boolean).find((sample, i, all) => i > 0 && all.slice(0, i).some((b) => b.bars >= 2) && sample.bars === 0);
+  check('once shown, the span is never missing from a later look, though the listing is 60 seconds behind and the window kept asking again', !lostBars, JSON.stringify(lostBars));
+  eq('one span, four revisions, each its own file, and the line cleared once', [spansNow().length, server.journalStore.spanFiles.size], [1, 4]);
+  await rowOf('2026-10-27').locator('.line-text').click();
+  await page3.keyboard.press('Control+A'); await page3.keyboard.press('Backspace'); await page3.keyboard.press('Enter');
+  check('deleting it is saved, and its Undo is offered', await waitFor(() => spansNow()[0].state === 'removed') && (await page3.textContent('#flash-text')) === 'Span deleted.');
+  await page3.click('#flash-action');
+  check('Undo makes it again once, as a new span', await waitFor(() => spansNow().filter((x) => x.state === 'open').length === 1) && spansNow().length === 2);
+  asking3 = false;
+  check('spans: the page threw nothing', errors3.length === 0, errors3.join(' | '));
+  // After the lag the listing has caught up, and a fresh look shows the same span.
+  await sleep(LAG + 2000);
+  await page3.reload();
+  await page3.waitForSelector('#app:not([hidden])');
+  eq('after 60 seconds a fresh look shows the same span the store holds', await page3.evaluate(() => [document.querySelector('.date-row[data-date="2026-10-27"] .line-text').innerText, document.querySelectorAll('.span-bar').length]), ['Germany trip', 2]);
   await other.close();
 }
 
