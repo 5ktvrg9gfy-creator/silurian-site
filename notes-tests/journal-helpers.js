@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { createJournalApi } from "../api/_lib/journal-api.js";
 import { ENVIRONMENT_VARIABLE } from "../api/_lib/gate.js";
-import { entryRecord, lineRecord, normaliseEntryFile, normaliseLineFile } from "../journal/core.js";
+import { entryRecord, lineRecord, normaliseEntryFile, normaliseLineFile, normaliseSpanFile, spanRecord } from "../journal/core.js";
 import { NOW, freshSecret, signedInCookie } from "./helpers.js";
 
 export { NOW, freshSecret, signedInCookie };
@@ -17,6 +17,7 @@ export const newId = () => randomBytes(16).toString("hex");
 export function journalMemoryStore() {
   const entries = new Map();   // "list|id|rev" -> { json, at }
   const lines = new Map();     // "date|rev" -> { json, at }
+  const spanFiles = new Map(); // "id|rev" -> { json, at }
   let version = 0;
   const creates = [];
   const state = { quick: null, hook: null, reads: 0 };
@@ -27,6 +28,7 @@ export function journalMemoryStore() {
   return {
     entries,
     lines,
+    spanFiles,
     creates,
     state,
     ageNow,
@@ -81,6 +83,35 @@ export function journalMemoryStore() {
         if (!latest.has(date) || Number(rev) > latest.get(date).rev) latest.set(date, { rev: Number(rev), json: held.json });
       }
       return [...latest.values()].map((x) => normaliseLineFile(JSON.parse(x.json)));
+    },
+    async readSpan(id, rev) {
+      state.reads += 1;
+      const held = spanFiles.get(`${id}|${rev}`);
+      if (!held) return null;
+      const found = normaliseSpanFile(JSON.parse(held.json));
+      if (!found) throw new Error("span file unreadable");
+      return found;
+    },
+    async createSpan(span) {
+      if (state.hook) {
+        const hook = state.hook;
+        state.hook = null;
+        await hook();
+      }
+      const k = `${span.id}|${span.rev}`;
+      if (spanFiles.has(k)) return false;
+      spanFiles.set(k, { json: JSON.stringify(spanRecord(span)), at: ageNow.now() });
+      creates.push("span:" + k);
+      return true;
+    },
+    async spans() {
+      const latest = new Map();
+      for (const [k, held] of spanFiles) {
+        const [id, rev] = k.split("|");
+        if (!listed(held.at)) continue;
+        if (!latest.has(id) || Number(rev) > latest.get(id).rev) latest.set(id, { rev: Number(rev), json: held.json });
+      }
+      return [...latest.values()].map((x) => normaliseSpanFile(JSON.parse(x.json)));
     },
     async months() {
       const found = new Set();

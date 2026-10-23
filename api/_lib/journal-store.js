@@ -2,6 +2,7 @@
 //
 //   journal/e/YYYY-MM/<entry id>.<rev>.json     one file per entry revision
 //   journal/l/YYYY-MM/<YYYY-MM-DD>.<rev>.json   one file per calendar line revision
+//   journal/spans/<span id>.<rev>.json          one file per span revision, keyed by id only
 //   journal/quick.json                          the Quick notes scratch area
 //
 // Nothing here is under notes/, so the notes list, the notes index and notes
@@ -32,10 +33,11 @@
 // The Blob functions are passed in so the adapter can be tested against an
 // in-memory stand-in.
 
-import { normaliseEntryFile, normaliseLineFile, entryRecord, lineRecord, parseList, monthOf } from "../../journal/core.js";
+import { normaliseEntryFile, normaliseLineFile, normaliseSpanFile, entryRecord, lineRecord, spanRecord, parseList, monthOf } from "../../journal/core.js";
 
 const ENTRY_PREFIX = "journal/e/";
 const LINE_PREFIX = "journal/l/";
+const SPAN_PREFIX = "journal/spans/";
 const QUICK_PATH = "journal/quick.json";
 const JSON_TYPE = "application/json";
 // How many files are read at once when a view is built.
@@ -43,6 +45,7 @@ const READ_AT_ONCE = 16;
 
 const entryPath = (list, id, rev) => `${ENTRY_PREFIX}${parseList(list).month}/${id}.${rev}.json`;
 const linePath = (date, rev) => `${LINE_PREFIX}${monthOf(date)}/${date}.${rev}.json`;
+const spanPath = (id, rev) => `${SPAN_PREFIX}${id}.${rev}.json`;
 
 async function readBytes(stream) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
@@ -181,6 +184,38 @@ export function createJournalStore(sdk) {
         const raw = await readKept(linePath(date, rev), normaliseLineFile);
         if (!raw) throw new Error("journal file listed and not readable");
         return normaliseLineFile(raw);
+      });
+    },
+
+    // The span at exactly this revision, or null if there is none.
+    async readSpan(id, rev) {
+      const raw = await readKept(spanPath(id, rev), normaliseSpanFile);
+      return raw ? normaliseSpanFile(raw) : null;
+    },
+
+    // True when made, false when that revision of that span already exists.
+    createSpan(span) {
+      return createOnly(spanPath(span.id, span.rev), spanRecord(span));
+    },
+
+    // Every span at its highest revision, removed ones included so that a device
+    // that still holds one learns it is gone. A span is keyed by its id alone and
+    // can cover any run of months, so there is no month to list by: this lists the
+    // prefix once. That is fine for the tens of spans a person keeps, and is the
+    // first thing to change if they ever reach hundreds (see journal-spans-open-questions.md).
+    async spans() {
+      const names = await listNames(SPAN_PREFIX);
+      const latest = new Map();
+      for (const name of names) {
+        const match = /^([0-9a-f]{32})\.(\d+)\.json$/.exec(name);
+        if (!match) continue;
+        const rev = Number(match[2]);
+        if (!latest.has(match[1]) || rev > latest.get(match[1])) latest.set(match[1], rev);
+      }
+      return inBatches([...latest.entries()], async ([id, rev]) => {
+        const raw = await readKept(spanPath(id, rev), normaliseSpanFile);
+        if (!raw) throw new Error("journal file listed and not readable");
+        return normaliseSpanFile(raw);
       });
     },
 

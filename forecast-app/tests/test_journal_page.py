@@ -181,9 +181,9 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         self.assertIn("/tokens.css", chain, "The page no longer loads tokens.css, which carries the Archivo font face.")
         used = used_custom_properties(self.text)
         self.assertGreaterEqual(len(used), 15, "Too few var() reads were found.")
-        # One name is set by the page's own script, Month's width once it has been dragged.
+        # Names the page's own script sets: Month's width once it has been dragged, and how many lanes a row of the calendar indents past and which lane a span bar is in.
         set_by_script = set(re.findall(r'style\.setProperty\("(--[a-z-]+)"', self.text))
-        self.assertEqual(set_by_script, {"--month-width"})
+        self.assertEqual(set_by_script, {"--month-width", "--lanes", "--lane"})
         self.assertEqual(sorted(used - declared - set_by_script), [], "var() names nothing declares.")
         self.assertEqual(sorted(name for name in used if not name.startswith("--notes-") and name not in set_by_script), [])
         self.assertEqual(sorted(used - set(self.light) - set_by_script), [], "Read but not declared in the light block.")
@@ -275,9 +275,9 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         return self.text.split('<script type="module">', 1)[1]
 
     SYMBOLS = sorted(["j-task", "j-event", "j-note", "j-done", "j-migrated", "j-scheduled", "j-more", "j-chevron-right",
-                      "i-bin", "i-chevron-left", "i-moon", "i-sun"])
+                      "i-bin", "i-chevron-left", "i-moon", "i-sun", "j-span-handle", "j-until"])
 
-    def test_exactly_twelve_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
+    def test_exactly_fourteen_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
         symbols = re.findall(r"<symbol\b([^>]*)>", self.text)
         ids = sorted(re.search(r'id="([^"]+)"', attributes).group(1) for attributes in symbols)
         self.assertEqual(ids, self.SYMBOLS)
@@ -302,6 +302,7 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
             "j-task": 'd="M12 12h.01"', "j-event": 'cx="12" cy="12" r="4"', "j-note": 'd="M8 12h8"', "j-done": 'd="M8 8l8 8M16 8l-8 8"',
             "j-migrated": 'd="M7 12h10M13 8l4 4-4 4"', "j-scheduled": 'd="M17 12H7M11 8l-4 4 4 4"',
             "j-more": 'd="M6 12h.01M12 12h.01M18 12h.01"', "j-chevron-right": 'd="M9 6l6 6-6 6"',
+            "j-span-handle": 'd="M12 4v12M7 11l5 5 5-5M5 20h14"', "j-until": 'd="M5 6h14v14H5zM5 10h14M9 3v4M15 3v4"',
         }
         for name, shape in paths.items():
             symbol = re.search(rf'<symbol id="{name}".*?</symbol>', self.text, re.DOTALL).group(0)
@@ -997,3 +998,215 @@ class JournalPeelsAndTheMonthHandle(unittest.TestCase):
         for values in (self.light, self.dark_media):
             self.assertGreaterEqual(contrast(values["--notes-strong"], values["--notes-ground"]), 3.0, "the handle's outline is visible on the page")
             self.assertGreaterEqual(contrast(values["--notes-icon"], values["--notes-ground"]), 3.0, "its hover rule is visible on the page")
+
+
+class JournalPastDaysAndSpans(unittest.TestCase):
+    """Section 9e, 23 October 2026: past days in Month are quiet, and a calendar line can
+    cover a run of days as one span. The rules are held by notes-tests/journal-spans.test.js;
+    this holds the page's side of them, and the browser check (sections 21 and 22) holds
+    what is drawn."""
+
+    def setUp(self) -> None:
+        self.page = JOURNAL_PAGE.read_text(encoding="utf-8")
+        self.text = without_comments(self.page)
+        self.style = self.text.split("<style>", 1)[1].split("</style>", 1)[0]
+        self.script = self.text.split('<script type="module">', 1)[1]
+        self.light = declarations(block_after(self.style, LIGHT_HEADER))
+        self.dark = declarations(block_after(self.style, DARK_MEDIA_HEADER))
+        self.core = (JOURNAL / "core.js").read_text(encoding="utf-8")
+        self.store = (REPOSITORY / "api" / "_lib" / "journal-store.js").read_text(encoding="utf-8")
+        self.api = (REPOSITORY / "api" / "_lib" / "journal-api.js").read_text(encoding="utf-8")
+
+    # ---- past days, and the colours ----
+
+    def test_a_past_day_is_muted_in_its_number_weekday_line_and_events(self) -> None:
+        for part in ('.date-row[data-past="true"] .date-open .wk', '.date-row[data-past="true"] .line-text', '.date-row[data-past="true"] .line-events', ".span-range"):
+            self.assertIn(part, self.style)
+        self.assertRegex(self.style, r'\.date-row\[data-past="true"\] \.span-range \{ color: var\(--notes-muted\); \}')
+        self.assertIn("color: var(--notes-muted); }", self.style.split('.date-row[data-past="true"] .date-open .num,', 1)[1].split("}", 1)[0] + "}")
+        self.assertIn('if (date < today) { li.setAttribute("data-past", "true"); }', self.script)
+
+    def test_the_design_text_was_stale_so_no_colour_changed_and_the_ones_it_banned_are_not_there(self) -> None:
+        # The design text named values from an older version of the page. Measured live, every pair passes,
+        # so nothing is changed: muted is already #66615f, there is no yellow theme and no --notes-text.
+        self.assertEqual(self.light["--notes-muted"], "#66615f")
+        self.assertEqual(self.dark["--notes-hover"], "#302d2b")
+        self.assertNotIn("#77716e", self.page.lower())
+        self.assertNotIn("--notes-text", self.page)
+        self.assertNotRegex(self.page, r"yellow[- ]paper|data-theme=\"yellow\"")
+
+    def test_every_pair_on_a_past_day_a_span_bar_and_the_pill_holds_its_floor_in_both_themes(self) -> None:
+        checked = 0
+        for theme, v in (("light", self.light), ("dark", self.dark)):
+            pairs = [
+                ("muted on the Month panel (a past day)", v["--notes-muted"], v["--notes-panel"], 4.5),
+                ("muted on a hovered date button (a past day)", v["--notes-muted"], v["--notes-hover"], 4.5),
+                ("muted on the Tomorrow row, which is the hover fill (the end of a span)", v["--notes-muted"], v["--notes-hover"], 4.5),
+                ("ink on the Today row, which is the selected fill (the end of a span there)", v["--notes-ink"], v["--notes-selected"], 4.5),
+                ("ink bar on the panel", v["--notes-ink"], v["--notes-panel"], 3.0),
+                ("muted bar on the panel (a past day)", v["--notes-muted"], v["--notes-panel"], 3.0),
+                ("ink bar on the hover fill (a row being dragged over)", v["--notes-ink"], v["--notes-hover"], 3.0),
+                ("strong bar on the hover fill (a selected span)", v["--notes-strong"], v["--notes-hover"], 3.0),
+                ("the pill: strong on the page ground", v["--notes-ground"], v["--notes-strong"], 4.5),
+                ("the handle icon on the panel", v["--notes-icon"], v["--notes-panel"], 3.0),
+                ("the handle icon on its hover fill", v["--notes-icon"], v["--notes-hover"], 3.0),
+                ("a ticked row in the Until menu: strong on selected", v["--notes-strong"], v["--notes-selected"], 4.5),
+                ("an Until menu row: ink on the panel", v["--notes-ink"], v["--notes-panel"], 4.5),
+            ]
+            for what, fg, bg, floor in pairs:
+                checked += 1
+                self.assertGreaterEqual(contrast(fg, bg), floor, f"{theme}: {what}")
+        self.assertEqual(checked, 26)
+        # Muted is never set on the selected fill, so the Today row's range is ink.
+        self.assertIn('.date-row[data-mark="today"] .span-range { color: var(--notes-ink); }', self.style)
+
+    # ---- the two new icons ----
+
+    def test_two_new_icons_only_the_handle_and_until(self) -> None:
+        ids = set(re.findall(r'<symbol id="([^"]+)"', self.text))
+        self.assertTrue({"j-span-handle", "j-until"} <= ids)
+        self.assertEqual(len(ids), 14, "twelve before, and two")
+        self.assertIn('icon("j-span-handle")', self.script)
+        self.assertIn('icon("j-until")', self.script)
+
+    # ---- the handle ----
+
+    def test_the_handle_is_24px_hover_only_for_a_mouse_never_for_a_finger_and_is_not_an_html_drag(self) -> None:
+        rule = re.search(r"\.span-handle \{([^}]*)\}", self.style).group(1)
+        for part in ("width: 24px;", "height: 24px;", "visibility: hidden;", "touch-action: none;"):
+            self.assertIn(part, rule)
+        fine = self.style.split("@media (hover: hover) and (pointer: fine) {\n    .date-row:hover .span-handle", 1)[1].split("}", 1)[0]
+        self.assertIn("visibility: visible;", fine)
+        self.assertIn("@media (pointer: coarse) { .span-handle { display: none; } }", self.style)
+        body = function_body(self.script, "spanHandle")
+        self.assertIn('handle.tabIndex = -1;', body)
+        self.assertIn('setAttribute("draggable", "false")', body)
+        self.assertIn('addEventListener("pointerdown"', body)
+        self.assertNotIn("dragstart", body)
+        # A separate drag with its own events, which never reaches the entry drag.
+        begin = function_body(self.script, "beginSpanDrag")
+        for part in ("event.preventDefault();", "event.stopPropagation();", "setPointerCapture", 'addEventListener("pointermove"', 'addEventListener("keydown", onSpanKey, true)'):
+            self.assertIn(part, begin)
+        self.assertEqual(self.script.count('addEventListener("dragstart"'), 1, "the only html drag is the entry's")
+        self.assertIn('li.addEventListener("dragstart"', function_body(self.script, "wireDrag"))
+
+    def test_a_handle_drag_snaps_by_day_shows_a_dashed_bar_and_a_pill_and_esc_cancels(self) -> None:
+        update = function_body(self.script, "updateSpanDrag")
+        self.assertIn('spanDrag.target = date > spanDrag.start ? date : spanDrag.start;', update)
+        self.assertIn('"Until " + weekdayDay(spanDrag.target)', update)
+        self.assertIn('"Just this day"', update)
+        self.assertIn('setAttribute("data-spanning", "true")', update)
+        self.assertIn("repeating-linear-gradient(to bottom, var(--notes-ink) 0, var(--notes-ink) 6px, transparent 6px, transparent 10px)", self.style)
+        self.assertRegex(self.style, r"\.span-preview \{[^}]*width: 2px;")
+        self.assertIn('.date-row[data-spanning="true"]:not([data-mark="today"]) { background: var(--notes-hover); }', self.style)
+        self.assertIn('event.key === "Escape" && spanDrag', function_body(self.script, "onSpanKey"))
+        end = function_body(self.script, "endSpanDrag")
+        self.assertIn("if (!commit) { return; }", end)
+        # Releasing on the first day makes no span; on a span it is the same as Just this day.
+        self.assertIn("} else if (drag.target !== drag.start) {", end)
+        self.assertIn("if (drag.target === drag.start) { justThisDay(drag.spanId); }", end)
+
+    # ---- the Until button and its menu ----
+
+    def test_the_until_button_and_menu_are_44px_and_work_by_keyboard(self) -> None:
+        self.assertRegex(self.style, r"\.span-until \{[^}]*min-height: 44px;")
+        self.assertRegex(self.style, r"\.until-menu button \{[^}]*min-height: 44px;")
+        self.assertIn("@media (pointer: coarse) { .span-until[data-text=\"true\"] { display: inline-flex; } }", self.style)
+        self.assertIn('.date-row:focus-within .span-until[data-text="true"]', self.style)
+        button = function_body(self.script, "untilButton")
+        self.assertIn('"Until, for: "', button)
+        self.assertIn('make("span", "", "Until")', button)
+        menu = function_body(self.script, "drawUntilMenu")
+        for part in ('"Just this day"', "for (var n = 1; n <= 7; n += 1)", '"Later date…"', 'setAttribute("role", "menu")',
+                     'event.key === "ArrowDown"', 'event.key === "ArrowUp"', 'event.key === "Escape"', "closeUntilMenu(true)"):
+            self.assertIn(part, menu)
+        self.assertIn('setAttribute("role", "menuitemradio")', function_body(self.script, "untilItem"))
+        self.assertIn('setAttribute("aria-checked", checked ? "true" : "false")', function_body(self.script, "untilItem"))
+        # Later date opens a picker of days, none over 366 days from the first day.
+        self.assertIn("core.MAX_SPAN_DAYS - 1", menu)
+        self.assertIn('"Until " + longDate(target)', menu)
+
+    # ---- what a row shows ----
+
+    def test_what_a_row_says_in_words_and_to_a_screen_reader(self) -> None:
+        self.assertIn('(lead.continued ? "continued, to " : "to ") + endWords(lead.span, month)', function_body(self.script, "spanRangeText"))
+        label = function_body(self.script, "spanLabel")
+        self.assertIn('", " + from + " to " + longDate(span.end)', label)
+        row = function_body(self.script, "dateRow")
+        self.assertIn('" continues, day " + b.day + " of " + b.total', row)
+        self.assertIn('" continues, day " + here.day + " of " + here.total', row)
+        self.assertIn('bar.setAttribute("aria-hidden", "true");', row)
+        self.assertIn('li.style.setProperty("--lanes", String(rowSpan.lanes));', row)
+        # Bars are 2px, 14px apart and up to three lanes; the words indent past them.
+        self.assertRegex(self.style, r"\.span-bar::before \{[^}]*width: 2px;")
+        self.assertIn("left: calc(72px + var(--lane, 0) * 14px);", self.style)
+        self.assertIn(".span-gutter { flex: none; width: calc(var(--lanes, 0) * 14px); }", self.style)
+        self.assertIn("export const MAX_LANES = 3;", self.core)
+        self.assertIn("export const MAX_SPAN_DAYS = 366;", self.core)
+        # A foot on the last day only; bars are muted on past days and ink otherwise.
+        self.assertIn('.span-bar[data-foot="true"]::after', self.style)
+        self.assertIn('.date-row[data-past="true"] .span-bar::before, .date-row[data-past="true"] .span-bar::after { background: var(--notes-muted); }', self.style)
+        # Words and a handle only on the first day (a span's handle is on its last day).
+        self.assertIn('if (foot || (!lead && day.line !== "")) {', row)
+
+    # ---- one span, edited once, ended with Undo ----
+
+    def test_a_span_is_one_entry_edited_in_one_place_and_ended_by_delete_clearing_or_just_this_day(self) -> None:
+        wire = function_body(self.script, "wireSpanLine")
+        self.assertIn('submit({ op: "spanEdit", id: id, rev: span.rev, text: typed }', wire)
+        self.assertIn('if (typed === "") { removeSpan(id); return; }', wire)
+        self.assertIn('event.key === "Delete" && selectedSpan === id', wire)
+        remove = function_body(self.script, "removeSpan")
+        self.assertIn('offerUndo("Span deleted."', remove)
+        self.assertIn('{ op: "spanAdd", span: { id: newId(),', remove, "Undo makes a new span: a removed span keeps its id")
+        select = function_body(self.script, "selectSpan")
+        self.assertIn("editor.focus();", select)
+        self.assertIn("selection.addRange(range);", select)
+
+    def test_making_and_unmaking_a_span_are_two_ordered_changes_so_a_failure_leaves_a_duplicate_never_a_loss(self) -> None:
+        make = function_body(self.script, "makeSpan")
+        self.assertLess(make.index('op: "spanAdd"'), make.index('op: "line"'), "the span is made first, then the line is cleared")
+        self.assertIn("core.spanIdFor(date, line.rev)", make, "the id is worked out from the line, so a retry is the same span")
+        self.assertIn('text: ""', make)
+        just = function_body(self.script, "justThisDay")
+        self.assertIn('submit({ op: "line", date: span.start, rev: line.rev, text: text }, {}).then(function (ok) { if (ok) { ask(); } });', just, "the line is written back first, and only then is the span removed")
+        self.assertIn('var ask = function () { return submit({ op: "spanRemove", id: id, rev: span.rev }, {}); };', just)
+        # The words are shown once when the line and the span say the same.
+        self.assertIn('day.line !== "" && day.line !== lead.span.text', function_body(self.script, "dateRow"))
+        self.assertIn("366 days at most.", self.script)
+
+    def test_the_page_uses_the_shared_span_rules_and_holds_spans_nowhere_but_in_memory(self) -> None:
+        self.assertIn("core.applySpanOp(", self.script)
+        self.assertIn("core.layoutSpans(", self.script)
+        self.assertIn("core.mergeSpans(", self.script)
+        self.assertIn("core.isSpanOp(", self.script)
+        submit = function_body(self.script, "submit")
+        self.assertIn("if (core.isSpanOp(op)) {", submit)
+        self.assertNotIn("spansShown", re.findall(r"localStorage[^;]*;", self.script).__str__())
+        pump = function_body(self.script, "pump")
+        self.assertIn("takeSpans(answer.body.spans);", pump)
+        self.assertNotIn("takeSpans(answer.body && answer.body.spans)", pump, "a refused change does not draw over the typed words: Reload does")
+
+    # ---- the server's side, as the page relies on it ----
+
+    def test_spans_are_stored_by_id_alone_under_their_own_prefix_and_never_overwritten(self) -> None:
+        self.assertIn('const SPAN_PREFIX = "journal/spans/";', self.store)
+        self.assertIn("const spanPath = (id, rev) => `${SPAN_PREFIX}${id}.${rev}.json`;", self.store)
+        self.assertIn("createOnly(spanPath(span.id, span.rev), spanRecord(span))", self.store)
+        self.assertNotIn("parseList", self.store.split("const spanPath", 1)[1].split("\n", 1)[0])
+        self.assertIn("journal/spans/<span id>.<rev>.json", self.store)
+        # A span change is its own path in the API: it reads only the span it starts from and never a day.
+        change = function_body(self.api, "changeSpan")
+        self.assertIn("store.readSpan(need.id, need.rev)", change)
+        self.assertIn("store.createSpan(w)", change)
+        self.assertNotIn("createEntry", change)
+        self.assertNotIn("createLine", change)
+        self.assertIn("isSpanOp(op) ? changeSpan(op) : change(op)", self.api)
+        self.assertEqual(self.api.count("spans"), self.api.count("spans"))
+        self.assertIn("{ months: view(files, months), spans }", self.api)
+
+    def test_no_new_public_file_and_the_page_still_says_no_dash(self) -> None:
+        public = (REPOSITORY / "site-allowlist.txt").read_text(encoding="utf-8")
+        self.assertIn("journal/", public)
+        for dash in ("—", "–", "&mdash;", "&ndash;", "&#8212;", "&#8211;"):
+            self.assertNotIn(dash, self.page)

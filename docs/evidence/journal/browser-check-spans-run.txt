@@ -1,0 +1,609 @@
+PASS signed out: only the wordmark and the form are visible, no panel, no tab bar, no sign out
+PASS signed out: nothing of the journal is painted, only the wordmark and the form
+PASS wrong password says so in the notes wording
+PASS signed in: the five panels are all on screen at 1280
+PASS the title of the window is Journal
+PASS today and tomorrow are filled in automatically
+PASS 1920px: three columns, Month then Today then Migrate
+PASS 1920px: Month is full height, Today above Tomorrow, Migrate above Quick notes
+PASS 1920px: nothing scrolls the page
+PASS 1280px: three columns, Month then Today then Migrate
+PASS 1280px: Month is full height, Today above Tomorrow, Migrate above Quick notes
+PASS 1280px: nothing scrolls the page
+PASS 1000px: three columns, Month then Today then Migrate
+PASS 1000px: Month is full height, Today above Tomorrow, Migrate above Quick notes
+PASS 1000px: nothing scrolls the page
+PASS 900px: Month on the left, the other four stacked on the right
+PASS 900px: Month is as tall as the window and sticks while the page scrolls
+PASS 375px: one panel at a time, Today first
+PASS 375px: five tabs, text only
+PASS 375px: every tab is 44px tall  44,44,44,44,44
+PASS 375px: the header fits without a menu and nothing scrolls sideways  {"right":367,"width":375,"scroll":375}
+PASS 320px: one panel at a time, Today first
+PASS 320px: five tabs, text only
+PASS 320px: every tab is 44px tall  44,44,44,44,44
+PASS 320px: the header fits without a menu and nothing scrolls sideways  {"right":312,"width":320,"scroll":320}
+PASS the add line says what it will add
+PASS task is the chosen type to begin with
+PASS a task appears at once, and an empty line adds nothing
+PASS the cursor stays in the add line for the next entry
+PASS Alt+2 chooses event and the line says so
+PASS a run of notes stays notes: the type is remembered for the list
+PASS Alt+1 goes back to task
+PASS the other lists keep their own type
+PASS "o " on an empty line makes it an event and the characters are eaten
+PASS Backspace straight after gives the characters back
+PASS so a line that really starts with o is never lost
+PASS "- " makes a note
+PASS and a prefix typed after other text is just text
+PASS without changing the type
+PASS ". " makes a task
+PASS each type has its own bullet: dot, circle, dash
+PASS and the server holds them, in order, at the bottom
+PASS only a task bullet is a button
+PASS the page threw nothing
+PASS ticking shows a cross, a strike, and the label says what the next click does
+PASS the server has it done at revision 2
+PASS clicking the cross opens it again
+PASS click the text, type, Enter: saved where it is
+PASS Escape puts the old text back
+PASS and saves nothing
+PASS clearing the text deletes the entry, with a message and an Undo
+PASS the server holds it as a removed revision, so another device learns it is gone
+PASS Undo brings it back with its text, as a new entry
+PASS Ctrl+B and Ctrl+Shift+X store markers
+PASS and the row shows styled text, with no asterisks in sight
+PASS the B button makes the selected text bold and shows it pressed
+PASS and stores it
+PASS a paste comes in as plain text on one line
+PASS there is no italic
+PASS 1280, a narrow panel, a mouse: hovering shows no move buttons and there is no More button
+PASS keyboard focus in the entry shows the actions in a second line, and not the one that points where it already is
+PASS Tomorrow: the moved entry is no longer in the list
+PASS and a quiet line at the bottom of the panel says "1 moved", closed
+PASS opening it shows the original with a right arrow and where it went
+PASS and says it is open
+PASS and a copy is at the bottom of Tomorrow
+PASS the message says what happened and offers Undo
+PASS greyed by colour, never by opacity, and not struck  {"colour":"rgb(102, 97, 95)","opacity":"1","strike":"none"}
+PASS a moved entry has no move controls and cannot be edited
+PASS pressing the line again closes it
+PASS the server agrees: arrow, destination, and the copy at revision 1
+PASS Undo opens the original again, takes the copy away, and the moved line goes
+PASS on the server too, and the copy is removed from tomorrow
+PASS an event moves to Migrate and keeps its circle
+PASS Date lists the dates of the month from today, with Today and Tomorrow named
+PASS and the day the entry is already on is not offered
+PASS scheduling gives a left arrow and "to 28 Oct", shown in the moved line
+PASS the moved line counts moved and scheduled together (the event moved earlier and this)
+PASS the message says which day, in full, and offers Undo and Open day
+PASS Open day opens that day, with the moved entry in it
+PASS the copy is in that day's log on the server
+PASS 1920, a wide panel: nothing shows until the row is hovered
+PASS hovering shows no move buttons: they would cover the text
+PASS keyboard focus shows the actions, as text
+PASS they sit on a line of their own under the text, not over it  {"below":true,"left":0}
+PASS the More button is out of the way for a mouse in a wide panel
+PASS one click moves it
+PASS spell check is on, in UK English, for an entry, a calendar line, Quick notes and the new entry line
+PASS notes is as it was: spell check off on the note box and no UK English tag
+PASS every entry has a bin button named for its text
+PASS the bin is quiet, and turns to the red on hover
+PASS and on keyboard focus
+PASS one click deletes it, with no question, and the message offers Undo
+PASS the server holds it as a removed revision
+PASS Undo brings it back as a new entry, once
+PASS the message goes by itself after ten seconds
+PASS over Tomorrow, the panel takes the selected fill and no other panel does
+PASS over the panel the entry is already in, nothing is marked
+PASS over a date before today, nothing is marked
+PASS over a date line, the line takes the selected fill
+PASS dropped on Tomorrow: a copy there, the original marked, the same message and Undo as the button
+PASS the server: one copy in Tomorrow at revision 1, the original migrated at revision 2
+PASS dropped on Migrate: one copy there, and the message says so
+PASS dropped on Today from Tomorrow: one copy in Today, and the message says so
+PASS dropped on the panel it is already in: nothing happens, nothing is written
+PASS dropped on a date line: the message names the day with Undo and Open day, as the Date picker does
+PASS the server: the event is scheduled (a left arrow) and has one copy on the 28th
+PASS every drag made exactly one copy: nothing doubled, nothing lost
+PASS a mouse over an entry shows no move buttons
+PASS keyboard focus in an entry shows them, and each is a button that names the entry
+PASS clicking into the text with the mouse puts them away again
+PASS a double click in the text being edited selects a word, and does not start a drag  ["Epsilon","false"]
+PASS 375 touch: the More button shows and nothing is draggable
+PASS 375 touch: the bin is 44px square  {"x":262,"y":134,"width":44,"height":44}
+PASS and More opens the same buttons as before
+PASS a tap on Tomorrow moves it as it always did
+PASS 375 touch: the bullet and More are 44px square  [[[44,44]],[[44,44]]]
+PASS 375 touch: each of the four actions is 44px tall  [[98,44],[98,44],[98,44]]
+PASS 375 touch: the type buttons, B and S and the add line are 44px  {"more":[[44,44]],"bullet":[[44,44]],"actions":[[98,44],[98,44],[98,44]],"type":[[44,44],[44,44],[44,44]],"fmt":[[44,44],[44,44]],"line":[[333,45]]}
+PASS 375 touch: in a narrow panel the actions are never squeezed below a thumb  [[98,44],[98,44],[98,44]]
+PASS 375 touch: the date rows are 44px tall and the full width  [[283,44],[283,44]]
+PASS 375 touch: the month arrows in the picker are 44px  44
+PASS 375 touch: the strip buttons and Bring all forward are 44px tall  44,44,44,44,44
+PASS 375 touch: every Month row, its date button and its line are 44px tall  44,44,44
+PASS 375 touch: the month arrows, the month name and This month are 44px
+PASS Month shows the month and year
+PASS there is one line per date
+PASS today and tomorrow carry a word as well as a fill
+PASS and the two fills differ from each other and from the panel  rgb(228, 220, 207) | rgb(237, 232, 225)
+PASS Month opens with today as near the top as the month allows: at the top, or the list is scrolled as far as it goes  288px from the top, at the end: true
+PASS a date with a log shows its own line, then its events, then a count
+PASS tasks and notes in the log do not show on the line
+PASS the line shows styled text with no asterisks
+PASS the calendar line is edited where it is, and saved with its own revision
+PASS and the log is untouched
+PASS clicking the date opens that day in the Month panel, with a way back
+PASS the month list is out of the way and the day has its own add line
+PASS Back returns to the month
+PASS Escape goes back too
+PASS the day has an address, so the browser Back button closes it
+PASS and it does
+PASS the date for today goes to the Today panel's add line and opens no second copy
+PASS and tomorrow to its own
+PASS the arrows move a month, and "This month" appears to come back
+PASS another month has no marks
+PASS an empty month says so and what to do next
+PASS This month goes back and the button goes away
+PASS the month name opens twelve months for the year
+PASS choosing one shows it, and the picker closes
+PASS Escape closes the picker without a change
+PASS the strip is at the top of Today with a heading that says whose tasks and how many
+PASS it offers open tasks only: no event, no note, no ticked task
+PASS each task has Bring forward and Drop, and there is one Bring all forward and no Drop all
+PASS opening the journal moved, migrated and dropped nothing: no write happened  6 writes against 6
+PASS ten minutes of timers later: still nothing moved, migrated or dropped, and the strip is still waiting  6 writes against 6
+PASS Bring forward is the primary button, in the accent  rgb(236, 105, 23)
+PASS Bring forward puts a copy at the bottom of Today
+PASS and the strip now has the one left, in the singular
+PASS with the message and an Undo
+PASS yesterday's original is kept, marked as moved to Today
+PASS Undo puts both tasks back in the strip and takes the copy out of Today
+PASS Drop strikes it and keeps it: yesterday's task is still there, marked Dropped
+PASS Bring all forward brings what is left
+PASS when the last one is handled the block goes and the message says so
+PASS Today holds the brought forward task
+PASS the heading names the day when it is not yesterday, and only the latest day is offered
+PASS a second group below the daily one, in the same words
+PASS open tasks only
+PASS Bring all forward puts them at the bottom of this month's Migrate, not Today
+PASS the daily group is still waiting, untouched
+PASS September's originals are kept, marked moved to October
+PASS overnight the headings and marks move on by themselves
+PASS and the open task is offered in the strip, as yesterday's
+PASS and nothing was moved, migrated or dropped by the date changing
+PASS and ten more minutes of timers move nothing either, with the strip still waiting
+PASS the empty state says what it is
+PASS typing marks it as not saved yet
+PASS and it saves by itself, as typed, with bold as markers
+PASS it comes back after a reload, with the bold drawn as bold
+PASS another device saves its own quick notes
+PASS a clash is refused: the plain message, a Reload button, and the typed text stays on screen
+PASS the other device's text was not overwritten
+PASS Reload brings the other device's text in and the status goes back to saved
+PASS the iPad is refused with the plain message and a Reload button
+PASS its typed text is still on screen, in the row, still editable
+PASS and the PC's edit was not overwritten
+PASS Reload shows the PC's version
+PASS a tick from an old copy is refused and writes nothing
+PASS and the iPad shows the message
+PASS entries added on two devices both survive and both screens catch up when the window gets focus
+PASS nothing is shown as saved: the entry goes and the message says nothing was changed
+PASS and the text is back in the add line
+PASS pressing Enter again saves it
+PASS sign out: before signing out the page holds the entries in memory, so the heap search can see them
+PASS sign out: after signing out no copy of an entry or of the quick notes is left in the page's memory
+PASS sign out: and none is on screen
+PASS sign out: the panels, the tabs and the header links are gone
+PASS sign out: refresh shows only sign in, nothing painted first
+PASS sign out: signing in again brings the journal back
+PASS leaving: before leaving the page holds the entry
+PASS leaving: after pagehide no copy of it is in memory
+PASS leaving: and nothing is on screen but the loading line  Journal Loading.
+PASS leaving: coming back asks the server first and then shows the journal
+PASS 401: the page ends on sign in with no entry on screen
+PASS 401: and no copy of the entry is left in the page's memory
+PASS sign out: if the quick notes cannot be saved the person stays signed in with the text on screen
+PASS storage: the device holds the theme and the last tab, and no service worker, cache or database
+PASS the last tab is remembered on the phone
+PASS and the theme choice is the one notes uses
+PASS storage blocked: the page and the theme switch still work
+PASS no-store and noindex on /journal  [200,"no-store","noindex, nofollow"]
+PASS no-store and noindex on /journal/  [200,"no-store","noindex, nofollow"]
+PASS no-store and noindex on /journal/core.js  [200,"no-store","noindex, nofollow"]
+PASS no-store and noindex on /journal/manifest.webmanifest  [200,"no-store","noindex, nofollow"]
+PASS no-store and noindex on /api/journal?view=months&months=2026-10  [200,"no-store","noindex, nofollow"]
+PASS no-store and noindex on /api/session  [200,"no-store","noindex, nofollow"]
+PASS the manifest is public: it loads with no cookie, as a browser fetches it
+PASS the theme and background colours are the page ground
+PASS the icons load with no cookie and are the sizes they say
+PASS the iPad icon and the tab icon load
+PASS the page names itself for the iPad home screen
+PASS the title bar colour follows the light and dark page ground
+PASS and the colour is read from the page when the theme is switched
+PASS Chromium, which is Edge's engine, finds nothing to stop the install, with no service worker
+PASS and it parsed the manifest without complaint  []
+PASS there is no service worker on the page
+PASS Journal is the last item in the menu, after Archive
+PASS it is a plain link to the journal
+PASS it opens the journal, already signed in because it is the same cookie
+PASS at phone width the menu that opens over the page has the Journal item too
+PASS screenshots: 1920px light: no error on the page
+PASS screenshots: 1280px light: no error on the page
+PASS screenshots: 900px light: no error on the page
+PASS screenshots: 375px light: no error on the page
+PASS screenshots: 1920px dark: no error on the page
+PASS screenshots: 1280px dark: no error on the page
+PASS screenshots: 900px dark: no error on the page
+PASS screenshots: 375px dark: no error on the page
+PASS alone: the month panel draws with the other four taken off the page
+PASS alone: the today panel draws with the other four taken off the page
+PASS alone: the tomorrow panel draws with the other four taken off the page
+PASS alone: the migrate panel draws with the other four taken off the page
+PASS alone: the quick panel draws with the other four taken off the page
+PASS light: today is the Peel fill
+PASS light: today: 37 text and icon colours measured on the Peel, none under their floor  []
+PASS light: tomorrow is the Peel fill
+PASS light: tomorrow: 15 text and icon colours measured on the Peel, none under their floor  []
+PASS light: migrate is the Peel fill
+PASS light: migrate: 18 text and icon colours measured on the Peel, none under their floor  []
+PASS light: month keeps the page panel colour
+PASS light: quick keeps the page panel colour
+PASS light: a hovered row on Today takes the Peel's hover fill
+PASS light: a greyed entry on Today stays 4.5:1 while hovered
+PASS light: today as a drop target takes its selected fill, and every text on it holds its floor  ["rgb(236, 212, 122)",true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]
+PASS light: tomorrow as a drop target takes its selected fill, and every text on it holds its floor  ["rgb(185, 217, 179)",true,true,true,true,true,true,true,true]
+PASS light: migrate as a drop target takes its selected fill, and every text on it holds its floor  ["rgb(236, 182, 198)",true,true,true,true,true,true,true,true,true,true]
+PASS light: the add line on Today is the Peel's field fill with the icon colour as its edge
+PASS light: a focused control on a Peel has a 2px ink outline
+PASS light: a focused control in Quick notes keeps the accent outline
+PASS light: no page errors
+PASS dark: today is the Peel fill
+PASS dark: today: 37 text and icon colours measured on the Peel, none under their floor  []
+PASS dark: tomorrow is the Peel fill
+PASS dark: tomorrow: 15 text and icon colours measured on the Peel, none under their floor  []
+PASS dark: migrate is the Peel fill
+PASS dark: migrate: 18 text and icon colours measured on the Peel, none under their floor  []
+PASS dark: month keeps the page panel colour
+PASS dark: quick keeps the page panel colour
+PASS dark: a hovered row on Today takes the Peel's hover fill
+PASS dark: a greyed entry on Today stays 4.5:1 while hovered
+PASS dark: today as a drop target takes its selected fill, and every text on it holds its floor  ["rgb(236, 212, 122)",true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]
+PASS dark: tomorrow as a drop target takes its selected fill, and every text on it holds its floor  ["rgb(185, 217, 179)",true,true,true,true,true,true,true,true]
+PASS dark: migrate as a drop target takes its selected fill, and every text on it holds its floor  ["rgb(236, 182, 198)",true,true,true,true,true,true,true,true,true,true]
+PASS dark: the add line on Today is the Peel's field fill with the icon colour as its edge
+PASS dark: a focused control on a Peel has a 2px ink outline
+PASS dark: a focused control in Quick notes keeps the accent outline
+PASS dark: no page errors
+PASS peels: 140 colours were measured in all, so the check saw something  140
+PASS phone, dark: Today is the yellow Peel
+PASS handle: shown at 1280 with its role, name and values
+PASS handle: at rest the three columns are equal thirds and nothing is stored
+PASS handle: sits on Month right edge, in the gap  0
+PASS drag: the page says it is resizing and the handle says it is dragging
+PASS drag: nothing is stored while the pointer moves
+PASS drag: Month is 120px wider and the middle and right columns share the rest equally  {"month":531,"today":351,"tomorrow":351,"migrate":351,"quick":351}
+PASS drag: letting go stores the width and clears the dragging marks
+PASS drag: the handle followed Month
+PASS reload: the width is remembered on this device
+PASS limit: dragged to the far left Month stops at 240px
+PASS limit: dragged to the far right Month stops at 616px and the others keep 280px or more  {"month":616,"today":308,"tomorrow":308,"migrate":308,"quick":308}
+PASS keyboard: the handle takes focus
+PASS keyboard: Home goes to the minimum
+PASS keyboard: Right arrow adds 16px
+PASS keyboard: Shift and Right arrow adds 64px
+PASS keyboard: Left arrow takes 16px and Shift and Left arrow takes 64px
+PASS keyboard: End goes to the maximum
+PASS keyboard: every step is stored
+PASS keyboard: Enter resets to the default and forgets the stored width
+PASS double click: resets to the default
+PASS handle: the focus outline is 2px ink on the page
+PASS window shrinks: a stored 616px is trimmed to 392px on screen, the others keep 280px or more  {"month":392,"today":280,"tomorrow":280,"migrate":280,"quick":280}
+PASS window shrinks: storage still holds 616
+PASS window grows again: the choice comes back
+PASS 999px: no handle, Month is the sticky column as before
+PASS 390px: no handle
+PASS handle: no page errors
+PASS storage blocked: the handle still works and nothing throws
+PASS a coarse pointer: the handle is 44px wide
+PASS 1920px, Today (a Peel): the move buttons show under the focused entry (3), none over its text or its bin  {"shown":3,"covered":0,"beside":0,"binCovered":0}
+PASS 1920px, Month day log: the move buttons show under the focused entry (4), none over its text or its bin  {"shown":4,"covered":0,"beside":0,"binCovered":0}
+PASS 1920px: no page errors
+PASS 1280px, Today (a Peel): the move buttons show under the focused entry (3), none over its text or its bin  {"shown":3,"covered":0,"beside":0,"binCovered":0}
+PASS 1280px, Month day log: the move buttons show under the focused entry (4), none over its text or its bin  {"shown":4,"covered":0,"beside":0,"binCovered":0}
+PASS 1280px: no page errors
+PASS 1000px, Today (a Peel): the move buttons show under the focused entry (3), none over its text or its bin  {"shown":3,"covered":0,"beside":0,"binCovered":0}
+PASS 1000px, Month day log: the move buttons show under the focused entry (4), none over its text or its bin  {"shown":4,"covered":0,"beside":0,"binCovered":0}
+PASS 1000px: no page errors
+PASS keyboard moves: 21 buttons were measured, so the check saw something  21
+PASS light: a past day's number, weekday, line and event text are all muted
+PASS light: a day from today on is unchanged: strong number, muted weekday, ink line and events
+PASS light: Today and Tomorrow are marked as before
+PASS light: 19 Month row text pairs measured as drawn, every one 4.5:1 or more  []
+PASS light: a past day while its date is hovered is 4.5:1 or more  [{"sel":".num","ratio":5.008838853675645},{"sel":".wk","ratio":5.008838853675645}]
+PASS light: 80 text and icon pairs on Month, its hover, the three Peels and Quick notes read from the live page, none used under its floor
+PASS light: no page errors
+PASS dark: a past day's number, weekday, line and event text are all muted
+PASS dark: a day from today on is unchanged: strong number, muted weekday, ink line and events
+PASS dark: Today and Tomorrow are marked as before
+PASS dark: 19 Month row text pairs measured as drawn, every one 4.5:1 or more  []
+PASS dark: a past day while its date is hovered is 4.5:1 or more  [{"sel":".num","ratio":4.809382798923999},{"sel":".wk","ratio":4.809382798923999}]
+PASS dark: 80 text and icon pairs on Month, its hover, the three Peels and Quick notes read from the live page, none used under its floor
+PASS dark: no page errors
+PASS past days: 202 pairs were measured in all, so the check saw something  202
+RATIOS
+RATIO	light	Month past	number	5.23
+RATIO	light	Month past	weekday	5.23
+RATIO	light	Month past	line	5.23
+RATIO	light	Month past	events	5.23
+RATIO	light	Month past	count	11.76
+RATIO	light	Month ordinary	number	15.05
+RATIO	light	Month ordinary	weekday	5.23
+RATIO	light	Month ordinary	line	11.76
+RATIO	light	Month ordinary	events	11.76
+RATIO	light	Month ordinary	count	11.76
+RATIO	light	Month today	number	12.91
+RATIO	light	Month today	weekday	12.91
+RATIO	light	Month today	line	10.08
+RATIO	light	Month today	mark word	12.91
+RATIO	light	Month today	count	11.76
+RATIO	light	Month tomorrow	number	14.41
+RATIO	light	Month tomorrow	weekday	11.25
+RATIO	light	Month tomorrow	line	11.25
+RATIO	light	Month tomorrow	mark word	14.41
+RATIO	light	Month past, hovered	num	5.01
+RATIO	light	Month past, hovered	wk	5.01
+RATIO	light	Month	ink on panel	11.76
+RATIO	light	Month	ink on hover	11.25
+RATIO	light	Month	ink on selected	10.08
+RATIO	light	Month	ink on field	13.72
+RATIO	light	Month	strong on panel	15.05
+RATIO	light	Month	strong on hover	14.41
+RATIO	light	Month	strong on selected	12.91
+RATIO	light	Month	strong on field	17.56
+RATIO	light	Month	muted on panel	5.23
+RATIO	light	Month	muted on hover	5.01
+RATIO	light	Month	muted on selected	4.49
+RATIO	light	Month	muted on field	6.10
+RATIO	light	Month	icon on panel	7.91
+RATIO	light	Month	icon on hover	7.57
+RATIO	light	Month	icon on selected	6.78
+RATIO	light	Month	icon on field	9.23
+RATIO	light	Today Peel	ink on panel	11.95
+RATIO	light	Today Peel	ink on hover	10.60
+RATIO	light	Today Peel	ink on selected	9.32
+RATIO	light	Today Peel	ink on field	12.98
+RATIO	light	Today Peel	strong on panel	15.29
+RATIO	light	Today Peel	strong on hover	13.56
+RATIO	light	Today Peel	strong on selected	11.93
+RATIO	light	Today Peel	strong on field	16.61
+RATIO	light	Today Peel	muted on panel	5.32
+RATIO	light	Today Peel	muted on hover	4.72
+RATIO	light	Today Peel	muted on selected	4.15
+RATIO	light	Today Peel	muted on field	5.78
+RATIO	light	Today Peel	icon on panel	8.04
+RATIO	light	Today Peel	icon on hover	7.13
+RATIO	light	Today Peel	icon on selected	6.27
+RATIO	light	Today Peel	icon on field	8.73
+RATIO	light	Tomorrow Peel	ink on panel	11.54
+RATIO	light	Tomorrow Peel	ink on hover	10.29
+RATIO	light	Tomorrow Peel	ink on selected	8.91
+RATIO	light	Tomorrow Peel	ink on field	12.82
+RATIO	light	Tomorrow Peel	strong on panel	14.77
+RATIO	light	Tomorrow Peel	strong on hover	13.17
+RATIO	light	Tomorrow Peel	strong on selected	11.40
+RATIO	light	Tomorrow Peel	strong on field	16.41
+RATIO	light	Tomorrow Peel	muted on panel	5.14
+RATIO	light	Tomorrow Peel	muted on hover	4.58
+RATIO	light	Tomorrow Peel	muted on selected	3.96
+RATIO	light	Tomorrow Peel	muted on field	5.71
+RATIO	light	Tomorrow Peel	icon on panel	7.76
+RATIO	light	Tomorrow Peel	icon on hover	6.92
+RATIO	light	Tomorrow Peel	icon on selected	5.99
+RATIO	light	Tomorrow Peel	icon on field	8.63
+RATIO	light	Migrate Peel	ink on panel	11.05
+RATIO	light	Migrate Peel	ink on hover	9.48
+RATIO	light	Migrate Peel	ink on selected	7.89
+RATIO	light	Migrate Peel	ink on field	12.62
+RATIO	light	Migrate Peel	strong on panel	14.14
+RATIO	light	Migrate Peel	strong on hover	12.13
+RATIO	light	Migrate Peel	strong on selected	10.09
+RATIO	light	Migrate Peel	strong on field	16.15
+RATIO	light	Migrate Peel	muted on panel	4.92
+RATIO	light	Migrate Peel	muted on hover	4.22
+RATIO	light	Migrate Peel	muted on selected	3.51
+RATIO	light	Migrate Peel	muted on field	5.61
+RATIO	light	Migrate Peel	icon on panel	7.43
+RATIO	light	Migrate Peel	icon on hover	6.38
+RATIO	light	Migrate Peel	icon on selected	5.30
+RATIO	light	Migrate Peel	icon on field	8.49
+RATIO	light	Quick notes	ink on panel	11.76
+RATIO	light	Quick notes	ink on hover	11.25
+RATIO	light	Quick notes	ink on selected	10.08
+RATIO	light	Quick notes	ink on field	13.72
+RATIO	light	Quick notes	strong on panel	15.05
+RATIO	light	Quick notes	strong on hover	14.41
+RATIO	light	Quick notes	strong on selected	12.91
+RATIO	light	Quick notes	strong on field	17.56
+RATIO	light	Quick notes	muted on panel	5.23
+RATIO	light	Quick notes	muted on hover	5.01
+RATIO	light	Quick notes	muted on selected	4.49
+RATIO	light	Quick notes	muted on field	6.10
+RATIO	light	Quick notes	icon on panel	7.91
+RATIO	light	Quick notes	icon on hover	7.57
+RATIO	light	Quick notes	icon on selected	6.78
+RATIO	light	Quick notes	icon on field	9.23
+RATIO	dark	Month past	number	5.91
+RATIO	dark	Month past	weekday	5.91
+RATIO	dark	Month past	line	5.91
+RATIO	dark	Month past	events	5.91
+RATIO	dark	Month past	count	12.68
+RATIO	dark	Month ordinary	number	15.05
+RATIO	dark	Month ordinary	weekday	5.91
+RATIO	dark	Month ordinary	line	12.68
+RATIO	dark	Month ordinary	events	12.68
+RATIO	dark	Month ordinary	count	12.68
+RATIO	dark	Month today	number	10.25
+RATIO	dark	Month today	weekday	10.25
+RATIO	dark	Month today	line	8.64
+RATIO	dark	Month today	mark word	10.25
+RATIO	dark	Month today	count	12.68
+RATIO	dark	Month tomorrow	number	12.26
+RATIO	dark	Month tomorrow	weekday	10.33
+RATIO	dark	Month tomorrow	line	10.33
+RATIO	dark	Month tomorrow	mark word	12.26
+RATIO	dark	Month past, hovered	num	4.81
+RATIO	dark	Month past, hovered	wk	4.81
+RATIO	dark	Month	ink on panel	12.68
+RATIO	dark	Month	ink on hover	10.33
+RATIO	dark	Month	ink on selected	8.64
+RATIO	dark	Month	ink on field	11.68
+RATIO	dark	Month	strong on panel	15.05
+RATIO	dark	Month	strong on hover	12.26
+RATIO	dark	Month	strong on selected	10.25
+RATIO	dark	Month	strong on field	13.87
+RATIO	dark	Month	muted on panel	5.91
+RATIO	dark	Month	muted on hover	4.81
+RATIO	dark	Month	muted on selected	4.02
+RATIO	dark	Month	muted on field	5.44
+RATIO	dark	Month	icon on panel	10.33
+RATIO	dark	Month	icon on hover	8.41
+RATIO	dark	Month	icon on selected	7.03
+RATIO	dark	Month	icon on field	9.51
+RATIO	dark	Today Peel	ink on panel	11.95
+RATIO	dark	Today Peel	ink on hover	10.60
+RATIO	dark	Today Peel	ink on selected	9.32
+RATIO	dark	Today Peel	ink on field	12.98
+RATIO	dark	Today Peel	strong on panel	15.29
+RATIO	dark	Today Peel	strong on hover	13.56
+RATIO	dark	Today Peel	strong on selected	11.93
+RATIO	dark	Today Peel	strong on field	16.61
+RATIO	dark	Today Peel	muted on panel	5.32
+RATIO	dark	Today Peel	muted on hover	4.72
+RATIO	dark	Today Peel	muted on selected	4.15
+RATIO	dark	Today Peel	muted on field	5.78
+RATIO	dark	Today Peel	icon on panel	8.04
+RATIO	dark	Today Peel	icon on hover	7.13
+RATIO	dark	Today Peel	icon on selected	6.27
+RATIO	dark	Today Peel	icon on field	8.73
+RATIO	dark	Tomorrow Peel	ink on panel	11.54
+RATIO	dark	Tomorrow Peel	ink on hover	10.29
+RATIO	dark	Tomorrow Peel	ink on selected	8.91
+RATIO	dark	Tomorrow Peel	ink on field	12.82
+RATIO	dark	Tomorrow Peel	strong on panel	14.77
+RATIO	dark	Tomorrow Peel	strong on hover	13.17
+RATIO	dark	Tomorrow Peel	strong on selected	11.40
+RATIO	dark	Tomorrow Peel	strong on field	16.41
+RATIO	dark	Tomorrow Peel	muted on panel	5.14
+RATIO	dark	Tomorrow Peel	muted on hover	4.58
+RATIO	dark	Tomorrow Peel	muted on selected	3.96
+RATIO	dark	Tomorrow Peel	muted on field	5.71
+RATIO	dark	Tomorrow Peel	icon on panel	7.76
+RATIO	dark	Tomorrow Peel	icon on hover	6.92
+RATIO	dark	Tomorrow Peel	icon on selected	5.99
+RATIO	dark	Tomorrow Peel	icon on field	8.63
+RATIO	dark	Migrate Peel	ink on panel	11.05
+RATIO	dark	Migrate Peel	ink on hover	9.48
+RATIO	dark	Migrate Peel	ink on selected	7.89
+RATIO	dark	Migrate Peel	ink on field	12.62
+RATIO	dark	Migrate Peel	strong on panel	14.14
+RATIO	dark	Migrate Peel	strong on hover	12.13
+RATIO	dark	Migrate Peel	strong on selected	10.09
+RATIO	dark	Migrate Peel	strong on field	16.15
+RATIO	dark	Migrate Peel	muted on panel	4.92
+RATIO	dark	Migrate Peel	muted on hover	4.22
+RATIO	dark	Migrate Peel	muted on selected	3.51
+RATIO	dark	Migrate Peel	muted on field	5.61
+RATIO	dark	Migrate Peel	icon on panel	7.43
+RATIO	dark	Migrate Peel	icon on hover	6.38
+RATIO	dark	Migrate Peel	icon on selected	5.30
+RATIO	dark	Migrate Peel	icon on field	8.49
+RATIO	dark	Quick notes	ink on panel	12.68
+RATIO	dark	Quick notes	ink on hover	10.33
+RATIO	dark	Quick notes	ink on selected	8.64
+RATIO	dark	Quick notes	ink on field	11.68
+RATIO	dark	Quick notes	strong on panel	15.05
+RATIO	dark	Quick notes	strong on hover	12.26
+RATIO	dark	Quick notes	strong on selected	10.25
+RATIO	dark	Quick notes	strong on field	13.87
+RATIO	dark	Quick notes	muted on panel	5.91
+RATIO	dark	Quick notes	muted on hover	4.81
+RATIO	dark	Quick notes	muted on selected	4.02
+RATIO	dark	Quick notes	muted on field	5.44
+RATIO	dark	Quick notes	icon on panel	10.33
+RATIO	dark	Quick notes	icon on hover	8.41
+RATIO	dark	Quick notes	icon on selected	7.03
+RATIO	dark	Quick notes	icon on field	9.51
+PASS hovering a line with words shows a 24px handle at its right
+PASS a line with no words has no handle to show
+PASS dragging down: a pill reads "Until Thu 29"
+PASS and the days in range snap day by day
+PASS they take the hover fill, with a dashed 2px bar  {"pill":"Until Thu 29","rows":["2026-10-27","2026-10-28","2026-10-29"],"dashed":true,"width":"2px","fill":["rgb(237, 232, 225)","rgb(237, 232, 225)","rgb(237, 232, 225)"],"hover":"rgb(237, 232, 225)"}
+PASS Esc cancels: nothing is made, the preview and the pill are gone, the line is as it was
+PASS releasing on the first day makes no span, and says nothing
+PASS releasing on Thursday makes one span
+PASS it is one file, from the 26th to the 29th, with the line's words
+PASS and the line is cleared, after the span was made
+PASS the first day has the words and "to Thu 29" in muted, no bar
+PASS a 2px bar runs down each following day, with a foot on the last only
+PASS a past day's bar is muted and a future day's is ink
+PASS a screen reader hears the first day as a range and the next days as continuing
+PASS editing the words on the first day is one new revision of the one span
+PASS and nothing was written into a day
+PASS on a span the handle is on the last day, and dragging down lengthens it
+PASS dragging up shortens it
+PASS the same one span, with a revision for each change
+PASS the handle is not on the first day of a span
+PASS an entry dragged over a spanned date line still takes the selected fill
+PASS and still moves to that date, without touching the span
+PASS a handle drag moves no entry
+PASS no page errors
+PASS the Until button shows on the line being edited, 44px tall, with a calendar icon
+PASS Tab reaches it
+PASS Enter opens the menu: Just this day, the next 7 days, then Later date
+PASS every row is 44px tall
+PASS the current end is ticked: Just this day
+PASS arrows move
+PASS Esc closes it and the focus goes back to the button
+PASS Enter on a day sets it: a span to that day is made
+PASS reopened, the span's end is the ticked row
+PASS Later date opens a date picker
+PASS a later date in the next month sets the end there
+PASS Just this day removes the span and keeps the line
+PASS and the line is back on screen, with no bar
+PASS no page errors
+PASS the Until button is always visible for a finger, 44px tall, and there is no drag handle
+PASS a line with no words has no Until button to show
+PASS the menu has 44px rows
+PASS tapping a day makes the span
+PASS no page errors
+PASS the span is made from the 29th to 3 November, in one file
+PASS in October the bar runs off the end of the month with no foot
+PASS and "to Tue 3 Nov" says where it ends, with the month
+PASS November repeats the words on the 1st, "continued, to Tue 3"
+PASS with the bar from the top of the 1st and a foot on the 3rd
+PASS the 1st reads as continuing, day 4 of 6
+PASS editing the continued 1st is one new revision of the same span
+PASS and October shows the new words too
+PASS no page errors
+PASS clicking the bar on a later day selects the span and puts the cursor in the first day's words
+PASS Delete with the span selected removes the whole span and says so, with Undo
+PASS it is a removed revision in the same span file series
+PASS Undo makes the span again as a new one
+PASS and the bars are back
+PASS clearing the text removes the whole span, with the same message
+PASS no page errors
+PASS overlapping spans take lanes 0, 1 and 2
+PASS the fourth is a normal line with its range and has no bar
+PASS the bars are 14px apart  [93,107,121]
+PASS events on a spanned day indent past the lanes in use  {"text":247.1875,"rightmost":129,"plain":97,"lead":42}
+PASS no page errors
+PASS the second device is told, in the plain message, with a Reload button
+PASS its typed words are kept on screen
+PASS nothing was replaced and no second span was made
+PASS Reload shows what the other device saved
+PASS a resize of a span that was deleted on the other device is refused the same way
+PASS no page errors on either device, apart from the two refusals
+PASS a lost answer and a retry make one span, not two
+
+404 of 404 passed

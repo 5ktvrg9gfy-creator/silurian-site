@@ -351,6 +351,18 @@ export function validateOp(op) {
       return isDate(op.date) && Number.isInteger(op.rev) && op.rev >= 0 && typeof op.text === "string" && cleanText(op.text).length <= MAX_LINE && op.text.length <= MAX_LINE * 2
         ? null
         : bad("line");
+    case "spanAdd": {
+      const span = op.span;
+      if (!span || typeof span !== "object" || !isId(span.id) || !spanDatesOk(span.start, span.end) || !spanTextOk(span.text)) return bad("spanAdd");
+      return null;
+    }
+    case "spanEdit":
+      if (!isId(op.id) || !revOk(op.rev) || (op.text === undefined && op.end === undefined)) return bad("spanEdit");
+      if (op.text !== undefined && !spanTextOk(op.text)) return bad("spanEdit");
+      if (op.end !== undefined && !isDate(op.end)) return bad("spanEdit");
+      return null;
+    case "spanRemove":
+      return isId(op.id) && revOk(op.rev) ? null : bad("spanRemove");
     default:
       return bad("not a change");
   }
@@ -408,7 +420,7 @@ const find = (list, id) => list.find((e) => e.id === id);
 // the ids of what was made.
 export function applyOp(files, op) {
   const problem = validateOp(op);
-  if (problem) return { error: { code: "invalid", message: MESSAGES.invalid } };
+  if (problem || isSpanOp(op)) return { error: { code: "invalid", message: MESSAGES.invalid } };
 
   switch (op.op) {
     case "add": {
@@ -630,6 +642,171 @@ export function discardCopies(files, listKey, ids) {
   }
   dropEmptyDays(file);
   return removed;
+}
+
+/* ---------- spans ---------- */
+
+// A span is a calendar line that covers a run of days, one entry and not copies.
+// It is stored apart from every day and every entry, one file per revision keyed
+// by the span's id alone (journal/spans/<id>.<rev>.json), so changing its dates
+// never renames anything. { id, rev, start, end, text, state }, state "open" or
+// "removed". It follows the entry rules: every change names the revision it
+// started from, the create of the next revision is the version check, a removal
+// is a revision, and the higher revision wins when two views are put together.
+export const SPAN_VERSION = 1;
+export const MAX_SPAN_DAYS = 366;
+export const MAX_LANES = 3;
+export const SPAN_STATES = ["open", "removed"];
+
+export const SPAN_OPS = ["spanAdd", "spanEdit", "spanRemove"];
+export const isSpanOp = (op) => Boolean(op) && SPAN_OPS.includes(op.op);
+
+export function daysBetween(from, to) {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
+}
+
+function spanDatesOk(start, end) {
+  return isDate(start) && isDate(end) && end > start && daysBetween(start, end) + 1 <= MAX_SPAN_DAYS;
+}
+
+function spanTextOk(text) {
+  return typeof text === "string" && text.length <= MAX_LINE * 2 && cleanText(text).length >= 1 && cleanText(text).length <= MAX_LINE;
+}
+
+const keepSpan = (s) => ({ id: s.id, rev: s.rev, start: s.start, end: s.end, text: s.text, state: s.state });
+
+// What one stored span revision holds: { v, id, rev, start, end, text, state }.
+export const spanRecord = (span) => ({ v: SPAN_VERSION, ...keepSpan(span) });
+
+// A stored span file as a span, or null when it is not one. A damaged file is not
+// skipped as if it were not there: the caller treats null as an error.
+export function normaliseSpanFile(raw) {
+  if (!raw || typeof raw !== "object" || raw.v !== SPAN_VERSION) return null;
+  if (!isId(raw.id) || !Number.isInteger(raw.rev) || raw.rev < 1 || !SPAN_STATES.includes(raw.state)) return null;
+  if (!spanDatesOk(raw.start, raw.end) || typeof raw.text !== "string" || raw.text.length > MAX_LINE * 2) return null;
+  return keepSpan(raw);
+}
+
+// The id of a span made from a calendar line, worked out from the day and the
+// revision the line was at, so that the same make sent twice, from the page or
+// another device, is the same span and never a second one.
+export const spanIdFor = (start, lineRev) => copyIdFor("span", lineRev, start);
+
+export const cloneSpans = (spans) => JSON.parse(JSON.stringify(spans));
+
+// Two sets of spans, { id: span }, put together: the higher rev of each wins and
+// nothing is dropped because the other set lacks it.
+export function mergeSpans(current, incoming) {
+  const out = cloneSpans(current || {});
+  for (const span of Object.values(incoming || {})) {
+    const held = out[span.id];
+    if (!held || span.rev > held.rev) out[span.id] = keepSpan(span);
+  }
+  return out;
+}
+
+export const spanList = (spans) => Object.values(spans).map(keepSpan);
+
+export const spansTouching = (spans, months) =>
+  spanList(spans).filter((s) => months.some((m) => s.start <= `${m}-${pad(daysInMonth(m))}` && s.end >= `${m}-01`));
+
+// The stored spans a span change starts from, each at the revision it names.
+export function spanNeeds(op) {
+  return op.op === "spanEdit" || op.op === "spanRemove" ? [{ id: op.id, rev: op.rev }] : [];
+}
+
+const spanStale = () => ({ error: { code: "stale", message: MESSAGES.stale } });
+
+// Apply one span change to { id: span }, in place. Answers { error } with nothing
+// changed, or { changed, created } where changed lists the ids a write touches.
+export function applySpanOp(spans, op) {
+  if (validateOp(op) || !isSpanOp(op)) return { error: { code: "invalid", message: MESSAGES.invalid } };
+  const done = { changed: [], created: [] };
+
+  if (op.op === "spanAdd") {
+    const given = op.span;
+    const existing = spans[given.id];
+    // The same add sent again after its answer was lost is not made twice.
+    if (existing) return existing.start === given.start ? { changed: [], created: [existing.id] } : { error: { code: "invalid", message: MESSAGES.invalid } };
+    spans[given.id] = { id: given.id, rev: 1, start: given.start, end: given.end, text: cleanText(given.text), state: "open" };
+    return { changed: [given.id], created: [given.id] };
+  }
+
+  const span = spans[op.id];
+  if (op.op === "spanRemove") {
+    if (!span || (span.state === "removed" && span.rev === op.rev + 1)) return done;
+    if (span.state !== "open" || span.rev !== op.rev) return spanStale();
+    span.state = "removed";
+    span.rev += 1;
+    return { changed: [span.id], created: [] };
+  }
+
+  // spanEdit: the text, the last day, or both.
+  const text = op.text === undefined ? undefined : cleanText(op.text);
+  const same = (s) => (text === undefined || s.text === text) && (op.end === undefined || s.end === op.end);
+  if (span && span.state === "open" && span.rev === op.rev + 1 && same(span)) return done;
+  if (!span || span.state !== "open" || span.rev !== op.rev) return spanStale();
+  if (op.end !== undefined && !spanDatesOk(span.start, op.end)) return { error: { code: "invalid", message: MESSAGES.invalid } };
+  if (same(span)) return done;
+  if (text !== undefined) span.text = text;
+  if (op.end !== undefined) span.end = op.end;
+  span.rev += 1;
+  return { changed: [span.id], created: [] };
+}
+
+// What a span change wrote, as the files to store: every span whose rev went up
+// or that is new. before is a clone of the spans taken before applySpanOp.
+export function spanWritesFor(before, after) {
+  const out = [];
+  for (const span of Object.values(after)) {
+    const was = before[span.id];
+    if (!was || span.rev > was.rev) out.push(keepSpan(span));
+  }
+  return out;
+}
+
+// How a month shows its spans, from the spans and the month: { rows, overflow }.
+// rows[date] is { texts, bars, lanes }. texts are the spans whose words are on that
+// row, { span, continued }: the first day, and the 1st of a month the span runs
+// into. bars are the 2px bars on that row, { id, lane, foot, top, day, total }:
+// one for each day after the first, and from the top of the 1st for a continued
+// span. lanes is how many lanes the row's bars use, so words indent past them.
+// A span needs a lane, up to MAX_LANES, kept for its whole stay in the month;
+// one that finds none is in overflow and shows as an ordinary line with its range.
+export function layoutSpans(spans, month) {
+  const first = `${month}-01`;
+  const last = `${month}-${pad(daysInMonth(month))}`;
+  const rows = {};
+  for (let d = 1; d <= daysInMonth(month); d += 1) rows[`${month}-${pad(d)}`] = { texts: [], bars: [], lanes: 0 };
+  const live = spanList(spans).filter((s) => s.state === "open" && s.start <= last && s.end >= first);
+  const byWords = (a, b) => (a.span.start !== b.span.start ? (a.span.start < b.span.start ? -1 : 1) : a.span.id < b.span.id ? -1 : 1);
+  for (const s of live) {
+    if (s.start >= first) rows[s.start].texts.push({ span: s, continued: false });
+    else rows[first].texts.push({ span: s, continued: true });
+  }
+  for (const row of Object.values(rows)) row.texts.sort(byWords);
+
+  const items = live
+    .map((s) => ({ s, from: s.start < first ? first : addDays(s.start, 1), to: s.end > last ? last : s.end }))
+    .filter((x) => x.from <= x.to)
+    .sort((a, b) => (a.from !== b.from ? (a.from < b.from ? -1 : 1) : a.s.end !== b.s.end ? (a.s.end > b.s.end ? -1 : 1) : a.s.id < b.s.id ? -1 : 1));
+  const laneEnds = [];
+  const overflow = [];
+  for (const item of items) {
+    let lane = laneEnds.findIndex((end) => end < item.from);
+    if (lane === -1) lane = laneEnds.length;
+    if (lane >= MAX_LANES) { overflow.push(item.s.id); continue; }
+    laneEnds[lane] = item.to;
+    const total = daysBetween(item.s.start, item.s.end) + 1;
+    for (let date = item.from; date <= item.to; date = addDays(date, 1)) {
+      rows[date].bars.push({ id: item.s.id, lane, foot: date === item.s.end, top: date === first && item.s.start < first, day: daysBetween(item.s.start, date) + 1, total });
+    }
+  }
+  for (const row of Object.values(rows)) {
+    row.bars.sort((a, b) => a.lane - b.lane);
+    row.lanes = row.bars.reduce((most, bar) => Math.max(most, bar.lane + 1), 0);
+  }
+  return { rows, overflow };
 }
 
 /* ---------- the morning strip ---------- */

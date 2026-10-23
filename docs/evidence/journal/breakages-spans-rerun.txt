@@ -1,0 +1,6 @@
+base: the Node tests and the page tests are green before any break
+
+CAUGHT rules: a span with a damaged file is read as if it were fine  [node]
+         1 failed: a removed span is not shown, and a damaged span file is refused
+
+1 of 1 deliberate breaks were caught

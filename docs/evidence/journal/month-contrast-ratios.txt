@@ -1,0 +1,205 @@
+Every text pair measured on the Month panel, its hover, the date rows and the three Peels, from the live page, 23 October 2026.
+Columns: theme, where, what, contrast ratio. Floors: 4.5 for text, 3 for icons. Pairs the page never sets (muted on the selected fill, muted on a Peel's hover fill) are listed and are not used.
+
+light	Month past	number	5.23
+light	Month past	weekday	5.23
+light	Month past	line	5.23
+light	Month past	events	5.23
+light	Month past	count	11.76
+light	Month ordinary	number	15.05
+light	Month ordinary	weekday	5.23
+light	Month ordinary	line	11.76
+light	Month ordinary	events	11.76
+light	Month ordinary	count	11.76
+light	Month today	number	12.91
+light	Month today	weekday	12.91
+light	Month today	line	10.08
+light	Month today	mark word	12.91
+light	Month today	count	11.76
+light	Month tomorrow	number	14.41
+light	Month tomorrow	weekday	11.25
+light	Month tomorrow	line	11.25
+light	Month tomorrow	mark word	14.41
+light	Month past, hovered	num	5.01
+light	Month past, hovered	wk	5.01
+light	Month	ink on panel	11.76
+light	Month	ink on hover	11.25
+light	Month	ink on selected	10.08
+light	Month	ink on field	13.72
+light	Month	strong on panel	15.05
+light	Month	strong on hover	14.41
+light	Month	strong on selected	12.91
+light	Month	strong on field	17.56
+light	Month	muted on panel	5.23
+light	Month	muted on hover	5.01
+light	Month	muted on selected	4.49
+light	Month	muted on field	6.10
+light	Month	icon on panel	7.91
+light	Month	icon on hover	7.57
+light	Month	icon on selected	6.78
+light	Month	icon on field	9.23
+light	Today Peel	ink on panel	11.95
+light	Today Peel	ink on hover	10.60
+light	Today Peel	ink on selected	9.32
+light	Today Peel	ink on field	12.98
+light	Today Peel	strong on panel	15.29
+light	Today Peel	strong on hover	13.56
+light	Today Peel	strong on selected	11.93
+light	Today Peel	strong on field	16.61
+light	Today Peel	muted on panel	5.32
+light	Today Peel	muted on hover	4.72
+light	Today Peel	muted on selected	4.15
+light	Today Peel	muted on field	5.78
+light	Today Peel	icon on panel	8.04
+light	Today Peel	icon on hover	7.13
+light	Today Peel	icon on selected	6.27
+light	Today Peel	icon on field	8.73
+light	Tomorrow Peel	ink on panel	11.54
+light	Tomorrow Peel	ink on hover	10.29
+light	Tomorrow Peel	ink on selected	8.91
+light	Tomorrow Peel	ink on field	12.82
+light	Tomorrow Peel	strong on panel	14.77
+light	Tomorrow Peel	strong on hover	13.17
+light	Tomorrow Peel	strong on selected	11.40
+light	Tomorrow Peel	strong on field	16.41
+light	Tomorrow Peel	muted on panel	5.14
+light	Tomorrow Peel	muted on hover	4.58
+light	Tomorrow Peel	muted on selected	3.96
+light	Tomorrow Peel	muted on field	5.71
+light	Tomorrow Peel	icon on panel	7.76
+light	Tomorrow Peel	icon on hover	6.92
+light	Tomorrow Peel	icon on selected	5.99
+light	Tomorrow Peel	icon on field	8.63
+light	Migrate Peel	ink on panel	11.05
+light	Migrate Peel	ink on hover	9.48
+light	Migrate Peel	ink on selected	7.89
+light	Migrate Peel	ink on field	12.62
+light	Migrate Peel	strong on panel	14.14
+light	Migrate Peel	strong on hover	12.13
+light	Migrate Peel	strong on selected	10.09
+light	Migrate Peel	strong on field	16.15
+light	Migrate Peel	muted on panel	4.92
+light	Migrate Peel	muted on hover	4.22
+light	Migrate Peel	muted on selected	3.51
+light	Migrate Peel	muted on field	5.61
+light	Migrate Peel	icon on panel	7.43
+light	Migrate Peel	icon on hover	6.38
+light	Migrate Peel	icon on selected	5.30
+light	Migrate Peel	icon on field	8.49
+light	Quick notes	ink on panel	11.76
+light	Quick notes	ink on hover	11.25
+light	Quick notes	ink on selected	10.08
+light	Quick notes	ink on field	13.72
+light	Quick notes	strong on panel	15.05
+light	Quick notes	strong on hover	14.41
+light	Quick notes	strong on selected	12.91
+light	Quick notes	strong on field	17.56
+light	Quick notes	muted on panel	5.23
+light	Quick notes	muted on hover	5.01
+light	Quick notes	muted on selected	4.49
+light	Quick notes	muted on field	6.10
+light	Quick notes	icon on panel	7.91
+light	Quick notes	icon on hover	7.57
+light	Quick notes	icon on selected	6.78
+light	Quick notes	icon on field	9.23
+dark	Month past	number	5.91
+dark	Month past	weekday	5.91
+dark	Month past	line	5.91
+dark	Month past	events	5.91
+dark	Month past	count	12.68
+dark	Month ordinary	number	15.05
+dark	Month ordinary	weekday	5.91
+dark	Month ordinary	line	12.68
+dark	Month ordinary	events	12.68
+dark	Month ordinary	count	12.68
+dark	Month today	number	10.25
+dark	Month today	weekday	10.25
+dark	Month today	line	8.64
+dark	Month today	mark word	10.25
+dark	Month today	count	12.68
+dark	Month tomorrow	number	12.26
+dark	Month tomorrow	weekday	10.33
+dark	Month tomorrow	line	10.33
+dark	Month tomorrow	mark word	12.26
+dark	Month past, hovered	num	4.81
+dark	Month past, hovered	wk	4.81
+dark	Month	ink on panel	12.68
+dark	Month	ink on hover	10.33
+dark	Month	ink on selected	8.64
+dark	Month	ink on field	11.68
+dark	Month	strong on panel	15.05
+dark	Month	strong on hover	12.26
+dark	Month	strong on selected	10.25
+dark	Month	strong on field	13.87
+dark	Month	muted on panel	5.91
+dark	Month	muted on hover	4.81
+dark	Month	muted on selected	4.02
+dark	Month	muted on field	5.44
+dark	Month	icon on panel	10.33
+dark	Month	icon on hover	8.41
+dark	Month	icon on selected	7.03
+dark	Month	icon on field	9.51
+dark	Today Peel	ink on panel	11.95
+dark	Today Peel	ink on hover	10.60
+dark	Today Peel	ink on selected	9.32
+dark	Today Peel	ink on field	12.98
+dark	Today Peel	strong on panel	15.29
+dark	Today Peel	strong on hover	13.56
+dark	Today Peel	strong on selected	11.93
+dark	Today Peel	strong on field	16.61
+dark	Today Peel	muted on panel	5.32
+dark	Today Peel	muted on hover	4.72
+dark	Today Peel	muted on selected	4.15
+dark	Today Peel	muted on field	5.78
+dark	Today Peel	icon on panel	8.04
+dark	Today Peel	icon on hover	7.13
+dark	Today Peel	icon on selected	6.27
+dark	Today Peel	icon on field	8.73
+dark	Tomorrow Peel	ink on panel	11.54
+dark	Tomorrow Peel	ink on hover	10.29
+dark	Tomorrow Peel	ink on selected	8.91
+dark	Tomorrow Peel	ink on field	12.82
+dark	Tomorrow Peel	strong on panel	14.77
+dark	Tomorrow Peel	strong on hover	13.17
+dark	Tomorrow Peel	strong on selected	11.40
+dark	Tomorrow Peel	strong on field	16.41
+dark	Tomorrow Peel	muted on panel	5.14
+dark	Tomorrow Peel	muted on hover	4.58
+dark	Tomorrow Peel	muted on selected	3.96
+dark	Tomorrow Peel	muted on field	5.71
+dark	Tomorrow Peel	icon on panel	7.76
+dark	Tomorrow Peel	icon on hover	6.92
+dark	Tomorrow Peel	icon on selected	5.99
+dark	Tomorrow Peel	icon on field	8.63
+dark	Migrate Peel	ink on panel	11.05
+dark	Migrate Peel	ink on hover	9.48
+dark	Migrate Peel	ink on selected	7.89
+dark	Migrate Peel	ink on field	12.62
+dark	Migrate Peel	strong on panel	14.14
+dark	Migrate Peel	strong on hover	12.13
+dark	Migrate Peel	strong on selected	10.09
+dark	Migrate Peel	strong on field	16.15
+dark	Migrate Peel	muted on panel	4.92
+dark	Migrate Peel	muted on hover	4.22
+dark	Migrate Peel	muted on selected	3.51
+dark	Migrate Peel	muted on field	5.61
+dark	Migrate Peel	icon on panel	7.43
+dark	Migrate Peel	icon on hover	6.38
+dark	Migrate Peel	icon on selected	5.30
+dark	Migrate Peel	icon on field	8.49
+dark	Quick notes	ink on panel	12.68
+dark	Quick notes	ink on hover	10.33
+dark	Quick notes	ink on selected	8.64
+dark	Quick notes	ink on field	11.68
+dark	Quick notes	strong on panel	15.05
+dark	Quick notes	strong on hover	12.26
+dark	Quick notes	strong on selected	10.25
+dark	Quick notes	strong on field	13.87
+dark	Quick notes	muted on panel	5.91
+dark	Quick notes	muted on hover	4.81
+dark	Quick notes	muted on selected	4.02
+dark	Quick notes	muted on field	5.44
+dark	Quick notes	icon on panel	10.33
+dark	Quick notes	icon on hover	8.41
+dark	Quick notes	icon on selected	7.03
+dark	Quick notes	icon on field	9.51

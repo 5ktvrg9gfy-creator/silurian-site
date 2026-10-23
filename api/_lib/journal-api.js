@@ -26,13 +26,18 @@ import {
   MAX_QUICK_BYTES,
   addDays,
   applyOp,
+  applySpanOp,
   isDate,
+  isSpanOp,
   isMonth,
   laterStamp,
   monthOf,
   monthsFor,
   needs,
   parseList,
+  spanNeeds,
+  spansTouching,
+  spanWritesFor,
   validateOp,
   viewFrom,
   writesFor,
@@ -125,6 +130,42 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
       Promise.all(months.map((month) => store.linesOfMonth(month))),
     ]);
     return viewFrom(months, entries.flat(), lines.flat());
+  }
+
+  // The spans that touch the months, as a list, at their highest revision.
+  async function loadSpans(months) {
+    const all = await store.spans();
+    return spansTouching(Object.fromEntries(all.map((s) => [s.id, s])), months);
+  }
+
+  // A span change. Like an entry change it reads only the span it starts from, at
+  // the revision it names, and the create of the next revision is the version
+  // check: refused if that revision exists, then read and decided again.
+  async function changeSpan(op) {
+    const records = {};
+    for (const need of spanNeeds(op)) {
+      const found = await store.readSpan(need.id, need.rev);
+      if (found) records[found.id] = found;
+    }
+    for (let round = 0; round < 5; round += 1) {
+      const spans = clone(records);
+      const before = clone(spans);
+      const result = applySpanOp(spans, op);
+      if (result.error) return fail(STATUS[result.error.code] || 400, result.error.message, { code: result.error.code, spans: Object.values(spans) });
+      const writes = spanWritesFor(before, spans);
+      if (writes.length === 0) return reply(200, { ok: true, created: result.created, spans: Object.values(spans) });
+      let clash = false;
+      for (const w of writes) {
+        if (await store.createSpan(w)) { records[w.id] = w; continue; }
+        const there = await store.readSpan(w.id, w.rev);
+        if (!there) throw new Error("journal revision refused and not readable");
+        records[w.id] = there;
+        clash = true;
+        break;
+      }
+      if (!clash) return reply(200, { ok: true, created: result.created, spans: Object.values(records) });
+    }
+    return fail(503, MESSAGES.busy);
   }
 
   // A time for a quick notes save that is never equal to or earlier than the one
@@ -251,8 +292,8 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
         if (months.length < 1 || months.length > MAX_MONTHS_PER_READ || !months.every(isMonth) || new Set(months).size !== months.length) {
           return fail(400, MESSAGES.badRequest);
         }
-        const files = await loadMonths(months);
-        return reply(200, { months: view(files, months) });
+        const [files, spans] = await Promise.all([loadMonths(months), loadSpans(months)]);
+        return reply(200, { months: view(files, months), spans });
       }
 
       if (kind === "home") {
@@ -265,8 +306,8 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
         const [onFile, quick] = await Promise.all([store.months(), store.readQuick()]);
         const earlier = onFile.filter((m) => m < thisMonth).slice(0, EARLIER_MONTHS);
         const months = [...wanted, ...earlier];
-        const files = await loadMonths(months);
-        return reply(200, { today, months: view(files, months), quick: { text: quick.text, updatedAt: quick.updatedAt } });
+        const [files, spans] = await Promise.all([loadMonths(months), loadSpans(months)]);
+        return reply(200, { today, months: view(files, months), spans, quick: { text: quick.text, updatedAt: quick.updatedAt } });
       }
 
       return fail(400, MESSAGES.badRequest);
@@ -275,7 +316,7 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
     POST: guarded(async (request) => {
       const op = await readJson(request);
       if (op === null || validateOp(op) !== null) return fail(400, MESSAGES.badChange);
-      return change(op);
+      return isSpanOp(op) ? changeSpan(op) : change(op);
     }),
 
     // Quick notes: one block of text. The same rule as a note: a save names the
