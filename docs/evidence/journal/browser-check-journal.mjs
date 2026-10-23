@@ -321,6 +321,8 @@ async function boxes(page) {
    7. Moving: the four actions, for a mouse and for a finger
    ===================================================================== */
 const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasText: text });
+// A move by keyboard: Tab marks the page as keyboard worked, focus is put in the entry, and the button that is shown is pressed.
+const keyMove = async (page, row, word) => { await page.keyboard.press('Tab'); await row.locator('.entry-text').focus(); await row.locator('.entry-actions button', { hasText: word }).press('Enter'); };
 {
   reset();
   const first = await seed(core.dayList(TODAY), 'Chase the invoice');
@@ -329,11 +331,11 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   await signIn(page);
   const row = cell(page, 'today', 'Chase the invoice');
   await row.hover();
-  eq('1280, a narrow panel: hovering shows no move buttons, the More button is the way in', [await row.locator('.entry-actions').isVisible(), await row.locator('.more').isVisible()], [false, true]);
-  await row.locator('.more').click();
-  eq('More opens the actions in a second line, and not the one that points where it already is', await row.locator('.entry-actions button').allInnerTexts(), ['Tomorrow', 'Migrate', 'Date']);
-  eq('and says it is open', await row.locator('.more').getAttribute('aria-expanded'), 'true');
-  await row.locator('.entry-actions button', { hasText: 'Tomorrow' }).click();
+  eq('1280, a narrow panel, a mouse: hovering shows no move buttons and there is no More button', [await row.locator('.entry-actions').isVisible(), await row.locator('.more').isVisible()], [false, false]);
+  await page.keyboard.press('Tab');
+  await row.locator('.entry-text').focus();
+  eq('keyboard focus in the entry shows the actions in a second line, and not the one that points where it already is', await row.locator('.entry-actions button').allInnerTexts(), ['Tomorrow', 'Migrate', 'Date']);
+  await row.locator('.entry-actions button', { hasText: 'Tomorrow' }).press('Enter');
   await page.waitForSelector('#flash:not([hidden])');
   eq('Tomorrow: the moved entry is no longer in the list', await cell(page, 'today', 'Chase the invoice').count(), 0);
   eq('and a quiet line at the bottom of the panel says "1 moved", closed', [await page.textContent('#moved-toggle-today'), await page.getAttribute('#moved-toggle-today', 'aria-expanded'), await page.locator('#moved-list-today').isHidden()], ['1 moved', 'false', true]);
@@ -359,16 +361,14 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
 
   // events and notes move too
   const event = cell(page, 'today', 'Supplier call');
-  await event.locator('.more').click();
-  await event.locator('.entry-actions button', { hasText: 'Migrate' }).click();
+  await keyMove(page, event, 'Migrate');
   await page.waitForFunction(() => document.querySelectorAll('#list-migrate li.entry').length === 1);
   eq('an event moves to Migrate and keeps its circle', await page.locator('#list-migrate li.entry use').first().getAttribute('href'), '#j-event');
   await shot(page, 'moved-1280-light');
 
   // the date picker
   const again = cell(page, 'today', 'Chase the invoice');
-  await again.locator('.more').click();
-  await again.locator('.entry-actions button', { hasText: 'Date' }).click();
+  await keyMove(page, again, 'Date');
   const days = await again.locator('.pick-day').evaluateAll((bs) => bs.map((b) => b.textContent));
   eq('Date lists the dates of the month from today, with Today and Tomorrow named', [days[0], days[1], days.length], ['Thu 22 Oct' + 'Today', 'Fri 23 Oct' + 'Tomorrow', 10]);
   check('and the day the entry is already on is not offered', await again.locator('.pick-day').first().isDisabled());
@@ -394,15 +394,171 @@ const cell = (page, list, text) => page.locator(`#list-${list} li.entry`, { hasT
   const row = cell(page, 'today', 'Chase the invoice');
   eq('1920, a wide panel: nothing shows until the row is hovered', await row.locator('.entry-actions').isVisible(), false);
   await row.hover();
-  eq('hovering shows the four actions at the right, as text', [await row.locator('.entry-actions').isVisible(), await row.locator('.entry-actions button').allInnerTexts()], [true, ['Tomorrow', 'Migrate', 'Date']]);
+  eq('hovering shows no move buttons: they would cover the text', await row.locator('.entry-actions').isVisible(), false);
+  await page.keyboard.press('Tab');
+  await row.locator('.entry-text').focus();
+  eq('keyboard focus shows the actions at the right, as text', [await row.locator('.entry-actions').isVisible(), await row.locator('.entry-actions button').allInnerTexts()], [true, ['Tomorrow', 'Migrate', 'Date']]);
   const where = await row.evaluate((li) => { const a = li.querySelector('.entry-actions').getBoundingClientRect(); const t = li.querySelector('.entry-text').getBoundingClientRect(); const r = li.getBoundingClientRect(); return { rightEdge: Math.round(r.right - a.right), textMoved: Math.round(t.left) }; });
-  check('they sit at the right edge of the row and the text does not move', where.rightEdge <= 12 && where.textMoved > 0, JSON.stringify(where));
+  check('they sit at the right of the row, beside the bin and not over it, and the text does not move', where.rightEdge <= 56 && where.rightEdge >= 40 && where.textMoved > 0, JSON.stringify(where));
   eq('the More button is out of the way for a mouse in a wide panel', await row.locator('.more').isVisible(), false);
-  await shot(page, 'hover-1920-light');
+  await shot(page, 'focus-1920-light');
   await row.locator('.entry-actions button', { hasText: 'Migrate' }).click();
   await page.waitForFunction(() => document.querySelectorAll('#list-migrate li.entry').length === 1);
   check('one click moves it', (await cell(page, 'today', 'Chase the invoice').count()) === 0 && (await page.textContent('#moved-toggle-today')) === '1 moved');
-  await shot(page, 'moved-by-hover-1920-light');
+  await shot(page, 'moved-by-click-1920-light');
+  await context.close();
+}
+/* =====================================================================
+   7b. The bin, spell check and dragging (a mouse), 23 October 2026
+   ===================================================================== */
+{
+  reset();
+  await seed(core.dayList(TODAY), 'Alpha task');
+  await seed(core.dayList(TODAY), 'Beta event', 'event');
+  await seed(core.dayList(TODAY), 'Gamma task');
+  await seed(core.dayList(TODAY), 'Delta task');
+  await seed(core.dayList(TOMORROW), 'Epsilon task');
+  const { context, page } = await open({ width: 1920, height: 1080 });
+  await signIn(page);
+
+  // Spell check, in UK English, on the three places text is typed, and not on notes.
+  const spell = await page.evaluate(() => {
+    const read = (el) => [el.spellcheck, el.lang];
+    return {
+      entry: read(document.querySelector('#list-today .entry-text')),
+      line: read(document.querySelector('#date-rows .line-text')),
+      quick: read(document.getElementById('quick-editor')),
+      add: read(document.querySelector('#addbar-today .editor-line')),
+    };
+  });
+  eq('spell check is on, in UK English, for an entry, a calendar line, Quick notes and the new entry line', spell, { entry: [true, 'en-GB'], line: [true, 'en-GB'], quick: [true, 'en-GB'], add: [true, 'en-GB'] });
+  const notesHtml = await (await fetch(BASE + '/notes')).text();
+  check('notes is as it was: spell check off on the note box and no UK English tag', /id="text" class="editor" aria-label="Note text" spellcheck="false"/.test(notesHtml) && !/lang="en-GB"/.test(notesHtml));
+
+  // The bin.
+  const row = cell(page, 'today', 'Gamma task');
+  const bin = row.locator('.entry-delete');
+  eq('every entry has a bin button named for its text', [await bin.getAttribute('aria-label'), await cell(page, 'today', 'Beta event').locator('.entry-delete').getAttribute('aria-label')], ['Delete entry: Gamma task', 'Delete entry: Beta event']);
+  const colours = async () => page.evaluate(() => { const probe = (v) => { const e = document.createElement('span'); e.style.color = v; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; }; return { bad: probe('var(--notes-bad)'), icon: probe('var(--notes-icon)') }; });
+  const c = await colours();
+  const colour = () => bin.evaluate((b) => getComputedStyle(b).color);
+  eq('the bin is quiet, and turns to the red on hover', [await colour(), (await row.hover(), await bin.hover(), await colour())], [c.icon, c.bad]);
+  await page.keyboard.press('Tab');
+  await bin.focus();
+  eq('and on keyboard focus', await colour(), c.bad);
+  await bin.click();
+  await page.waitForSelector('#flash:not([hidden])');
+  eq('one click deletes it, with no question, and the message offers Undo', [await cell(page, 'today', 'Gamma task').count(), await page.textContent('#flash-text'), await page.textContent('#flash-action')], [0, 'Entry deleted.', 'Undo']);
+  await sleep(300);
+  eq('the server holds it as a removed revision', stored().days[TODAY].entries.filter((e) => e.text === 'Gamma task').map((e) => [e.state, e.rev]), [['removed', 2]]);
+  await page.click('#flash-action');
+  await page.waitForFunction(() => [...document.querySelectorAll('#list-today .entry-text')].some((e) => e.innerText === 'Gamma task'));
+  await sleep(300);
+  eq('Undo brings it back as a new entry, once', [await cell(page, 'today', 'Gamma task').count(), storedDay().entries.filter((e) => e.text === 'Gamma task').length], [1, 1]);
+  await cell(page, 'today', 'Gamma task').locator('.entry-delete').click();
+  await page.waitForSelector('#flash:not([hidden])');
+  check('the message goes by itself after ten seconds', await (async () => { await sleep(10300); return page.locator('#flash').isHidden(); })());
+
+  // Dragging an entry. The target takes the selected fill while the pointer is over it.
+  const fill = async (selector) => page.locator(selector).evaluate((el) => getComputedStyle(el).backgroundColor);
+  const selectedFill = await page.evaluate(() => { const e = document.createElement('span'); e.style.background = 'var(--notes-selected)'; document.body.appendChild(e); const c = getComputedStyle(e).backgroundColor; e.remove(); return c; });
+  const source = cell(page, 'today', 'Alpha task');
+  const sourceBox = await source.locator('.bullet').boundingBox();
+  const box = async (selector) => page.locator(selector).boundingBox();
+  await page.mouse.move(sourceBox.x + 10, sourceBox.y + 10);
+  await page.mouse.down();
+  const tomorrowBox = await box('#panel-tomorrow');
+  await page.mouse.move(tomorrowBox.x + 60, tomorrowBox.y + 200, { steps: 8 });
+  await page.mouse.move(tomorrowBox.x + 63, tomorrowBox.y + 202, { steps: 2 });
+  await sleep(300);
+  eq('over Tomorrow, the panel takes the selected fill and no other panel does', [await fill('#panel-tomorrow'), await page.locator('[data-drop]').count()], [selectedFill, 1]);
+  const todayBox = await box('#panel-today');
+  await page.mouse.move(todayBox.x + 60, todayBox.y + 300, { steps: 8 });
+  await page.mouse.move(todayBox.x + 63, todayBox.y + 302, { steps: 2 });
+  await sleep(300);
+  eq('over the panel the entry is already in, nothing is marked', await page.locator('[data-drop]').count(), 0);
+  await page.locator('#date-rows li.date-row[data-date="2026-10-20"]').scrollIntoViewIfNeeded();
+  const pastRow = await box('#date-rows li.date-row[data-date="2026-10-20"]');
+  await page.mouse.move(pastRow.x + 40, pastRow.y + 10, { steps: 8 });
+  await page.mouse.move(pastRow.x + 43, pastRow.y + 12, { steps: 2 });
+  await sleep(300);
+  eq('over a date before today, nothing is marked', await page.locator('[data-drop]').count(), 0);
+  await page.locator('#date-rows li.date-row[data-date="2026-10-28"]').scrollIntoViewIfNeeded();
+  const dateRow = await box('#date-rows li.date-row[data-date="2026-10-28"]');
+  await page.mouse.move(dateRow.x + 40, dateRow.y + 10, { steps: 8 });
+  await page.mouse.move(dateRow.x + 43, dateRow.y + 12, { steps: 2 });
+  await sleep(300);
+  eq('over a date line, the line takes the selected fill', [await fill('#date-rows li.date-row[data-date="2026-10-28"]'), await page.locator('[data-drop]').count()], [selectedFill, 1]);
+  await shot(page, 'drag-over-a-date-1920-light');
+  await page.mouse.move(tomorrowBox.x + 60, tomorrowBox.y + 200, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForSelector('#flash:not([hidden])');
+  eq('dropped on Tomorrow: a copy there, the original marked, the same message and Undo as the button', [await texts(page, 'tomorrow'), await cell(page, 'today', 'Alpha task').count(), await page.textContent('#flash-text'), await page.textContent('#flash-action'), await page.locator('[data-drop]').count()], [['Epsilon task', 'Alpha task'], 0, 'Moved to Tomorrow.', 'Undo', 0]);
+  await sleep(300);
+  eq('the server: one copy in Tomorrow at revision 1, the original migrated at revision 2', [storedDay(TOMORROW).entries.filter((e) => e.text === 'Alpha task').map((e) => e.rev), storedDay().entries.filter((e) => e.text === 'Alpha task').map((e) => [e.state, e.rev, e.to])], [[1], [['migrated', 2, 'day:' + TOMORROW]]]);
+
+  const dragTo = async (from, selector, where = {}) => {
+    const s = await from.locator('.bullet').boundingBox();
+    const t = await box(selector);
+    await page.mouse.move(s.x + 10, s.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(t.x + (where.x ?? 60), t.y + (where.y ?? 12), { steps: 8 });
+    await page.mouse.up();
+  };
+  await dragTo(cell(page, 'today', 'Delta task'), '#panel-migrate', { y: 200 });
+  await page.waitForFunction(() => document.querySelectorAll('#list-migrate li.entry').length === 1);
+  eq('dropped on Migrate: one copy there, and the message says so', [await texts(page, 'migrate'), await page.textContent('#flash-text')], [['Delta task'], 'Moved to Migrate.']);
+  await dragTo(cell(page, 'tomorrow', 'Epsilon task'), '#panel-today', { y: 200 });
+  await page.waitForFunction(() => [...document.querySelectorAll('#list-today .entry-text')].some((e) => e.innerText === 'Epsilon task'));
+  eq('dropped on Today from Tomorrow: one copy in Today, and the message says so', [(await texts(page, 'today')).filter((t) => t === 'Epsilon task').length, await page.textContent('#flash-text')], [1, 'Moved to Today.']);
+  const before = writes();
+  await dragTo(cell(page, 'today', 'Beta event'), '#panel-today', { y: 300 });
+  await sleep(500);
+  eq('dropped on the panel it is already in: nothing happens, nothing is written', [await texts(page, 'today').then((t) => t.includes('Beta event')), writes() - before], [true, 0]);
+  await dragTo(cell(page, 'today', 'Beta event'), '#date-rows li.date-row[data-date="2026-10-28"]', { x: 40, y: 10 });
+  await page.waitForSelector('#flash:not([hidden])');
+  await page.waitForFunction(() => /Moved to/.test(document.getElementById('flash-text').textContent));
+  eq('dropped on a date line: the message names the day with Undo and Open day, as the Date picker does', [await page.textContent('#flash-text'), await page.textContent('#flash-action'), await page.textContent('#flash-also')], ['Moved to Wednesday 28 October.', 'Undo', 'Open day']);
+  await sleep(400);
+  eq('the server: the event is scheduled (a left arrow) and has one copy on the 28th', [storedDay().entries.filter((e) => e.text === 'Beta event').map((e) => [e.state, e.to]), storedDay('2026-10-28').entries.filter((e) => e.text === 'Beta event').length], [[['scheduled', 'day:2026-10-28']], 1]);
+  const open_ = (entries) => entries.filter((e) => e.state === 'open').map((e) => e.text).sort();
+  const copies = { today: open_(storedDay().entries), tomorrow: open_(storedDay(TOMORROW).entries), migrate: open_(stored().migrate), the28th: open_(storedDay('2026-10-28').entries) };
+  eq('every drag made exactly one copy: nothing doubled, nothing lost', copies, { today: ['Epsilon task'], tomorrow: ['Alpha task'], migrate: ['Delta task'], the28th: ['Beta event'] });
+
+  // The move buttons: not on hover, on keyboard focus.
+  const key = cell(page, 'today', 'Epsilon task');
+  await key.hover();
+  eq('a mouse over an entry shows no move buttons', await key.locator('.entry-actions').isVisible(), false);
+  await page.keyboard.press('Tab');
+  await key.locator('.entry-text').focus();
+  eq('keyboard focus in an entry shows them, and each is a button that names the entry', [await key.locator('.entry-actions').isVisible(), await key.locator('.entry-actions button').first().getAttribute('aria-label')], [true, 'Tomorrow: Epsilon task']);
+  const text = key.locator('.entry-text');
+  await text.click();
+  eq('clicking into the text with the mouse puts them away again', await key.locator('.entry-actions').isVisible(), false);
+  // Selecting words in an entry that is being edited is not a drag.
+  await text.click();
+  const textBox = await text.boundingBox();
+  await page.mouse.dblclick(textBox.x + 20, textBox.y + 10);
+  const picked = await page.evaluate(() => String(getSelection()).trim());
+  check('a double click in the text being edited selects a word, and does not start a drag', picked === 'Epsilon' && (await key.getAttribute('draggable')) === 'false', JSON.stringify([picked, await key.getAttribute('draggable')]));
+  await context.close();
+}
+{
+  // a finger keeps More and the move buttons, and nothing is draggable
+  reset();
+  await seed(core.dayList(TODAY), 'Chase the invoice');
+  const { context, page } = await open({ width: 375, height: 740 }, { hasTouch: true, isMobile: true });
+  await signIn(page);
+  const row = cell(page, 'today', 'Chase the invoice');
+  eq('375 touch: the More button shows and nothing is draggable', [await row.locator('.more').isVisible(), await row.getAttribute('draggable')], [true, null]);
+  const bin = await row.locator('.entry-delete').boundingBox();
+  check('375 touch: the bin is 44px square', Math.round(bin.width) >= 44 && Math.round(bin.height) >= 44, JSON.stringify(bin));
+  await row.locator('.more').tap();
+  eq('and More opens the same buttons as before', await row.locator('.entry-actions button').allInnerTexts(), ['Tomorrow', 'Migrate', 'Date']);
+  await row.locator('.entry-actions button', { hasText: 'Tomorrow' }).tap();
+  await page.waitForSelector('#flash:not([hidden])');
+  eq('a tap on Tomorrow moves it as it always did', [await page.textContent('#flash-text'), await page.textContent('#flash-action')], ['Moved to Tomorrow.', 'Undo']);
+  await row.hover().catch(() => {});
   await context.close();
 }
 {

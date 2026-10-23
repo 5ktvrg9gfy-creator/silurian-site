@@ -90,3 +90,7 @@ Reported by the product owner, not run by the build session. Every step passed o
 5. Add a label on each device without reloading. Neither is lost.
 6. Do not roll back after notes have been saved on this version; fix forward.
 7. If anything disappears, reverts, or says "changed on another device" when nothing else was open, do not retry. Note the time and report it.
+
+## Production check passed, 23 October 2026
+
+The product owner ran every step of the Production check list above on https://www.silurianconsulting.co.uk/notes (merge commit `92b85a066703e9cee839b3f4c928c6359f521154`). Reported by the product owner, not run by the build session.

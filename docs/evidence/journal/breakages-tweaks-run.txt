@@ -1,0 +1,43 @@
+base: the page tests are green before any break
+
+CAUGHT bin: a click asks first  [page]
+         1 failed: test_each_entry_has_a_bin_that_deletes_at_once_with_an_undo
+CAUGHT bin: the message no longer says Entry deleted  [page]
+         2 failed: test_each_entry_has_a_bin_that_deletes_at_once_with_an_undo; test_every_empty_state_and_message_says_exactly_what_the_brief_says
+CAUGHT bin: the bin has no name  [page]
+         2 failed: test_each_entry_has_a_bin_that_deletes_at_once_with_an_undo; test_every_control_the_script_makes_names_what_it_acts_on
+CAUGHT bin: no Undo after a delete  [page]
+         3 failed: test_each_entry_has_a_bin_that_deletes_at_once_with_an_undo; test_every_empty_state_and_message_says_exactly_what_the_brief_says; test_undo_of_a_delete_makes_a_new_entry_because_a_removed_entry_keeps_its_id
+CAUGHT spell check: off for entries  [page]
+         1 failed: test_spell_check_is_on_for_entries_calendar_lines_and_quick_notes_in_uk_english
+CAUGHT spell check: a calendar line is not in UK English  [page]
+         1 failed: test_spell_check_is_on_for_entries_calendar_lines_and_quick_notes_in_uk_english
+CAUGHT spell check: off for Quick notes  [page]
+         1 failed: test_spell_check_is_on_for_entries_calendar_lines_and_quick_notes_in_uk_english
+CAUGHT spell check: turned on in notes  [page]
+         1 failed: test_spell_check_is_on_for_entries_calendar_lines_and_quick_notes_in_uk_english
+CAUGHT drag: a drop on the list the entry is in is a move  [page, browser]
+         2 failed: test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list; over the panel the entry is already in, nothing is marked  got 1 wanted 0
+CAUGHT drag: a drop does not use the move the buttons use  [page]
+         1 failed: test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list
+CAUGHT drag: a date line makes the move Migrate, not the Date picker's  [page]
+         1 failed: test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list
+CAUGHT drag: a date before today is a target  [page, browser]
+         2 failed: test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list; over a date before today, nothing is marked  got 1 wanted 0
+CAUGHT drag: a finger can drag too  [page]
+         1 failed: test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list
+CAUGHT drag: a drag in the text being edited picks the row up  [page, browser]
+         1 failed: a double click in the text being edited selects a word, and does not start a drag  ["Epsilon","true"]
+CAUGHT drag: the target takes another fill  [page, browser]
+         3 failed: test_a_drop_target_takes_the_selected_fill_and_no_new_colour; over Tomorrow, the panel takes the selected fill and no other panel does  got ["rgb(237, 232, 225)",1] wanted ["rgb(228, 220, 207)",1]; over a date line, the line takes the selected fill  got ["rgb(237, 232, 225)",1] wanted ["rgb(228, 220, 207)",1]
+CAUGHT drag: the entry's text goes with the drag  [page]
+         1 failed: test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list
+CAUGHT buttons: they show on hover again  [page, browser]
+         2 failed: test_a_mouse_drags_so_the_moves_are_not_offered_on_hover_and_they_show_on_keyboard_focus; 1280, a narrow panel, a mouse: hovering shows no move buttons and there is no More button  got [true,false] wanted [false,false]
+CAUGHT buttons: keyboard focus never shows them  [page, browser]
+         2 failed: test_a_mouse_drags_so_the_moves_are_not_offered_on_hover_and_they_show_on_keyboard_focus; the run stopped early
+CAUGHT buttons: a mouse gets the More button  [page, browser]
+         3 failed: test_a_mouse_drags_so_the_moves_are_not_offered_on_hover_and_they_show_on_keyboard_focus; 1280, a narrow panel, a mouse: hovering shows no move buttons and there is no More button  got [false,true] wanted [false,false]; the More button is out of the way for a mouse in a wide panel  got true wanted false
+
+19 of 19 deliberate breaks were caught
+done
