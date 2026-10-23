@@ -1,0 +1,25 @@
+PASS adding: an entry that has been shown is never missing from a later look, though the window kept asking again and the listing is 60 seconds behind
+PASS adding: all five are on screen a few seconds after the last add  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel"]
+PASS moving to Tomorrow: the moved line says "1 moved" and the entry is hidden from the list  1 moved
+PASS moving to a date: the message names the day in full and has Undo and Open day  Moved to Wednesday 28 October.
+PASS Open day shows the day, with the moved entry in it  ["Order labels"]
+PASS the edit made straight after an add was kept, not refused as a clash  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS the store has all five added entries, each once, as originals or as moved  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS a single move to Tomorrow made exactly one copy  ["Book the van","Ring the supplier"]
+PASS and the original is marked moved exactly once  ["migrated"]
+PASS Bring all forward made exactly one copy of each of yesterday's two tasks in Today  ["Order labels","Ring the supplier","Book the van","Send the batch record","Reply to Daniel today","Call the courier","Check the tracker"]
+PASS and yesterday's originals are each marked moved once
+PASS dragging to Tomorrow, with the answer lost once, made exactly one copy  ["Book the van","Ring the supplier"]
+PASS dragging to a date line, with the answer lost once, made exactly one copy  ["Send the batch record"]
+PASS the move to the 28th made one copy there, and one in Migrate that was itself moved on
+PASS the screen agrees with the store once everything has settled: no entry missing, none twice  ["Reply to Daniel today","Call the courier","Check the tracker"]
+PASS no message about a failed save is left on screen  Moved to Thursday 29 October.
+PASS the page threw nothing
+PASS a second device, signed in after the lag, sees the same list as the first, each entry once  ["Reply to Daniel today","Call the courier","Check the tracker"]
+PASS and the same "1 moved" line
+PASS the second device threw nothing
+PASS older reads: an entry shown after a save is never replaced by an older read, though the window asked again every 400ms
+PASS older reads: all three entries are still on screen when it settles, each once  ["Older read one","Older read two","Older read three"]
+PASS older reads: the page threw nothing
+
+23 of 23 passed

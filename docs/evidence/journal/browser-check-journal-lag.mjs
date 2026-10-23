@@ -97,10 +97,19 @@ check('adding: all five are on screen a few seconds after the last add', ADDED.m
 
 // From here every move is made and its answer is lost once, so the window sends it again.
 server.control.loseFirstAnswers = '"op":"move"';
+// Dragging an entry with the mouse onto a panel or a date line, which is the move a mouse makes.
+const dragTo = async (row, target, where = { x: 60, y: 160 }) => {
+  await target.scrollIntoViewIfNeeded();
+  const from = await row.locator('.bullet').boundingBox();
+  const to = await target.boundingBox();
+  await page.mouse.move(from.x + 10, from.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(to.x + where.x, to.y + Math.min(where.y, to.height - 4), { steps: 8 });
+  await page.mouse.up();
+};
 // One move, to Tomorrow.
 const van = page.locator('#list-today li.entry', { hasText: 'Book the van' });
-await van.locator('.more').click();
-await van.locator('.entry-actions button', { hasText: 'Tomorrow' }).click();
+await dragTo(van, page.locator('#panel-tomorrow'));
 await sleep(2500);
 check('moving to Tomorrow: the moved line says "1 moved" and the entry is hidden from the list', (await page.textContent('#moved-toggle-today')) === '1 moved' && (await page.locator('#list-today li.entry', { hasText: 'Book the van' }).count()) === 0, await page.textContent('#moved-toggle-today'));
 // Bring all forward, straight after the move.
@@ -109,12 +118,13 @@ await sleep(2500);
 // A move to a date, through Migrate then Date, to the 28th.
 {
   const row = page.locator('#list-today li.entry', { hasText: 'Order labels' });
-  await row.locator('.more').click();
-  await row.locator('.entry-actions button', { hasText: 'Migrate' }).click();
+  await dragTo(row, page.locator('#panel-migrate'));
   await sleep(2500);
   const migrated = page.locator('#list-migrate li.entry', { hasText: 'Order labels' });
-  await migrated.locator('.more').click();
-  await migrated.locator('.entry-actions button', { hasText: 'Date' }).click();
+  // The Date picker, by keyboard: a mouse drags and has no More button.
+  await page.keyboard.press('Tab');
+  await migrated.locator('.entry-text').focus();
+  await migrated.locator('.entry-actions button', { hasText: 'Date' }).press('Enter');
   await migrated.locator('.pick-day', { hasText: 'Wed 28 Oct' }).click();
   await page.waitForSelector('#flash:not([hidden])');
   check('moving to a date: the message names the day in full and has Undo and Open day', JSON.stringify([await page.textContent('#flash-text'), await page.textContent('#flash-action'), await page.textContent('#flash-also')]) === JSON.stringify(['Moved to Wednesday 28 October.', 'Undo', 'Open day']), await page.textContent('#flash-text'));
@@ -124,6 +134,11 @@ await sleep(2500);
   check('Open day shows the day, with the moved entry in it', (await page.textContent('#day-date')) === 'Wednesday 28 October' && JSON.stringify(there) === JSON.stringify(['Order labels']), JSON.stringify(there));
   await page.click('#day-back');
   await sleep(500);
+  // Two more drags, to a panel and to a date line, each with its answer lost once.
+  await dragTo(page.locator('#list-today li.entry', { hasText: 'Ring the supplier' }), page.locator('#panel-tomorrow'));
+  await sleep(2000);
+  await dragTo(page.locator('#list-today li.entry', { hasText: 'Send the batch record' }), page.locator('#date-rows li.date-row[data-date="2026-10-29"]'), { x: 40, y: 10 });
+  await sleep(2500);
 }
 
 // Let every send and retry finish, with the window still asking, and then go past the 60 seconds.
@@ -137,12 +152,15 @@ const today = day(file, TODAY);
 const tomorrow = day(file, TOMORROW);
 const yesterday = day(file, YESTERDAY);
 const all28 = day(file, '2026-10-28');
+const all29 = day(file, '2026-10-29');
 check('the edit made straight after an add was kept, not refused as a clash', today.some((e) => e.text === 'Reply to Daniel today'), JSON.stringify(today.map((e) => e.text)));
 check('the store has all five added entries, each once, as originals or as moved', ADDED.every((t) => today.filter((e) => e.text === t).length === 1), JSON.stringify(today.map((e) => e.text)));
 check('a single move to Tomorrow made exactly one copy', tomorrow.filter((e) => e.text === 'Book the van').length === 1, JSON.stringify(tomorrow.map((e) => e.text)));
 check('and the original is marked moved exactly once', today.filter((e) => e.text === 'Book the van' && e.state === 'migrated').length === 1, JSON.stringify(today.filter((e) => e.text === 'Book the van').map((e) => e.state)));
 check('Bring all forward made exactly one copy of each of yesterday\'s two tasks in Today', ['Call the courier', 'Check the tracker'].every((t) => today.filter((e) => e.text === t && e.state === 'open').length === 1), JSON.stringify(today.map((e) => e.text)));
 check('and yesterday\'s originals are each marked moved once', yesterday.filter((e) => e.state === 'migrated').length === 2 && yesterday.length === 2);
+check('dragging to Tomorrow, with the answer lost once, made exactly one copy', tomorrow.filter((e) => e.text === 'Ring the supplier' && e.state === 'open').length === 1 && today.filter((e) => e.text === 'Ring the supplier' && e.state === 'migrated').length === 1, JSON.stringify(tomorrow.map((e) => e.text)));
+check('dragging to a date line, with the answer lost once, made exactly one copy', all29.filter((e) => e.text === 'Send the batch record' && e.state === 'open').length === 1 && today.filter((e) => e.text === 'Send the batch record' && e.state === 'scheduled').length === 1, JSON.stringify(all29.map((e) => e.text)));
 check('the move to the 28th made one copy there, and one in Migrate that was itself moved on', all28.filter((e) => e.text === 'Order labels' && e.state === 'open').length === 1);
 const shownNow = await page.evaluate(() => [...document.querySelectorAll('#list-today li.entry:not([data-state="migrated"]):not([data-state="scheduled"]) .entry-text')].map((e) => e.innerText));
 check('the screen agrees with the store once everything has settled: no entry missing, none twice', JSON.stringify([...shownNow].sort()) === JSON.stringify(today.filter((e) => e.state !== 'migrated' && e.state !== 'scheduled').map((e) => e.text).sort()), JSON.stringify(shownNow));

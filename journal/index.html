@@ -494,6 +494,8 @@
   .entry[data-open="true"] .entry-actions { display: flex; }
   .entry[data-picking="true"] .entry-actions { display: none; }
   .more { color: var(--notes-icon); }
+  .entry-delete { color: var(--notes-icon); }
+  .entry-delete:hover, .entry-delete:focus-visible { color: var(--notes-bad); }
   .date-pick { display: none; margin: 0 4px 8px 36px; padding: 8px; border: 1px solid var(--notes-line); border-radius: 8px; background: var(--notes-field); }
   .entry[data-picking="true"] .date-pick { display: block; }
   .pick-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
@@ -506,23 +508,38 @@
     .entry-actions button { min-height: 44px; }
     .pick-day { min-height: 44px; }
   }
+  /* A mouse drags an entry onto a panel or a date, so the moves are not offered on
+     hover and there is no More button. They are offered on keyboard focus, so every
+     move stays possible without a mouse: the page marks the last way of working
+     as data-input on the root, "keyboard" only after Tab. A finger keeps More. */
+  @media (hover: hover) and (pointer: fine) {
+    .entry .more { display: none; }
+    html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }
+    .entry[data-open="true"] .entry-actions { display: flex; }
+  }
   @container panel (min-width: 440px) {
     @media (hover: hover) and (pointer: fine) {
       .entry-actions {
         position: absolute;
         top: 4px;
-        right: 8px;
+        right: 48px;
         padding: 0;
         background: var(--notes-hover);
         display: none;
       }
       .entry-actions button { flex: none; min-height: 28px; padding: 0 12px; border-radius: 6px; font-size: var(--notes-size-13); }
-      .entry:hover .entry-actions, .entry:focus-within .entry-actions { display: flex; }
+      html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }
       .entry[data-open="true"] .entry-actions { display: flex; }
-      .entry .more { display: none; }
-      .entry:hover .entry-note, .entry:focus-within .entry-note { display: none; }
+      html[data-input="keyboard"] .entry:focus-within .entry-note { display: none; }
     }
   }
+
+  /* Dragging an entry: the panel or the date line under the pointer takes the
+     selected fill, and what is muted on it goes to the strong text. */
+  .panel[data-drop="true"], .date-row[data-drop="true"] { background: var(--notes-selected); }
+  .panel[data-drop="true"] .panel-date, .panel[data-drop="true"] .entry-note, .panel[data-drop="true"] .moved-toggle,
+  .panel[data-drop="true"] .status, .panel[data-drop="true"] .lead, .panel[data-drop="true"] .empty { color: var(--notes-strong); }
+  .date-row[data-drop="true"] .date-open .wk { color: var(--notes-strong); }
 
   /* ---------- the morning strip ---------- */
 
@@ -625,6 +642,7 @@
   <symbol id="j-scheduled" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 12H7M11 8l-4 4 4 4"/></symbol>
   <symbol id="j-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h.01M12 12h.01M18 12h.01"/></symbol>
   <symbol id="j-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-bin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
   <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
@@ -773,7 +791,7 @@
         </div>
       </header>
       <div class="quick-body">
-        <div class="quick-editor" id="quick-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Quick notes" data-editor="multi" data-placeholder="Type anything here. It has no date and stays until you delete it." spellcheck="false"></div>
+        <div class="quick-editor" id="quick-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Quick notes" data-editor="multi" data-placeholder="Type anything here. It has no date and stays until you delete it." spellcheck="true" lang="en-GB"></div>
       </div>
     </section>
 
@@ -1253,7 +1271,8 @@ import * as core from "/journal/core.js";
     editor.setAttribute("role", "textbox");
     editor.setAttribute("aria-label", "New entry");
     editor.setAttribute("data-editor", "single");
-    editor.setAttribute("spellcheck", "false");
+    editor.setAttribute("spellcheck", "true");
+    editor.setAttribute("lang", "en-GB");
     editor.setAttribute("enterkeyhint", "enter");
     host.appendChild(editor);
 
@@ -1429,7 +1448,8 @@ import * as core from "/journal/core.js";
       text.setAttribute("role", "textbox");
       text.setAttribute("aria-label", "Entry text");
       text.setAttribute("data-editor", "single");
-      text.setAttribute("spellcheck", "false");
+      text.setAttribute("spellcheck", "true");
+      text.setAttribute("lang", "en-GB");
       wireEditor(text);
       wireEntryEditing(text, listKey, entry);
     }
@@ -1440,6 +1460,18 @@ import * as core from "/journal/core.js";
       tail.appendChild(make("span", "entry-note", destinationWords(entry, listKey)));
     } else if (entry.state === "dropped") {
       tail.appendChild(make("span", "entry-note", "Dropped"));
+    }
+    if (editable) {
+      var bin = make("button", "icon-button entry-delete");
+      bin.type = "button";
+      bin.setAttribute("aria-label", "Delete entry: " + rowText(entry));
+      bin.title = "Delete entry";
+      bin.appendChild(icon("i-bin"));
+      bin.addEventListener("click", function () {
+        var current = findEntry(listKey, entry.id);
+        if (current) { deleteEntry(listKey, current, {}); }
+      });
+      tail.appendChild(bin);
     }
     if (entry.state === "open") {
       var more = make("button", "icon-button more");
@@ -1461,6 +1493,7 @@ import * as core from "/journal/core.js";
     li.appendChild(main);
 
     if (entry.state === "open") {
+      wireDrag(li, listKey, entry);
       li.appendChild(moveButtons(listKey, entry));
       li.appendChild(datePicker(listKey, entry));
     }
@@ -1494,18 +1527,23 @@ import * as core from "/journal/core.js";
       original = null;
       if (cancelled || typed === before) { return; }
       if (core.cleanText(typed) === "") {
-        // Undo makes the entry again as a new one, because a removed entry keeps its id.
-        var removed = { type: entry.type, state: entry.state, text: entry.text };
-        submit({ op: "remove", list: listKey, id: entry.id, rev: entry.rev }, {
-          onFail: function () { restoreEditing(listKey, entry.id, typed); }
-        }).then(function (ok) {
-          if (ok) { offerUndo("Entry deleted.", [{ op: "add", list: listKey, entry: { id: newId(), type: removed.type, text: removed.text, state: removed.state } }]); }
-        });
+        deleteEntry(listKey, entry, { onFail: function () { restoreEditing(listKey, entry.id, typed); } });
         return;
       }
       submit({ op: "edit", list: listKey, id: entry.id, rev: entry.rev, text: typed }, {
         onFail: function () { restoreEditing(listKey, entry.id, typed); }
       });
+    });
+  }
+
+  // Deletes an entry: a new revision marked removed, at once, with no question. The
+  // message offers Undo for ten seconds, which makes the entry again as a new one,
+  // because a removed entry keeps its id.
+  function deleteEntry(listKey, entry, hooks) {
+    var kept = { type: entry.type, state: entry.state, text: entry.text };
+    return submit({ op: "remove", list: listKey, id: entry.id, rev: entry.rev }, hooks).then(function (ok) {
+      if (ok) { offerUndo("Entry deleted.", [{ op: "add", list: listKey, entry: { id: newId(), type: kept.type, text: kept.text, state: kept.state } }]); }
+      return ok;
     });
   }
 
@@ -1547,6 +1585,92 @@ import * as core from "/journal/core.js";
     group.appendChild(date);
     return group;
   }
+
+  /* ---------- dragging an entry, with a mouse ---------- */
+
+  var mouse = window.matchMedia("(hover: hover) and (pointer: fine)");
+  var dragging = null;     // { list, id } while one of this page's entries is being dragged
+  var dropMark = null;     // the element that has the selected fill
+
+  // An entry is picked up anywhere but in its text while the text is being edited,
+  // so a drag there still selects words.
+  function wireDrag(li, listKey, entry) {
+    if (!mouse.matches) { return; }
+    li.setAttribute("draggable", "true");
+    li.addEventListener("mousedown", function (event) {
+      var text = li.querySelector(".entry-text");
+      var editing = text && text.contains(document.activeElement) && text.contains(event.target);
+      li.setAttribute("draggable", editing ? "false" : "true");
+    }, true);
+    li.addEventListener("dragstart", function (event) {
+      dragging = { list: listKey, id: entry.id };
+      // Only a marker of this page's own drag: no text of the entry leaves the page.
+      event.dataTransfer.setData("application/x-journal-entry", entry.id);
+      event.dataTransfer.effectAllowed = "move";
+      li.setAttribute("data-dragging", "true");
+    });
+    li.addEventListener("dragend", function () {
+      dragging = null;
+      li.removeAttribute("data-dragging");
+      markDrop(null);
+    });
+  }
+
+  // Where a drop would go: Today, Tomorrow or Migrate (the same move as their
+  // buttons), or a date from today on in Month (the same move as the Date picker).
+  // Nothing for the list the entry is already in.
+  function dropTarget(node) {
+    if (!dragging || !node || !node.closest) { return null; }
+    var row = node.closest("li.date-row");
+    var found = null;
+    if (row) {
+      var date = row.getAttribute("data-date");
+      if (date && date >= today) { found = { el: row, list: core.dayList(date), how: "scheduled" }; }
+    } else {
+      var panel = node.closest(".panel");
+      var name = panel && panel.getAttribute("data-panel");
+      if (name === "today") { found = { el: panel, list: core.dayList(today), how: "migrated" }; }
+      else if (name === "tomorrow") { found = { el: panel, list: core.dayList(tomorrow()), how: "migrated" }; }
+      else if (name === "migrate") { found = { el: panel, list: core.migrateList(thisMonth()), how: "migrated" }; }
+    }
+    return found && found.list !== dragging.list ? found : null;
+  }
+
+  function markDrop(el) {
+    if (dropMark === el) { return; }
+    if (dropMark) { dropMark.removeAttribute("data-drop"); }
+    dropMark = el;
+    if (dropMark) { dropMark.setAttribute("data-drop", "true"); }
+  }
+
+  document.addEventListener("dragover", function (event) {
+    var target = dropTarget(event.target);
+    markDrop(target ? target.el : null);
+    if (target) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }
+  });
+  document.addEventListener("dragleave", function (event) {
+    if (event.relatedTarget === null) { markDrop(null); }
+  });
+  document.addEventListener("drop", function (event) {
+    var target = dropTarget(event.target);
+    var item = dragging;
+    markDrop(null);
+    if (!target || !item) { return; }
+    event.preventDefault();
+    dragging = null;
+    moveEntry(item.list, item.id, target.list, target.how);
+  });
+
+  // Whether the page was last worked by keyboard, so the moves show on focus only then.
+  document.documentElement.setAttribute("data-input", "mouse");
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Tab") { document.documentElement.setAttribute("data-input", "keyboard"); }
+  }, true);
+  document.addEventListener("pointerdown", function (event) {
+    // Pressing one of the move buttons that keyboard focus showed does not hide them.
+    if (event.target.closest && event.target.closest(".entry-actions")) { return; }
+    document.documentElement.setAttribute("data-input", "mouse");
+  }, true);
 
   function moveEntry(listKey, id, target, how) {
     var entry = findEntry(listKey, id);
@@ -1832,7 +1956,8 @@ import * as core from "/journal/core.js";
     line.setAttribute("aria-label", "Calendar line for " + longDate(date));
     line.setAttribute("data-editor", "single");
     line.setAttribute("data-placeholder", "Add to " + shortDate(date));
-    line.setAttribute("spellcheck", "false");
+    line.setAttribute("spellcheck", "true");
+    line.setAttribute("lang", "en-GB");
     drawMarks(line, day.line, false);
     wireEditor(line);
     wireLine(line, date, day);

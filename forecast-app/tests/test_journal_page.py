@@ -252,10 +252,14 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
 
     # ---- icons ----
 
-    SYMBOLS = sorted(["j-task", "j-event", "j-note", "j-done", "j-migrated", "j-scheduled", "j-more", "j-chevron-right",
-                      "i-chevron-left", "i-moon", "i-sun"])
+    @property
+    def script(self) -> str:
+        return self.text.split('<script type="module">', 1)[1]
 
-    def test_exactly_eleven_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
+    SYMBOLS = sorted(["j-task", "j-event", "j-note", "j-done", "j-migrated", "j-scheduled", "j-more", "j-chevron-right",
+                      "i-bin", "i-chevron-left", "i-moon", "i-sun"])
+
+    def test_exactly_twelve_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
         symbols = re.findall(r"<symbol\b([^>]*)>", self.text)
         ids = sorted(re.search(r'id="([^"]+)"', attributes).group(1) for attributes in symbols)
         self.assertEqual(ids, self.SYMBOLS)
@@ -276,6 +280,7 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
 
     def test_the_shapes_are_the_ones_in_the_brief(self) -> None:
         paths = {
+            "i-bin": 'd="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"',
             "j-task": 'd="M12 12h.01"', "j-event": 'cx="12" cy="12" r="4"', "j-note": 'd="M8 12h8"', "j-done": 'd="M8 8l8 8M16 8l-8 8"',
             "j-migrated": 'd="M7 12h10M13 8l4 4-4 4"', "j-scheduled": 'd="M17 12H7M11 8l-4 4 4 4"',
             "j-more": 'd="M6 12h.01M12 12h.01M18 12h.01"', "j-chevron-right": 'd="M9 6l6 6-6 6"',
@@ -396,13 +401,73 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
                 self.assertNotIn(f"panel-{other}", body, f"{name} knows about the {other} panel")
         self.assertIn('var panel = $("panel-" + key);', function_body(self.text, "showPanel"))
 
-    def test_a_move_row_goes_to_the_right_in_a_wide_panel_for_a_mouse_only(self) -> None:
+    def test_a_mouse_drags_so_the_moves_are_not_offered_on_hover_and_they_show_on_keyboard_focus(self) -> None:
+        # Ruled by the product owner on 23 October 2026: a mouse drags an entry, so the move buttons never
+        # cover the text on hover; they show on keyboard focus, so every move stays possible without a mouse.
+        self.assertNotIn(".entry:hover .entry-actions", self.style, "No move buttons on hover.")
+        fine = self.style.split("@media (hover: hover) and (pointer: fine) {", 1)[1]
+        self.assertIn(".entry .more { display: none; }", fine.split("@container", 1)[0], "A mouse has no More button.")
+        self.assertIn('html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }', self.style)
         self.assertIn("@container panel (min-width: 440px) {", self.style)
         container = self.style.split("@container panel (min-width: 440px) {", 1)[1]
         self.assertIn("@media (hover: hover) and (pointer: fine) {", container)
         self.assertIn("position: absolute;", container)
-        self.assertIn(".entry .more { display: none; }", container)
         self.assertIn("container: panel / inline-size;", self.style)
+        # Only Tab marks the page as keyboard worked, so typing in an entry does not show them.
+        self.assertIn('if (event.key === "Tab") { document.documentElement.setAttribute("data-input", "keyboard"); }', self.script)
+        self.assertIn('document.addEventListener("pointerdown", function (event) {', self.script)
+        self.assertIn('if (event.target.closest && event.target.closest(".entry-actions")) { return; }', self.script, "Pressing a move button that focus showed does not hide it.")
+        self.assertIn('document.documentElement.setAttribute("data-input", "mouse");', self.script)
+        # A finger keeps the More button: nothing in the coarse pointer rules changed it.
+        self.assertIn('more.setAttribute("aria-label", "Move this entry: " + rowText(entry));', self.script)
+
+    def test_a_drag_does_what_the_move_button_does_to_each_target_and_nothing_to_the_same_list(self) -> None:
+        target = function_body(self.script, "dropTarget")
+        self.assertIn('found = { el: panel, list: core.dayList(today), how: "migrated" };', target)
+        self.assertIn('found = { el: panel, list: core.dayList(tomorrow()), how: "migrated" };', target)
+        self.assertIn('found = { el: panel, list: core.migrateList(thisMonth()), how: "migrated" };', target)
+        self.assertIn('found = { el: row, list: core.dayList(date), how: "scheduled" };', target, "A date line is the Date picker's move.")
+        self.assertIn("date >= today", target, "Dates before today are not offered by the picker and are not targets.")
+        self.assertIn("found.list !== dragging.list", target, "Dropping on the list an entry is already in does nothing.")
+        drop = re.search(r'document.addEventListener\("drop", function \(event\) \{(.*?)\n  \}\);', self.script, re.DOTALL).group(1)
+        self.assertIn("moveEntry(item.list, item.id, target.list, target.how);", drop, "The drop goes through the same function as the buttons.")
+        self.assertNotIn("submit(", drop)
+        start = self.script[self.script.index('li.addEventListener("dragstart"') :][:420]
+        self.assertIn('setData("application/x-journal-entry", entry.id)', start)
+        self.assertNotIn("text/plain", start, "No text of the entry leaves the page.")
+        self.assertIn("if (!mouse.matches) { return; }", function_body(self.script, "wireDrag"), "Mouse only: a finger keeps More.")
+        self.assertIn('window.matchMedia("(hover: hover) and (pointer: fine)")', self.script)
+
+    def test_a_drop_target_takes_the_selected_fill_and_no_new_colour(self) -> None:
+        self.assertIn('.panel[data-drop="true"], .date-row[data-drop="true"] { background: var(--notes-selected); }', self.style)
+        rules = re.findall(r"([^{}@]+)\{([^{}]*)\}", self.without_theme_blocks(self.style))
+        for selector, body in rules:
+            if "data-drop" in selector:
+                self.assertNotIn("--notes-muted", body, f"{selector.strip()} puts muted text on the selected fill.")
+
+    def test_each_entry_has_a_bin_that_deletes_at_once_with_an_undo(self) -> None:
+        self.assertIn('make("button", "icon-button entry-delete")', self.script)
+        row = self.script[self.script.index('"icon-button entry-delete"') :][:520]
+        self.assertIn('bin.setAttribute("aria-label", "Delete entry: " + rowText(entry));', row)
+        self.assertIn('icon("i-bin")', row)
+        self.assertIn("deleteEntry(listKey, current, {});", row, "One click, no confirmation.")
+        self.assertNotIn("confirm(", self.script)
+        body = function_body(self.script, "deleteEntry")
+        self.assertIn('submit({ op: "remove", list: listKey, id: entry.id, rev: entry.rev }, hooks)', body)
+        self.assertIn('offerUndo("Entry deleted."', body)
+        self.assertIn(".entry-delete:hover, .entry-delete:focus-visible { color: var(--notes-bad); }", self.style)
+        self.assertIn("button.icon-button", self.coarse(), "44px for a finger comes from the icon button rule.")
+
+    def test_spell_check_is_on_for_entries_calendar_lines_and_quick_notes_in_uk_english(self) -> None:
+        self.assertNotIn('"spellcheck", "false"', self.text)
+        self.assertNotIn('spellcheck="false"', self.text)
+        self.assertEqual(self.text.count('setAttribute("spellcheck", "true")'), 3, "the new entry line, an entry and a calendar line")
+        self.assertEqual(self.text.count('setAttribute("lang", "en-GB")'), 3)
+        self.assertRegex(self.text, r'id="quick-editor"[^>]*spellcheck="true" lang="en-GB"')
+        notes = (REPOSITORY / "notes" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="text" class="editor" aria-label="Note text" spellcheck="false"', notes, "Notes stays as it is.")
+        self.assertNotIn('lang="en-GB"', notes)
+        self.assertNotIn('setAttribute("lang", "en-GB")', notes)
 
     # ---- the header and the sign in ----
 
@@ -486,8 +551,8 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
         self.assertIn("export function copyIdFor(id, rev, to)", core)
 
     def test_undo_of_a_delete_makes_a_new_entry_because_a_removed_entry_keeps_its_id(self) -> None:
-        self.assertIn("entry: { id: newId(), type: removed.type, text: removed.text, state: removed.state }", self.script)
-        self.assertNotIn("removed.id", self.script)
+        self.assertIn("entry: { id: newId(), type: kept.type, text: kept.text, state: kept.state }", function_body(self.script, "deleteEntry"))
+        self.assertNotIn("kept.id", self.script)
 
     def test_a_move_to_a_day_says_which_day_and_offers_to_open_it(self) -> None:
         move = function_body(self.script, "moveEntry")
