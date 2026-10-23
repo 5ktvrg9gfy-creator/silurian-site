@@ -1,6 +1,6 @@
 # Journal tweaks: open questions
 
-Each: what it blocks, the default built, and the cost if wrong. Brief: journal tweaks of 23 October 2026 (the bin, spell check, drag and drop). **Four waiting.**
+Each: what it blocks, the default built, and the cost if wrong. Brief: journal tweaks of 23 October 2026 (the bin, spell check, drag and drop). **None waiting. Q1 to Q4 were answered on 23 October 2026: all four defaults accepted.**
 
 **Q1. A mouse has no More button, so a mouse user with no keyboard moves an entry by dragging only.**
 Blocks: nothing. The brief says the move buttons no longer appear on hover and appear on keyboard focus.

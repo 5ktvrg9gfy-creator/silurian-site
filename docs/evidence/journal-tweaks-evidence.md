@@ -44,3 +44,17 @@ The product owner ran the notes revisions Production check (merge `92b85a0`) and
 **On the iPad (touch):**
 6. **Unchanged.** Each entry has the More button and a bin. Tap More: Tomorrow, Migrate and Date appear and work as before. Entries do not drag. Tap a bin: it deletes with the message and Undo. Spell check underlines a misspelling in an entry and in Quick notes.
 7. **If anything disappears, doubles or moves to the wrong place.** Do not retry. Note the time, what you did and what you saw, and report it.
+
+## Preview of `567fc36`: passed, 23 October 2026
+
+Reported by the product owner, not run by the build session. Every step passed on the PC in Edge and on the iPad: the bin with Undo; UK spell check in the journal and not in notes; a drag to Tomorrow, Migrate and a date line with the drop fill and the matching message; nothing on a past date or on the same panel; word selection while editing; no buttons on hover and buttons on Tab; the iPad unchanged. Q1 to Q4 accepted as built. Approved to merge by pull request pinned to the reviewed head.
+
+## Production check list for the product owner
+
+1. Open https://www.silurianconsulting.co.uk/journal on the PC in Edge, signed in. Your entries are all there. (The installed app updates itself; if it looks unchanged, close and reopen it.)
+2. Make a task, hover its bin (red), click it: it goes with "Entry deleted." and Undo. Undo brings it back.
+3. Type "recieve" in an entry, a calendar line and Quick notes: underlined, with UK spellings offered. Open Notes: no underline there.
+4. Drag a task by its dot onto Tomorrow, then Migrate, then a date line two weeks on: the target turns beige and the message matches the button's, with Undo. Dragging onto a past date or onto the panel it is in does nothing.
+5. Hover an entry: no move buttons. Tab to an entry: they appear and work with Enter.
+6. On the iPad: More and the buttons work as before, nothing drags, the bin deletes with Undo.
+7. If anything disappears, doubles or moves to the wrong place, do not retry. Note the time and report it.
