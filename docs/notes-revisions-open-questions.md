@@ -1,6 +1,6 @@
 # Notes save safety: open questions
 
-Each: what it blocks, the default built, and the cost if wrong. Brief: the notes save safety build brief of 22 October 2026 (revision files for notes, following the journal pattern). **Four waiting.**
+Each: what it blocks, the default built, and the cost if wrong. Brief: the notes save safety build brief of 22 October 2026 (revision files for notes, following the journal pattern). **None waiting. Q1 to Q4 were answered on 23 October 2026: all four defaults accepted, Q1 to be a small separate change later.**
 
 **Q1. Creating a note is not made safe against a repeat.**
 Blocks: nothing. The brief is about revisions of a note's text, labels and archive flag.

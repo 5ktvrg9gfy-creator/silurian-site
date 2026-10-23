@@ -76,3 +76,17 @@ On the branch Preview at `/notes`, signed in on the PC and on the iPad (or two b
 5. **The list.** Make three notes on the PC in a minute, delete one, then watch the list for a minute with the window in front: **Pass:** the notes you made stay, the deleted one does not come back, and no title reverts.
 6. **A note from before.** Open a note you have had for days and edit it. **Pass:** it saves as normal, and after a reload the new text is there.
 7. **If anything disappears, reverts or says "changed on another device" when nothing else was open.** Do not retry. Note the time, what you did and what you saw, and report it.
+
+## Preview of `57beb20`: passed, 23 October 2026
+
+Reported by the product owner, not run by the build session. Every step passed on the PC and the iPad: single-device behaviour, the two-device clash with the text kept, labels added on both devices with neither lost, the list with no reverts and the deleted note staying gone, and an old note editing and holding. The journal also behaved correctly overnight on Production. Q1 to Q4 accepted as built; Q1 (a repeated note creation) is to be a small separate change later. Approved to merge by pull request pinned to the reviewed head.
+
+## Production check list for the product owner
+
+1. Open https://www.silurianconsulting.co.uk/notes and sign in. The list shows every note you had, with the same titles and labels.
+2. Open an old note, change a word, wait for Saved, reload. The new text is there. (This is the first save of an old note on the new storage, which makes its revision 1.)
+3. Make a new note, add a label, archive it, unarchive it, delete it. It leaves the list and stays gone after a reload.
+4. Two devices: open the same note on the PC and the iPad, save a change on the iPad, then change a different word on the PC without reloading. The PC says the note was changed on another device and keeps its text. Reload the PC to see the iPad's version.
+5. Add a label on each device without reloading. Neither is lost.
+6. Do not roll back after notes have been saved on this version; fix forward.
+7. If anything disappears, reverts, or says "changed on another device" when nothing else was open, do not retry. Note the time and report it.
