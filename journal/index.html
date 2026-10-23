@@ -45,6 +45,27 @@
     --notes-good: #356b46;
     --notes-warn: #9a5a12;
     --notes-bad: #a52a1f;
+    --notes-peel-yellow: #fcf0b8;
+    --notes-peel-yellow-hover: #f6e294;
+    --notes-peel-yellow-selected: #ecd47a;
+    --notes-peel-yellow-field: #fef9e3;
+    --notes-peel-yellow-line: #ecd47a;
+    --notes-peel-green: #e0f0dc;
+    --notes-peel-green-hover: #cde6c8;
+    --notes-peel-green-selected: #b9d9b3;
+    --notes-peel-green-field: #f3f9f1;
+    --notes-peel-green-line: #b9d9b3;
+    --notes-peel-pink: #fbe0e7;
+    --notes-peel-pink-hover: #f5ccd8;
+    --notes-peel-pink-selected: #ecb6c6;
+    --notes-peel-pink-field: #fdf3f5;
+    --notes-peel-pink-line: #ecb6c6;
+    --notes-peel-ink: #2f2d2b;
+    --notes-peel-strong: #1a1918;
+    --notes-peel-muted: #66615f;
+    --notes-peel-icon: #4a4744;
+    --notes-peel-bad: #a52a1f;
+    --notes-peel-focus: #1a1918;
 
     --notes-header-height: 65px;
     --notes-size-12: 12px;
@@ -77,6 +98,27 @@
       --notes-good: #6fbf86;
       --notes-warn: #e8a54b;
       --notes-bad: #f0857a;
+      --notes-peel-yellow: #fcf0b8;
+      --notes-peel-yellow-hover: #f6e294;
+      --notes-peel-yellow-selected: #ecd47a;
+      --notes-peel-yellow-field: #fef9e3;
+      --notes-peel-yellow-line: #ecd47a;
+      --notes-peel-green: #e0f0dc;
+      --notes-peel-green-hover: #cde6c8;
+      --notes-peel-green-selected: #b9d9b3;
+      --notes-peel-green-field: #f3f9f1;
+      --notes-peel-green-line: #b9d9b3;
+      --notes-peel-pink: #fbe0e7;
+      --notes-peel-pink-hover: #f5ccd8;
+      --notes-peel-pink-selected: #ecb6c6;
+      --notes-peel-pink-field: #fdf3f5;
+      --notes-peel-pink-line: #ecb6c6;
+      --notes-peel-ink: #2f2d2b;
+      --notes-peel-strong: #1a1918;
+      --notes-peel-muted: #66615f;
+      --notes-peel-icon: #4a4744;
+      --notes-peel-bad: #a52a1f;
+      --notes-peel-focus: #1a1918;
     }
   }
 
@@ -100,6 +142,27 @@
     --notes-good: #6fbf86;
     --notes-warn: #e8a54b;
     --notes-bad: #f0857a;
+    --notes-peel-yellow: #fcf0b8;
+    --notes-peel-yellow-hover: #f6e294;
+    --notes-peel-yellow-selected: #ecd47a;
+    --notes-peel-yellow-field: #fef9e3;
+    --notes-peel-yellow-line: #ecd47a;
+    --notes-peel-green: #e0f0dc;
+    --notes-peel-green-hover: #cde6c8;
+    --notes-peel-green-selected: #b9d9b3;
+    --notes-peel-green-field: #f3f9f1;
+    --notes-peel-green-line: #b9d9b3;
+    --notes-peel-pink: #fbe0e7;
+    --notes-peel-pink-hover: #f5ccd8;
+    --notes-peel-pink-selected: #ecb6c6;
+    --notes-peel-pink-field: #fdf3f5;
+    --notes-peel-pink-line: #ecb6c6;
+    --notes-peel-ink: #2f2d2b;
+    --notes-peel-strong: #1a1918;
+    --notes-peel-muted: #66615f;
+    --notes-peel-icon: #4a4744;
+    --notes-peel-bad: #a52a1f;
+    --notes-peel-focus: #1a1918;
   }
 
   * { box-sizing: border-box; }
@@ -296,7 +359,7 @@
   /* ---------- panels ---------- */
 
   #app { min-width: 0; }
-  .panels { display: grid; gap: 12px; padding: 12px; }
+  .panels { position: relative; display: grid; gap: 12px; padding: 12px; }
   .panel {
     container: panel / inline-size;
     display: flex;
@@ -342,6 +405,8 @@
     color: var(--notes-ink);
   }
 
+  .panel-handle { display: none; }
+
   /* Three columns from 1000px, filling the window, as the sticky notes sit now:
      Month full height on the left, Today above Tomorrow in the middle, Migrate
      above Quick notes on the right. */
@@ -353,7 +418,19 @@
       grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-areas: "month today migrate" "month tomorrow quick";
     }
+    /* Month's width once it has been dragged or set from the keyboard. The other
+       two columns share what is left equally. */
+    .panels[data-month-width] { grid-template-columns: var(--month-width) minmax(0, 1fr) minmax(0, 1fr); }
+    .panel-handle { display: block; position: absolute; top: 12px; bottom: 12px; z-index: 5; width: 12px; transform: translateX(-50%); cursor: col-resize; touch-action: none; }
+    .panel-handle::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); background: var(--notes-line); }
+    .panel-handle:hover::before { width: 2px; background: var(--notes-icon); }
+    .panel-handle[data-dragging="true"]::before { width: 2px; background: var(--notes-accent); }
+    .panel-handle:focus-visible { outline: 2px solid var(--notes-strong); outline-offset: 2px; }
   }
+  @media (min-width: 1000px) and (pointer: coarse) {
+    .panel-handle { width: 44px; }
+  }
+  html[data-resizing="true"], html[data-resizing="true"] * { cursor: col-resize !important; user-select: none; }
 
   /* Small window and iPad portrait: Month stays on the left, as tall as the
      window, and the other four stack on the right and the page scrolls. */
@@ -540,6 +617,56 @@
   .panel[data-drop="true"] .panel-date, .panel[data-drop="true"] .entry-note, .panel[data-drop="true"] .moved-toggle,
   .panel[data-drop="true"] .status, .panel[data-drop="true"] .lead, .panel[data-drop="true"] .empty { color: var(--notes-strong); }
   .date-row[data-drop="true"] .date-open .wk { color: var(--notes-strong); }
+
+  /* ---------- Peels (CLAUDE.md 9e) ----------
+     Today, Tomorrow and Migrate are sticky note paper, from Spud Notes' own
+     colours, the same in both themes with dark text on them. Inside a Peel the
+     page's own variables are pointed at the Peel's, so every rule above reads the
+     Peel's colour and nothing else needs to know. Month and Quick notes are not
+     Peels. */
+  .panel[data-peel] {
+    color: var(--notes-peel-ink);
+    --notes-ink: var(--notes-peel-ink);
+    --notes-strong: var(--notes-peel-strong);
+    --notes-muted: var(--notes-peel-muted);
+    --notes-icon: var(--notes-peel-icon);
+    --notes-bad: var(--notes-peel-bad);
+  }
+  .panel[data-peel="yellow"] {
+    --notes-panel: var(--notes-peel-yellow);
+    --notes-hover: var(--notes-peel-yellow-hover);
+    --notes-selected: var(--notes-peel-yellow-selected);
+    --notes-field: var(--notes-peel-yellow-field);
+    --notes-ground: var(--notes-peel-yellow-field);
+    --notes-line: var(--notes-peel-yellow-line);
+    --notes-line-soft: var(--notes-peel-yellow-line);
+  }
+  .panel[data-peel="green"] {
+    --notes-panel: var(--notes-peel-green);
+    --notes-hover: var(--notes-peel-green-hover);
+    --notes-selected: var(--notes-peel-green-selected);
+    --notes-field: var(--notes-peel-green-field);
+    --notes-ground: var(--notes-peel-green-field);
+    --notes-line: var(--notes-peel-green-line);
+    --notes-line-soft: var(--notes-peel-green-line);
+  }
+  .panel[data-peel="pink"] {
+    --notes-panel: var(--notes-peel-pink);
+    --notes-hover: var(--notes-peel-pink-hover);
+    --notes-selected: var(--notes-peel-pink-selected);
+    --notes-field: var(--notes-peel-pink-field);
+    --notes-ground: var(--notes-peel-pink-field);
+    --notes-line: var(--notes-peel-pink-line);
+    --notes-line-soft: var(--notes-peel-pink-line);
+  }
+  /* The accent is under 3:1 on every Peel, so the focus outline is ink. */
+  .panel[data-peel] :focus-visible { outline-color: var(--notes-peel-focus); }
+  /* A field is only a little lighter than its Peel, so its edge is drawn darker. */
+  .panel[data-peel] .editor-line, .panel[data-peel] .empty, .panel[data-peel] .strip-group, .panel[data-peel] .date-pick { border-color: var(--notes-icon); }
+  /* Muted is under 4.5:1 on a hovered or dropped-on Peel, so it goes to ink there. */
+  .panel[data-peel] .entry:hover, .panel[data-peel] .moved-toggle:hover, .panel[data-peel] .pick-day:hover { --notes-muted: var(--notes-ink); }
+  .panel[data-peel][data-drop="true"] { --notes-muted: var(--notes-ink); }
+  .panel[data-peel][data-drop="true"] .entry-delete { color: var(--notes-icon); }
 
   /* ---------- the morning strip ---------- */
 
@@ -732,7 +859,7 @@
       <div class="addbar" id="addbar-day" hidden></div>
     </section>
 
-    <section class="panel" id="panel-today" data-panel="today" data-active="true" aria-labelledby="h-today">
+    <section class="panel" id="panel-today" data-panel="today" data-peel="yellow" data-active="true" aria-labelledby="h-today">
       <header class="panel-head">
         <h2 class="panel-title" id="h-today">Today</h2>
         <span class="panel-date" id="date-today"></span>
@@ -749,7 +876,7 @@
       <div class="addbar" id="addbar-today"></div>
     </section>
 
-    <section class="panel" id="panel-tomorrow" data-panel="tomorrow" data-active="false" aria-labelledby="h-tomorrow">
+    <section class="panel" id="panel-tomorrow" data-panel="tomorrow" data-peel="green" data-active="false" aria-labelledby="h-tomorrow">
       <header class="panel-head">
         <h2 class="panel-title" id="h-tomorrow">Tomorrow</h2>
         <span class="panel-date" id="date-tomorrow"></span>
@@ -765,7 +892,7 @@
       <div class="addbar" id="addbar-tomorrow"></div>
     </section>
 
-    <section class="panel" id="panel-migrate" data-panel="migrate" data-active="false" aria-labelledby="h-migrate">
+    <section class="panel" id="panel-migrate" data-panel="migrate" data-peel="pink" data-active="false" aria-labelledby="h-migrate">
       <header class="panel-head">
         <h2 class="panel-title" id="h-migrate">Migrate</h2>
         <span class="panel-date" id="date-migrate"></span>
@@ -794,6 +921,8 @@
         <div class="quick-editor" id="quick-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Quick notes" data-editor="multi" data-placeholder="Type anything here. It has no date and stays until you delete it." spellcheck="true" lang="en-GB"></div>
       </div>
     </section>
+
+    <div class="panel-handle" id="month-handle" role="separator" aria-orientation="vertical" aria-label="Resize Month" tabindex="0"></div>
 
   </div>
 </div>
@@ -853,6 +982,128 @@
   button.addEventListener("click", flip);
   if (query && query.addEventListener) { query.addEventListener("change", paint); }
   paint();
+})();
+</script>
+
+<script id="month-handle-script">
+(function () {
+  "use strict";
+
+  // Month's width at 1000px and up. Held on this device only, like the theme,
+  // and never sent anywhere. A width that no longer fits the window is trimmed on
+  // the screen and left as it was in storage, so a wider window brings it back.
+  var HANDLE_KEY = "silurian-journal-month-width";
+  var MIN = 240;
+  var STEP = 16;
+  var BIG_STEP = 64;
+  var PAD = 12;
+  var GAP = 12;
+  var OTHER_MIN = 280;
+  var root = document.documentElement;
+  var wide = window.matchMedia("(min-width: 1000px)");
+  var panels = document.getElementById("panels");
+  var month = document.getElementById("panel-month");
+  var handle = document.getElementById("month-handle");
+  var width = null;
+  var dragging = false;
+  var grab = 0;
+
+  try {
+    var raw = localStorage.getItem(HANDLE_KEY);
+    var saved = parseInt(raw, 10);
+    if (saved > 0 && String(saved) === raw) { width = saved; }
+  } catch (e) { /* storage is blocked: Month keeps its default width */ }
+
+  function limits() {
+    var available = panels.clientWidth - 2 * PAD - 2 * GAP;
+    return { min: MIN, max: Math.max(MIN, Math.min(Math.floor(available / 2), available - 2 * OTHER_MIN)) };
+  }
+
+  function clamp(value) {
+    var l = limits();
+    return Math.min(l.max, Math.max(l.min, value));
+  }
+
+  function place() {
+    if (!wide.matches || !panels.clientWidth) { return; }
+    if (width === null) {
+      panels.removeAttribute("data-month-width");
+      panels.style.removeProperty("--month-width");
+    } else {
+      panels.setAttribute("data-month-width", "set");
+      panels.style.setProperty("--month-width", clamp(width) + "px");
+    }
+    var l = limits();
+    var box = month.getBoundingClientRect();
+    var frame = panels.getBoundingClientRect();
+    handle.style.left = (box.right - frame.left + GAP / 2) + "px";
+    handle.setAttribute("aria-valuemin", String(l.min));
+    handle.setAttribute("aria-valuemax", String(l.max));
+    handle.setAttribute("aria-valuenow", String(Math.round(box.width)));
+  }
+
+  function keep() {
+    try {
+      if (width === null) { localStorage.removeItem(HANDLE_KEY); } else { localStorage.setItem(HANDLE_KEY, String(width)); }
+    } catch (e) { /* not saved */ }
+  }
+
+  function setWidth(value, save) {
+    width = clamp(Math.round(value));
+    place();
+    if (save) { keep(); }
+  }
+
+  function reset() {
+    width = null;
+    place();
+    keep();
+  }
+
+  function stop() {
+    if (!dragging) { return; }
+    dragging = false;
+    handle.removeAttribute("data-dragging");
+    root.removeAttribute("data-resizing");
+    keep();
+  }
+
+  handle.addEventListener("pointerdown", function (event) {
+    if (event.pointerType === "mouse" && event.button !== 0) { return; }
+    event.preventDefault();
+    var box = handle.getBoundingClientRect();
+    grab = event.clientX - (box.left + box.width / 2);
+    dragging = true;
+    handle.setAttribute("data-dragging", "true");
+    root.setAttribute("data-resizing", "true");
+    try { handle.setPointerCapture(event.pointerId); } catch (e) { /* the move events still arrive */ }
+    handle.focus();
+  });
+  handle.addEventListener("pointermove", function (event) {
+    if (!dragging) { return; }
+    var frame = panels.getBoundingClientRect();
+    setWidth(event.clientX - grab - frame.left - PAD - GAP / 2, false);
+  });
+  handle.addEventListener("pointerup", stop);
+  handle.addEventListener("pointercancel", stop);
+  handle.addEventListener("lostpointercapture", stop);
+  handle.addEventListener("dblclick", reset);
+  handle.addEventListener("keydown", function (event) {
+    var step = event.shiftKey ? BIG_STEP : STEP;
+    var now = Math.round(month.getBoundingClientRect().width);
+    if (event.key === "ArrowLeft") { setWidth(now - step, true); }
+    else if (event.key === "ArrowRight") { setWidth(now + step, true); }
+    else if (event.key === "Home") { setWidth(limits().min, true); }
+    else if (event.key === "End") { setWidth(limits().max, true); }
+    else if (event.key === "Enter") { reset(); }
+    else { return; }
+    event.preventDefault();
+  });
+
+  if (typeof ResizeObserver === "function") { new ResizeObserver(place).observe(panels); }
+  window.addEventListener("resize", place);
+  if (wide.addEventListener) { wide.addEventListener("change", place); }
+  place();
 })();
 </script>
 

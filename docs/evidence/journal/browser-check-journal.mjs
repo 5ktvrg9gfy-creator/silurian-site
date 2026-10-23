@@ -345,6 +345,7 @@ const keyMove = async (page, row, word) => { await page.keyboard.press('Tab'); a
   eq('and says it is open', await page.getAttribute('#moved-toggle-today', 'aria-expanded'), 'true');
   eq('and a copy is at the bottom of Tomorrow', await texts(page, 'tomorrow'), ['Chase the invoice']);
   eq('the message says what happened and offers Undo', [await page.textContent('#flash-text'), await page.textContent('#flash-action')], ['Moved to Tomorrow.', 'Undo']);
+  await page.mouse.move(2, 2);   // a hovered row on a Peel goes to ink, so measure it at rest
   const grey = await movedRow.evaluate((li) => { const t = getComputedStyle(li.querySelector('.entry-text')); return { colour: t.color, opacity: getComputedStyle(li).opacity, strike: t.textDecorationLine }; });
   check('greyed by colour, never by opacity, and not struck', grey.opacity === '1' && grey.strike === 'none' && grey.colour !== 'rgb(47, 45, 43)', JSON.stringify(grey));
   check('a moved entry has no move controls and cannot be edited', (await movedRow.locator('.more, .entry-actions, [contenteditable]').count()) === 0);
@@ -471,7 +472,7 @@ const keyMove = async (page, row, word) => { await page.keyboard.press('Tab'); a
   await page.mouse.move(tomorrowBox.x + 60, tomorrowBox.y + 200, { steps: 8 });
   await page.mouse.move(tomorrowBox.x + 63, tomorrowBox.y + 202, { steps: 2 });
   await sleep(300);
-  eq('over Tomorrow, the panel takes the selected fill and no other panel does', [await fill('#panel-tomorrow'), await page.locator('[data-drop]').count()], [selectedFill, 1]);
+  eq('over Tomorrow, the panel takes the selected fill and no other panel does', [await fill('#panel-tomorrow'), await page.locator('[data-drop]').count()], ['rgb(185, 217, 179)', 1]);   // Tomorrow is the green Peel, whose selected fill is Spud Notes' green fold colour
   const todayBox = await box('#panel-today');
   await page.mouse.move(todayBox.x + 60, todayBox.y + 300, { steps: 8 });
   await page.mouse.move(todayBox.x + 63, todayBox.y + 302, { steps: 2 });
@@ -1205,6 +1206,178 @@ async function showcase() {
     check(`alone: the ${panel} panel draws with the other four taken off the page`, (await page.locator('.panel').count()) === 1 && (await drawn(page)) && page.errors.length === 0, page.errors.join(' | '));
     await context.close();
   }
+}
+
+/* =====================================================================
+   18. The Peels: Today yellow, Tomorrow green, Migrate pink, in both themes
+   ===================================================================== */
+const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+const PEELS = { today: ['#fcf0b8', '#f6e294', '#ecd47a', '#fef9e3'], tomorrow: ['#e0f0dc', '#cde6c8', '#b9d9b3', '#f3f9f1'], migrate: ['#fbe0e7', '#f5ccd8', '#ecb6c6', '#fdf3f5'] };
+const PLAIN = { light: ['#f1ede7'], dark: ['#1f1d1c'] };
+// In the page: the contrast of a colour on the fill a given element really sits on.
+const inPage = () => {
+  const lum = (c) => { const [r, g, b] = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  const fillOf = (el) => { for (let n = el; n; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') return c; } return 'rgb(255, 255, 255)'; };
+  return { ratio, fillOf };
+};
+{
+  await showcase();
+  let observations = 0;
+  for (const scheme of ['light', 'dark']) {
+    const { context, page } = await open({ width: 1280, height: 800 }, { colorScheme: scheme });
+    await signIn(page);
+    await page.evaluate((src) => { window.__h = (new Function('return (' + src + ')()'))(); }, inPage.toString());
+    for (const [panel, [body, hover, selected, field]] of Object.entries(PEELS)) {
+      const bg = await page.evaluate((id) => getComputedStyle(document.getElementById('panel-' + id)).backgroundColor, panel);
+      eq(`${scheme}: ${panel} is the Peel fill`, bg, rgb(body));
+      // Every text, icon and mark that sits on the fill, measured as drawn.
+      const measured = await page.evaluate((id) => {
+        const h = window.__h; const panelEl = document.getElementById('panel-' + id);
+        const pick = (sel) => [...panelEl.querySelectorAll(sel)].filter((e) => e.offsetParent !== null);
+        const out = [];
+        for (const [label, sel, floor] of [['title', '.panel-title', 4.5], ['date', '.panel-date', 4.5], ['entry text', '.entry-text', 4.5], ['bullet', 'span.bullet, button.bullet', 3], ['bin', '.entry-delete', 3], ['moved line', '.moved-toggle', 4.5], ['add line', '.editor-line', 4.5], ['type button', '.type-button', 3], ['strip heading', '.strip-head', 4.5], ['strip text', '.strip-text', 4.5]]) {
+          for (const el of pick(sel)) { const cs = getComputedStyle(el); out.push({ label, floor, ratio: h.ratio(cs.color, h.fillOf(el)) }); }
+        }
+        return out;
+      }, panel);
+      observations += measured.length;
+      const bad = measured.filter((m) => m.ratio < m.floor);
+      check(`${scheme}: ${panel}: ${measured.length} text and icon colours measured on the Peel, none under their floor`, measured.length >= 8 && bad.length === 0, JSON.stringify(bad.slice(0, 3)));
+      // The empty-state box and a muted entry (done) are measured where they exist.
+    }
+    for (const plain of ['month', 'quick']) {
+      const bg = await page.evaluate((id) => getComputedStyle(document.getElementById('panel-' + id)).backgroundColor, plain);
+      eq(`${scheme}: ${plain} keeps the page panel colour`, bg, rgb(PLAIN[scheme][0]));
+    }
+    // Hover, a drop target and focus, on Today.
+    const row = page.locator('#list-today li.entry').first();
+    await row.hover();
+    eq(`${scheme}: a hovered row on Today takes the Peel's hover fill`, await row.evaluate((el) => getComputedStyle(el).backgroundColor), rgb(PEELS.today[1]));
+    const muted = page.locator('#list-today li.entry[data-state="done"]').first();
+    await muted.hover();
+    check(`${scheme}: a greyed entry on Today stays 4.5:1 while hovered`, await muted.evaluate((el, src) => { const h = (new Function('return (' + src + ')()'))(); const t = el.querySelector('.entry-text'); return h.ratio(getComputedStyle(t).color, getComputedStyle(el).backgroundColor) >= 4.5; }, inPage.toString()));
+    for (const [panel, [, , selected]] of Object.entries(PEELS)) {
+      await page.evaluate((id) => document.getElementById('panel-' + id).setAttribute('data-drop', 'true'), panel);
+      const drop = await page.evaluate((id) => { const el = document.getElementById('panel-' + id); const h = window.__h; const out = [getComputedStyle(el).backgroundColor]; for (const sel of ['.panel-date', '.panel-title', '.entry-text', '.entry-delete', '.moved-toggle']) for (const n of el.querySelectorAll(sel)) if (n.offsetParent !== null) out.push(h.ratio(getComputedStyle(n).color, getComputedStyle(el).backgroundColor) >= (sel === '.entry-delete' ? 3 : 4.5)); return out; }, panel);
+      check(`${scheme}: ${panel} as a drop target takes its selected fill, and every text on it holds its floor`, drop[0] === rgb(selected) && drop.slice(1).every(Boolean) && drop.length > 3, JSON.stringify(drop));
+      await page.evaluate((id) => document.getElementById('panel-' + id).removeAttribute('data-drop'), panel);
+    }
+    // The field: lighter than the Peel, with a darker edge.
+    const field = await page.evaluate(() => { const el = document.querySelector('#addbar-today .editor-line'); const cs = getComputedStyle(el); return [cs.backgroundColor, cs.borderTopColor]; });
+    eq(`${scheme}: the add line on Today is the Peel's field fill with the icon colour as its edge`, field, [rgb(PEELS.today[3]), rgb('#4a4744')]);
+    // Focus: ink on a Peel, accent on Quick notes.
+    await page.locator('#addbar-today .editor-line').focus();
+    await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+    eq(`${scheme}: a focused control on a Peel has a 2px ink outline`, await page.evaluate(() => { const cs = getComputedStyle(document.activeElement); return [cs.outlineWidth, cs.outlineColor]; }), ['2px', rgb('#1a1918')]);
+    await page.locator('#quick-editor').focus();
+    await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+    eq(`${scheme}: a focused control in Quick notes keeps the accent outline`, await page.evaluate(() => { const cs = getComputedStyle(document.activeElement); return [cs.outlineWidth, cs.outlineColor]; }), ['2px', rgb('#ec6917')]);
+    await shot(page, `peels-${scheme}`);
+    check(`${scheme}: no page errors`, page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+  check(`peels: ${observations} colours were measured in all, so the check saw something`, observations > 100, String(observations));
+  // A phone shows one panel at a time and it is still a Peel.
+  const { context, page } = await open({ width: 390, height: 800 }, { colorScheme: 'dark', hasTouch: true, isMobile: true });
+  await signIn(page);
+  eq('phone, dark: Today is the yellow Peel', await page.evaluate(() => getComputedStyle(document.getElementById('panel-today')).backgroundColor), rgb('#fcf0b8'));
+  await context.close();
+}
+
+/* =====================================================================
+   19. Month's resize handle
+   ===================================================================== */
+{
+  await showcase();
+  const widths = (page) => page.evaluate(() => Object.fromEntries(['month', 'today', 'tomorrow', 'migrate', 'quick'].map((k) => [k, Math.round(document.getElementById('panel-' + k).getBoundingClientRect().width)])));
+  const stash = (page) => page.evaluate(() => { try { return localStorage.getItem('silurian-journal-month-width'); } catch { return 'blocked'; } });
+  const handleBox = async (page) => { const b = await page.locator('#month-handle').boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2, w: b.width }; };
+  const { context, page } = await open({ width: 1280, height: 800 });
+  await signIn(page);
+  const first = await widths(page);
+  check('handle: shown at 1280 with its role, name and values', await page.evaluate(() => { const h = document.getElementById('month-handle'); return h.offsetParent !== null && h.getAttribute('role') === 'separator' && h.getAttribute('aria-label') === 'Resize Month' && h.getAttribute('aria-orientation') === 'vertical' && h.getAttribute('aria-valuemin') === '240' && h.getAttribute('aria-valuemax') === '616'; }));
+  eq('handle: at rest the three columns are equal thirds and nothing is stored', [Math.abs(first.month - first.today) <= 1, Math.abs(first.today - first.migrate) <= 1, await stash(page)], [true, true, null]);
+  // The handle sits in the gap at Month's right edge.
+  const gap = await page.evaluate(() => { const m = document.getElementById('panel-month').getBoundingClientRect(); const h = document.getElementById('month-handle').getBoundingClientRect(); return Math.abs((h.left + h.width / 2) - (m.right + 6)); });
+  check('handle: sits on Month right edge, in the gap', gap <= 1, String(gap));
+  // Drag with a mouse.
+  let h = await handleBox(page);
+  await page.mouse.move(h.x, h.y); await page.mouse.down();
+  eq('drag: the page says it is resizing and the handle says it is dragging', await page.evaluate(() => [document.documentElement.getAttribute('data-resizing'), document.getElementById('month-handle').getAttribute('data-dragging')]), ['true', 'true']);
+  await page.mouse.move(h.x + 60, h.y); await page.mouse.move(h.x + 120, h.y);
+  const during = await widths(page);
+  eq('drag: nothing is stored while the pointer moves', await stash(page), null);
+  await page.mouse.up();
+  const after = await widths(page);
+  check('drag: Month is 120px wider and the middle and right columns share the rest equally', Math.abs(after.month - (first.month + 120)) <= 2 && Math.abs(after.today - after.migrate) <= 1 && Math.abs(during.month - after.month) <= 1, JSON.stringify(after));
+  eq('drag: letting go stores the width and clears the dragging marks', [await stash(page), await page.evaluate(() => [document.documentElement.getAttribute('data-resizing'), document.getElementById('month-handle').getAttribute('data-dragging')])], [String(after.month), [null, null]]);
+  check('drag: the handle followed Month', Math.abs((await handleBox(page)).x - (await page.evaluate(() => document.getElementById('panel-month').getBoundingClientRect().right + 6))) <= 1);
+  await shot(page, 'handle-dragged');
+  // Reload keeps it.
+  await page.reload(); await page.waitForSelector('#app:not([hidden])'); await sleep(300);
+  check('reload: the width is remembered on this device', Math.abs((await widths(page)).month - after.month) <= 1);
+  // Limits.
+  h = await handleBox(page);
+  await page.mouse.move(h.x, h.y); await page.mouse.down(); await page.mouse.move(5, h.y, { steps: 5 }); await page.mouse.up();
+  eq('limit: dragged to the far left Month stops at 240px', (await widths(page)).month, 240);
+  h = await handleBox(page);
+  await page.mouse.move(h.x, h.y); await page.mouse.down(); await page.mouse.move(1270, h.y, { steps: 5 }); await page.mouse.up();
+  const far = await widths(page);
+  check('limit: dragged to the far right Month stops at 616px and the others keep 280px or more', far.month === 616 && far.today >= 280 && far.migrate >= 280, JSON.stringify(far));
+  // Keyboard.
+  await page.locator('#month-handle').focus();
+  eq('keyboard: the handle takes focus', await page.evaluate(() => document.activeElement.id), 'month-handle');
+  await shot(page, 'handle-focused');
+  await page.keyboard.press('Home');
+  eq('keyboard: Home goes to the minimum', [(await widths(page)).month, await page.getAttribute('#month-handle', 'aria-valuenow')], [240, '240']);
+  await page.keyboard.press('ArrowRight');
+  eq('keyboard: Right arrow adds 16px', (await widths(page)).month, 256);
+  await page.keyboard.press('Shift+ArrowRight');
+  eq('keyboard: Shift and Right arrow adds 64px', (await widths(page)).month, 320);
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.press('Shift+ArrowLeft');
+  eq('keyboard: Left arrow takes 16px and Shift and Left arrow takes 64px', (await widths(page)).month, 240);
+  await page.keyboard.press('End');
+  eq('keyboard: End goes to the maximum', (await widths(page)).month, 616);
+  eq('keyboard: every step is stored', await stash(page), '616');
+  await page.keyboard.press('Enter');
+  const reset = await widths(page);
+  eq('keyboard: Enter resets to the default and forgets the stored width', [Math.abs(reset.month - first.month) <= 1, await stash(page)], [true, null]);
+  await page.keyboard.press('ArrowRight');
+  await page.locator('#month-handle').dblclick();
+  eq('double click: resets to the default', [Math.abs((await widths(page)).month - first.month) <= 1, await stash(page)], [true, null]);
+  check('handle: the focus outline is 2px ink on the page', await page.evaluate(() => { document.getElementById('month-handle').focus(); const cs = getComputedStyle(document.getElementById('month-handle')); return cs.outlineWidth; }) === '2px');
+  // Trimmed, not rewritten, when the window is too small.
+  await page.keyboard.press('End');
+  await page.setViewportSize({ width: 1000, height: 700 }); await sleep(300);
+  const squeezed = await widths(page);
+  check('window shrinks: a stored 616px is trimmed to 392px on screen, the others keep 280px or more', squeezed.month === 392 && squeezed.today >= 280, JSON.stringify(squeezed));
+  eq('window shrinks: storage still holds 616', await stash(page), '616');
+  await page.setViewportSize({ width: 1280, height: 800 }); await sleep(300);
+  eq('window grows again: the choice comes back', (await widths(page)).month, 616);
+  // Below 1000px there is no handle and the layout is the old one.
+  await page.setViewportSize({ width: 999, height: 700 }); await sleep(300);
+  check('999px: no handle, Month is the sticky column as before', await page.evaluate(() => getComputedStyle(document.getElementById('month-handle')).display === 'none' && getComputedStyle(document.getElementById('panel-month')).position === 'sticky'));
+  await page.setViewportSize({ width: 390, height: 800 }); await sleep(300);
+  check('390px: no handle', await page.evaluate(() => getComputedStyle(document.getElementById('month-handle')).display === 'none'));
+  check('handle: no page errors', page.errors.length === 0, page.errors.join(' | '));
+  await context.close();
+
+  // Dark theme look of the handle, and storage that is blocked.
+  const dark = await open({ width: 1280, height: 800 }, { colorScheme: 'dark' });
+  await dark.page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
+  await signIn(dark.page);
+  await dark.page.locator('#month-handle').focus();
+  await dark.page.keyboard.press('ArrowRight');
+  check('storage blocked: the handle still works and nothing throws', (await widths(dark.page)).month > first.month - 1 && dark.page.errors.length === 0, dark.page.errors.join(' | '));
+  await shot(dark.page, 'handle-dark');
+  await dark.context.close();
+
+  // A finger gets a 44px target.
+  const touch = await open({ width: 1280, height: 800 }, { hasTouch: true, isMobile: true });
+  await signIn(touch.page);
+  check('a coarse pointer: the handle is 44px wide', (await touch.page.evaluate(() => document.getElementById('month-handle').getBoundingClientRect().width)) === 44);
+  await touch.context.close();
 }
 
 /* The rest of the checks continue below. */

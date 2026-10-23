@@ -1,0 +1,50 @@
+base: the page tests are green before any break
+
+CAUGHT colours: the dark theme gets a darker yellow  [page]
+         3 failed: test_the_journal_declares_the_notes_palette_and_only_the_twenty_one_peel_variables_more; test_the_peel_text_pairs_pass_on_every_peel_fill_in_both_themes; test_the_peel_values_are_spud_notes_own_and_the_same_in_every_theme
+CAUGHT colours: the dark theme gets lighter Peel muted text  [page]
+         3 failed: test_the_journal_declares_the_notes_palette_and_only_the_twenty_one_peel_variables_more; test_the_peel_text_pairs_pass_on_every_peel_fill_in_both_themes; test_the_peel_values_are_spud_notes_own_and_the_same_in_every_theme
+CAUGHT colours: a Peel stops setting its own text colour  [page, browser]
+         2 failed: test_each_peel_points_the_pages_variables_at_its_own_and_only_its_own; dark: today: 37 text and icon colours measured on the Peel, none under their floor  [{"label":"strip text","floor":4.5,"ratio":1.2526455852041845},{"label":"strip text","floor":4.5,"ratio":1.2526455852041845},{"label":"strip text","floor":4.5,"ratio":1.2526455852041845}]
+CAUGHT colours: the pink Peel's buttons stay on the page ground  [page, browser]
+         2 failed: test_each_peel_points_the_pages_variables_at_its_own_and_only_its_own; dark: migrate: 18 text and icon colours measured on the Peel, none under their floor  [{"label":"type button","floor":3,"ratio":1.6761157592580285},{"label":"type button","floor":3,"ratio":1.6761157592580285}]
+CAUGHT colours: Today is not a Peel  [page, browser]
+         12 failed: test_today_tomorrow_and_migrate_are_yellow_green_and_pink_and_month_and_quick_notes_are_not_peels; light: today is the Peel fill  got "rgb(241, 237, 231)" wanted "rgb(252, 240, 184)"; light: a hovered row on Today takes the Peel's hover fill  got "rgb(237, 232, 225)" wanted "rgb(246, 226, 148)" ...
+CAUGHT colours: Quick notes becomes a Peel  [page]
+         1 failed: test_today_tomorrow_and_migrate_are_yellow_green_and_pink_and_month_and_quick_notes_are_not_peels
+CAUGHT colours: a Peel keeps the accent focus outline  [page, browser]
+         4 failed: test_a_drop_target_peel_takes_its_own_selected_fill; test_a_peel_focus_outline_is_ink_and_a_field_has_a_darker_edge; light: a focused control on a Peel has a 2px ink outline  got ["2px","rgb(236, 105, 23)"] wanted ["2px","rgb(26, 25, 24)"] ...
+CAUGHT colours: muted stays muted on a hovered Peel row  [page, browser]
+         1 failed: test_muted_goes_to_ink_where_a_peel_is_hovered_or_dropped_on_and_the_bin_stays_quiet
+CAUGHT colours: muted stays muted on a Peel that is a drop target  [page]
+         1 failed: test_muted_goes_to_ink_where_a_peel_is_hovered_or_dropped_on_and_the_bin_stays_quiet
+CAUGHT colours: the bin goes red on a Peel that is a drop target  [page]
+         1 failed: test_muted_goes_to_ink_where_a_peel_is_hovered_or_dropped_on_and_the_bin_stays_quiet
+CAUGHT colours: a field on a Peel has the faint edge again  [page, browser]
+         3 failed: test_a_peel_focus_outline_is_ink_and_a_field_has_a_darker_edge; light: the add line on Today is the Peel's field fill with the icon colour as its edge  got ["rgb(254, 249, 227)","rgb(236, 212, 122)"] wanted ["rgb(254, 249, 227)","rgb(74, 71, 68)"]; dark: the add line on Today is the Peel's field fill with the icon colour as its edge  got ["rgb(254, 249, 227)","rgb(236, 212, 122)"] wanted ["rgb(254, 249, 227)","rgb(74, 71, 68)"]
+CAUGHT handle: it shows below 1000px  [page, browser]
+         3 failed: test_the_handle_and_the_column_rule_exist_at_1000px_and_up_only; 999px: no handle, Month is the sticky column as before; 390px: no handle
+CAUGHT handle: the maximum ignores the other two columns  [page, browser]
+         2 failed: test_the_limits_are_240px_and_never_less_than_280px_for_each_other_column; window shrinks: a stored 616px is trimmed to 392px on screen, the others keep 280px or more  {"month":476,"today":238,"tomorrow":238,"migrate":238,"quick":238}
+CAUGHT handle: the minimum is 200px  [page, browser]
+         7 failed: test_the_limits_are_240px_and_never_less_than_280px_for_each_other_column; handle: shown at 1280 with its role, name and values; limit: dragged to the far left Month stops at 240px  got 200 wanted 240 ...
+CAUGHT handle: a drag stores the width while it moves  [page, browser]
+         2 failed: test_a_drag_saves_when_the_pointer_is_let_go_and_not_while_it_moves; drag: nothing is stored while the pointer moves  got "531" wanted null
+CAUGHT handle: a reset keeps the stored width  [page, browser]
+         3 failed: test_the_keyboard_resizes_jumps_and_resets_and_a_double_click_resets; keyboard: Enter resets to the default and forgets the stored width  got [true,"616"] wanted [true,null]; double click: resets to the default  got [true,"427"] wanted [true,null]
+CAUGHT handle: trimming for a small window rewrites the stored width  [page, browser]
+         4 failed: test_the_width_is_kept_on_this_device_only_inside_try_and_catch_and_trimmed_not_rewritten; drag: nothing is stored while the pointer moves  got "531" wanted null; window shrinks: storage still holds 616  got "392" wanted "616" ...
+CAUGHT handle: Enter does not reset  [page, browser]
+         2 failed: test_the_keyboard_resizes_jumps_and_resets_and_a_double_click_resets; keyboard: Enter resets to the default and forgets the stored width  got [false,"616"] wanted [true,null]
+CAUGHT handle: a double click does not reset  [page, browser]
+         2 failed: test_the_keyboard_resizes_jumps_and_resets_and_a_double_click_resets; double click: resets to the default  got [false,"427"] wanted [true,null]
+CAUGHT handle: it has no name  [page]
+         1 failed: test_the_handle_is_a_focusable_vertical_separator_with_a_name_and_values
+CAUGHT handle: the middle and right columns are not equal  [page, browser]
+         3 failed: test_the_handle_and_the_column_rule_exist_at_1000px_and_up_only; drag: Month is 120px wider and the middle and right columns share the rest equally  {"month":531,"today":467,"tomorrow":467,"migrate":234,"quick":234}; limit: dragged to the far right Month stops at 616px and the others keep 280px or more  {"month":616,"today":411,"tomorrow":411,"migrate":205,"quick":205}
+CAUGHT handle: a finger gets 36px, not 44px  [page, browser]
+         2 failed: test_the_handle_is_44px_under_a_coarse_pointer; a coarse pointer: the handle is 44px wide
+CAUGHT handle: the arrow keys do nothing  [page, browser]
+         3 failed: test_the_keyboard_resizes_jumps_and_resets_and_a_double_click_resets; keyboard: Right arrow adds 16px  got 240 wanted 256; keyboard: Shift and Right arrow adds 64px  got 240 wanted 320
+
+23 of 23 deliberate breaks were caught
