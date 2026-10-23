@@ -189,19 +189,27 @@ after(async () => {
 });
 
 test("the adapter works with only what Vercel provides, and every request carries the identity token and store ID", async () => {
-  const store = createBlobStore(blob);
+  // An hour on, so that what a later save supersedes is old enough to be tidied away.
+  const store = createBlobStore(blob, { now: () => Date.now() + 60 * 60 * 1000 });
   const meta = { title: "Deploy script", updatedAt: "2026-10-18T09:00:00.000Z" };
   const text = new TextEncoder().encode("echo hello\r\n");
+  const id = "e".repeat(32);
 
-  await store.write("note-a", text, meta);
+  assert.deepEqual(await store.write(id, text, meta, null, "t:a"), { ok: true, updatedAt: meta.updatedAt });
   assert.equal((await store.list()).length, 1);
-  const read = await store.read("note-a");
+  const read = await store.read(id);
   assert.deepEqual([...read.bytes], [...text]);
   assert.equal(read.updatedAt, meta.updatedAt);
-  assert.equal(await store.stamp("note-a"), meta.updatedAt);
-  await store.remove("note-a");
-  assert.equal(await store.stamp("note-a"), null);
-  assert.deepEqual(await store.list(), []);
+  assert.equal(await store.stamp(id), meta.updatedAt);
+  const next = { title: "Deploy script", updatedAt: "2026-10-18T09:05:00.000Z" };
+  assert.equal((await store.write(id, text, next, meta.updatedAt, "t:b")).ok, true, "a second revision");
+  assert.equal(await store.readLabels(), null, "no label list yet, which is looked for under both names");
+  await store.list();
+  await store.remove(id, "2026-10-18T09:10:00.000Z");
+  assert.equal(await store.stamp(id), null);
+  const after = await store.list();
+  assert.equal(after.length, 0);
+  assert.deepEqual(after.gone, [id], "a removed note is not listed and is reported as gone");
 
   // Every kind of call the adapter makes went out, so none was skipped.
   const kinds = new Set(requests.map((r) => `${r.method} ${r.origin}`));

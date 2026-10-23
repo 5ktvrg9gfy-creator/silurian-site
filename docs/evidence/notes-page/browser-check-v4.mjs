@@ -10,6 +10,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { createNotesApi } from '../../../api/_lib/notes-api.js';
 import { ENVIRONMENT_VARIABLE } from '../../../api/_lib/gate.js';
+import { memoryStore } from '../../../notes-tests/helpers.js';
 
 const require = createRequire('/opt/node22/lib/node_modules/');
 const { chromium, devices } = require('playwright');
@@ -20,25 +21,9 @@ const SHOTS = process.env.SHOTS_DIR || ROOT + 'docs/evidence/notes-v4';
 mkdirSync(SHOTS, { recursive: true });
 const password = 'pw-' + randomBytes(12).toString('hex');
 
-const notes = new Map();
-const control = { failWrites: false, writeDelayMs: 0 };
-let labelsFile = null;
-const store = {
-  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true })); },
-  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
-  async text(id) { const n = notes.get(id); return n ? n.bytes : null; },
-  async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
-  async meta(id) { const n = notes.get(id); return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
-  async writeMeta(id, meta) { notes.get(id).meta = meta; },
-  async readLabels() { return labelsFile ? structuredClone(labelsFile) : null; },
-  async writeLabels(file) { labelsFile = structuredClone(file); },
-  async write(id, bytes, meta) {
-    if (control.writeDelayMs) await new Promise((r) => setTimeout(r, control.writeDelayMs));
-    if (control.failWrites) throw new Error('refused');
-    notes.set(id, { bytes: new Uint8Array(bytes), meta });
-  },
-  async remove(id) { notes.delete(id); },
-};
+// The shared in-memory store, which keeps the same promises as the Blob adapter.
+const store = memoryStore();
+const notes = store.notes;
 const api = createNotesApi({ store, env: { [ENVIRONMENT_VARIABLE]: password } });
 const routes = {
   '/api/login': { POST: api.login },
@@ -126,9 +111,9 @@ async function addNote(text, { labels = [], archived = false } = {}) {
   await sleep(12);
   return made.json.id;
 }
-const wipe = () => { notes.clear(); labelsFile = null; };
-const labelNames = () => (labelsFile ? labelsFile.labels.map((l) => l.name) : []);
-const idOf = (name) => labelsFile.labels.find((l) => l.name === name).id;
+const wipe = () => { notes.clear(); store.state.labelsFile = null; };
+const labelNames = () => (store.state.labelsFile ? store.state.labelsFile.labels.map((l) => l.name) : []);
+const idOf = (name) => store.state.labelsFile.labels.find((l) => l.name === name).id;
 const stored = (id) => notes.get(id).meta;
 
 let ids = {};
@@ -495,7 +480,7 @@ for (const width of [320, 1280]) for (const theme of ['light', 'dark']) await sh
   await page.click('#label-list .confirm-yes');
   await page.waitForFunction(() => ![...document.querySelectorAll('#label-list .label-name')].some((e) => e.textContent === 'Solo'));
   check('deleting a label removes it from the list only, the note and its text stay', !labelNames().includes('Solo') && Buffer.from(notes.get(soloNote).bytes).toString() === textBefore && stored(soloNote).labels.join() === solo);
-  const holdsTwo = labelsFile.labels.find((l) => [...notes.values()].filter((n) => n.meta.labels?.includes(l.id)).length === 2);
+  const holdsTwo = store.state.labelsFile.labels.find((l) => [...notes.values()].filter((n) => n.meta.labels?.includes(l.id)).length === 2);
   if (holdsTwo) {
     await page.locator('#label-list li', { hasText: holdsTwo.name }).locator('.label-delete').click();
     await page.waitForFunction((n) => document.querySelector('#label-list .confirm p')?.textContent === `Delete the label ${n}? It is on 2 notes. The notes stay.`, holdsTwo.name);

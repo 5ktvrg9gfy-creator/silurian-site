@@ -4,7 +4,7 @@
 // error message, because any of them can hold the password, the cookie or a
 // storage token.
 
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   FAILURE_DELAY_MS,
   configuredPassword,
@@ -203,11 +203,16 @@ export function createNotesApi({
     return [...new Set(value)];
   };
 
-  async function save(id, body, previous = null, held = { labels: [], archived: false }) {
-    const updatedAt = nextStamp(previous);
+  // What the same save says, so the same save sent again is recognised: the text.
+  const textPrint = (bytes) => `t:${createHash("sha256").update(bytes).digest("hex")}`;
+
+  // Saves text as a new revision on top of the version it started from (null for a
+  // new note). Answers the store's answer: { ok: true, updatedAt } or { ok: false,
+  // current } with nothing written.
+  async function save(id, body, base, held = { labels: [], archived: false }) {
+    const updatedAt = nextStamp(base);
     const labels = await knownLabelIds(held.labels);
-    await store.write(id, body.bytes, { title: titleOf(body.text), updatedAt, labels, archived: held.archived });
-    return updatedAt;
+    return store.write(id, body.bytes, { title: titleOf(body.text), updatedAt, labels, archived: held.archived }, base, textPrint(body.bytes));
   }
 
   async function readJson(request) {
@@ -258,6 +263,8 @@ export function createNotesApi({
         if (!["notes", "archive", "label", "all"].includes(view)) return fail(400, MESSAGES.badView);
         if (view === "label" && !ID_PATTERN.test(labelId || "")) return fail(400, MESSAGES.badView);
         const notes = await store.list();
+        // Ids of notes removed since, so a page still showing one can drop it.
+        const gone = notes.gone || [];
         notes.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
         const every = notes.map(asListed);
         if (search.query === null) {
@@ -269,7 +276,7 @@ export function createNotesApi({
             if (n.archived) return false;
             return view === "notes" || n.labels.includes(labelId);
           });
-          return reply(200, { notes: shown });
+          return reply(200, gone.length > 0 ? { notes: shown, gone } : { notes: shown });
         }
 
         // Search reads every note in full, archived or not and whatever list it
@@ -296,8 +303,8 @@ export function createNotesApi({
         const labels = starting ? cleanIds(starting.split(",")) : [];
         if (labels === null) return fail(400, MESSAGES.badChange);
         const id = newId();
-        const updatedAt = await save(id, body, null, { labels, archived: false });
-        return reply(201, { id, updatedAt });
+        const made = await save(id, body, null, { labels, archived: false });
+        return reply(201, { id, updatedAt: made.updatedAt });
       }),
     },
 
@@ -327,15 +334,24 @@ export function createNotesApi({
         // own text.
         const base = request.headers.get("x-base-updated");
         if (!base) return fail(400, MESSAGES.missingVersion);
-        const current = await store.meta(id);
+        const current = await store.meta(id, base);
         if (current === null) return fail(409, MESSAGES.deletedElsewhere);
         if (current.updatedAt !== base) {
+          // The same save sent again after its answer was lost has already happened.
+          const done = await store.repeat(id, base, textPrint(body.bytes));
+          if (done) return reply(200, { id, updatedAt: done.updatedAt });
           return reply(409, { error: MESSAGES.changedElsewhere, updatedAt: current.updatedAt });
         }
 
-        // The text changes; the labels and the archived flag stay as they are.
-        const updatedAt = await save(id, body, current.updatedAt, current);
-        return reply(200, { id, updatedAt });
+        // The text changes; the labels and the archived flag stay as they are. The
+        // new revision is made only if nobody has made it first.
+        const saved = await save(id, body, current.updatedAt, current);
+        if (!saved.ok) {
+          return saved.current === null
+            ? fail(409, MESSAGES.deletedElsewhere)
+            : reply(409, { error: MESSAGES.changedElsewhere, updatedAt: saved.current.updatedAt });
+        }
+        return reply(200, { id, updatedAt: saved.updatedAt });
       }),
 
       // Labels and the archived flag. The text file is not touched. The same
@@ -356,9 +372,16 @@ export function createNotesApi({
         if (!base) return fail(400, MESSAGES.missingVersion);
         // A label change needs the label list to drop ids that no longer exist,
         // and it does not depend on the note, so both are read together.
-        const [current, known] = await Promise.all([store.meta(id), wantsLabels ? labelsFile() : null]);
+        const [current, known] = await Promise.all([store.meta(id, base), wantsLabels ? labelsFile() : null]);
         if (current === null) return fail(409, MESSAGES.metaDeletedElsewhere);
+        const print = `m:${JSON.stringify([wantsLabels ? labels : null, wantsArchived ? change.archived : null])}`;
         if (current.updatedAt !== base) {
+          // The same change sent again after its answer was lost has already happened.
+          const done = await store.repeat(id, base, print);
+          if (done) {
+            const again = await store.meta(id);
+            return reply(200, { id, updatedAt: done.updatedAt, labels: again.labels, archived: again.archived });
+          }
           return reply(409, { error: MESSAGES.metaChangedElsewhere, updatedAt: current.updatedAt });
         }
 
@@ -370,14 +393,19 @@ export function createNotesApi({
         const nextLabels = await knownLabelIds(wantsLabels ? labels : current.labels, known);
         const archived = wantsArchived ? change.archived : current.archived;
         const updatedAt = nextStamp(current.updatedAt);
-        await store.writeMeta(id, { title, updatedAt, labels: nextLabels, archived });
-        return reply(200, { id, updatedAt, labels: nextLabels, archived });
+        const saved = await store.writeMeta(id, { title, updatedAt, labels: nextLabels, archived }, base, print);
+        if (!saved.ok) {
+          return saved.current === null
+            ? fail(409, MESSAGES.metaDeletedElsewhere)
+            : reply(409, { error: MESSAGES.metaChangedElsewhere, updatedAt: saved.current.updatedAt });
+        }
+        return reply(200, { id, updatedAt: saved.updatedAt, labels: nextLabels, archived });
       }),
 
       DELETE: guarded(async (request) => {
         const id = new URL(request.url).searchParams.get("id");
         if (!ID_PATTERN.test(id || "")) return fail(404, MESSAGES.notFound);
-        await store.remove(id);
+        await store.remove(id, new Date(now()).toISOString());
         return reply(200, { deleted: true });
       }),
     },
@@ -392,7 +420,7 @@ export function createNotesApi({
         const body = await readJson(request);
         const name = body === null ? null : cleanLabelName(body.name);
         if (name === null) return fail(400, MESSAGES.labelNameLength);
-        return changeLabels(request, (file) => {
+        return changeLabels(request, `c:${name}`, (file) => {
           if (file.labels.some((l) => sameName(l.name, name))) return { clash: name };
           const label = { id: newId(), name };
           return { labels: [...file.labels, label], created: label.id, status: 201 };
@@ -405,7 +433,7 @@ export function createNotesApi({
         const body = await readJson(request);
         const name = body === null ? null : cleanLabelName(body.name);
         if (name === null) return fail(400, MESSAGES.labelNameLength);
-        return changeLabels(request, (file) => {
+        return changeLabels(request, `r:${id}:${name}`, (file) => {
           if (!file.labels.some((l) => l.id === id)) return { missing: true };
           if (file.labels.some((l) => l.id !== id && sameName(l.name, name))) return { clash: name };
           return { labels: file.labels.map((l) => (l.id === id ? { id, name } : l)) };
@@ -417,7 +445,7 @@ export function createNotesApi({
       DELETE: guarded(async (request) => {
         const id = new URL(request.url).searchParams.get("id");
         if (!ID_PATTERN.test(id || "")) return fail(404, MESSAGES.labelNotFound);
-        return changeLabels(request, (file) => {
+        return changeLabels(request, `d:${id}`, (file) => {
           if (!file.labels.some((l) => l.id === id)) return { missing: true };
           return { labels: file.labels.filter((l) => l.id !== id) };
         });
@@ -425,18 +453,28 @@ export function createNotesApi({
     },
   };
 
-  async function changeLabels(request, change) {
+  // Every change to the label list says which version it started from and what it
+  // is (print). The new revision is made only if nobody has made it first, and the
+  // same change sent again after its answer was lost has already happened.
+  async function changeLabels(request, print, change) {
     const base = request.headers.get("x-base-labels");
     if (!base) return fail(400, MESSAGES.labelsMissingVersion);
     const file = await labelsFile();
+    const conflict = (current) => reply(409, { error: MESSAGES.labelsChanged, labels: current.labels, updatedAt: current.updatedAt });
+    const done = (made, status) => reply(status, { labels: made.labels, updatedAt: made.updatedAt, ...(made.created ? { id: made.created } : {}) });
     if (file.updatedAt !== base) {
-      return reply(409, { error: MESSAGES.labelsChanged, labels: file.labels, updatedAt: file.updatedAt });
+      const again = await store.labelsRepeat(base, print);
+      return again ? done(again, print.startsWith("c:") ? 201 : 200) : conflict(file);
     }
     const result = change(file);
     if (result.clash !== undefined) return reply(422, { error: labelClash(result.clash), code: "duplicate" });
     if (result.missing) return fail(404, MESSAGES.labelNotFound);
     const updatedAt = nextStamp(file.updatedAt === NO_LABELS_VERSION ? null : file.updatedAt);
-    await store.writeLabels({ labels: result.labels, updatedAt });
+    const saved = await store.writeLabels({ labels: result.labels, updatedAt }, base, print, result.created || null);
+    if (!saved.ok) {
+      const again = await store.labelsRepeat(base, print);
+      return again ? done(again, print.startsWith("c:") ? 201 : 200) : conflict(await labelsFile());
+    }
     return reply(result.status || 200, { labels: result.labels, updatedAt, ...(result.created ? { id: result.created } : {}) });
   }
 }

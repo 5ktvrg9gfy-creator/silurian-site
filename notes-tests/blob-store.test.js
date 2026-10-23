@@ -1,7 +1,8 @@
 // The Blob adapter, against an in-memory stand-in for the package. This proves
-// how the adapter uses the package (private, overwrite in place, text before
-// metadata, paging). It cannot prove the package or the store behave as the
-// stand-in does; that needs a real Preview with a store attached.
+// how the adapter uses the package (private, a new revision for every save and
+// never an overwrite, text before the small file, paging, tidying). It cannot prove
+// the package or the store behave as the stand-in does; that needs a real Preview
+// with a store attached. The 60 second stale store is notes-tests/revisions.test.js.
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -23,7 +24,7 @@ function fakeSdk({ pageSize = 2 } = {}) {
     BlobNotFoundError: FakeNotFound,
     async put(pathname, body, options) {
       calls.push({ op: "put", pathname, options });
-      if (files.has(pathname) && !options.allowOverwrite) throw new Error("exists");
+      if (files.has(pathname) && !options.allowOverwrite) throw new Error("This blob already exists, use `allowOverwrite: true` to overwrite it");
       // Like the real store, every write gives the blob a new etag.
       files.set(pathname, { bytes: Buffer.from(typeof body === "string" ? body : body), uploadedAt: new Date(NOW + tick++), etag: `etag-${version++}` });
       return { pathname };
@@ -68,24 +69,28 @@ function fakeSdk({ pageSize = 2 } = {}) {
 function wire() {
   const sdk = fakeSdk();
   const password = freshSecret("pw");
-  const api = createNotesApi({ store: createBlobStore(sdk), env: { [ENVIRONMENT_VARIABLE]: password }, now: () => NOW, sleep: async () => {} });
-  return { sdk, api, cookie: signedInCookie(password) };
+  const api = createNotesApi({ store: createBlobStore(sdk, { now: () => NOW + 5000 }), env: { [ENVIRONMENT_VARIABLE]: password }, now: () => NOW, sleep: async () => {} });
+  return { sdk, api, cookie: signedInCookie(password), password };
 }
 
 const request = (path, method, cookie, body) =>
   new Request(`https://notes.test${path}`, { method, headers: { cookie }, body });
 
-test("notes are written private, in place, text first and metadata second", async () => {
+test("a note is written private, as a new revision, text first and the small file second, and never overwritten", async () => {
   const { sdk, api, cookie } = wire();
   const { id } = await (await api.collection.POST(request("/api/notes", "POST", cookie, "Title\nbody"))).json();
   const puts = sdk.calls.filter((c) => c.op === "put");
-  assert.deepEqual(puts.map((c) => c.pathname), [`notes/${id}.txt`, `notes/${id}.json`]);
+  assert.equal(puts.length, 2);
+  assert.match(puts[0].pathname, new RegExp(`^notes/${id}\\.[0-9a-f]{12}\\.txt$`), "a text file named for this save alone");
+  assert.equal(puts[1].pathname, `notes/${id}.1.json`, "then revision 1 of the small file");
   for (const put of puts) {
     assert.equal(put.options.access, "private");
     assert.equal(put.options.addRandomSuffix, false);
-    assert.equal(put.options.allowOverwrite, true);
+    assert.equal(put.options.allowOverwrite, false, "no note file is ever overwritten");
   }
   assert.match(puts[0].options.contentType, /^text\/plain/);
+  const meta = JSON.parse(sdk.files.get(`notes/${id}.1.json`).bytes.toString());
+  assert.equal(`notes/${id}.${meta.text}.txt`, puts[0].pathname, "and the small file names that text file");
 });
 
 test("every read is private and bypasses the CDN cache so another device sees the latest save", async () => {
@@ -94,7 +99,7 @@ test("every read is private and bypasses the CDN cache so another device sees th
   await api.item.GET(request(`/api/note?id=${id}`, "GET", cookie));
   await api.collection.GET(request("/api/notes", "GET", cookie));
   const gets = sdk.calls.filter((c) => c.op === "get");
-  assert.ok(gets.length >= 3, `${gets.length} reads observed`);
+  assert.ok(gets.length >= 2, `${gets.length} reads observed`);
   for (const get of gets) {
     assert.equal(get.options.access, "private");
     assert.equal(get.options.useCache, false);
@@ -114,25 +119,29 @@ test("the list pages through every note and drops nothing at a page boundary", a
   assert.ok(listCalls.every((c) => c.prefix === "notes/"));
 });
 
-test("delete removes both files from storage and the note from the list", async () => {
+test("delete makes a removed revision, the note leaves the list, and the page is told it is gone", async () => {
   const { sdk, api, cookie } = wire();
   const { id } = await (await api.collection.POST(request("/api/notes", "POST", cookie, "to go"))).json();
   assert.equal(sdk.files.size, 2);
   const response = await api.item.DELETE(request(`/api/note?id=${id}`, "DELETE", cookie));
   assert.equal(response.status, 200);
-  assert.equal(sdk.files.size, 0, "nothing left in storage");
-  const { notes } = await (await api.collection.GET(request("/api/notes", "GET", cookie))).json();
-  assert.deepEqual(notes, []);
+  assert.ok(sdk.files.has(`notes/${id}.2.json`), "a revision that says the note is gone");
+  assert.equal(sdk.calls.filter((c) => c.op === "del").length, 0, "nothing deleted at once: the older revisions go when they are safely superseded");
+  const listed = await (await api.collection.GET(request("/api/notes?view=all", "GET", cookie))).json();
+  assert.deepEqual(listed.notes, []);
+  assert.deepEqual(listed.gone, [id]);
+  assert.equal((await api.item.GET(request(`/api/note?id=${id}`, "GET", cookie))).status, 404);
   // Deleting again is not an error.
   assert.equal((await api.item.DELETE(request(`/api/note?id=${id}`, "DELETE", cookie))).status, 200);
 });
 
-test("a note whose metadata is missing or damaged still lists, as Untitled", async () => {
+test("a note made before revisions, with no small file or a damaged one, still lists as Untitled and a save repairs it", async () => {
   const { sdk, api, cookie } = wire();
-  const a = (await (await api.collection.POST(request("/api/notes", "POST", cookie, "A"))).json()).id;
-  const b = (await (await api.collection.POST(request("/api/notes", "POST", cookie, "B"))).json()).id;
-  sdk.files.delete(`notes/${a}.json`);
-  sdk.files.get(`notes/${b}.json`).bytes = Buffer.from("{ not json");
+  const a = "a".repeat(32);
+  const b = "b".repeat(32);
+  await sdk.put(`notes/${a}.txt`, "A", { allowOverwrite: false });
+  await sdk.put(`notes/${b}.txt`, "B", { allowOverwrite: false });
+  await sdk.put(`notes/${b}.json`, "{ not json", { allowOverwrite: false });
   const { notes } = await (await api.collection.GET(request("/api/notes", "GET", cookie))).json();
   assert.deepEqual(notes.map((n) => n.title).sort(), ["Untitled", "Untitled"]);
   // Reading the text still works and a save repairs the title.
@@ -142,6 +151,15 @@ test("a note whose metadata is missing or damaged still lists, as Untitled", asy
   assert.equal(repaired.status, 200, "a note with no metadata can still be saved from the time it was opened");
   const after = (await (await api.collection.GET(request("/api/notes", "GET", cookie))).json()).notes;
   assert.ok(after.some((n) => n.id === a && n.title === "Repaired title"));
+  assert.ok(sdk.files.has(`notes/${a}.txt`), "the old text file is not overwritten or deleted at once");
+});
+
+test("a text file with no small file that is not an old note is a save that did not finish, and does not list", async () => {
+  const { sdk, api, cookie } = wire();
+  const id = "c".repeat(32);
+  await sdk.put(`notes/${id}.0123456789ab.txt`, "half a save", { allowOverwrite: false });
+  const { notes } = await (await api.collection.GET(request("/api/notes", "GET", cookie))).json();
+  assert.deepEqual(notes, []);
 });
 
 test("a storage failure answers 500 with a plain message and leaks nothing", async () => {
@@ -161,22 +179,25 @@ test("a storage failure answers 500 with a plain message and leaks nothing", asy
   }
 });
 
-test("the version check reads two small files and never the note text", async () => {
-  const { sdk, api, cookie } = wire();
-  const { id, updatedAt } = await (await api.collection.POST(request("/api/notes", "POST", cookie, "A".repeat(100_000)))).json();
+test("the version check reads the newest small file and never the note text", async () => {
+  const { sdk, api: first, cookie, password } = wire();
+  const { id, updatedAt } = await (await first.collection.POST(request("/api/notes", "POST", cookie, "A".repeat(100_000)))).json();
+  // Another instance, which has read nothing yet.
+  const api = createNotesApi({ store: createBlobStore(sdk, { now: () => NOW + 5000 }), env: { [ENVIRONMENT_VARIABLE]: password }, now: () => NOW, sleep: async () => {} });
   sdk.calls.length = 0;
   const response = await api.item.PUT(new Request(`https://notes.test/api/note?id=${id}`, { method: "PUT", headers: { cookie, "x-base-updated": updatedAt }, body: "B" }));
   assert.equal(response.status, 200);
   const before = sdk.calls.slice(0, sdk.calls.findIndex((c) => c.op === "put"));
-  assert.deepEqual(before.map((c) => c.pathname), [`notes/${id}.txt`, `notes/${id}.json`], "a head of the text, then the metadata");
+  assert.ok(before.some((c) => c.op === "get" && c.pathname === `notes/${id}.1.json`), "the newest small file");
   assert.ok(!before.some((c) => c.op === "get" && c.pathname.endsWith(".txt")), "the text was not downloaded to check the version");
 });
 
-test("a note with no text file is reported as gone even if its metadata lingers", async () => {
+test("a note that was deleted is not brought back by a save from a copy of it", async () => {
   const { sdk, api, cookie } = wire();
   const { id, updatedAt } = await (await api.collection.POST(request("/api/notes", "POST", cookie, "A"))).json();
-  sdk.files.delete(`notes/${id}.txt`);
+  await api.item.DELETE(request(`/api/note?id=${id}`, "DELETE", cookie));
+  const before = sdk.files.size;
   const response = await api.item.PUT(new Request(`https://notes.test/api/note?id=${id}`, { method: "PUT", headers: { cookie, "x-base-updated": updatedAt }, body: "B" }));
   assert.equal(response.status, 409);
-  assert.ok(!sdk.files.has(`notes/${id}.txt`), "the deleted note was not brought back");
+  assert.equal(sdk.files.size, before, "nothing was written");
 });

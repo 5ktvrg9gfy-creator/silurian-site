@@ -66,7 +66,14 @@ function wire(options) {
   const cookie = signedInCookie(password);
   const send = (handler, path, method = "GET", body, headers = {}) =>
     handler(new Request(`https://notes.test${path}`, { method, headers: { cookie, ...headers }, body }));
-  return { sdk, api, send, cookie };
+  const t = { sdk, api, send, cookie };
+  // Another instance over the same store, which has read and made nothing yet. The
+  // instance that made a revision knows it and does not read it back, so a test of
+  // what a list reads asks a different one.
+  t.reopen = () => {
+    t.api = createNotesApi({ store: createBlobStore(sdk), env: { [ENVIRONMENT_VARIABLE]: password }, now: () => (clock += 10), sleep: async () => {} });
+  };
+  return t;
 }
 
 const mark = (sdk) => sdk.calls.length;
@@ -79,7 +86,9 @@ async function seeded(n = 6) {
   for (let i = 0; i < n; i += 1) {
     ids.push((await (await t.send(t.api.collection.POST, "/api/notes", "POST", `Note ${i}\nbody ${i}`)).json()).id);
   }
-  return { ...t, ids };
+  t.ids = ids;
+  t.reopen();
+  return t;
 }
 const listOf = async (t) => (await (await t.send(t.api.collection.GET, "/api/notes?view=all")).json()).notes;
 
@@ -99,7 +108,7 @@ test("the first list of a store with no index reads each note once and makes the
   const from = mark(t.sdk);
   await listOf(t);
   const calls = since(t.sdk, from);
-  assert.equal(count(calls, "get"), 1 + 5, "the missing index, then the five metadata files");
+  assert.equal(count(calls, "get"), 1 + 5, "the missing index, then the five newest small files");
   assert.equal(count(calls, "put"), 1);
   assert.ok(t.sdk.files.has("notes-index.json"));
 });
@@ -110,11 +119,12 @@ test("after one note changes, the next list reads that note's metadata only and 
   const base = (await t.send(t.api.item.GET, `/api/note?id=${t.ids[2]}`)).headers.get("x-note-updated");
   const patched = await t.send(t.api.item.PATCH, `/api/note?id=${t.ids[2]}`, "PATCH", JSON.stringify({ archived: true }), { "x-base-updated": base });
   assert.equal(patched.status, 200);
+  t.reopen();
   const from = mark(t.sdk);
   const notes = await listOf(t);
   const calls = since(t.sdk, from);
   assert.equal(notes.find((n) => n.id === t.ids[2]).archived, true, "the change shows at once");
-  assert.equal(count(calls, "get"), 1 + 1, "the index and the one changed metadata file");
+  assert.equal(count(calls, "get"), 1 + 1, "the index and the one new small file");
   assert.equal(count(calls, "put"), 1);
   const again = since(t.sdk, mark(t.sdk));
   await listOf(t);
@@ -125,16 +135,16 @@ test("after one note changes, the next list reads that note's metadata only and 
 test("an index that is behind the store never shows a stale row", async () => {
   const t = await seeded(4);
   await listOf(t);
-  // Another instance wrote a note's metadata after this index was made.
-  const meta = JSON.parse(t.sdk.files.get(`notes/${t.ids[1]}.json`).bytes.toString());
-  await t.sdk.put(`notes/${t.ids[1]}.json`, JSON.stringify({ ...meta, title: "Changed elsewhere", labels: [], archived: true }), {});
+  // Another instance made a newer revision of a note's small file after this index was made.
+  const meta = JSON.parse(t.sdk.files.get(`notes/${t.ids[1]}.1.json`).bytes.toString());
+  await t.sdk.put(`notes/${t.ids[1]}.2.json`, JSON.stringify({ ...meta, title: "Changed elsewhere", labels: [], archived: true }), {});
   const notes = await listOf(t);
   const row = notes.find((n) => n.id === t.ids[1]);
   assert.equal(row.title, "Changed elsewhere");
   assert.equal(row.archived, true);
 });
 
-test("a note deleted elsewhere leaves the list and the index", async () => {
+test("a note deleted elsewhere leaves the list, and the index records that it is gone", async () => {
   const t = await seeded(4);
   await listOf(t);
   await t.send(t.api.item.DELETE, `/api/note?id=${t.ids[0]}`, "DELETE");
@@ -142,11 +152,11 @@ test("a note deleted elsewhere leaves the list and the index", async () => {
   assert.equal(notes.length, 3);
   assert.ok(!notes.some((n) => n.id === t.ids[0]));
   const index = JSON.parse(t.sdk.files.get("notes-index.json").bytes.toString());
-  assert.ok(!(t.ids[0] in index.entries), "the index lost it too");
+  assert.equal(index.entries[t.ids[0]].deleted, true, "the index knows it as removed");
 });
 
 test("a damaged, empty or other-version index is ignored and replaced", async () => {
-  for (const bad of ["{ not json", "{}", JSON.stringify({ v: 99, entries: { x: { tag: "m:etag-0", title: "Wrong" } } }), "null", "[]"]) {
+  for (const bad of ["{ not json", "{}", JSON.stringify({ v: 99, entries: { x: { tag: "r1", title: "Wrong" } } }), "null", "[]"]) {
     const t = await seeded(3);
     await t.sdk.put("notes-index.json", bad, {});
     const notes = await listOf(t);
@@ -165,12 +175,23 @@ test("an index that cannot be written never fails a list", async () => {
   assert.deepEqual((await response.json()).notes.map((n) => n.id), [id]);
 });
 
-test("a note with no metadata file lists as before and its entry is replaced by a save", async () => {
+test("a note made before revisions, with no small file, lists as before and a save makes its first revision", async () => {
   const t = await seeded(2);
   await listOf(t);
-  t.sdk.files.delete(`notes/${t.ids[0]}.json`);
+  const id = t.ids[0];
+  const meta = JSON.parse(t.sdk.files.get(`notes/${id}.1.json`).bytes.toString());
+  const text = t.sdk.files.get(`notes/${id}.${meta.text}.txt`).bytes;
+  t.sdk.files.delete(`notes/${id}.1.json`);
+  t.sdk.files.delete(`notes/${id}.${meta.text}.txt`);
+  await t.sdk.put(`notes/${id}.txt`, text, {});
+  t.reopen();
   const notes = await listOf(t);
-  assert.equal(notes.find((n) => n.id === t.ids[0]).title, "Untitled");
+  assert.equal(notes.find((n) => n.id === id).title, "Untitled");
+  const version = (await t.send(t.api.item.GET, `/api/note?id=${id}`)).headers.get("x-note-updated");
+  const saved = await t.send(t.api.item.PUT, `/api/note?id=${id}`, "PUT", "Renamed\nbody", { "x-base-updated": version });
+  assert.equal(saved.status, 200);
+  assert.ok(t.sdk.files.has(`notes/${id}.1.json`), "revision 1, beside the old file, which is not overwritten");
+  assert.equal(Buffer.from(t.sdk.files.get(`notes/${id}.txt`).bytes).toString(), Buffer.from(text).toString());
 });
 
 test("a version check never looks at the index", async () => {
@@ -217,7 +238,7 @@ test("opening a note and changing its labels send their independent reads togeth
   const from = mark(t.sdk);
   const patched = await t.send(t.api.item.PATCH, `/api/note?id=${id}`, "PATCH", JSON.stringify({ labels: [label.id] }), { "x-base-updated": version });
   assert.equal(patched.status, 200);
-  assert.equal(t.sdk.flight.most, 3, "the text file check, the metadata and the label list are read together");
+  assert.equal(t.sdk.flight.most, 2, "the note's newest small file and the label list are looked up together");
   assert.equal(count(since(t.sdk, from), "put"), 1);
   assert.deepEqual((await patched.json()).labels, [label.id]);
 });

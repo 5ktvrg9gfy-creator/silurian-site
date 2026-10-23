@@ -12,6 +12,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { createNotesApi } from '../../../api/_lib/notes-api.js';
 import { ENVIRONMENT_VARIABLE } from '../../../api/_lib/gate.js';
+import { memoryStore } from '../../../notes-tests/helpers.js';
 
 const require = createRequire('/opt/node22/lib/node_modules/');
 const { chromium } = require('playwright');
@@ -25,22 +26,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------- the server: real handlers, in-memory store, controls ---------- */
 
-const notes = new Map();
-let labelsFile = null;
+// The shared in-memory store, which keeps the same promises as the Blob adapter.
+const store = memoryStore();
+const notes = store.notes;
 const control = { delay: {}, failMetaWrites: false };
 const requests = [];
-const store = {
-  async list() { return [...notes].map(([id, n]) => ({ id, title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true })); },
-  async read(id) { const n = notes.get(id); return n ? { bytes: n.bytes, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
-  async text(id) { const n = notes.get(id); return n ? n.bytes : null; },
-  async stamp(id) { const n = notes.get(id); return n ? n.meta.updatedAt : null; },
-  async meta(id) { const n = notes.get(id); return n ? { title: n.meta.title, updatedAt: n.meta.updatedAt, labels: n.meta.labels || [], archived: n.meta.archived === true } : null; },
-  async writeMeta(id, meta) { if (control.failMetaWrites) throw new Error('refused'); notes.get(id).meta = meta; },
-  async readLabels() { return labelsFile ? structuredClone(labelsFile) : null; },
-  async writeLabels(file) { labelsFile = structuredClone(file); },
-  async write(id, bytes, meta) { notes.set(id, { bytes: new Uint8Array(bytes), meta }); },
-  async remove(id) { notes.delete(id); },
-};
+{
+  const real = store.writeMeta;
+  store.writeMeta = async (...args) => { if (control.failMetaWrites) throw new Error('refused'); return real(...args); };
+}
 const api = createNotesApi({ store, env: { [ENVIRONMENT_VARIABLE]: password } });
 const routes = {
   '/api/login': { POST: api.login },
@@ -125,7 +119,7 @@ async function editElsewhere(id, text) {
 let L = {}; let ids = {};
 async function seed() {
   if (!cookie) await seedLogin();
-  notes.clear(); labelsFile = null;
+  notes.clear(); store.state.labelsFile = null;
   control.delay = {}; control.failMetaWrites = false;
   L = { Work: await addLabel('Work'), Home: await addLabel('Home'), Ideas: await addLabel('Ideas') };
   ids = {

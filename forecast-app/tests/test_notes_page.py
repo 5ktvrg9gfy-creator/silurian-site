@@ -468,7 +468,7 @@ class NotesPageSpeedKeepsMemoryOnly(unittest.TestCase):
         # Sign out and leaving the page both go through clearContent.
         self.assertIn("clearContent();", function_body(self.text, "signOut") + self.text[self.text.index('"pagehide"') : self.text.index('"pagehide"') + 200])
         body = function_body(self.text, "forgetMemory")
-        for fragment in ("mem = { all: null, opened: {} };", "inFlight = {};", "changesInFlight = 0;", "memoryGeneration += 1;"):
+        for fragment in ("mem = { all: null, opened: {}, gone: {} };", "inFlight = {};", "changesInFlight = 0;", "memoryGeneration += 1;"):
             self.assertIn(fragment, body)
 
     def test_nothing_is_written_to_the_device_but_the_theme_choice(self) -> None:
@@ -494,3 +494,35 @@ class NotesPageSpeedKeepsMemoryOnly(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NotesPageNeverDrawsAnOlderCopyOverANewerOne(unittest.TestCase):
+    """Notes save safety. A read of the list or of a note can be older than a save,
+    because the store can serve an old copy of an overwritten file for a minute, or
+    list a little behind. The page puts what it reads together with what it holds,
+    the newer version of each note wins, and nothing is dropped because a read lacks
+    it. These are the static halves; `browser-check-revisions.mjs` runs two devices."""
+
+    text = NOTES_PAGE.read_text(encoding="utf-8")
+
+    def test_the_list_from_the_server_is_put_together_with_the_rows_held(self) -> None:
+        load = function_body(self.text, "loadList")
+        self.assertIn("mem.all = mergeList(mem.all, data.notes, data.gone);", load)
+        self.assertNotIn("mem.all = data.notes", self.text, "never a replacement")
+        merge = function_body(self.text, "mergeList")
+        self.assertIn("n.updatedAt >= held.updatedAt", merge, "the newer version of each note wins")
+        self.assertNotIn(".splice(", merge)
+        self.assertIn("removed[n.id]", merge, "a row goes only for a note the server says is gone or this page deleted")
+        self.assertIn("mem.gone[id] = true;", function_body(self.text, "forget"), "a deleted note stays gone whatever an older list shows")
+        rows = re.search(r"var rows = query === \"\" \? rowsFrom\(([^,]+),", load)
+        self.assertEqual(rows.group(1), "changesInFlight === 0 ? mem.all : data.notes", "the rows drawn are the merged ones")
+
+    def test_no_older_copy_replaces_a_newer_one_in_memory_or_on_screen(self) -> None:
+        self.assertIn("if (held && held.updatedAt > item.updatedAt) { return; }", function_body(self.text, "remember"))
+        self.assertIn("mem.opened[id].version > entry.version", function_body(self.text, "rememberOpened"))
+        self.assertIn("if (loaded.version <= note.version) { return; }", function_body(self.text, "refreshOpened"), "only a newer version replaces what is on screen")
+        self.assertIn("var best = mem.opened[id];", function_body(self.text, "openNote"), "a note is opened from the newer of what arrived and what was held")
+
+    def test_the_page_still_sends_the_version_every_save_started_from(self) -> None:
+        self.assertIn('headers["X-Base-Updated"] = note.version;', function_body(self.text, "save"))
+        self.assertIn('"X-Base-Updated": note.version', function_body(self.text, "patchNote"))
