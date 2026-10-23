@@ -57,3 +57,9 @@ The product owner's Preview passed every step except one: with an entry focused 
 - **CLAUDE.md 9e corrected** where it still described the four buttons at the right of the row on hover.
 
 Preview step to retest: on a PC at 1280px or wider, press Tab until an entry in Today (or in a day opened from Month) has focus. Tomorrow, Migrate and Date should be on a line under the entry, with the entry text fully readable above them and the bin at the right of the text line.
+
+## Preview results (23 October 2026), reported by the product owner, not run by the build session
+
+- **Preview of `5073769`:** every step passed (light and dark Peels, drop highlight, handle by mouse and keyboard, no handle below 1000px) except that on keyboard focus the move buttons sat over the entry text.
+- **Preview of `4f923e8`:** passed. On Tab the move buttons sit on their own line under the entry in Today and in a day log, the text is readable and the bin is in place. All earlier steps still passed.
+- Approved to merge by the product owner on 23 October 2026. The merge is pinned to the reviewed head `4f923e8` plus this documentation commit only.
