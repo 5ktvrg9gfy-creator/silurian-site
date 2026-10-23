@@ -63,3 +63,7 @@ Preview step to retest: on a PC at 1280px or wider, press Tab until an entry in 
 - **Preview of `5073769`:** every step passed (light and dark Peels, drop highlight, handle by mouse and keyboard, no handle below 1000px) except that on keyboard focus the move buttons sat over the entry text.
 - **Preview of `4f923e8`:** passed. On Tab the move buttons sit on their own line under the entry in Today and in a day log, the text is readable and the bin is in place. All earlier steps still passed.
 - Approved to merge by the product owner on 23 October 2026. The merge is pinned to the reviewed head `4f923e8` plus this documentation commit only.
+
+## Production result (23 October 2026)
+
+The product owner ran the Production check against merge `de1cf99e72121d0cd7eadfd75965a27011e986ea` and all four steps passed: Peels in light and dark; Tab shows the move buttons under the entry, with the bin and Undo working; the handle resizes Month, keeps the width after a reload and resets on a double click; iPad portrait shows the Peels and no handle. Reported by the product owner, not run by the build session.
