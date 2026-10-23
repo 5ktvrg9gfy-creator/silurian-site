@@ -563,9 +563,9 @@
     .line-text { min-height: 44px; padding: 10px 4px; }
   }
 
-  /* The four moves. Under the text, opened by the More button, for a finger and
-     for a narrow panel. In a wide panel with a mouse they sit at the right of
-     the row while it is hovered or has focus, and take no room from the text. */
+  /* The four moves. On a line of their own under the text, opened by the More
+     button for a finger, and shown by keyboard focus for a mouse. They are never
+     laid over the text, at any width. */
   .entry-actions { display: none; flex-wrap: wrap; gap: 4px; padding: 0 4px 8px 36px; }
   .entry-actions button { flex: 1 1 96px; min-height: 36px; }
   .entry[data-open="true"] .entry-actions { display: flex; }
@@ -594,23 +594,6 @@
     html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }
     .entry[data-open="true"] .entry-actions { display: flex; }
   }
-  @container panel (min-width: 440px) {
-    @media (hover: hover) and (pointer: fine) {
-      .entry-actions {
-        position: absolute;
-        top: 4px;
-        right: 48px;
-        padding: 0;
-        background: var(--notes-hover);
-        display: none;
-      }
-      .entry-actions button { flex: none; min-height: 28px; padding: 0 12px; border-radius: 6px; font-size: var(--notes-size-13); }
-      html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }
-      .entry[data-open="true"] .entry-actions { display: flex; }
-      html[data-input="keyboard"] .entry:focus-within .entry-note { display: none; }
-    }
-  }
-
   /* Dragging an entry: the panel or the date line under the pointer takes the
      selected fill, and what is muted on it goes to the strong text. */
   .panel[data-drop="true"], .date-row[data-drop="true"] { background: var(--notes-selected); }

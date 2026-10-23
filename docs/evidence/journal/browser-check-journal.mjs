@@ -387,7 +387,7 @@ const keyMove = async (page, row, word) => { await page.keyboard.press('Tab'); a
   await context.close();
 }
 {
-  // a wide panel with a mouse: the four buttons sit at the right of the row on hover
+  // a wide panel with a mouse: no buttons on hover, and on keyboard focus they sit on a line of their own under the text
   reset();
   await seed(core.dayList(TODAY), 'Chase the invoice');
   const { context, page } = await open({ width: 1920, height: 1080 });
@@ -398,9 +398,9 @@ const keyMove = async (page, row, word) => { await page.keyboard.press('Tab'); a
   eq('hovering shows no move buttons: they would cover the text', await row.locator('.entry-actions').isVisible(), false);
   await page.keyboard.press('Tab');
   await row.locator('.entry-text').focus();
-  eq('keyboard focus shows the actions at the right, as text', [await row.locator('.entry-actions').isVisible(), await row.locator('.entry-actions button').allInnerTexts()], [true, ['Tomorrow', 'Migrate', 'Date']]);
-  const where = await row.evaluate((li) => { const a = li.querySelector('.entry-actions').getBoundingClientRect(); const t = li.querySelector('.entry-text').getBoundingClientRect(); const r = li.getBoundingClientRect(); return { rightEdge: Math.round(r.right - a.right), textMoved: Math.round(t.left) }; });
-  check('they sit at the right of the row, beside the bin and not over it, and the text does not move', where.rightEdge <= 56 && where.rightEdge >= 40 && where.textMoved > 0, JSON.stringify(where));
+  eq('keyboard focus shows the actions, as text', [await row.locator('.entry-actions').isVisible(), await row.locator('.entry-actions button').allInnerTexts()], [true, ['Tomorrow', 'Migrate', 'Date']]);
+  const where = await row.evaluate((li) => { const a = li.querySelector('.entry-actions').getBoundingClientRect(); const t = li.querySelector('.entry-text').getBoundingClientRect(); return { below: a.top >= t.bottom - 1, left: Math.round(a.left - li.getBoundingClientRect().left) }; });
+  check('they sit on a line of their own under the text, not over it', where.below === true, JSON.stringify(where));
   eq('the More button is out of the way for a mouse in a wide panel', await row.locator('.more').isVisible(), false);
   await shot(page, 'focus-1920-light');
   await row.locator('.entry-actions button', { hasText: 'Migrate' }).click();
@@ -1378,6 +1378,47 @@ const inPage = () => {
   await signIn(touch.page);
   check('a coarse pointer: the handle is 44px wide', (await touch.page.evaluate(() => document.getElementById('month-handle').getBoundingClientRect().width)) === 44);
   await touch.context.close();
+}
+
+/* =====================================================================
+   20. With an entry focused by Tab, the move buttons are on their own line
+   ===================================================================== */
+{
+  await showcase();
+  let seen = 0;
+  const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  for (const width of [1920, 1280, 1000]) {
+    const { context, page } = await open({ width, height: 800 });
+    await signIn(page);
+    for (const where of ['Today (a Peel)', 'Month day log']) {
+      if (where === 'Month day log') { await page.locator('.date-row[data-date="2026-10-26"] .date-open').click(); await page.waitForSelector('#list-day li.entry'); }
+      const list = where === 'Today (a Peel)' ? '#list-today' : '#list-day';
+      const row = page.locator(`${list} li.entry`).first();
+      await page.mouse.move(2, 2);
+      await page.keyboard.press('Tab');
+      await row.locator('.entry-text').focus();
+      await sleep(150);
+      const buttons = row.locator('.entry-actions button');
+      const count = await buttons.count();
+      const text = await row.locator('.entry-text').boundingBox();
+      const bin = await row.locator('.entry-delete').boundingBox();
+      let covered = 0; let beside = 0; let binCovered = 0; let shown = 0;
+      for (let i = 0; i < count; i++) {
+        const box = await buttons.nth(i).boundingBox();
+        if (!box) continue;
+        shown++;
+        if (overlap(box, text)) covered++;
+        if (box.y < text.y + text.height - 1) beside++;
+        if (bin && overlap(box, bin)) binCovered++;
+      }
+      seen += shown;
+      check(`${width}px, ${where}: the move buttons show under the focused entry (${where.startsWith('Today') ? 3 : 4}), none over its text or its bin`, shown === (where.startsWith('Today') ? 3 : 4) && covered === 0 && beside === 0 && binCovered === 0, JSON.stringify({ shown, covered, beside, binCovered }));
+      await shot(page, `keyboard-moves-${width}-${where.startsWith('Today') ? 'today' : 'day'}`);
+    }
+    check(`${width}px: no page errors`, page.errors.length === 0, page.errors.join(' | '));
+    await context.close();
+  }
+  check(`keyboard moves: ${seen} buttons were measured, so the check saw something`, seen === 21, String(seen));
 }
 
 /* The rest of the checks continue below. */

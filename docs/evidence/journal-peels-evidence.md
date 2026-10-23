@@ -45,3 +45,15 @@ Month handle, mouse:
 10. Below 1000px there is no handle.
 
 Keyboard: Tab until the line shows a dark outline. Left and Right change the width, Shift takes bigger steps, Home and End go to the limits, Enter resets.
+
+## Fix after the Preview of `5073769`: move buttons under the entry on keyboard focus (23 October 2026)
+
+The product owner's Preview passed every step except one: with an entry focused by Tab, the Tomorrow, Migrate and Date buttons sat over the entry text in a wide panel. Cause: a wide panel layout (a panel 440px or wider, with a mouse) laid the buttons over the right of the row. **That layout is removed.** On keyboard focus the buttons are on a line of their own directly under the entry at every width, the same layout touch uses. The bin does not move, mouse hover still shows no buttons, touch is unchanged.
+
+- **New check**, section 20 of `docs/evidence/journal/browser-check-journal.mjs`: Tab to an entry, then measure that no move button overlaps the entry text's box or the bin, and that every button starts below the text. On a Peel (Today) and in Month's day log (the 26th), at 1920, 1280 and 1000px: 21 buttons measured (3 on a Peel, 4 in a day log, six cases).
+- **It fails on `5073769`**: `keyboard-moves-before-the-fix.txt` is the full run on that code. At 1920px the Today buttons all covered the text (`covered: 3`) and so did all four in the day log; 313 of 318 passed. At 1280 and 1000px a Peel's panel is under 440px so it already stacked there. (Month's day log at 1280 and 1000px failed only my first expected count, 3 where a day log offers 4, which I corrected before the fix.)
+- **After the fix:** browser check 318 of 318 (308 before, 10 added: six placements, three page error checks, one count), lag check 23 of 23, Python 418 (one assertion in `test_a_mouse_drags_so_the_moves_are_not_offered_on_hover_and_they_show_on_keyboard_focus` now forbids any position, top or right on the move buttons' rules and the 440px container block), Node 233. One older browser check that asserted the overlay layout ("they sit at the right of the row") now asserts a line under the text. Screenshots: `shots/keyboard-moves-<1920|1280|1000>-<today|day>.png`.
+- **Not run:** a Preview of this fix, and a finger on an iPad (touch is unchanged).
+- **CLAUDE.md 9e corrected** where it still described the four buttons at the right of the row on hover.
+
+Preview step to retest: on a PC at 1280px or wider, press Tab until an entry in Today (or in a day opened from Month) has focus. Tomorrow, Migrate and Date should be on a line under the entry, with the entry text fully readable above them and the bin at the right of the text line.

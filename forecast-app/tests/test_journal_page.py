@@ -426,10 +426,15 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         fine = self.style.split("@media (hover: hover) and (pointer: fine) {", 1)[1]
         self.assertIn(".entry .more { display: none; }", fine.split("@container", 1)[0], "A mouse has no More button.")
         self.assertIn('html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }', self.style)
-        self.assertIn("@container panel (min-width: 440px) {", self.style)
-        container = self.style.split("@container panel (min-width: 440px) {", 1)[1]
-        self.assertIn("@media (hover: hover) and (pointer: fine) {", container)
-        self.assertIn("position: absolute;", container)
+        # Ruled again on 23 October 2026 after the Preview of the Peels: on keyboard focus the buttons are on a
+        # line of their own under the entry at every width, never laid over the text. There is no wide panel layout.
+        self.assertNotIn("@container panel (min-width: 440px)", self.style)
+        entry_actions = [(sel, body) for sel, body in re.findall(r"([^{}@]+)\{([^{}]*)\}", self.style) if ".entry-actions" in sel and "button" not in sel]
+        self.assertGreaterEqual(len(entry_actions), 3)
+        for selector, body in entry_actions:
+            self.assertNotIn("position:", body, f"{selector.strip()} lays the move buttons over something")
+            self.assertNotIn("right:", body)
+            self.assertNotIn("top:", body)
         self.assertIn("container: panel / inline-size;", self.style)
         # Only Tab marks the page as keyboard worked, so typing in an entry does not show them.
         self.assertIn('if (event.key === "Tab") { document.documentElement.setAttribute("data-input", "keyboard"); }', self.script)
