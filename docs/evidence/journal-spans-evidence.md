@@ -65,3 +65,7 @@ On the PC (Edge) at 1280px or wider, signed in:
 9. **Three overlapping spans** sit side by side 14px apart, and a fourth is a normal line with its range and no bar.
 10. **iPad (portrait and landscape).** There is no drag handle. A line with words has an "Until" button, 44px tall, always showing. Tap it, then a day: the span is made. Tap the words on the first day and clear them: the span goes with Undo.
 11. **Two devices.** Open the journal on the PC and the iPad. Change a span's words on the PC. On the iPad, still showing the old words, change them and press Enter: the iPad shows the plain message with Reload and keeps what you typed. Reload: it shows the PC's words, and there is still only one span.
+
+## Preview result (23 October 2026), reported by the product owner, not run by the build session
+
+The Preview of `64a77c2` passed every step: past days grey in light and dark; a span made by mouse drag with its words, end date, bar and foot; the words edited once; resize up and down; a span across the month end with "continued"; delete with Undo; an entry dragged onto a spanned date leaving the span untouched; Until on the iPad; and the two-device clash with the typed text kept. Q5 to Q10 defaults accepted. Approved to merge, pinned to the reviewed head `64a77c2` plus this documentation commit only.

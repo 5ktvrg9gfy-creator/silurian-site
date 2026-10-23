@@ -46,4 +46,4 @@ Branch `journal-spans`, 23 October 2026. Format: what it blocks, the recommended
 - Blocks: nothing. Recorded because the brief said to.
 - What was found: `--notes-muted` is already `#66615f` (4.12 was the old `#77716e`), the dark Month hover is `#302d2b` (4.81 against muted), there is no yellow theme and `--notes-text` does not exist (the page's `--notes-ink` is used). Every pair measured as drawn is at or over its floor, so no colour was changed. See `docs/evidence/journal/month-contrast-ratios.txt`.
 
-Waiting for an answer: 0 that block anything. 6 defaults (Q5 to Q10) to confirm.
+**Q5 to Q10: defaults accepted by the product owner, 23 October 2026**, after the Preview. Waiting for an answer: 0.
