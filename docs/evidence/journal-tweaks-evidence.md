@@ -58,3 +58,7 @@ Reported by the product owner, not run by the build session. Every step passed o
 5. Hover an entry: no move buttons. Tab to an entry: they appear and work with Enter.
 6. On the iPad: More and the buttons work as before, nothing drags, the bin deletes with Undo.
 7. If anything disappears, doubles or moves to the wrong place, do not retry. Note the time and report it.
+
+## Production result (23 October 2026)
+
+The product owner ran the Production check list above against merge `28a745cbb9d38b55f867caf8045595ced8b57d43` and every step passed. Reported by the product owner, not run by the build session.

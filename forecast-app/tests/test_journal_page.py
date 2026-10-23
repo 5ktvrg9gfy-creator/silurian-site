@@ -116,11 +116,25 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
 
     # ---- palette ----
 
-    def test_the_journal_declares_exactly_the_notes_palette_and_adds_none(self) -> None:
-        self.assertEqual(self.light, self.notes_light, "A light value or variable differs from the notes page.")
-        self.assertEqual(self.dark_media, self.notes_dark, "A dark value or variable differs from the notes page.")
-        self.assertEqual(self.dark_attribute, self.notes_dark_attribute)
+    PEEL_VARIABLES = (
+        "--notes-peel-yellow", "--notes-peel-yellow-hover", "--notes-peel-yellow-selected", "--notes-peel-yellow-field", "--notes-peel-yellow-line",
+        "--notes-peel-green", "--notes-peel-green-hover", "--notes-peel-green-selected", "--notes-peel-green-field", "--notes-peel-green-line",
+        "--notes-peel-pink", "--notes-peel-pink-hover", "--notes-peel-pink-selected", "--notes-peel-pink-field", "--notes-peel-pink-line",
+        "--notes-peel-ink", "--notes-peel-strong", "--notes-peel-muted", "--notes-peel-icon", "--notes-peel-bad", "--notes-peel-focus",
+    )
+
+    @classmethod
+    def without_peels(cls, values: dict) -> dict:
+        return {k: v for k, v in values.items() if k not in cls.PEEL_VARIABLES}
+
+    def test_the_journal_declares_the_notes_palette_and_only_the_twenty_one_peel_variables_more(self) -> None:
+        self.assertEqual(self.without_peels(self.light), self.notes_light, "A light value or variable differs from the notes page.")
+        self.assertEqual(self.without_peels(self.dark_media), self.notes_dark, "A dark value or variable differs from the notes page.")
+        self.assertEqual(self.without_peels(self.dark_attribute), self.notes_dark_attribute)
         self.assertEqual(self.dark_media, self.dark_attribute, "The two dark blocks differ.")
+        self.assertEqual(len(self.PEEL_VARIABLES), 21)
+        for block in (self.light, self.dark_media, self.dark_attribute):
+            self.assertEqual(sorted(k for k in block if k.startswith("--notes-peel-")), sorted(self.PEEL_VARIABLES))
         self.assertGreaterEqual(len([k for k in self.light if k.startswith("--")]), 24, "The light block was not read.")
 
     def test_raw_colours_only_inside_the_three_theme_blocks_and_the_two_theme_tags(self) -> None:
@@ -167,9 +181,12 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         self.assertIn("/tokens.css", chain, "The page no longer loads tokens.css, which carries the Archivo font face.")
         used = used_custom_properties(self.text)
         self.assertGreaterEqual(len(used), 15, "Too few var() reads were found.")
-        self.assertEqual(sorted(used - declared), [], "var() names nothing declares.")
-        self.assertEqual(sorted(name for name in used if not name.startswith("--notes-")), [])
-        self.assertEqual(sorted(used - set(self.light)), [], "Read but not declared in the light block.")
+        # One name is set by the page's own script, Month's width once it has been dragged.
+        set_by_script = set(re.findall(r'style\.setProperty\("(--[a-z-]+)"', self.text))
+        self.assertEqual(set_by_script, {"--month-width"})
+        self.assertEqual(sorted(used - declared - set_by_script), [], "var() names nothing declares.")
+        self.assertEqual(sorted(name for name in used if not name.startswith("--notes-") and name not in set_by_script), [])
+        self.assertEqual(sorted(used - set(self.light) - set_by_script), [], "Read but not declared in the light block.")
 
     # ---- contrast, from the declared values, for every pair the journal uses ----
 
@@ -247,7 +264,8 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         for border in borders:
             self.assertTrue(border in ("0", "none") or border.startswith("1px solid "), f"border: {border}")
         self.assertNotRegex(self.style, r"border-(?:top|right|bottom|left)?-?width")
-        self.assertEqual(set(re.findall(r"outline\s*:\s*([^;]+);", self.style)), {"2px solid var(--notes-accent)"})
+        # Two outlines: the accent everywhere, and ink on the Month handle (section 9e). A Peel changes only the colour.
+        self.assertEqual(set(re.findall(r"outline\s*:\s*([^;]+);", self.style)), {"2px solid var(--notes-accent)", "2px solid var(--notes-strong)"})
         self.assertEqual(set(re.findall(r"outline-offset:\s*([^;]+);", self.style)), {"2px"})
 
     # ---- icons ----
@@ -408,10 +426,15 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         fine = self.style.split("@media (hover: hover) and (pointer: fine) {", 1)[1]
         self.assertIn(".entry .more { display: none; }", fine.split("@container", 1)[0], "A mouse has no More button.")
         self.assertIn('html[data-input="keyboard"] .entry:focus-within .entry-actions { display: flex; }', self.style)
-        self.assertIn("@container panel (min-width: 440px) {", self.style)
-        container = self.style.split("@container panel (min-width: 440px) {", 1)[1]
-        self.assertIn("@media (hover: hover) and (pointer: fine) {", container)
-        self.assertIn("position: absolute;", container)
+        # Ruled again on 23 October 2026 after the Preview of the Peels: on keyboard focus the buttons are on a
+        # line of their own under the entry at every width, never laid over the text. There is no wide panel layout.
+        self.assertNotIn("@container panel (min-width: 440px)", self.style)
+        entry_actions = [(sel, body) for sel, body in re.findall(r"([^{}@]+)\{([^{}]*)\}", self.style) if ".entry-actions" in sel and "button" not in sel]
+        self.assertGreaterEqual(len(entry_actions), 3)
+        for selector, body in entry_actions:
+            self.assertNotIn("position:", body, f"{selector.strip()} lays the move buttons over something")
+            self.assertNotIn("right:", body)
+            self.assertNotIn("top:", body)
         self.assertIn("container: panel / inline-size;", self.style)
         # Only Tab marks the page as keyboard worked, so typing in an entry does not show them.
         self.assertIn('if (event.key === "Tab") { document.documentElement.setAttribute("data-input", "keyboard"); }', self.script)
@@ -443,7 +466,7 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         rules = re.findall(r"([^{}@]+)\{([^{}]*)\}", self.without_theme_blocks(self.style))
         for selector, body in rules:
             if "data-drop" in selector:
-                self.assertNotIn("--notes-muted", body, f"{selector.strip()} puts muted text on the selected fill.")
+                self.assertNotIn("var(--notes-muted)", body, f"{selector.strip()} puts muted text on the selected fill.")
 
     def test_each_entry_has_a_bin_that_deletes_at_once_with_an_undo(self) -> None:
         self.assertIn('make("button", "icon-button entry-delete")', self.script)
@@ -649,7 +672,7 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
         for api in ("sessionStorage", "indexedDB", "caches.", "serviceWorker", "document.cookie", "openDatabase", "navigator.storage"):
             self.assertNotIn(api, self.text, f"the page must not keep entries with {api}")
         stores = re.findall(r"localStorage\.(?:setItem|getItem|removeItem)\(([^,)]+)", self.text)
-        self.assertEqual(set(stores), {'"silurian-notes-theme"', "KEY", "TAB_KEY"}, "localStorage holds the theme and the last tab")
+        self.assertEqual(set(stores), {'"silurian-notes-theme"', "KEY", "TAB_KEY", "HANDLE_KEY"}, "localStorage holds the theme, the last tab and Month's width")
         self.assertIn('var TAB_KEY = "silurian-journal-tab";', self.script)
         for use in re.finditer(r"localStorage", self.script):
             before = self.script[: use.start()]
@@ -742,3 +765,235 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class JournalPeelsAndTheMonthHandle(unittest.TestCase):
+    """Section 9e, 23 October 2026: the three Peels and Month's resize handle."""
+
+    # Spud Notes, looks.PAPER_COLOURS (body, header, fold). Read from that repository, not invented.
+    SPUD = {"yellow": ("#fcf0b8", "#f6e294", "#ecd47a"), "green": ("#e0f0dc", "#cde6c8", "#b9d9b3"), "pink": ("#fbe0e7", "#f5ccd8", "#ecb6c6")}
+    FIELDS = {"yellow": "#fef9e3", "green": "#f3f9f1", "pink": "#fdf3f5"}
+    TEXT = {"--notes-peel-ink": "#2f2d2b", "--notes-peel-strong": "#1a1918", "--notes-peel-muted": "#66615f",
+            "--notes-peel-icon": "#4a4744", "--notes-peel-bad": "#a52a1f", "--notes-peel-focus": "#1a1918"}
+
+    def setUp(self) -> None:
+        self.page = JOURNAL_PAGE.read_text(encoding="utf-8")
+        self.text = without_comments(self.page)
+        self.style = self.text.split("<style>", 1)[1].split("</style>", 1)[0]
+        self.light = declarations(block_after(self.style, LIGHT_HEADER))
+        self.dark_media = declarations(block_after(self.style, DARK_MEDIA_HEADER))
+        self.dark_attribute = declarations(block_after(self.style, DARK_ATTRIBUTE_HEADER))
+        self.handle_script = self.text.split('<script id="month-handle-script">', 1)[1].split("</script>", 1)[0]
+
+    def rule(self, selector: str) -> str:
+        return block_after(self.style, "\n  " + selector + " {")
+
+    def themes(self):
+        return (("light", self.light), ("dark", self.dark_media), ("dark choice", self.dark_attribute))
+
+    # ---- the colours ----
+
+    def test_the_peel_values_are_spud_notes_own_and_the_same_in_every_theme(self) -> None:
+        for theme, values in self.themes():
+            for name, (body, header, fold) in self.SPUD.items():
+                self.assertEqual(values[f"--notes-peel-{name}"], body, f"{theme} {name} body")
+                self.assertEqual(values[f"--notes-peel-{name}-hover"], header, f"{theme} {name} hover is Spud's header colour")
+                self.assertEqual(values[f"--notes-peel-{name}-selected"], fold, f"{theme} {name} selected is Spud's fold colour")
+                self.assertEqual(values[f"--notes-peel-{name}-line"], fold, f"{theme} {name} line")
+                self.assertEqual(values[f"--notes-peel-{name}-field"], self.FIELDS[name], f"{theme} {name} field")
+            for name, value in self.TEXT.items():
+                self.assertEqual(values[name], value, f"{theme} {name}")
+        for key in (k for k in self.light if k.startswith("--notes-peel-")):
+            self.assertEqual({self.light[key], self.dark_media[key], self.dark_attribute[key]}, {self.light[key]}, f"{key} differs between themes: a Peel is paper in both")
+
+    def test_a_field_is_the_peel_mixed_sixty_percent_toward_white(self) -> None:
+        for name, (body, _, _) in self.SPUD.items():
+            mixed = "#" + "".join("%02x" % round(int(body[i : i + 2], 16) * 0.4 + 255 * 0.6) for i in (1, 3, 5))
+            self.assertEqual(mixed, self.FIELDS[name])
+
+    def test_the_peel_text_pairs_pass_on_every_peel_fill_in_both_themes(self) -> None:
+        checked = 0
+        for theme, values in self.themes():
+            for name in self.SPUD:
+                fills = {kind: values[f"--notes-peel-{name}{suffix}"] for kind, suffix in (("body", ""), ("hover", "-hover"), ("selected", "-selected"), ("field", "-field"))}
+                ink, strong, muted, icon, bad, focus = (values[k] for k in self.TEXT)
+                pairs = [
+                    ("ink", ink, "body", 4.5), ("ink", ink, "hover", 4.5), ("ink", ink, "selected", 4.5), ("ink", ink, "field", 4.5),
+                    ("strong", strong, "body", 4.5), ("strong", strong, "hover", 4.5), ("strong", strong, "selected", 4.5), ("strong", strong, "field", 4.5),
+                    ("muted", muted, "body", 4.5), ("muted", muted, "field", 4.5),
+                    ("icon", icon, "body", 3.0), ("icon", icon, "hover", 3.0), ("icon", icon, "selected", 3.0), ("icon", icon, "field", 3.0),
+                    ("bad", bad, "body", 4.5), ("bad", bad, "hover", 4.5), ("bad", bad, "field", 4.5),
+                    ("focus", focus, "body", 3.0), ("focus", focus, "hover", 3.0), ("focus", focus, "selected", 3.0), ("focus", focus, "field", 3.0),
+                ]
+                for label, colour, fill, floor in pairs:
+                    checked += 1
+                    ratio = contrast(colour, fills[fill])
+                    self.assertGreaterEqual(ratio, floor, f"{theme} {name}: {label} on {fill} is {ratio:.2f}:1, needs {floor}:1")
+        self.assertEqual(checked, 3 * 3 * 21)
+
+    def test_the_peel_contrast_check_can_fail_and_the_known_failures_are_still_failures(self) -> None:
+        light = self.light
+        for name in self.SPUD:
+            body = light[f"--notes-peel-{name}"]
+            # The dark theme's own text on a Peel, which is why a Peel has its own text colours.
+            for dark_text in ("--notes-ink", "--notes-strong", "--notes-icon"):
+                self.assertLess(contrast(self.dark_media[dark_text], body), 3.0, f"dark {dark_text} on {name}")
+            # The accent as a focus outline is under 3:1, which is why a Peel's outline is ink.
+            self.assertLess(contrast(light["--notes-accent"], body), 3.0, f"accent on {name}")
+            # Muted is under 4.5:1 once the fill is hovered or dropped on, which is why it goes to ink there.
+            self.assertLess(contrast(light["--notes-peel-muted"], light[f"--notes-peel-{name}-selected"]), 4.5)
+        self.assertLess(contrast(light["--notes-peel-muted"], light["--notes-peel-pink-hover"]), 4.5)
+        # Warn on pink is 4.40:1, which is why no Peel has a warn colour.
+        self.assertLess(contrast(light["--notes-warn"], light["--notes-peel-pink"]), 4.5)
+        # Bad on selected pink is 4.09:1, which is why the bin stays icon coloured on a Peel that is a drop target.
+        self.assertLess(contrast(light["--notes-peel-bad"], light["--notes-peel-pink-selected"]), 4.5)
+
+    # ---- where the colours are used ----
+
+    def test_today_tomorrow_and_migrate_are_yellow_green_and_pink_and_month_and_quick_notes_are_not_peels(self) -> None:
+        peels = dict(re.findall(r'<section class="panel" id="panel-(\w+)" data-panel="\w+" data-peel="(\w+)"', self.text))
+        self.assertEqual(peels, {"today": "yellow", "tomorrow": "green", "migrate": "pink"})
+        self.assertEqual(len(re.findall(r'<section[^>]*data-peel=', self.text)), 3, "Three panels are Peels and no other element is.")
+        for plain in ("month", "quick"):
+            section = re.search(r'<section class="panel" id="panel-%s"[^>]*>' % plain, self.text).group(0)
+            self.assertNotIn("data-peel", section)
+
+    def test_each_peel_points_the_pages_variables_at_its_own_and_only_its_own(self) -> None:
+        for name in self.SPUD:
+            body = declarations(self.rule('.panel[data-peel="%s"]' % name))
+            self.assertEqual(body, {
+                "--notes-panel": f"var(--notes-peel-{name})",
+                "--notes-hover": f"var(--notes-peel-{name}-hover)",
+                "--notes-selected": f"var(--notes-peel-{name}-selected)",
+                "--notes-field": f"var(--notes-peel-{name}-field)",
+                "--notes-ground": f"var(--notes-peel-{name}-field)",
+                "--notes-line": f"var(--notes-peel-{name}-line)",
+                "--notes-line-soft": f"var(--notes-peel-{name}-line)",
+            })
+        # Text with no colour of its own inherits the page's, which is light in the dark theme, so a Peel sets its own.
+        self.assertIn("color: var(--notes-peel-ink);", self.rule(".panel[data-peel]"))
+        shared = declarations(self.rule(".panel[data-peel]"))
+        self.assertEqual(shared, {"--notes-ink": "var(--notes-peel-ink)", "--notes-strong": "var(--notes-peel-strong)", "--notes-muted": "var(--notes-peel-muted)",
+                                  "--notes-icon": "var(--notes-peel-icon)", "--notes-bad": "var(--notes-peel-bad)"})
+
+    def test_the_peel_variables_are_read_only_by_the_peel_rules(self) -> None:
+        outside = self.text.replace(self.style, "")
+        self.assertNotIn("--notes-peel", outside)
+        for selector, body in re.findall(r"([^{}@]+)\{([^{}]*)\}", self.style):
+            if "var(--notes-peel-" in body:
+                self.assertIn("data-peel", selector, f"{selector.strip()} reads a Peel variable outside a Peel rule")
+
+    def test_a_peel_has_no_warn_colour_and_month_and_quick_notes_keep_the_page_palette(self) -> None:
+        for selector, body in re.findall(r"([^{}@]+)\{([^{}]*)\}", self.style):
+            if "data-peel" in selector:
+                self.assertNotIn("--notes-warn", body)
+                self.assertNotIn("--notes-good", body)
+        self.assertIn(".status[data-state=\"unsaved\"]::before { background: var(--notes-warn); }", self.style)
+        self.assertIn("#panel-quick", self.style)
+        for selector, body in re.findall(r"([^{}@]+)\{([^{}]*)\}", self.style):
+            if "month" in selector.lower() or "quick" in selector.lower():
+                self.assertNotIn("peel", body, f"{selector.strip()} uses a Peel colour")
+
+    def test_a_peel_focus_outline_is_ink_and_a_field_has_a_darker_edge(self) -> None:
+        self.assertIn(".panel[data-peel] :focus-visible { outline-color: var(--notes-peel-focus); }", self.style)
+        self.assertIn("border-color: var(--notes-icon); }", self.style)
+        for field in (".editor-line", ".empty", ".strip-group", ".date-pick"):
+            self.assertIn(".panel[data-peel] " + field, self.style)
+
+    def test_muted_goes_to_ink_where_a_peel_is_hovered_or_dropped_on_and_the_bin_stays_quiet(self) -> None:
+        hover = self.rule(".panel[data-peel] .entry:hover, .panel[data-peel] .moved-toggle:hover, .panel[data-peel] .pick-day:hover")
+        self.assertEqual(declarations(hover), {"--notes-muted": "var(--notes-ink)"})
+        self.assertEqual(declarations(self.rule('.panel[data-peel][data-drop="true"]')), {"--notes-muted": "var(--notes-ink)"})
+        self.assertIn('.panel[data-peel][data-drop="true"] .entry-delete { color: var(--notes-icon); }', self.style)
+
+    def test_a_drop_target_peel_takes_its_own_selected_fill(self) -> None:
+        # The drop rule reads --notes-selected on the panel itself, where a Peel has pointed it at its own selected fill.
+        self.assertIn('.panel[data-drop="true"], .date-row[data-drop="true"] { background: var(--notes-selected); }', self.style)
+        self.assertLess(self.style.index('.panel[data-peel="yellow"] {'), self.style.index('.panel[data-peel] :focus-visible'))
+        for name in self.SPUD:
+            self.assertIn(f"--notes-selected: var(--notes-peel-{name}-selected);", self.style)
+
+    # ---- the resize handle ----
+
+    def test_the_handle_is_a_focusable_vertical_separator_with_a_name_and_values(self) -> None:
+        tag = re.search(r'<div class="panel-handle"[^>]*>', self.text).group(0)
+        for part in ('id="month-handle"', 'role="separator"', 'aria-orientation="vertical"', 'aria-label="Resize Month"', 'tabindex="0"'):
+            self.assertIn(part, tag)
+        for attribute in ("aria-valuemin", "aria-valuemax", "aria-valuenow"):
+            self.assertIn(f'"{attribute}"', self.handle_script)
+
+    def test_the_handle_and_the_column_rule_exist_at_1000px_and_up_only(self) -> None:
+        self.assertIn(".panel-handle { display: none; }", self.style)
+        self.assertLess(self.style.index(".panel-handle { display: none; }"), self.style.index("@media (min-width: 1000px) {"), "the default is set first, so the wide rule can show it")
+        wide = self.style.split("@media (min-width: 1000px) {", 1)[1].split("\n  @media (min-width: 1000px) and (pointer: coarse)", 1)[0]
+        self.assertIn(".panel-handle { display: block;", wide)
+        self.assertIn(".panels[data-month-width] { grid-template-columns: var(--month-width) minmax(0, 1fr) minmax(0, 1fr); }", wide, "The other two columns share the rest equally.")
+        for narrower in ("@media (min-width: 761px) and (max-width: 999px) {", "@media (max-width: 760px) {"):
+            self.assertNotIn("panel-handle", self.style.split(narrower, 1)[1].split("\n  }\n", 1)[0])
+        self.assertIn('var wide = window.matchMedia("(min-width: 1000px)");', self.handle_script)
+
+    def test_the_limits_are_240px_and_never_less_than_280px_for_each_other_column(self) -> None:
+        for constant in ("var MIN = 240;", "var OTHER_MIN = 280;", "var STEP = 16;", "var BIG_STEP = 64;"):
+            self.assertIn(constant, self.handle_script)
+        self.assertIn("Math.min(Math.floor(available / 2), available - 2 * OTHER_MIN)", self.handle_script)
+        # The arithmetic, at 1000px: 952px for columns, so Month is 240px to 392px and the others are at least 280px.
+        available = 1000 - 24 - 24
+        maximum = min(available // 2, available - 2 * 280)
+        self.assertEqual(maximum, 392)
+        self.assertGreaterEqual((available - maximum) / 2, 280)
+
+    def test_the_width_is_kept_on_this_device_only_inside_try_and_catch_and_trimmed_not_rewritten(self) -> None:
+        self.assertIn('var HANDLE_KEY = "silurian-journal-month-width";', self.handle_script)
+        for use in re.finditer(r"localStorage", self.handle_script):
+            before = self.handle_script[: use.start()]
+            self.assertGreater(before.rfind("try {"), before.rfind("catch"), "storage is read and written inside try and catch")
+        for api in ("fetch(", "XMLHttpRequest", "sendBeacon", "document.cookie", "sessionStorage"):
+            self.assertNotIn(api, self.handle_script, "the width never leaves the device")
+        place = function_body(self.handle_script, "place")
+        self.assertIn("clamp(width)", place)
+        self.assertNotIn("keep()", place, "trimming for the window never rewrites what was stored")
+        self.assertNotIn("HANDLE_KEY", place)
+
+    def test_a_drag_saves_when_the_pointer_is_let_go_and_not_while_it_moves(self) -> None:
+        move = re.search(r'addEventListener\("pointermove", function \(event\) \{(.*?)\n  \}\);', self.handle_script, re.S).group(1)
+        self.assertIn("setWidth(", move)
+        self.assertIn(", false)", move)
+        self.assertNotIn("keep()", move)
+        self.assertIn("keep();", function_body(self.handle_script, "stop"))
+        for event in ("pointerup", "pointercancel", "lostpointercapture"):
+            self.assertIn(f'handle.addEventListener("{event}", stop);', self.handle_script)
+        self.assertIn("setPointerCapture", self.handle_script)
+        self.assertIn('root.setAttribute("data-resizing", "true")', self.handle_script)
+
+    def test_the_keyboard_resizes_jumps_and_resets_and_a_double_click_resets(self) -> None:
+        keys = self.handle_script.split('handle.addEventListener("keydown"', 1)[1]
+        for part in ('event.key === "ArrowLeft") { setWidth(now - step, true)', 'event.key === "ArrowRight") { setWidth(now + step, true)',
+                     'event.key === "Home") { setWidth(limits().min, true)', 'event.key === "End") { setWidth(limits().max, true)',
+                     'event.key === "Enter") { reset(); }', "event.shiftKey ? BIG_STEP : STEP"):
+            self.assertIn(part, keys)
+        self.assertIn('handle.addEventListener("dblclick", reset);', self.handle_script)
+        reset = function_body(self.handle_script, "reset")
+        self.assertIn("width = null;", reset)
+        self.assertIn("keep();", reset)
+        self.assertIn("removeItem(HANDLE_KEY)", self.handle_script, "a reset forgets the stored width, so the default keeps following the window")
+
+    def test_the_handle_looks_as_proposed_with_no_new_colour_and_no_shadow(self) -> None:
+        for part in ("background: var(--notes-line); }", ".panel-handle:hover::before { width: 2px; background: var(--notes-icon); }",
+                     '.panel-handle[data-dragging="true"]::before { width: 2px; background: var(--notes-accent); }',
+                     ".panel-handle:focus-visible { outline: 2px solid var(--notes-strong); outline-offset: 2px; }",
+                     'html[data-resizing="true"], html[data-resizing="true"] * { cursor: col-resize !important; user-select: none; }',
+                     "width: 1px;"):
+            self.assertIn(part, self.style)
+        self.assertNotRegex(self.style, r"shadow")
+
+    def test_the_handle_is_44px_under_a_coarse_pointer(self) -> None:
+        self.assertRegex(self.style, r"@media \(min-width: 1000px\) and \(pointer: coarse\) \{\s*\.panel-handle \{ width: 44px; \}")
+        self.assertIn("touch-action: none;", self.style)
+
+    def test_the_handle_sits_between_columns_on_the_page_ground_so_it_is_not_a_peel_pair(self) -> None:
+        handle = self.text.index('id="month-handle"')
+        self.assertGreater(handle, self.text.index('id="panel-quick"'))
+        self.assertLess(handle, self.text.index('<nav class="tabbar"'))
+        for values in (self.light, self.dark_media):
+            self.assertGreaterEqual(contrast(values["--notes-strong"], values["--notes-ground"]), 3.0, "the handle's outline is visible on the page")
+            self.assertGreaterEqual(contrast(values["--notes-icon"], values["--notes-ground"]), 3.0, "its hover rule is visible on the page")
