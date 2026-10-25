@@ -179,8 +179,8 @@ for (const phone of [false, true]) {
   ms = await within(page, (w) => document.getElementById('list-heading').textContent === w && document.querySelectorAll('#notes .note-title').length === 1, 'Work', 2000);
   check(`${tag}: a label view shows at once and holds only that label's unarchived notes`, ms !== null && ms < FAST && JSON.stringify(await titles(page)) === '["Alpha"]', `${ms} ms; ${JSON.stringify(await titles(page))}`);
   await sleep(3200);
-  check(`${tag}: each switch still asked the server (quietly), one list request each`, count(/^GET \/api\/notes\?view=all$/) === 3, JSON.stringify(requests.filter((r) => r.includes('/api/notes'))));
-  check(`${tag}: the label list was not asked for again after a switch the user made`, count(/GET \/api\/labels/) === 3, `${count(/GET \/api\/labels/)} label requests`);
+  check(`${tag}: switches inside five minutes are drawn from what the page holds and ask the server for no list`, count(/^GET \/api\/notes\?view=all$/) === 0, JSON.stringify(requests.filter((r) => r.includes('/api/notes'))));
+  check(`${tag}: the label list was not asked for again after a switch the user made`, count(/GET \/api\/labels/) === 0, `${count(/GET \/api\/labels/)} label requests`);
   control.delay = {};
 
   /* ---- archive from a row: instant, then confirmed ---- */
@@ -194,7 +194,7 @@ for (const phone of [false, true]) {
   ms = await within(page, () => ![...document.querySelectorAll('#notes .note-title')].some((e) => e.textContent === 'Alpha') && !document.getElementById('flash').hidden && document.getElementById('flash-text').textContent === 'Note archived.', null, 2000);
   check(`${tag}: archiving from a row takes the row off and shows the message at once, before the server answers`, ms !== null && ms < FAST && serverNote(ids.alpha).archived !== true, `${ms} ms`);
   await sleep(1600);
-  check(`${tag}: the server then holds the change, with one change request and one list refresh`, serverNote(ids.alpha).archived === true && count(/^PATCH \/api\/note/) === 1 && count(/^GET \/api\/notes\?view=all$/) === 1, JSON.stringify(requests));
+  check(`${tag}: the server then holds the change, with one change request and no list refresh (the page already holds the new state)`, serverNote(ids.alpha).archived === true && count(/^PATCH \/api\/note/) === 1 && count(/^GET \/api\/notes\?view=all$/) === 0, JSON.stringify(requests));
   await chooseView(page, phone, 'archive');
   await page.waitForFunction(headingIs, 'Archive');
   check(`${tag}: and Archive lists it`, (await titles(page)).includes('Alpha'), JSON.stringify(await titles(page)));
@@ -408,8 +408,10 @@ async function heapHas(page, needle) {
   await page.waitForFunction(() => !document.getElementById('list').hidden);
   check('401: before the session ends the page holds the first note\'s text in memory', await heapHas(page, MARKER));
   await context.clearCookies();
-  await chooseView(page, false, 'archive');
-  // The cached Archive may flash for the moment before the answer; what matters is where it ends and that nothing is kept.
+  // A view switch inside five minutes asks the server for nothing (25 October 2026), so the
+  // next thing that does ask is what finds the session gone: opening a note.
+  await page.locator('#notes .note-link', { hasText: 'Bravo' }).click();
+  // The held note may flash for the moment before the answer; what matters is where it ends and that nothing is kept.
   await page.waitForSelector('#login:not([hidden])', { timeout: 5000 });
   check('401: the page ends on sign in, with no note on screen', await page.evaluate(() => document.querySelectorAll('#notes .note-row').length === 0 && document.getElementById('list').hidden && document.getElementById('edit').hidden));
   check('401: and no copy of the opened notes is left in the page\'s memory', !(await heapHas(page, MARKER)));

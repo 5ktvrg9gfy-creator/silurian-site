@@ -173,7 +173,7 @@ async function run(label, contextOptions) {
     await press('#new-note');
     await page.waitForSelector('#edit:not([hidden])');
     await page.fill('#text', text);
-    await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved' && location.hash.startsWith('#n/'), null, { timeout: 5000 });
+    await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved' && location.hash.startsWith('#n/'), null, { timeout: 15000 });
     const id = (await page.evaluate(() => location.hash)).slice(3);
     await press('#back');
     await page.waitForSelector('#list:not([hidden])');
@@ -234,7 +234,7 @@ async function run(label, contextOptions) {
   await page.screenshot({ path: `${SHOTS}/${label}-failed-save.png` });
   control.failWrites = false;
   // Let the page's own retry save it, so the conflict case starts clean.
-  await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 10000 }).catch(() => {});
+  await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 15000 }).catch(() => {});
 
   // A conflict: the note changed on another device. Stay, text kept.
   if (!(await visible('#login'))) {

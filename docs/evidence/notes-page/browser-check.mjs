@@ -121,7 +121,7 @@ check('copy: button confirms', (await page.locator('#copy').textContent()) === '
 await page.fill('#text', script + 'second line\n');
 await savedWithin(page);
 check('edit: saved again in place', (await status()) === 'Saved' && notes.size === 1);
-await context.route('**/api/note?*', (route) => (route.request().method() === 'PUT' ? route.abort() : route.continue()));
+await page.route('**/api/note?*', (route) => (route.request().method() === 'PUT' ? route.abort() : route.continue()));
 await page.fill('#text', script + 'third line\n');
 await page.waitForFunction(() => document.getElementById('status').textContent === 'Not saved' && document.getElementById('detail').textContent.includes('Trying again'), null, { timeout: 15000 });
 check('storage failure: Not saved with a retry message', (await status()) === 'Not saved' && (await page.locator('#detail').innerText()).includes('Trying again'));
@@ -130,9 +130,8 @@ page.once('dialog', async (d) => { beforeUnload.push(d.type()); await d.dismiss(
 await page.close({ runBeforeUnload: true });
 await sleep(300);
 check('unsaved changes: leaving the page asks first', beforeUnload.join() === 'beforeunload', beforeUnload.join());
-// Dismissing the prompt left that page open and still retrying, so close it for good before storage is checked.
-await page.close();
-await context.unroute('**/api/note?*');
+// Dismissing the prompt left that page open and still retrying. Its saves keep failing (the route is its own),
+// so nothing from it can reach storage while the rest is checked.
 
 const page2 = await context.newPage();
 await page2.goto(BASE + '/notes' + '#n/' + [...notes.keys()][0]);

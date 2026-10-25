@@ -4,7 +4,7 @@
 // made for the run, in Chromium through Playwright. Prints one PASS or FAIL line
 // per check and writes the screenshots to docs/evidence/journal/shots/.
 import { mkdirSync } from 'node:fs';
-import { startServer, chromium, ROOT } from './harness.mjs';
+import { startServer, chromium, ROOT, returnToWindow } from './harness.mjs';
 import * as core from '../../../journal/core.js';
 
 const SHOTS = process.env.SHOTS_DIR || ROOT + 'docs/evidence/journal/shots';
@@ -869,9 +869,9 @@ const strip = (page) => page.locator('#strip');
   await sleep(400);
   await enter(B.page, 'tomorrow', 'Added on the iPad');
   await sleep(400);
-  await B.page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await B.page.evaluate(returnToWindow);
   await B.page.waitForFunction(() => document.querySelectorAll('#list-today li.entry').length === 2, null, { timeout: 6000 });
-  await A.page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await A.page.evaluate(returnToWindow);
   await A.page.waitForFunction(() => document.querySelectorAll('#list-tomorrow li.entry').length === 1, null, { timeout: 6000 });
   eq('entries added on two devices both survive and both screens catch up when the window gets focus', [await texts(B.page, 'today'), await texts(A.page, 'tomorrow')], [['Shared entry (edited on the PC) again', 'Added on the PC'], ['Added on the iPad']]);
   void id;
@@ -962,7 +962,7 @@ const MARK = 'ZEBRA-CROSSING-4471';
   const { context, page } = await open({ width: 1280, height: 800 });
   await signIn(page);
   await context.clearCookies();
-  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.evaluate(returnToWindow);
   await page.waitForSelector('#login:not([hidden])', { timeout: 6000 });
   check('401: the page ends on sign in with no entry on screen', await page.evaluate(() => document.getElementById('app').hidden));
   check('401: and no copy of the entry is left in the page\'s memory', !(await heapHas(page, MARK)));
@@ -1201,7 +1201,7 @@ async function showcase() {
     await signIn(page);
     await page.evaluate((keep) => { for (const el of [...document.querySelectorAll('.panel')]) if (el.id !== 'panel-' + keep) el.remove(); }, panel);
     // Ask the server again and draw: only this panel is on the page.
-    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.evaluate(returnToWindow);
     await sleep(900);
     check(`alone: the ${panel} panel draws with the other four taken off the page`, (await page.locator('.panel').count()) === 1 && (await drawn(page)) && page.errors.length === 0, page.errors.join(' | '));
     await context.close();

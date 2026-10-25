@@ -134,3 +134,14 @@ export async function startServer({ port = 8771, lagMs = 0, listLagMs = 0, pageF
     close: () => new Promise((r) => server.close(r)),
   };
 }
+
+// What the page does when a window is brought back: since 25 October 2026 it asks the server again
+// only if five minutes have passed since it last asked. This makes the page's clock read six minutes
+// on for the moment the focus is handled (the page compares the two times at once), then puts it
+// back, so nothing else the page times (undo, messages, stamps) is moved. Self-contained, because
+// Playwright sends the function to the page.
+export const returnToWindow = () => {
+  const real = Date.now;
+  Date.now = () => real.call(Date) + 6 * 60 * 1000;
+  try { window.dispatchEvent(new Event('focus')); } finally { Date.now = real; }
+};
