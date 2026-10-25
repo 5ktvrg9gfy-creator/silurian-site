@@ -46,6 +46,7 @@ async function costOf(w, work) {
   return { advanced: d.advanced, simple: d.simple };
 }
 const within = (name, got) => {
+  if (process.env.BUDGET_REPORT) console.log(`BUDGET ${name} => ${JSON.stringify(got)}`);
   const limit = BUDGET.api[name];
   assert.ok(limit, `no budget for "${name}"`);
   assert.ok(got.advanced <= limit.advanced, `${name}: ${got.advanced} advanced operations, budget ${limit.advanced}`);
