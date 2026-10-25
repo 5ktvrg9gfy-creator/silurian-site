@@ -425,7 +425,7 @@ test("the label list sits outside the notes prefix, so the notes listing never s
   const sdk = fakeSdk();
   const store = createBlobStore(sdk);
   assert.deepEqual(await store.writeLabels({ labels: [{ id: "a".repeat(32), name: "Work" }], updatedAt: "2026-10-20T10:00:00.000Z" }, "none", "c:Work", "a".repeat(32)), { ok: true });
-  assert.deepEqual(await store.write("b".repeat(32), Buffer.from("A note"), { title: "A note", updatedAt: "2026-10-20T10:01:00.000Z", labels: [], archived: false }, null, "t:x"), { ok: true, updatedAt: "2026-10-20T10:01:00.000Z" });
+  assert.deepEqual(await store.write("b".repeat(32), Buffer.from("A note"), { title: "A note", updatedAt: "2026-10-20T10:01:00.000Z", labels: [], archived: false }, null, "t:x"), { ok: true, updatedAt: "2026-10-20T10:01:00.000Z", rev: 1 });
   assert.ok(sdk.files.has("labels/1.json"), "a revision of the label list, never overwritten");
   assert.ok(![...sdk.files.keys()].some((p) => p.startsWith("notes/labels")));
   assert.deepEqual((await store.list()).map((n) => n.id), ["b".repeat(32)]);

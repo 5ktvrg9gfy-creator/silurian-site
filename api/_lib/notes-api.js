@@ -63,6 +63,15 @@ const BASE_HEADERS = {
   "X-Content-Type-Options": "nosniff",
 };
 
+// The revision a save made, for the page to send back with its next save so the
+// server can go straight to it instead of listing the note's files. Only a starting
+// point: the create of the next revision is still what checks the version.
+const revHeader = (result) => (result && Number.isInteger(result.rev) ? { "X-Note-Rev": String(result.rev) } : {});
+const hintOf = (request) => {
+  const value = request.headers.get("x-base-rev");
+  return value !== null && /^[0-9]{1,9}$/.test(value) ? Number(value) : null;
+};
+
 function reply(status, body, extra = {}) {
   const headers = new Headers({ ...BASE_HEADERS, ...extra });
   if (body !== null && !headers.has("Content-Type")) {
@@ -209,10 +218,10 @@ export function createNotesApi({
   // Saves text as a new revision on top of the version it started from (null for a
   // new note). Answers the store's answer: { ok: true, updatedAt } or { ok: false,
   // current } with nothing written.
-  async function save(id, body, base, held = { labels: [], archived: false }) {
+  async function save(id, body, base, held = { labels: [], archived: false }, hint = null) {
     const updatedAt = nextStamp(base);
     const labels = await knownLabelIds(held.labels);
-    return store.write(id, body.bytes, { title: titleOf(body.text), updatedAt, labels, archived: held.archived }, base, textPrint(body.bytes));
+    return store.write(id, body.bytes, { title: titleOf(body.text), updatedAt, labels, archived: held.archived }, base, textPrint(body.bytes), hint);
   }
 
   async function readJson(request) {
@@ -304,7 +313,7 @@ export function createNotesApi({
         if (labels === null) return fail(400, MESSAGES.badChange);
         const id = newId();
         const made = await save(id, body, null, { labels, archived: false });
-        return reply(201, { id, updatedAt: made.updatedAt });
+        return reply(201, { id, updatedAt: made.updatedAt }, revHeader(made));
       }),
     },
 
@@ -317,6 +326,7 @@ export function createNotesApi({
         return reply(200, note.bytes, {
           "Content-Type": "text/plain; charset=utf-8",
           "X-Note-Updated": note.updatedAt,
+          "X-Note-Rev": String(note.rev),
           "X-Note-Labels": (note.labels || []).join(","),
           "X-Note-Archived": note.archived === true ? "true" : "false",
         });
@@ -334,24 +344,25 @@ export function createNotesApi({
         // own text.
         const base = request.headers.get("x-base-updated");
         if (!base) return fail(400, MESSAGES.missingVersion);
-        const current = await store.meta(id, base);
+        const hint = hintOf(request);
+        const current = await store.meta(id, base, hint);
         if (current === null) return fail(409, MESSAGES.deletedElsewhere);
         if (current.updatedAt !== base) {
           // The same save sent again after its answer was lost has already happened.
-          const done = await store.repeat(id, base, textPrint(body.bytes));
-          if (done) return reply(200, { id, updatedAt: done.updatedAt });
+          const done = await store.repeat(id, base, textPrint(body.bytes), hint);
+          if (done) return reply(200, { id, updatedAt: done.updatedAt }, revHeader(done));
           return reply(409, { error: MESSAGES.changedElsewhere, updatedAt: current.updatedAt });
         }
 
         // The text changes; the labels and the archived flag stay as they are. The
         // new revision is made only if nobody has made it first.
-        const saved = await save(id, body, current.updatedAt, current);
+        const saved = await save(id, body, current.updatedAt, current, hint);
         if (!saved.ok) {
           return saved.current === null
             ? fail(409, MESSAGES.deletedElsewhere)
             : reply(409, { error: MESSAGES.changedElsewhere, updatedAt: saved.current.updatedAt });
         }
-        return reply(200, { id, updatedAt: saved.updatedAt });
+        return reply(200, { id, updatedAt: saved.updatedAt }, revHeader(saved));
       }),
 
       // Labels and the archived flag. The text file is not touched. The same
@@ -372,15 +383,16 @@ export function createNotesApi({
         if (!base) return fail(400, MESSAGES.missingVersion);
         // A label change needs the label list to drop ids that no longer exist,
         // and it does not depend on the note, so both are read together.
-        const [current, known] = await Promise.all([store.meta(id, base), wantsLabels ? labelsFile() : null]);
+        const hint = hintOf(request);
+        const [current, known] = await Promise.all([store.meta(id, base, hint), wantsLabels ? labelsFile() : null]);
         if (current === null) return fail(409, MESSAGES.metaDeletedElsewhere);
         const print = `m:${JSON.stringify([wantsLabels ? labels : null, wantsArchived ? change.archived : null])}`;
         if (current.updatedAt !== base) {
           // The same change sent again after its answer was lost has already happened.
-          const done = await store.repeat(id, base, print);
+          const done = await store.repeat(id, base, print, hint);
           if (done) {
             const again = await store.meta(id);
-            return reply(200, { id, updatedAt: done.updatedAt, labels: again.labels, archived: again.archived });
+            return reply(200, { id, updatedAt: done.updatedAt, labels: again.labels, archived: again.archived }, revHeader(done));
           }
           return reply(409, { error: MESSAGES.metaChangedElsewhere, updatedAt: current.updatedAt });
         }
@@ -393,13 +405,13 @@ export function createNotesApi({
         const nextLabels = await knownLabelIds(wantsLabels ? labels : current.labels, known);
         const archived = wantsArchived ? change.archived : current.archived;
         const updatedAt = nextStamp(current.updatedAt);
-        const saved = await store.writeMeta(id, { title, updatedAt, labels: nextLabels, archived }, base, print);
+        const saved = await store.writeMeta(id, { title, updatedAt, labels: nextLabels, archived }, base, print, hint);
         if (!saved.ok) {
           return saved.current === null
             ? fail(409, MESSAGES.metaDeletedElsewhere)
             : reply(409, { error: MESSAGES.metaChangedElsewhere, updatedAt: saved.current.updatedAt });
         }
-        return reply(200, { id, updatedAt: saved.updatedAt, labels: nextLabels, archived });
+        return reply(200, { id, updatedAt: saved.updatedAt, labels: nextLabels, archived }, revHeader(saved));
       }),
 
       DELETE: guarded(async (request) => {

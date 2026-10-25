@@ -113,7 +113,7 @@ test("the first list of a store with no index reads each note once and makes the
   assert.ok(t.sdk.files.has("notes-index.json"));
 });
 
-test("after one note changes, the next list reads that note's metadata only and repairs the index once", async () => {
+test("after one note changes, the next list reads that note's metadata only and writes nothing; eight behind and it repairs the index once", async () => {
   const t = await seeded(6);
   await listOf(t);
   const base = (await t.send(t.api.item.GET, `/api/note?id=${t.ids[2]}`)).headers.get("x-note-updated");
@@ -125,11 +125,24 @@ test("after one note changes, the next list reads that note's metadata only and 
   const calls = since(t.sdk, from);
   assert.equal(notes.find((n) => n.id === t.ids[2]).archived, true, "the change shows at once");
   assert.equal(count(calls, "get"), 1 + 1, "the index and the one new small file");
-  assert.equal(count(calls, "put"), 1);
-  const again = since(t.sdk, mark(t.sdk));
+  assert.equal(count(calls, "put"), 0, "one note behind is not worth an advanced operation");
+});
+
+test("eight notes behind the index and the next list rewrites it once, and the list after that writes nothing", async () => {
+  const t = await seeded(10);
   await listOf(t);
-  assert.equal(count(since(t.sdk, mark(t.sdk) - 2), "put"), 0, "and the list after that makes no write");
-  assert.deepEqual(again, []);
+  for (let i = 0; i < 8; i += 1) {
+    const base = (await t.send(t.api.item.GET, `/api/note?id=${t.ids[i]}`)).headers.get("x-note-updated");
+    const patched = await t.send(t.api.item.PATCH, `/api/note?id=${t.ids[i]}`, "PATCH", JSON.stringify({ archived: true }), { "x-base-updated": base });
+    assert.equal(patched.status, 200);
+  }
+  t.reopen();
+  const first = mark(t.sdk);
+  await listOf(t);
+  assert.equal(count(since(t.sdk, first), "put"), 1, "the index is made again");
+  const second = mark(t.sdk);
+  await listOf(t);
+  assert.equal(count(since(t.sdk, second), "put"), 0, "and the list after that makes no write");
 });
 
 test("an index that is behind the store never shows a stale row", async () => {

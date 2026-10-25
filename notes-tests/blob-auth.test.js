@@ -195,7 +195,7 @@ test("the adapter works with only what Vercel provides, and every request carrie
   const text = new TextEncoder().encode("echo hello\r\n");
   const id = "e".repeat(32);
 
-  assert.deepEqual(await store.write(id, text, meta, null, "t:a"), { ok: true, updatedAt: meta.updatedAt });
+  assert.deepEqual(await store.write(id, text, meta, null, "t:a"), { ok: true, updatedAt: meta.updatedAt, rev: 1 });
   assert.equal((await store.list()).length, 1);
   const read = await store.read(id);
   assert.deepEqual([...read.bytes], [...text]);

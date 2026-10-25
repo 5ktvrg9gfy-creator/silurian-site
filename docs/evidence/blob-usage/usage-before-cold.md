@@ -16,7 +16,7 @@
 | journal: make a span from that line (Until, three days) | 2 | 1 | 0 |
 | journal: switch back to the window after six minutes (focus) | 36 | 810 | 0 |
 | journal: switch back to the window again after one minute (focus) | 8 | 180 | 0 |
-| journal: type in Quick notes for one minute | 26 | 284 | 0 |
+| journal: type in Quick notes for one minute | 25 | 197 | 0 |
 | notes: open the list (page load, signed in) | 2 | 2 | 0 |
 | notes: open a note | 2 | 3 | 0 |
 | notes: type for one minute (bursts with short pauses) | 36 | 78 | 0 |
@@ -28,4 +28,4 @@
 | notes: the same list again straight after | 1 | 1 | 0 |
 | notes: one save with no cleanup due | 3 | 1 | 0 |
 
-Typical day: advanced 302, simple 4247
+Typical day: advanced 301, simple 4160

@@ -1152,8 +1152,14 @@ import * as core from "/journal/core.js";
   "use strict";
 
   var TAB_KEY = "silurian-journal-tab";
-  var SAVE_DELAY_MS = 1000;
-  var POLL_MS = 45000;
+  // Quick notes: one burst of typing is one save (a five second pause, thirty seconds
+  // at most from the first unsaved key). Leaving the box or hiding the window saves at once.
+  var SAVE_DELAY_MS = 5000;
+  var SAVE_MAX_WAIT_MS = 30000;
+  // The journal never asks the server on a timer. It asks again when the window is
+  // brought back (shown, or focused), and then only if five minutes have passed since
+  // it last asked, or the date has changed. A window that is hidden never asks.
+  var REFRESH_MIN_MS = 5 * 60 * 1000;
   var UNDO_MS = 10000;
   var NOT_CHANGED = "Could not save that change. Nothing was changed. Try again.";
   var NOT_LOADED = "Could not load your journal. Check your connection and reload.";
@@ -1229,7 +1235,6 @@ import * as core from "/journal/core.js";
   var quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
   var stripMonths = [];    // the months the last load sent: the strip looks only there
   var lastRefresh = 0;
-  var pollTimer = null;
   var flashTimer = null;
   var flashRun = null;
   var flashAlso = null;   // the second button of the message bar, or null
@@ -3023,14 +3028,22 @@ import * as core from "/journal/core.js";
     quick.dirty = true;
     quick.failed = false;
     setQuickStatus("unsaved", "Not saved yet");
-    clearTimeout(quick.timer);
-    quick.timer = setTimeout(function () { saveQuick(); }, SAVE_DELAY_MS);
+    scheduleQuickSave();
   });
   quickEditor.addEventListener("blur", function () { if (quick.dirty) { saveQuick(); } });
+
+  function scheduleQuickSave() {
+    var at = Date.now();
+    if (!quick.dirtySince) { quick.dirtySince = at; }
+    var wait = Math.max(0, Math.min(SAVE_DELAY_MS, quick.dirtySince + SAVE_MAX_WAIT_MS - at));
+    clearTimeout(quick.timer);
+    quick.timer = setTimeout(function () { saveQuick(); }, wait);
+  }
 
   function saveQuick() {
     clearTimeout(quick.timer);
     quick.timer = null;
+    quick.dirtySince = 0;
     // A save already on its way is the one to wait for, so a caller that needs to
     // know (sign out) gets the real answer and not a guess.
     if (quick.saving) { return quick.promise; }
@@ -3047,7 +3060,7 @@ import * as core from "/journal/core.js";
       if (answer.status === 200) {
         quick.base = answer.body.updatedAt;
         // More was typed while this was on its way: save that too.
-        if (readEditor(quickEditor) !== text) { quick.dirty = true; quick.timer = setTimeout(saveQuick, SAVE_DELAY_MS); setQuickStatus("unsaved", "Not saved yet"); return false; }
+        if (readEditor(quickEditor) !== text) { quick.dirty = true; scheduleQuickSave(); setQuickStatus("unsaved", "Not saved yet"); return false; }
         quick.dirty = false;
         setQuickStatus("saved", "Saved");
         return true;
@@ -3141,10 +3154,12 @@ import * as core from "/journal/core.js";
 
   /* ---------- loading and keeping up to date ---------- */
 
-  function applyHome(body, replaceQuick) {
+  function applyHome(body, replaceQuick, light) {
     takeMonths(body.months);
     takeSpans(body.spans);
-    stripMonths = Object.keys(body.months);
+    // A light answer carries only this month's files, so the earlier months the
+    // strip already holds stay in it.
+    stripMonths = light ? stripMonths.concat(Object.keys(body.months).filter(function (m) { return stripMonths.indexOf(m) === -1; })) : Object.keys(body.months);
     recompute();
     if (body.quick) {
       if (replaceQuick) { quick.base = body.quick.updatedAt; drawMarks(quickEditor, body.quick.text, true); }
@@ -3160,6 +3175,7 @@ import * as core from "/journal/core.js";
     }).then(function (body) {
       if (gen !== generation) { return false; }
       applyHome(body, true);
+      lastRefresh = Date.now();
       return true;
     });
   }
@@ -3174,15 +3190,18 @@ import * as core from "/journal/core.js";
     if (busy) { return Promise.resolve(false); }
     var gen = generation;
     var rolled = londonDate();
-    if (rolled !== today) { today = rolled; }
-    var extra = Object.keys(confirmed).filter(function (m) { return m !== thisMonth(); });
-    return request("/api/journal?view=home&today=" + today).then(function (response) {
+    var rolledOver = rolled !== today;
+    if (rolledOver) { today = rolled; }
+    // Only the month being looked at is asked for again; the earlier months the
+    // morning strip read when the page opened are not.
+    var extra = viewMonth !== thisMonth() && confirmed[viewMonth] ? [viewMonth] : [];
+    return request("/api/journal?view=home" + (rolledOver ? "" : "&light=1") + "&today=" + today).then(function (response) {
       if (!response.ok) { throw new Error("home"); }
       return readJson(response);
     }).then(function (body) {
       if (gen !== generation || pending.length > 0 || sending) { return false; }
       var others = extra.filter(function (m) { return !body.months[m]; });
-      applyHome(body, false);
+      applyHome(body, false, !rolledOver);
       if (others.length === 0) { return true; }
       return request("/api/journal?view=months&months=" + others.slice(0, 5).join(",")).then(readJson).then(function (more) {
         if (gen !== generation || pending.length > 0 || sending) { return false; }
@@ -3197,19 +3216,19 @@ import * as core from "/journal/core.js";
     }).catch(function () { return false; });
   }
 
-  function startPolling() {
-    clearInterval(pollTimer);
-    pollTimer = setInterval(function () {
-      if (document.visibilityState !== "visible") { return; }
-      refresh(false);
-    }, POLL_MS);
+  // Asks again only when the window has just been brought back, is visible, and
+  // either five minutes have passed since it last asked or the date has changed.
+  function refreshOnReturn() {
+    if (!signedIn || document.visibilityState !== "visible") { return; }
+    if (londonDate() !== today) { refresh(true); return; }
+    if (Date.now() - lastRefresh >= REFRESH_MIN_MS) { refresh(false); }
   }
 
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && signedIn) { refresh(false); }
+    if (document.visibilityState === "visible") { refreshOnReturn(); }
     else if (document.visibilityState === "hidden" && quick.dirty) { saveQuick(); }
   });
-  window.addEventListener("focus", function () { if (signedIn) { refresh(false); } });
+  window.addEventListener("focus", refreshOnReturn);
 
   /* ---------- sign in, sign out ---------- */
 
@@ -3242,7 +3261,6 @@ import * as core from "/journal/core.js";
   function clearContent() {
     generation += 1;
     clearTimeout(quick.timer);
-    clearInterval(pollTimer);
     confirmed = {};
     stripMonths = [];
     pending = [];
@@ -3350,7 +3368,6 @@ import * as core from "/journal/core.js";
       showPanel(tab);
       renderAll();
       scrollToToday();
-      startPolling();
       var match = /^#d\/(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
       if (match && core.isDate(match[1]) && match[1] !== today && match[1] !== tomorrow()) {
         loadMonths([core.monthOf(match[1])]).then(function (loaded) { if (loaded) { dayView = match[1]; renderAll(); } });
@@ -3364,8 +3381,7 @@ import * as core from "/journal/core.js";
   // are right in the morning without a reload.
   setInterval(function () {
     if (!signedIn) { return; }
-    var now = londonDate();
-    if (now !== today) { refresh(true); }
+    if (document.visibilityState === "visible" && londonDate() !== today) { refresh(true); }
   }, 30000);
 
   request("/api/session").then(function (response) {

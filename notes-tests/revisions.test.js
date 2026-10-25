@@ -344,7 +344,8 @@ test("the list never shows an older version of a note than one the server has ma
   assert.equal(before.notes[0].title, "v1");
   // The index is overwritten in place and is only a copy: an old one is never trusted past its revision tags.
   const index = JSON.parse(w.sdk.files.get("notes-index.json").versions.at(-1).bytes.toString());
-  assert.equal(index.entries[note.id].tag, "r2");
+  // One note behind is not worth a write (an advanced operation): the next list reads that one small file.
+  assert.equal(index.entries[note.id].tag, "r1", "the index is left behind for one changed note");
 });
 
 test("two hundred saves, changes and deletes, some sent twice, each to an instance that remembers nothing, end as one device would have left them", async () => {

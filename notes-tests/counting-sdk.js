@@ -27,7 +27,8 @@ export function countingSdk({ clock = { now: Date.now() }, pageSize = 1000 } = {
   const wrap = (name) => async (...args) => {
     counts[name] += 1;
     if (name === "del") counts.delPaths += [args[0]].flat().length;
-    log.push(name);
+    const what = name === "list" ? (args[0] && args[0].prefix) : [args[0]].flat().join(',');
+    log.push(`${name} ${what}`);
     return inner[name](...args);
   };
   const sdk = {

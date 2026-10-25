@@ -158,11 +158,11 @@
     },
     {
       "name": "journal: type in Quick notes for one minute",
-      "advanced": 26,
-      "simple": 284,
-      "put": 14,
-      "list": 12,
-      "get": 284,
+      "advanced": 25,
+      "simple": 197,
+      "put": 17,
+      "list": 8,
+      "get": 197,
       "head": 0,
       "del": 0,
       "note": ""
@@ -338,10 +338,10 @@
         "name": "journal: type in Quick notes for one minute",
         "times": 1,
         "why": "one minute of Quick notes",
-        "each": 26,
-        "simpleEach": 284,
-        "advanced": 26,
-        "simple": 284
+        "each": 25,
+        "simpleEach": 197,
+        "advanced": 25,
+        "simple": 197
       },
       {
         "name": "notes: open the list (page load, signed in)",
@@ -398,8 +398,8 @@
         "simple": 55
       }
     ],
-    "advanced": 302,
-    "simple": 4247,
+    "advanced": 301,
+    "simple": 4160,
     "note": "Idle open windows are not in this day. Add the idle hour figure for each hour a window is left open."
   },
   "idleHour": [

@@ -88,10 +88,12 @@ counter.reset();
 
 async function measure(name, work, { note = '' } = {}) {
   const before = counter.snapshot();
+  const mark = counter.log.length;
   await work();
   await sleep(1800);   // answers that are still on their way
   const d = counter.since(before);
   results.push({ name, advanced: d.advanced, simple: d.simple, put: d.put, list: d.list, get: d.get, head: d.head, del: d.del, note });
+  if (process.env.TRACE) for (const l of counter.log.slice(mark)) console.log('      ' + l.replace(/[0-9a-f]{32}/g, '<id>'));
   console.log(`${name.padEnd(64)} advanced ${String(d.advanced).padStart(4)}  simple ${String(d.simple).padStart(4)}  (put ${d.put} list ${d.list} get ${d.get} head ${d.head} del ${d.del})`);
 }
 
@@ -102,6 +104,7 @@ async function newPage(startPath, { hiddenControl = false } = {}) {
   await context.addCookies([{ name: cookie.split('=')[0], value: cookie.split('=')[1], url: BASE }]);
   const page = await context.newPage();
   page.errors = [];
+  if (process.env.TRACE) page.on('request', (r) => { if (/\/api\/(note|notes|labels)/.test(r.url())) console.log('      REQ ' + r.method() + ' ' + r.url().replace(BASE, '').replace(/[0-9a-f]{32}/, '<id>') + ' rev=' + (r.headers()['x-base-rev'] || '-')); });
   page.on('pageerror', (e) => page.errors.push(e.message));
   return { context, page };
 }
@@ -176,7 +179,7 @@ for (const view of ['list', 'a note being edited']) {
   });
   await measure('journal: type in Quick notes for one minute', async () => {
     await page.locator('#quick-editor').click();
-    await context.clock.pauseAt(new Date(Date.now() + 1000));
+    await context.clock.pauseAt(new Date((await page.evaluate(() => Date.now())) + 1000));
     for (let burst = 0; burst < 12; burst += 1) {
       for (let k = 0; k < 10; k += 1) { await page.keyboard.type('ab'); await context.clock.runFor(300); }
       await context.clock.runFor(2000);
@@ -198,7 +201,7 @@ for (const view of ['list', 'a note being edited']) {
   await measure('notes: type for one minute (bursts with short pauses)', async () => {
     await page.locator('#text').click();
     await page.keyboard.press('Control+End');
-    await context.clock.pauseAt(new Date(Date.now() + 1000));
+    await context.clock.pauseAt(new Date((await page.evaluate(() => Date.now())) + 1000));
     for (let burst = 0; burst < 12; burst += 1) {
       for (let k = 0; k < 10; k += 1) { await page.keyboard.type('ab'); await context.clock.runFor(300); }
       await context.clock.runFor(2000);
@@ -268,5 +271,21 @@ const idleHour = results.filter((r) => r.name.includes('idle for one hour'));
 const day = { rows, advanced, simple, note: 'Idle open windows are not in this day. Add the idle hour figure for each hour a window is left open.' };
 console.log(`\nTypical day, ${MODE} instances: advanced ${advanced}, simple ${simple}`);
 writeFileSync(`${OUT}/usage-${LABEL}-${MODE}.json`, JSON.stringify({ label: LABEL, mode: MODE, results, day, idleHour }, null, 2));
+
+// --check holds the figures to notes-tests/blob-budget.json and exits 1 when any is over,
+// or when a budgeted action was not measured at all (a check that saw nothing has not run).
+if (process.argv.includes('--check')) {
+  const { readFileSync } = await import('node:fs');
+  const budget = JSON.parse(readFileSync(ROOT + 'notes-tests/blob-budget.json', 'utf8'));
+  let bad = 0;
+  for (const [name, limit] of Object.entries(budget.browser)) {
+    const got = results.find((r) => r.name === name);
+    if (!got) { console.log(`NOT MEASURED  ${name}`); bad += 1; continue; }
+    if (got.advanced > limit.advanced || got.simple > limit.simple) { console.log(`OVER BUDGET   ${name}: advanced ${got.advanced}/${limit.advanced}, simple ${got.simple}/${limit.simple}`); bad += 1; }
+  }
+  if (!WARM && (advanced > budget.typicalDay.advanced || simple > budget.typicalDay.simple)) { console.log(`OVER BUDGET   typical day: advanced ${advanced}/${budget.typicalDay.advanced}, simple ${simple}/${budget.typicalDay.simple}`); bad += 1; }
+  console.log(bad === 0 ? `Within budget (${Object.keys(budget.browser).length} actions checked)` : `${bad} over budget`);
+  if (bad) process.exitCode = 1;
+}
 const md = [`# Blob operations, ${LABEL}, ${MODE} instances`, '', '| Action | Advanced | Simple | del |', '|---|---:|---:|---:|', ...results.map((r) => `| ${r.name} | ${r.advanced} | ${r.simple} | ${r.del} |`), '', `Typical day: advanced ${advanced}, simple ${simple}`, ''].join('\n');
 writeFileSync(`${OUT}/usage-${LABEL}-${MODE}.md`, md);
