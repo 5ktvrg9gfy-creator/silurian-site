@@ -84,9 +84,14 @@ class NotesAsksLessAndSavesOnceABurst(unittest.TestCase):
 
     def test_nothing_asks_the_server_on_a_timer(self) -> None:
         self.assertNotIn("setInterval(", self.text)
-        for call in timer_calls(self.text):
-            names = set(re.findall(r"\b([a-zA-Z]+)\(", call)) - {"setTimeout", "function"}
-            self.assertLessEqual(names, {"save", "loadList", "resolve", "settle", "hideFlash", "clearFlash", "retry", "setStatus", "showFlash", "focus", "sync", "closeMenu", "tick", "undo", "repaint", "render"} | names - {"loadList"}, call[:100])
+        calls = timer_calls(self.text)
+        self.assertGreaterEqual(len(calls), 3, "the timers were not found")
+        for call in calls:
+            for name in ("request(", "refreshLabels(", "fetch(", "showList(", "fetchNote("):
+                self.assertNotIn(name, call, f"a timer asks the server: {call[:90]}")
+            # the only timer that reaches the list is the search box's own delay, which a keystroke starts
+            if "loadList(" in call:
+                self.assertIn("SEARCH_DELAY_MS", call)
 
     def test_one_burst_of_typing_is_one_save_and_leaving_saves_at_once(self) -> None:
         self.assertGreaterEqual(number(self.text, "SAVE_DELAY_MS"), 5000)
