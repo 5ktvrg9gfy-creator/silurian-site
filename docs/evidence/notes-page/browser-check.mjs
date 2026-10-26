@@ -58,6 +58,8 @@ const context = await browser.newContext({ viewport: { width: 1100, height: 800 
 await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE });
 const page = await context.newPage();
 const status = () => page.locator('#status').textContent();
+// Autosave waits for a five second pause in typing (thirty seconds at most), so a check waits for Saved.
+const savedWithin = (pg, ms = 12000) => pg.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: ms });
 const visible = (sel) => page.locator(sel).isVisible();
 
 // 1. Signed out
@@ -91,8 +93,10 @@ const script = '# Deploy script\n\n```bash\n\techo "tab indented"   \n```\n\n–ö–
 await page.fill('#text', script);
 check('status reads Not saved straight after typing', (await status()) === 'Not saved');
 const seen = new Set();
-for (let i = 0; i < 30; i += 1) { seen.add(await status()); if (seen.has('Saved') && notes.size === 1) break; await sleep(100); }
-check('autosave: reaches Saved about a second later', seen.has('Saved') && notes.size === 1, [...seen].join(' > '));
+await sleep(2500);
+check('autosave: nothing is saved while the typing pause is under five seconds', (await status()) === 'Not saved' && notes.size === 0);
+for (let i = 0; i < 70; i += 1) { seen.add(await status()); if (seen.has('Saved') && notes.size === 1) break; await sleep(100); }
+check('autosave: reaches Saved after the five second pause, as one write', seen.has('Saved') && notes.size === 1, [...seen].join(' > '));
 check('the address now names the note', /#n\/[0-9a-f]{32}$/.test(page.url()));
 check('stored bytes equal the typed text', Buffer.from([...notes.values()][0].bytes).toString('utf8') === script);
 
@@ -115,18 +119,19 @@ check('copy: button confirms', (await page.locator('#copy').textContent()) === '
 
 // 6. Edit existing note, status, then failure and recovery
 await page.fill('#text', script + 'second line\n');
-await sleep(1500);
+await savedWithin(page);
 check('edit: saved again in place', (await status()) === 'Saved' && notes.size === 1);
-await context.route('**/api/note?*', (route) => (route.request().method() === 'PUT' ? route.abort() : route.continue()));
+await page.route('**/api/note?*', (route) => (route.request().method() === 'PUT' ? route.abort() : route.continue()));
 await page.fill('#text', script + 'third line\n');
-await page.waitForFunction(() => document.getElementById('status').textContent === 'Not saved' && document.getElementById('detail').textContent.includes('Trying again'), null, { timeout: 5000 });
+await page.waitForFunction(() => document.getElementById('status').textContent === 'Not saved' && document.getElementById('detail').textContent.includes('Trying again'), null, { timeout: 15000 });
 check('storage failure: Not saved with a retry message', (await status()) === 'Not saved' && (await page.locator('#detail').innerText()).includes('Trying again'));
 const beforeUnload = [];
 page.once('dialog', async (d) => { beforeUnload.push(d.type()); await d.dismiss(); });
 await page.close({ runBeforeUnload: true });
 await sleep(300);
 check('unsaved changes: leaving the page asks first', beforeUnload.join() === 'beforeunload', beforeUnload.join());
-await context.unroute('**/api/note?*');
+// Dismissing the prompt left that page open and still retrying. Its saves keep failing (the route is its own),
+// so nothing from it can reach storage while the rest is checked.
 
 const page2 = await context.newPage();
 await page2.goto(BASE + '/notes' + '#n/' + [...notes.keys()][0]);
@@ -137,11 +142,11 @@ check('the failed edit never reached storage; the last good version is intact', 
 const puts = [];
 page2.on('request', (r) => { if (['PUT', 'POST'].includes(r.method())) puts.push(r.method()); });
 await page2.evaluate(() => { const t = document.getElementById('text'); t.value = 'x'.repeat(1024 * 1024 + 10); t.dispatchEvent(new Event('input', { bubbles: true })); });
-await sleep(1500);
+await sleep(6500);
 check('over 1 MB: Not saved with the plain message and no request sent', (await page2.locator('#status').textContent()) === 'Not saved' && (await page2.locator('#detail').innerText()).includes('over 1 MB') && puts.length === 0);
-check('over 1 MB: the stored note is untouched', Buffer.from([...notes.values()][0].bytes).toString('utf8') === script + 'second line\n');
+check('over 1 MB: the stored note is untouched', Buffer.from([...notes.values()][0].bytes).toString('utf8') === script + 'second line\n', JSON.stringify(Buffer.from([...notes.values()][0].bytes).toString('utf8').slice(0, 60)));
 await page2.evaluate(() => { const t = document.getElementById('text'); t.value = 'x'.repeat(900 * 1024); t.dispatchEvent(new Event('input', { bubbles: true })); });
-await sleep(2500);
+await savedWithin(page2);
 check('back under 1 MB: saves again', (await page2.locator('#status').textContent()) === 'Saved' && notes.size === 1 && [...notes.values()][0].bytes.length === 900 * 1024);
 
 // 7b. Another device changes the note: the save is refused, the text stays, nothing is lost
@@ -157,14 +162,14 @@ const attempts = [];
 page2.on('request', (r) => { if (r.method() === 'PUT') attempts.push(r.method()); });
 const mine = 'my unsaved edit, typed on the stale copy\n';
 await page2.fill('#text', mine);
-await page2.waitForFunction(() => document.getElementById('detail').textContent.includes('another device'), null, { timeout: 5000 });
+await page2.waitForFunction(() => document.getElementById('detail').textContent.includes('another device'), null, { timeout: 15000 });
 check('conflict: Not saved with the plain message', (await page2.locator('#status').textContent()) === 'Not saved' && (await page2.locator('#detail').innerText()).includes('your edits were not saved'), await page2.locator('#detail').innerText());
 check('conflict: my text is still on screen', (await page2.inputValue('#text')) === mine);
 check('conflict: the other device\'s version is untouched in storage', Buffer.from([...notes.values()][0].bytes).toString('utf8') === 'written on the other device\n');
 await page2.screenshot({ path: SHOTS + '/5-conflict.png' });
 const before = attempts.length;
 await page2.fill('#text', mine + 'and some more typing\n');
-await sleep(2500);
+await sleep(6500);
 check('conflict: typing more does not keep hammering the server', attempts.length === before && (await page2.inputValue('#text')) === mine + 'and some more typing\n');
 check('conflict: Copy still gives me my text', await (async () => { await page2.click('#copy'); return (await page2.evaluate(() => navigator.clipboard.readText())) === mine + 'and some more typing\n'; })());
 const leaving = [];
@@ -181,7 +186,7 @@ await page2.click('.note-link');
 await page2.waitForFunction(() => document.getElementById('text').value.startsWith('written on'));
 check('reopening shows the latest version and saves normally again', (await page2.inputValue('#text')) === 'written on the other device\n');
 await page2.fill('#text', 'written on the other device\nplus my follow up\n');
-await sleep(1600);
+await savedWithin(page2);
 check('after reopening, a save goes through', (await page2.locator('#status').textContent()) === 'Saved' && Buffer.from([...notes.values()][0].bytes).toString('utf8') === 'written on the other device\nplus my follow up\n');
 
 // 8. Delete with confirmation
@@ -205,7 +210,7 @@ await page2.click('#new-note');
 await page2.waitForSelector('#edit:not([hidden])');
 await page2.fill('#text', 'A very long single line with no break to push the box sideways '.repeat(12));
 widths.edit = await overflow();
-await sleep(1500);
+await sleep(300);
 await page2.screenshot({ path: SHOTS + '/3-edit-phone.png' });
 await page2.setViewportSize({ width: 1100, height: 800 });
 await page2.screenshot({ path: SHOTS + '/4-edit-desktop.png' });

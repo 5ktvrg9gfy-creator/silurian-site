@@ -89,7 +89,7 @@ async function newNote(text) {
   await page.click('#new-note');
   await page.waitForSelector('#edit:not([hidden])');
   await page.fill('#text', text);
-  await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved' && location.hash.startsWith('#n/'), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved' && location.hash.startsWith('#n/'), null, { timeout: 15000 });
   await page.click('#back');
   await page.waitForSelector('#list:not([hidden])');
 }
@@ -175,7 +175,7 @@ check('sign out with an unsaved edit whose save fails: no offer to leave anyway'
 check('sign out with a failed save: still signed in, edit still on screen with the plain message', (await visible('#edit')) && (await page.inputValue('#text')).includes('UNSAVED EDIT')
   && (await page.locator('#status').textContent()) === 'Not saved' && (await page.locator('#detail').textContent()) !== '');
 await page.unroute('**/api/note?**');
-await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 8000 });
+await page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 15000 });
 
 const cookiesBefore = (await context.cookies()).map((c) => c.name);
 await page.click('#sign-out');

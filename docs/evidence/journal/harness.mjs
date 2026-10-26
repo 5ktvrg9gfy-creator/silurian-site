@@ -8,6 +8,8 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { createNotesApi } from '../../../api/_lib/notes-api.js';
 import { createJournalApi } from '../../../api/_lib/journal-api.js';
+import { createJournalStore } from '../../../api/_lib/journal-store.js';
+import { createBlobStore } from '../../../api/_lib/store.js';
 import { ENVIRONMENT_VARIABLE } from '../../../api/_lib/gate.js';
 import { journalMemoryStore, staleJournalStore } from '../../../notes-tests/journal-helpers.js';
 import { memoryStore } from '../../../notes-tests/helpers.js';
@@ -23,17 +25,30 @@ const types = {
   '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain',
 };
 
-export async function startServer({ port = 8771, lagMs = 0, listLagMs = 0, pageFile = process.env.JOURNAL_PAGE_FILE, coldInstances = false } = {}) {
+// sdk: run the real Blob adapters over this Blob package stand-in instead of the in-memory
+// stores (the usage measurement passes a counting one). cold: each request is answered by
+// a function that has just started and remembers nothing.
+export async function startServer({ port = 8771, lagMs = 0, listLagMs = 0, pageFile = process.env.JOURNAL_PAGE_FILE, coldInstances = false, sdk = null, cold = false } = {}) {
   const password = 'pw-' + randomBytes(12).toString('hex');
-  const journalStore = lagMs || listLagMs ? staleJournalStore({ lagMs, listLagMs }) : journalMemoryStore();
-  const notesStore = memoryStore();
+  const journalStore = sdk ? createJournalStore(sdk) : lagMs || listLagMs ? staleJournalStore({ lagMs, listLagMs }) : journalMemoryStore();
+  const notesStore = sdk ? createBlobStore(sdk) : memoryStore();
   const env = { [ENVIRONMENT_VARIABLE]: password };
+  const freshNotes = () => createNotesApi({ store: sdk ? createBlobStore(sdk) : notesStore, env });
+  const freshJournal = () => createJournalApi({ store: sdk ? createJournalStore(sdk) : journalStore, env });
   const notes = createNotesApi({ store: notesStore, env });
   const journal = createJournalApi({ store: journalStore, env });
   const control = { delayMs: 0, failPosts: false, failQuick: false, staleGets: false, loseFirstAnswers: '' };   // a piece of text: changes whose body has it lose their first answer
   const lost = new Set();
   const frozen = new Map();
-  const routes = {
+  const coldNotes = (route, method) => (request) => freshNotes()[route][method](request);
+  const routes = cold ? {
+    '/api/login': { POST: (r) => freshNotes().login(r) },
+    '/api/session': { GET: (r) => freshNotes().session(r), DELETE: (r) => freshNotes().signOut(r) },
+    '/api/notes': { GET: coldNotes('collection', 'GET'), POST: coldNotes('collection', 'POST') },
+    '/api/note': { GET: coldNotes('item', 'GET'), PUT: coldNotes('item', 'PUT'), PATCH: coldNotes('item', 'PATCH'), DELETE: coldNotes('item', 'DELETE') },
+    '/api/labels': { GET: coldNotes('labels', 'GET'), POST: coldNotes('labels', 'POST'), PUT: coldNotes('labels', 'PUT'), DELETE: coldNotes('labels', 'DELETE') },
+    '/api/journal': Object.fromEntries(['GET', 'POST', 'PUT'].map((m) => [m, (request) => freshJournal()[m](request)])),
+  } : {
     '/api/login': { POST: notes.login },
     '/api/session': { GET: notes.session, DELETE: notes.signOut },
     '/api/notes': notes.collection,
@@ -119,3 +134,14 @@ export async function startServer({ port = 8771, lagMs = 0, listLagMs = 0, pageF
     close: () => new Promise((r) => server.close(r)),
   };
 }
+
+// What the page does when a window is brought back: since 25 October 2026 it asks the server again
+// only if five minutes have passed since it last asked. This makes the page's clock read six minutes
+// on for the moment the focus is handled (the page compares the two times at once), then puts it
+// back, so nothing else the page times (undo, messages, stamps) is moved. Self-contained, because
+// Playwright sends the function to the page.
+export const returnToWindow = () => {
+  const real = Date.now;
+  Date.now = () => real.call(Date) + 6 * 60 * 1000;
+  try { window.dispatchEvent(new Event('focus')); } finally { Date.now = real; }
+};

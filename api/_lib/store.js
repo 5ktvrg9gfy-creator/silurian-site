@@ -78,6 +78,9 @@ const REVISION_VERSION = 2;
 
 // How long a newer revision must have been listed before the ones under it go.
 export const SUPERSEDED_MS = 60 * 1000;
+// How many notes the index may be behind on before a list rewrites it.
+const INDEX_REWRITE_MIN = 8;
+
 // How old a text file no kept revision uses must be before it goes.
 export const ORPHAN_MS = 2 * 60 * 1000;
 const MAX_PROBE = 64;
@@ -245,20 +248,31 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
   // what the listing and this instance's memory show, the files after them are asked
   // for by path. A note with a text file and no small file is revision 0 made up from
   // the text file's own time, and is repaired by the next save.
-  async function newestOf(id, { scan = undefined, atLeast = null } = {}) {
+  async function newestOf(id, { scan = undefined, atLeast = null, hint = null } = {}) {
     const recent = moment.get(id);
     if (scan === undefined && recent && now() - recent.at < MOMENT_MS && (atLeast === null || atLeast !== "9999")) {
       const value = recent.value;
       if (value === null || atLeast === null || value.updatedAt >= atLeast) return value;
     }
-    const value = await findNewest(id, { scan, atLeast });
+    const value = await findNewest(id, { scan, atLeast, hint });
     if (scan === undefined) moment.set(id, { value, at: now() });
     return value;
   }
 
-  async function findNewest(id, { scan, atLeast }) {
-    const entry = scan === undefined ? scanNames(await listPrefix(`${PREFIX}${id}.`)).get(id) : scan;
-    let rev = highestOf(entry);
+  async function findNewest(id, { scan, atLeast, hint = null }) {
+    // A caller that says which revision it started from, and that revision is there,
+    // saves a listing: revisions are only ever made one after another, so the
+    // newest one is that revision or a later one, and the create of the next
+    // revision is what checks the version. There is then no listing to tidy from.
+    let entry = scan;
+    let rev = -1;
+    if (entry === undefined && atLeast !== null && Number.isInteger(hint) && hint >= 1 && (await readRevision(id, hint))) {
+      entry = null;
+      rev = hint;
+    } else if (entry === undefined) {
+      entry = scanNames(await listPrefix(`${PREFIX}${id}.`)).get(id);
+    }
+    if (rev < 0) rev = highestOf(entry);
     const floor = newestSeen.get(id);
     if (floor !== undefined && floor > rev) rev = floor;
     let found = rev >= 0 ? await readRevision(id, rev) : null;
@@ -343,12 +357,12 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
       kept.set(metaPath(id, rev), sound(file, rev));
       newestSeen.set(id, rev);
       moment.delete(id);
-      return { ok: true, updatedAt: meta.updatedAt };
+      return { ok: true, updatedAt: meta.updatedAt, rev };
     }
     // Something is at that revision: read it, and decide again from it.
     const there = await readRevision(id, rev);
     if (!there) throw new Error("revision refused and not readable");
-    if (!there.deleted && there.from === base && there.fp === fp) return { ok: true, updatedAt: there.updatedAt, repeated: true };
+    if (!there.deleted && there.from === base && there.fp === fp) return { ok: true, updatedAt: there.updatedAt, rev: there.rev, repeated: true };
     const latest = await newestOf(id, { atLeast: "9999" });
     return { ok: false, current: latest && !latest.deleted ? publicMeta(latest) : null };
   }
@@ -458,7 +472,9 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
       const scan = scanNames(blobs);
       const fresh = {};
       const gone = [];
-      let repaired = Object.keys(entries).some((id) => !scan.has(id));
+      // An index with nothing in it (missing, damaged or from another version) is made.
+      let repaired = Object.keys(entries).some((id) => !scan.has(id)) || (Object.keys(entries).length === 0 && scan.size > 0);
+      let stale = 0;
       const garbage = [];
       const listed = await Promise.all(
         [...scan].map(async ([id, entry]) => {
@@ -475,7 +491,9 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
             item = record
               ? { tag, title: record.title, updatedAt: record.updatedAt, labels: record.labels, archived: record.archived, text: record.text, deleted: record.deleted }
               : { tag, title: "", updatedAt: isoOf((text || entry.revs.get(rev)).uploadedAt), labels: [], archived: false, text: "legacy", deleted: false };
-            repaired = true;
+            stale += 1;
+            // A removed note is recorded at once, or every list would read its file again.
+            if (item.deleted) repaired = true;
           }
           fresh[id] = item;
           garbage.push(...(await garbageOf(id, entry, rev >= 0 ? { rev, text: item.text, deleted: item.deleted } : null)).slice(0, MAX_DELETES));
@@ -484,7 +502,10 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
           return { id, title: item.title, updatedAt: item.updatedAt, labels: item.labels, archived: item.archived, text: item.text };
         }),
       );
-      if (repaired) await writeIndex(fresh);
+      // The index is only a copy, and writing it costs an advanced operation, while a
+      // note it is behind on costs one small read in the next list. So it is rewritten
+      // when it names a note that has gone, or when enough notes are behind.
+      if (repaired || stale >= INDEX_REWRITE_MIN) await writeIndex(fresh);
       if (garbage.length > 0) {
         try { await deleteAll(garbage.slice(0, MAX_DELETES)); } catch { /* the next list tries again */ }
       }
@@ -517,7 +538,7 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
       if (!newest || newest.deleted) return null;
       const result = guess && guess[0] === newest.text ? guessed : await getPrivate(textPath(id, newest.text));
       if (!result) return null;
-      return { bytes: await readBytes(result.stream), updatedAt: newest.updatedAt, labels: newest.labels, archived: newest.archived };
+      return { bytes: await readBytes(result.stream), updatedAt: newest.updatedAt, rev: newest.rev, labels: newest.labels, archived: newest.archived };
     },
 
     // The last-edited time of a note, or null when there is no such note.
@@ -528,30 +549,30 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
 
     // Title, time, labels and archived flag of the newest revision, or null. atLeast
     // is a version the caller knows exists (the one its save started from).
-    async meta(id, atLeast = null) {
-      const newest = await newestOf(id, { atLeast });
+    async meta(id, atLeast = null, hint = null) {
+      const newest = await newestOf(id, { atLeast, hint });
       return newest && !newest.deleted ? publicMeta(newest) : null;
     },
 
     // The same save sent again: { updatedAt } when the newest revision, or one of the
     // two before it, started from `base` and says the same thing (`fp`), else null.
-    async repeat(id, base, fp) {
-      const newest = await newestOf(id, { atLeast: base });
+    async repeat(id, base, fp, hint = null) {
+      const newest = await newestOf(id, { atLeast: base, hint });
       if (!newest) return null;
       const record = await repeatOf(id, base, fp, newest);
-      return record ? { updatedAt: record.updatedAt } : null;
+      return record ? { updatedAt: record.updatedAt, rev: record.rev } : null;
     },
 
     // Saves new text. base is the version the save started from, or null for a new
     // note. Answers { ok: true, updatedAt } or { ok: false, current } with current the
     // newest revision's small file (null when the note is gone) and nothing changed.
-    async write(id, bytes, meta, base, fp) {
+    async write(id, bytes, meta, base, fp, hint = null) {
       // A new note has an id nobody has used, so there is nothing to look for.
-      const newest = base === null ? null : await newestOf(id, { atLeast: base });
+      const newest = base === null ? null : await newestOf(id, { atLeast: base, hint });
       if (base !== null && (!newest || newest.deleted)) return { ok: false, current: null };
       if (base !== null && newest.updatedAt !== base) {
         const record = await repeatOf(id, base, fp, newest);
-        return record ? { ok: true, updatedAt: record.updatedAt, repeated: true } : { ok: false, current: publicMeta(newest) };
+        return record ? { ok: true, updatedAt: record.updatedAt, rev: record.rev, repeated: true } : { ok: false, current: publicMeta(newest) };
       }
       const token = randomBytes(6).toString("hex");
       await sdk.put(textPath(id, token), Buffer.from(bytes), { access: "private", addRandomSuffix: false, allowOverwrite: false, contentType: TEXT_TYPE });
@@ -562,12 +583,12 @@ export function createBlobStore(sdk, { now = () => Date.now() } = {}) {
 
     // Labels and the archived flag change the small file only: a new revision that
     // names the same text file. Same answers as write.
-    async writeMeta(id, meta, base, fp) {
-      const newest = await newestOf(id, { atLeast: base });
+    async writeMeta(id, meta, base, fp, hint = null) {
+      const newest = await newestOf(id, { atLeast: base, hint });
       if (!newest || newest.deleted) return { ok: false, current: null };
       if (newest.updatedAt !== base) {
         const record = await repeatOf(id, base, fp, newest);
-        return record ? { ok: true, updatedAt: record.updatedAt, repeated: true } : { ok: false, current: publicMeta(newest) };
+        return record ? { ok: true, updatedAt: record.updatedAt, rev: record.rev, repeated: true } : { ok: false, current: publicMeta(newest) };
       }
       const result = await makeRevision(id, newest, base, fp, meta, newest.text);
       if (result.ok) await tidyOne(id, newest.scan, newest);

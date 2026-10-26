@@ -855,7 +855,11 @@
   "use strict";
 
   var MAX_BYTES = 1024 * 1024;
-  var SAVE_DELAY_MS = 1000;
+  // One burst of typing is one save: the save waits for a pause of five seconds, and
+  // never longer than thirty seconds from the first unsaved key. Leaving the note or
+  // the window saves at once (see settle and the visibilitychange handler).
+  var SAVE_DELAY_MS = 5000;
+  var SAVE_MAX_WAIT_MS = 30000;
   var RETRY_DELAY_MS = 5000;
   var TOO_LARGE = "This note is over 1 MB, so it cannot be saved. Cut it down and it will save.";
   var NOT_DELETED = "Could not delete this note. Nothing was changed. Try again.";
@@ -889,7 +893,26 @@
   // The address of the list the user was last on, so All notes and Delete go back there.
   var lastListHash = "";
   // The labels file as the server last said it, and the version a change must start from.
+  // The revision number the server last gave for each note, with the version it
+  // belongs to, sent back with the next change so the server can go straight to it
+  // and need not list the note's files. A hint only: the server still checks the
+  // version when it makes the next revision. Held in memory for this page only.
+  var revs = {};
+  function rememberRev(id, version, rev) {
+    var n = Number(rev);
+    if (id && version && rev !== null && rev !== undefined && isFinite(n) && n >= 1) { revs[id] = { version: version, rev: n }; }
+  }
+  function withRev(headers, id, version) {
+    var held = revs[id];
+    if (held && held.version === version) { headers["X-Base-Rev"] = String(held.rev); }
+    return headers;
+  }
   var labelsState = { labels: [], version: "none" };
+  // When the list of notes was last asked for. A navigation back to the list within
+  // five minutes draws what the page holds and asks nothing; every change made on this
+  // page is already in memory, and every change to a note names the version it started from.
+  var LIST_FRESH_MS = 5 * 60 * 1000;
+  var listAt = 0;
   // A message bar and an Undo waiting for the list that is about to be shown.
   var pendingFlash = null;
   var flashUndo = null;
@@ -1004,6 +1027,7 @@
     changesInFlight = 0;
     shownSig = "";
     labelRun = null;
+    revs = {};
   }
 
   // The same title the server makes: the first line, trimmed, 200 characters.
@@ -1119,12 +1143,20 @@
     return labelsState.labels.some(function (l) { return l.id !== exceptId && l.name.toLowerCase() === lower; });
   }
 
+  // The label names are asked for again only when the page has not asked within five
+  // minutes (or is told to). A label change names the version it started from, so a
+  // stale list is never written over a newer one: it is refused with the current list.
+  var LABELS_FRESH_MS = 5 * 60 * 1000;
+  var labelsAt = 0;
+
   function takeLabels(data) {
     labelsState = { labels: data.labels, version: data.updatedAt };
+    labelsAt = Date.now();
     renderMenu();
   }
 
-  function refreshLabels() {
+  function refreshLabels(force) {
+    if (!force && labelsAt && Date.now() - labelsAt < LABELS_FRESH_MS && labelsState.version !== "none") { return Promise.resolve(labelsState); }
     return request("/api/labels").then(function (response) {
       if (!response.ok) { throw new Error("labels"); }
       return response.json();
@@ -1323,11 +1355,11 @@
   function patchRequest(id, base, change) {
     return request("/api/note?id=" + encodeURIComponent(id), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "X-Base-Updated": base },
+      headers: withRev({ "Content-Type": "application/json", "X-Base-Updated": base }, id, base),
       body: JSON.stringify(change)
     }).then(function (response) {
       return response.json().then(function (data) { return data; }, function () { return {}; }).then(function (data) {
-        if (response.ok) { return { ok: true, updatedAt: data.updatedAt }; }
+        if (response.ok) { rememberRev(id, data.updatedAt, response.headers.get("X-Note-Rev")); return { ok: true, updatedAt: data.updatedAt }; }
         return { ok: false, error: data.error || NOT_CHANGED };
       });
     }).catch(function () { return { ok: false, error: NOT_CHANGED }; });
@@ -1348,7 +1380,7 @@
             return false;
           }
           remember({ id: item.id, title: item.title, updatedAt: result.updatedAt, labels: item.labels, archived: !nowArchived });
-          if (currentView === "list") { loadList(false); }
+          if (currentView === "list") { repaintFromMemory(); }
           return true;
         });
       });
@@ -1367,7 +1399,7 @@
       if (inFlight[item.id] === pending) { delete inFlight[item.id]; }
       if (result.ok) {
         remember({ id: item.id, title: item.title, updatedAt: result.updatedAt, labels: item.labels, archived: toArchive });
-        if (currentView === "list") { loadList(false); }
+        if (currentView === "list") { repaintFromMemory(); }
       } else {
         remember(item);
         refused(result.error);
@@ -1629,6 +1661,8 @@
     if (query === "" && mem.all !== null && (reveal || currentView === "list") && (listView.kind !== "label" || labelById(listView.id))) {
       paintList(rowsFor(listView.kind, listView.id), query, reveal, flash);
       painted = true;
+      // Asked for within the last five minutes: what is held stands, and the server is not asked.
+      if (reveal && listAt && Date.now() - listAt < LIST_FRESH_MS) { return; }
     }
     var gen = memoryGeneration;
     var listed = request(url, options).then(function (response) {
@@ -1652,7 +1686,7 @@
         // An answer that was asked for before a change of the user's own was
         // sent does not know about it. The change refreshes the list itself.
         if (changesInFlight > 0 && painted) { return; }
-        if (changesInFlight === 0) { mem.all = mergeList(mem.all, data.notes, data.gone); }
+        if (changesInFlight === 0) { mem.all = mergeList(mem.all, data.notes, data.gone); listAt = Date.now(); }
       }
       // A label that no longer exists shows the Notes list.
       if (query === "" && listView.kind === "label" && !labelById(listView.id)) {
@@ -1704,7 +1738,7 @@
   function showLabels() {
     labelError("");
     var navigation = routeSeq;
-    refreshLabels().then(function () {
+    refreshLabels(true).then(function () {
       if (navigation !== routeSeq) { return; }
       renamingId = confirmingId = null;
       show("labels");
@@ -1930,6 +1964,7 @@
     return request("/api/note?id=" + encodeURIComponent(id)).then(function (response) {
       if (!response.ok) { throw new Error("open"); }
       var version = response.headers.get("X-Note-Updated");
+      rememberRev(id, version, response.headers.get("X-Note-Rev"));
       var labels = (response.headers.get("X-Note-Labels") || "").split(",").filter(Boolean);
       var archived = response.headers.get("X-Note-Archived") === "true";
       return response.arrayBuffer().then(function (buffer) {
@@ -2028,12 +2063,19 @@
     }
     note.tooLarge = false;
     setStatus("unsaved", "Not saved", "");
-    clearTimeout(note.timer);
-    note.timer = setTimeout(save, SAVE_DELAY_MS);
+    scheduleSave();
   });
 
+  function scheduleSave() {
+    var at = Date.now();
+    if (!note.dirtySince) { note.dirtySince = at; }
+    var wait = Math.max(0, Math.min(SAVE_DELAY_MS, note.dirtySince + SAVE_MAX_WAIT_MS - at));
+    clearTimeout(note.timer);
+    note.timer = setTimeout(save, wait);
+  }
+
   function save() {
-    clearTimeout(note.timer); note.timer = null;
+    clearTimeout(note.timer); note.timer = null; note.dirtySince = 0;
     if (note.saving || note.conflict !== null) { return Promise.resolve(false); }
     var body = textBox.value;
     if (body === note.saved || (note.id === null && body === "")) {
@@ -2051,6 +2093,7 @@
       if (note.labels.length) { headers["X-Note-Labels"] = note.labels.join(","); }
     } else {
       headers["X-Base-Updated"] = note.version;
+      withRev(headers, note.id, note.version);
     }
     return request(path, {
       method: creating ? "POST" : "PUT",
@@ -2079,6 +2122,7 @@
         note.failed = false;
         note.saved = body;
         note.version = data.updatedAt;
+        rememberRev(data.id || note.id, data.updatedAt, response.headers.get("X-Note-Rev"));
         if (creating) {
           note.id = data.id;
           note.serverLabels = note.labels.slice();
@@ -2089,7 +2133,7 @@
         syncMemory();
         if (textBox.value !== body) {
           setStatus("unsaved", "Not saved", "");
-          note.timer = setTimeout(save, SAVE_DELAY_MS);
+          scheduleSave();
           return false;
         }
         setStatus("saved", "Saved", "");
@@ -2124,7 +2168,7 @@
       setStatus("saving", "Saving", "");
       return request("/api/note?id=" + encodeURIComponent(id), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", "X-Base-Updated": note.version },
+        headers: withRev({ "Content-Type": "application/json", "X-Base-Updated": note.version }, id, note.version),
         body: JSON.stringify(change)
       }).then(function (response) {
         return response.json().then(function (data) { return data; }, function () { return {}; }).then(function (data) {
@@ -2137,6 +2181,7 @@
           }
           if (!response.ok) { setStatus("failed", "Not saved", data.error || NOT_CHANGED); return false; }
           note.version = data.updatedAt;
+          rememberRev(id, data.updatedAt, response.headers.get("X-Note-Rev"));
           note.serverLabels = data.labels.slice();
           // Ticks made while this was on its way are the user's latest wish and
           // are sent next; otherwise the server's own list stands.
@@ -2159,8 +2204,7 @@
   function resumeAfterPatch() {
     if (isDirty() && note.conflict === null) {
       setStatus("unsaved", "Not saved", "");
-      clearTimeout(note.timer);
-      note.timer = setTimeout(save, SAVE_DELAY_MS);
+      scheduleSave();
     } else {
       setStatus("saved", "Saved", "");
     }
@@ -2440,6 +2484,8 @@
     $("new-label").value = "";
     labelError("");
     labelsState = { labels: [], version: "none" };
+    labelsAt = 0;
+    listAt = 0;
     listView = { kind: "notes", id: null };
     lastListHash = "";
     pendingFlash = null;
@@ -2488,6 +2534,12 @@
   // Back exactly as it was left, before any code runs. So the page empties
   // itself as it is left: what the cache keeps holds no note and shows only the
   // wordmark. On return it asks the server before showing anything.
+  // Hiding the window saves what is waiting, so a long pause is never a reason to
+  // lose words when the tab is closed or the device is put down.
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden" && currentView === "edit" && hasUnsavedWork()) { save(); }
+  });
+
   window.addEventListener("pagehide", function () {
     clearContent();
     showOnly("Loading.");

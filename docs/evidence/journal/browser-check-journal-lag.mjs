@@ -9,7 +9,7 @@
 // It takes about three minutes, because it works in real time: it adds, edits,
 // moves and brings forward while the window keeps asking the server again, then
 // waits past the 60 seconds and looks again.
-import { startServer, chromium } from './harness.mjs';
+import { startServer, chromium, returnToWindow } from './harness.mjs';
 import * as core from '../../../journal/core.js';
 
 const LAG = 60000;
@@ -53,7 +53,7 @@ await page.waitForSelector('#app:not([hidden])');
 
 // The window keeps asking again, as it does on focus and every 45 seconds.
 let asking = true;
-(async () => { while (asking) { await page.evaluate(() => window.dispatchEvent(new Event('focus'))).catch(() => {}); await sleep(700); } })();
+(async () => { while (asking) { await page.evaluate(returnToWindow).catch(() => {}); await sleep(700); } })();
 
 // Every 300ms: what Today shows, as the texts of its entries.
 const samples = [];
@@ -213,7 +213,7 @@ await context.close();
   await fetch(BASE + '/api/journal?view=home&today=' + TODAY, { headers: { cookie } });
   await fetch(BASE + '/api/journal?view=months&months=' + OCT, { headers: { cookie } });
   let asking2 = true;
-  (async () => { while (asking2) { await page2.evaluate(() => window.dispatchEvent(new Event('focus'))).catch(() => {}); await sleep(400); } })();
+  (async () => { while (asking2) { await page2.evaluate(returnToWindow).catch(() => {}); await sleep(400); } })();
   const seen2 = [];
   let sampling2 = true;
   (async () => { while (sampling2) { const t = await page2.evaluate(() => [...document.querySelectorAll('#list-migrate li.entry .entry-text')].map((e) => e.innerText)).catch(() => null); if (t) seen2.push(t); await sleep(250); } })();
@@ -253,7 +253,7 @@ await context.close();
   const rowOf = (d) => page3.locator(`.date-row[data-date="${d}"]`);
   // The window keeps asking again, as it does on focus and every 45 seconds.
   let asking3 = true;
-  (async () => { while (asking3) { await page3.evaluate(() => window.dispatchEvent(new Event('focus'))).catch(() => {}); await sleep(500); } })();
+  (async () => { while (asking3) { await page3.evaluate(returnToWindow).catch(() => {}); await sleep(500); } })();
   const barsOf = () => page3.evaluate(() => ({ text: (document.querySelector('.date-row[data-date="2026-10-27"] .line-text') || {}).innerText, bars: document.querySelectorAll('.span-bar').length }));
   const spansNow = () => { const out = new Map(); for (const [k, h] of server.journalStore.spanFiles) { const f = core.normaliseSpanFile(JSON.parse(h.json)); if (!out.has(f.id) || f.rev > out.get(f.id).rev) out.set(f.id, f); } return [...out.values()]; };
   const waitFor = async (fn, ms = 8000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return true; await sleep(100); } return false; };

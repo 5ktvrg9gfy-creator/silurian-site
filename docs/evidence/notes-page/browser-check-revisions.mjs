@@ -88,12 +88,12 @@ async function device(label) {
 }
 const rows = (d) => d.page.locator('#notes > li');
 const titles = (d) => d.page.locator('#notes .note-title').allInnerTexts();
-const saved = (d) => d.page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 8000 });
+const saved = (d) => d.page.waitForFunction(() => document.getElementById('status').textContent === 'Saved', null, { timeout: 15000 });
 async function create(d, text) {
   await d.page.click('#new-note');
   await d.page.waitForSelector('#edit:not([hidden])');
   await d.page.fill('#text', text);
-  await d.page.waitForFunction(() => document.getElementById('status').textContent === 'Saved' && location.hash.startsWith('#n/'), null, { timeout: 8000 });
+  await d.page.waitForFunction(() => document.getElementById('status').textContent === 'Saved' && location.hash.startsWith('#n/'), null, { timeout: 15000 });
   await d.page.click('#back');
   await d.page.waitForSelector('#list:not([hidden])');
 }
@@ -127,7 +127,7 @@ behind.B = true;
 
 // Device B, which holds the first version and is shown the first version again when it asks, edits it.
 await B.page.fill('#text', 'Alpha v2 from B, written over A');
-await sleep(2500);
+await B.page.waitForFunction(() => /changed on another device/.test(document.getElementById('detail').textContent), null, { timeout: 15000 });
 const message = await B.page.locator('#detail').textContent();
 check('device B is refused: the note changed on another device, with its text kept on screen', (await B.page.locator('#status').textContent()) === 'Not saved' && /changed on another device/.test(message) && (await B.page.inputValue('#text')) === 'Alpha v2 from B, written over A', message);
 check('and device A\'s version is what is stored', (await storedText()) === 'Alpha v2 from A', await storedText());

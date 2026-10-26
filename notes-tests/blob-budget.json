@@ -1,0 +1,151 @@
+{
+  "about": "Blob operations each common action may cost, set at exactly the figures measured on 25 October 2026 after the cuts in the blob-usage branch, on instances that remember nothing (the most an action can cost). Advanced is put plus copy plus list; simple is get plus head, every get counted as a cache miss. Nothing here has slack: a figure goes up only by a decision recorded in docs/evidence/blob-usage/blob-usage-evidence.md and docs/blob-usage-open-questions.md. The typical day is 73 advanced operations, accepted by the product owner on 25 October 2026 on the Pro plan.",
+  "api": {
+    "journal: open (home)": {
+      "advanced": 4,
+      "simple": 68
+    },
+    "journal: return to an open window (light home)": {
+      "advanced": 3,
+      "simple": 68
+    },
+    "journal: add an entry": {
+      "advanced": 1,
+      "simple": 0
+    },
+    "journal: edit an entry": {
+      "advanced": 1,
+      "simple": 1
+    },
+    "journal: move an entry": {
+      "advanced": 2,
+      "simple": 1
+    },
+    "journal: set a calendar line": {
+      "advanced": 1,
+      "simple": 0
+    },
+    "journal: make a span": {
+      "advanced": 1,
+      "simple": 0
+    },
+    "journal: save quick notes": {
+      "advanced": 1,
+      "simple": 1
+    },
+    "notes: open the list": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: open a note": {
+      "advanced": 1,
+      "simple": 2
+    },
+    "notes: save a note, from the revision the page holds": {
+      "advanced": 2,
+      "simple": 1
+    },
+    "notes: label a note, from the revision the page holds": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: archive a note, from the revision the page holds": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: search": {
+      "advanced": 1,
+      "simple": 32
+    }
+  },
+  "browser": {
+    "journal open and idle for one hour, focused": {
+      "advanced": 0,
+      "simple": 0
+    },
+    "journal open and idle for one hour, visible, not focused": {
+      "advanced": 0,
+      "simple": 0
+    },
+    "journal open and idle for one hour, hidden": {
+      "advanced": 0,
+      "simple": 0
+    },
+    "notes open and idle for one hour, on the list": {
+      "advanced": 0,
+      "simple": 0
+    },
+    "notes open and idle for one hour, on the a note being edited": {
+      "advanced": 0,
+      "simple": 0
+    },
+    "journal: open (page load, signed in)": {
+      "advanced": 4,
+      "simple": 86
+    },
+    "journal: add an entry in Today": {
+      "advanced": 1,
+      "simple": 0
+    },
+    "journal: move that entry to Tomorrow (keyboard buttons)": {
+      "advanced": 2,
+      "simple": 1
+    },
+    "journal: edit an entry and tick another": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "journal: type a calendar line in Month": {
+      "advanced": 1,
+      "simple": 0
+    },
+    "journal: make a span from that line (Until, three days)": {
+      "advanced": 2,
+      "simple": 1
+    },
+    "journal: switch back to the window after six minutes (focus)": {
+      "advanced": 3,
+      "simple": 90
+    },
+    "journal: switch back to the window again after one minute (focus)": {
+      "advanced": 0,
+      "simple": 0
+    },
+    "journal: type in Quick notes for one minute": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: open the list (page load, signed in)": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: open a note": {
+      "advanced": 1,
+      "simple": 2
+    },
+    "notes: type for one minute (bursts with short pauses)": {
+      "advanced": 4,
+      "simple": 2
+    },
+    "notes: give the open note a label": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: archive the open note": {
+      "advanced": 2,
+      "simple": 2
+    },
+    "notes: search for a word": {
+      "advanced": 1,
+      "simple": 46
+    },
+    "notes: list after one note collected 8 settled revisions (cleanup)": {
+      "advanced": 1,
+      "simple": 3
+    }
+  },
+  "typicalDay": {
+    "advanced": 73,
+    "simple": 864
+  }
+}

@@ -303,7 +303,11 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
         const tomorrowMonth = monthOf(addDays(today, 1));
         const wanted = [thisMonth];
         if (tomorrowMonth !== thisMonth) wanted.push(tomorrowMonth);
-        const [onFile, quick] = await Promise.all([store.months(), store.readQuick()]);
+        // light: a return to an open window. The months the morning strip looks back
+        // over were sent when the page opened, so the listing of every month that has
+        // a file is not made again.
+        const light = params.get("light") === "1";
+        const [onFile, quick] = await Promise.all([light ? [] : store.months(), store.readQuick()]);
         const earlier = onFile.filter((m) => m < thisMonth).slice(0, EARLIER_MONTHS);
         const months = [...wanted, ...earlier];
         const [files, spans] = await Promise.all([loadMonths(months), loadSpans(months)]);

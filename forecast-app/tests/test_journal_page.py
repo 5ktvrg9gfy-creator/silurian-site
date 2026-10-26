@@ -608,7 +608,7 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
 
     def test_nothing_is_moved_migrated_or_dropped_by_a_timer_or_by_loading(self) -> None:
         calls = timer_calls(self.script)
-        self.assertGreaterEqual(len(calls), 6, "The timers were not found.")
+        self.assertGreaterEqual(len(calls), 5, "The timers were not found.")  # six until 25 October 2026, when the polling interval went (test_blob_usage.py)
         for call in calls:
             for name in ("submit(", "pump(", "moveEntry(", "bringForward(", "dropTasks(", "runUndo(", "offerUndo("):
                 self.assertNotIn(name, call, f"A timer calls {name}: {call[:90]}")
@@ -646,7 +646,7 @@ class JournalPageKeepsItsPromises(unittest.TestCase):
     def test_memory_is_dropped_on_sign_out_on_a_401_and_when_the_page_is_left(self) -> None:
         body = function_body(self.script, "clearContent")
         for fragment in ("generation += 1;", "confirmed = {};", "stripMonths = [];", "pending = [];", "shown = {};",
-                         "sending = false;", "dayView = null;", "quickEditor.textContent = \"\";", "clearInterval(pollTimer);",
+                         "sending = false;", "dayView = null;", "quickEditor.textContent = \"\";",
                          "clearTimeout(quick.timer);", '$("password").value = "";', "hideFlash();"):
             self.assertIn(fragment, body)
         self.assertIn("clearContent();", function_body(self.script, "goToLogin"), "A 401 and sign out both go through goToLogin.")

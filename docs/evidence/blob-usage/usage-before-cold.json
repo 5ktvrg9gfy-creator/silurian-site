@@ -1,0 +1,462 @@
+{
+  "label": "before",
+  "mode": "cold",
+  "results": [
+    {
+      "name": "journal open and idle for one hour, focused",
+      "advanced": 320,
+      "simple": 6880,
+      "put": 0,
+      "list": 320,
+      "get": 6880,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal open and idle for one hour, visible, not focused",
+      "advanced": 320,
+      "simple": 6880,
+      "put": 0,
+      "list": 320,
+      "get": 6880,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal open and idle for one hour, hidden",
+      "advanced": 0,
+      "simple": 0,
+      "put": 0,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes open and idle for one hour, on the list",
+      "advanced": 0,
+      "simple": 0,
+      "put": 0,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes open and idle for one hour, on the a note being edited",
+      "advanced": 0,
+      "simple": 0,
+      "put": 0,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: open (page load, signed in)",
+      "advanced": 4,
+      "simple": 86,
+      "put": 0,
+      "list": 4,
+      "get": 86,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: open again (a second device, or a reload)",
+      "advanced": 4,
+      "simple": 86,
+      "put": 0,
+      "list": 4,
+      "get": 86,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: add an entry in Today",
+      "advanced": 1,
+      "simple": 0,
+      "put": 1,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: move that entry to Tomorrow (keyboard buttons)",
+      "advanced": 2,
+      "simple": 1,
+      "put": 2,
+      "list": 0,
+      "get": 1,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: edit an entry and tick another",
+      "advanced": 2,
+      "simple": 2,
+      "put": 2,
+      "list": 0,
+      "get": 2,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: type a calendar line in Month",
+      "advanced": 1,
+      "simple": 0,
+      "put": 1,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: make a span from that line (Until, three days)",
+      "advanced": 2,
+      "simple": 1,
+      "put": 2,
+      "list": 0,
+      "get": 1,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: switch back to the window after six minutes (focus)",
+      "advanced": 36,
+      "simple": 810,
+      "put": 0,
+      "list": 36,
+      "get": 810,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: switch back to the window again after one minute (focus)",
+      "advanced": 8,
+      "simple": 180,
+      "put": 0,
+      "list": 8,
+      "get": 180,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal: type in Quick notes for one minute",
+      "advanced": 25,
+      "simple": 197,
+      "put": 17,
+      "list": 8,
+      "get": 197,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: open the list (page load, signed in)",
+      "advanced": 2,
+      "simple": 2,
+      "put": 0,
+      "list": 2,
+      "get": 2,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: open a note",
+      "advanced": 2,
+      "simple": 3,
+      "put": 0,
+      "list": 2,
+      "get": 3,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: type for one minute (bursts with short pauses)",
+      "advanced": 36,
+      "simple": 78,
+      "put": 24,
+      "list": 12,
+      "get": 78,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: give the open note a label",
+      "advanced": 3,
+      "simple": 14,
+      "put": 1,
+      "list": 2,
+      "get": 14,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: archive the open note",
+      "advanced": 7,
+      "simple": 47,
+      "put": 2,
+      "list": 5,
+      "get": 47,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: go back to the list after editing (the list is asked for again)",
+      "advanced": 2,
+      "simple": 16,
+      "put": 0,
+      "list": 2,
+      "get": 16,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: search for a word",
+      "advanced": 1,
+      "simple": 55,
+      "put": 0,
+      "list": 1,
+      "get": 55,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: list after one note collected 8 settled revisions (cleanup)",
+      "advanced": 2,
+      "simple": 2,
+      "put": 1,
+      "list": 1,
+      "get": 2,
+      "head": 0,
+      "del": 1,
+      "note": "8 old revisions and their text files become deletable"
+    },
+    {
+      "name": "notes: the same list again straight after",
+      "advanced": 1,
+      "simple": 1,
+      "put": 0,
+      "list": 1,
+      "get": 1,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes: one save with no cleanup due",
+      "advanced": 3,
+      "simple": 1,
+      "put": 2,
+      "list": 1,
+      "get": 1,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    }
+  ],
+  "day": {
+    "rows": [
+      {
+        "name": "journal: open (page load, signed in)",
+        "times": 5,
+        "why": "five opens across the PC and the iPad",
+        "each": 4,
+        "simpleEach": 86,
+        "advanced": 20,
+        "simple": 430
+      },
+      {
+        "name": "journal: switch back to the window after six minutes (focus)",
+        "times": 4,
+        "why": "four returns to a window left open for more than five minutes",
+        "each": 36,
+        "simpleEach": 810,
+        "advanced": 144,
+        "simple": 3240
+      },
+      {
+        "name": "journal: add an entry in Today",
+        "times": 8,
+        "why": "eight entries added",
+        "each": 1,
+        "simpleEach": 0,
+        "advanced": 8,
+        "simple": 0
+      },
+      {
+        "name": "journal: move that entry to Tomorrow (keyboard buttons)",
+        "times": 2,
+        "why": "two moves",
+        "each": 2,
+        "simpleEach": 1,
+        "advanced": 4,
+        "simple": 2
+      },
+      {
+        "name": "journal: edit an entry and tick another",
+        "times": 3,
+        "why": "three edits or ticks",
+        "each": 2,
+        "simpleEach": 2,
+        "advanced": 6,
+        "simple": 6
+      },
+      {
+        "name": "journal: type a calendar line in Month",
+        "times": 1,
+        "why": "one calendar line",
+        "each": 1,
+        "simpleEach": 0,
+        "advanced": 1,
+        "simple": 0
+      },
+      {
+        "name": "journal: type in Quick notes for one minute",
+        "times": 1,
+        "why": "one minute of Quick notes",
+        "each": 25,
+        "simpleEach": 197,
+        "advanced": 25,
+        "simple": 197
+      },
+      {
+        "name": "notes: open the list (page load, signed in)",
+        "times": 2,
+        "why": "two visits to the notes list",
+        "each": 2,
+        "simpleEach": 2,
+        "advanced": 4,
+        "simple": 4
+      },
+      {
+        "name": "notes: open a note",
+        "times": 3,
+        "why": "three notes opened",
+        "each": 2,
+        "simpleEach": 3,
+        "advanced": 6,
+        "simple": 9
+      },
+      {
+        "name": "notes: type for one minute (bursts with short pauses)",
+        "times": 2,
+        "why": "two minutes of typing in notes",
+        "each": 36,
+        "simpleEach": 78,
+        "advanced": 72,
+        "simple": 156
+      },
+      {
+        "name": "notes: give the open note a label",
+        "times": 1,
+        "why": "one label",
+        "each": 3,
+        "simpleEach": 14,
+        "advanced": 3,
+        "simple": 14
+      },
+      {
+        "name": "notes: archive the open note",
+        "times": 1,
+        "why": "one archive",
+        "each": 7,
+        "simpleEach": 47,
+        "advanced": 7,
+        "simple": 47
+      },
+      {
+        "name": "notes: search for a word",
+        "times": 1,
+        "why": "one search",
+        "each": 1,
+        "simpleEach": 55,
+        "advanced": 1,
+        "simple": 55
+      }
+    ],
+    "advanced": 301,
+    "simple": 4160,
+    "note": "Idle open windows are not in this day. Add the idle hour figure for each hour a window is left open."
+  },
+  "idleHour": [
+    {
+      "name": "journal open and idle for one hour, focused",
+      "advanced": 320,
+      "simple": 6880,
+      "put": 0,
+      "list": 320,
+      "get": 6880,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal open and idle for one hour, visible, not focused",
+      "advanced": 320,
+      "simple": 6880,
+      "put": 0,
+      "list": 320,
+      "get": 6880,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "journal open and idle for one hour, hidden",
+      "advanced": 0,
+      "simple": 0,
+      "put": 0,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes open and idle for one hour, on the list",
+      "advanced": 0,
+      "simple": 0,
+      "put": 0,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    },
+    {
+      "name": "notes open and idle for one hour, on the a note being edited",
+      "advanced": 0,
+      "simple": 0,
+      "put": 0,
+      "list": 0,
+      "get": 0,
+      "head": 0,
+      "del": 0,
+      "note": ""
+    }
+  ]
+}
