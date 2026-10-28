@@ -36,4 +36,16 @@ The browser check counts what it looked at: 4 Done rows over two days, an empty 
 
 ## Not run
 
-The Vercel Preview, a finger on an iPad, a real Blob store (the stand-in counts calls; real `uploadedAt` values come from the package and were not seen), `npm run test:vercel`, and the Production usage result for blob-usage (not available to this session, Q9).
+A finger on an iPad, a real Blob store (the stand-in counts calls; real `uploadedAt` values come from the package and were not seen), `npm run test:vercel`, and the Production usage result for blob-usage (not available to this session, Q9).
+
+## Preview, 28 October 2026, of `fe6878b`: passed
+
+The product owner ran the Preview steps and every one passed (reported by the product owner, not run by the build session): the Done list with today's ticks and their logs; the Q3 case, a September task ticked today shown in October with its September log date; Escape, Back and a refresh keeping the Done view; the month arrows with next off on October; the calendar search across a line, a span and an entry with click-through, clearing the field and the empty message; and the Quick notes bullets kept after a reload. The Blob usage page step was dropped by the product owner because that page lags and lumps days together; `notes-tests/blob-budget.test.js` holds the cost. Approved to merge. The merge commit and the Production check are recorded in the handoff entry that follows the merge.
+
+## Production check list (for after the merge)
+
+1. Open `/journal`, tick a task in Today, click Done: it is there under today's date with its log. Reload on `#done/...` and it stays.
+2. Tick a task from an older log and confirm it appears in the month it was ticked.
+3. Search a word you know is in a calendar line, a span and an entry: results, click-through, clear.
+4. In Quick notes, type `- one`, Enter, `two`, Enter, Enter, reload: the "\u2022 " lines are kept.
+5. Sign out and sign in: no Done list or search result is left on the sign in screen.
