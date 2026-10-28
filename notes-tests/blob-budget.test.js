@@ -81,6 +81,22 @@ test("the journal: every common action stays inside its Blob budget", async () =
   within("journal: move an entry", await costOf(w, () => w.op({ op: "move", from: `day:${today}`, to: "day:2026-10-23", at: NOW + 100000, how: "migrated", items: [{ id, rev: 2 }] })));
   within("journal: set a calendar line", await costOf(w, () => w.op({ op: "line", date: "2026-10-24", rev: 0, text: "Dentist" })));
   within("journal: make a span", await costOf(w, () => w.op({ op: "spanAdd", span: { id: newId(), start: "2026-11-02", end: "2026-11-04", text: "Away" } })));
+  // The Done list: five of the October tasks are ticked, one of them edited after, and
+  // the list is asked for with nothing remembered by the instance that answers.
+  const ticked = entries.filter((e) => e.list === "day:2026-10-03").slice(0, 3).concat(entries.filter((e) => e.list === "day:2026-10-04").slice(0, 2));
+  for (const e of ticked) await w.op({ op: "state", list: e.list, id: e.id, rev: 1, state: "done" });
+  await w.op({ op: "edit", list: ticked[0].list, id: ticked[0].id, rev: 2, text: "Edited after the tick" });
+  w.clock.now += 5 * 60 * 1000;
+  const doneOpen = within("journal: open the Done list", await costOf(w, () => w.ask(w.journal().GET, "/api/journal?view=done&month=2026-10").then((r) => r.json())));
+  const doneBody = await (await w.ask(w.journal().GET, "/api/journal?view=done&month=2026-10")).json();
+  assert.equal(doneBody.items.length, 5, "the five ticked tasks, and only those");
+  assert.ok(doneOpen.advanced >= 1, "one listing of every entry file, and a page more for every thousand files");
+  within("journal: change the Done month", await costOf(w, () => w.ask(w.journal().GET, "/api/journal?view=done&month=2026-09").then((r) => r.json())));
+  // The first search in a window: everything the page does not hold. The page holds this month.
+  const search = within("journal: search the calendar (the first search in a window)", await costOf(w, () => w.ask(w.journal().GET, "/api/journal?view=all&skip=2026-10").then((r) => r.json())));
+  assert.ok(search.advanced >= 3, "one listing of the entries, one of the lines and one of the spans");
+  // The next search in the window is worked out by the page from what it holds: it asks nothing,
+  // which forecast-app/tests/test_journal_page.py holds and the browser check shows.
   within("journal: save quick notes", await costOf(w, () => w.ask(w.journal().PUT, "/api/journal?part=quick", "PUT", "Quick text", { "x-base-updated": "none", "content-type": "text/plain; charset=utf-8" }).then((r) => assert.equal(r.status, 200))));
 });
 

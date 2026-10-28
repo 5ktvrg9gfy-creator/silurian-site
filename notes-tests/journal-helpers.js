@@ -64,6 +64,48 @@ export function journalMemoryStore() {
       }
       return [...latest.values()].map((x) => normaliseEntryFile(JSON.parse(x.json)));
     },
+    async entryIndex() {
+      state.reads += 1;
+      const byEntry = new Map();
+      for (const [k, held] of entries) {
+        const [list, id, rev] = k.split("|");
+        if (!listed(held.at)) continue;
+        const month = monthOfList(list);
+        const got = byEntry.get(`${month}/${id}`) || { month, id, rev: 0, times: {} };
+        got.times[Number(rev)] = new Date(held.at).toISOString();
+        got.rev = Math.max(got.rev, Number(rev));
+        byEntry.set(`${month}/${id}`, got);
+      }
+      return [...byEntry.values()];
+    },
+    async readEntryOfMonth(month, id, rev) {
+      state.reads += 1;
+      for (const [k, held] of entries) {
+        const [list, entryId, entryRev] = k.split("|");
+        if (monthOfList(list) === month && entryId === id && Number(entryRev) === rev) return normaliseEntryFile(JSON.parse(held.json));
+      }
+      return null;
+    },
+    async entriesAcross(skip = []) {
+      state.reads += 1;
+      const latest = new Map();
+      for (const [k, held] of entries) {
+        const [list, id, rev] = k.split("|");
+        if (skip.includes(monthOfList(list)) || !listed(held.at)) continue;
+        if (!latest.has(id) || Number(rev) > latest.get(id).rev) latest.set(id, { rev: Number(rev), json: held.json });
+      }
+      return [...latest.values()].map((x) => normaliseEntryFile(JSON.parse(x.json)));
+    },
+    async linesAcross(skip = []) {
+      state.reads += 1;
+      const latest = new Map();
+      for (const [k, held] of lines) {
+        const [date, rev] = k.split("|");
+        if (skip.includes(date.slice(0, 7)) || !listed(held.at)) continue;
+        if (!latest.has(date) || Number(rev) > latest.get(date).rev) latest.set(date, { rev: Number(rev), json: held.json });
+      }
+      return [...latest.values()].map((x) => normaliseLineFile(JSON.parse(x.json)));
+    },
     async readLine(date, rev) {
       const held = lines.get(`${date}|${rev}`);
       return held ? normaliseLineFile(JSON.parse(held.json)) : null;

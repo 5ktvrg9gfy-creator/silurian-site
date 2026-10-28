@@ -1,0 +1,51 @@
+# Journal: Done list, Quick notes bullets and calendar search, evidence
+
+Branch `journal-done-search`, cut from `main` at `ac41590` on 28 October 2026. Not merged. Questions: `docs/journal-done-search-open-questions.md` (all answered on 28 October 2026: Q1, Q2 and Q4 to Q8 accepted, Q3 fixed, Q9 recorded).
+
+## What was built
+
+- **Done list.** `#done/YYYY-MM`, a full-window read only view with Back, Escape and month arrows. The server route is `GET /api/journal?view=done&month=` (every entry file listed once, Q3); the grouping is `core.doneGroups`; the tick time is the listing's `uploadedAt` for the first revision of the run of done revisions ending at the newest.
+- **Quick notes bullets.** A bullet button; "- " or "* " typed at the start of a line, Enter on a bullet and Enter on an empty bullet. Rules in `core.js`, carried out on screen through editing commands.
+- **Calendar search.** A field at the top of Month; `GET /api/journal?view=all` once per window; `core.searchCalendar` in the page.
+- Two icons, `j-tick` and `j-bullet`. No new colour, size, width or radius.
+
+## Usage, measured (counting stand-in, instances that remember nothing)
+
+Same seed as the other rows (23 days of October, 10 of September, a span), five of the October tasks ticked and one edited after its tick.
+
+| Action | Advanced | Simple |
+|---|---:|---:|
+| Open the Done list (October) | 1 | 84 |
+| Change its month (September) | 1 | 84 |
+| First search in a window (the page holds October) | 3 | 12 |
+| Next search in the window | 0 | 0 |
+| Idle, with the Done list or a search open | 0 | 0 |
+
+Set in `notes-tests/blob-budget.json` at exactly these figures. **Changed on 28 October 2026 after the product owner's answer to Q3:** the Done list lists every entry file once, so a task ticked in a month is found whatever month its log is in. That is 1 advanced operation on the seed (it was 2), and a page more for every thousand entry files. The seed's entries were all written inside every month's window, so every one is read each time (84 simple, the most it can cost); in use, entries older than the month are not read. The floor for Done is one listing and one read for every entry whose newest revision falls in the window, because the state is in the file. Entries whose newest revision was written before the month are not read (held by a test). The browser check shows a month already seen is asked for no more within five minutes, and no later search asks. These actions are not in the typical day of 73, which is a browser measurement of a stated mix.
+
+## Tests
+
+- Node: 265 before, 285 after, still 285 after the Q3 fix (`notes-tests/journal-done-search.test.js` 20; the budget test gained three rows inside an existing test).
+- Python `test_journal_page.py`: 83 before, 96 after (13 new in `JournalDoneListSearchAndBullets`). Three existing tests changed: the two icon count tests (14 to 16, with the two new shapes) and the spell check test was met by leaving `spellcheck="false"` off the search field.
+- Browser: `docs/evidence/journal/browser-check-journal-done-search.mjs` 57 of 57 (first run 56 of 57: a test expectation had "Sep" where the locale writes "Sept"; the page was right). Existing journal browser check 404 of 404 and lag check 33 of 33, run after the change.
+- Deliberate breakage proofs for the new rules only: `docs/evidence/journal/breakages-done-search.py`, 17 of 17 caught, output in `breakages-done-search-run.txt`. **Two missed on the first run and were closed:** a test for "a file written before the month is not read" put its old files in a month the route never lists, so it could not fail (fixed to put them in September's log), and the Back break left a second branch that gave the same result (the break now removes both).
+
+## What the checks saw
+
+The browser check counts what it looked at: 4 Done rows over two days, an empty September, 5 search results across 4 months, a narrower search, no results, a result opened in March, results back after the log, clear and Escape, a Migrate result, an entry added in the window found without a read, 8 bullet steps. Screenshots in `docs/evidence/journal/shots/` (`done-list.png`, `done-list-390.png`, `search-results.png`, `quick-bullets.png`).
+
+## Not run
+
+A finger on an iPad, a real Blob store (the stand-in counts calls; real `uploadedAt` values come from the package and were not seen), `npm run test:vercel`, and the Production usage result for blob-usage (not available to this session, Q9).
+
+## Preview, 28 October 2026, of `fe6878b`: passed
+
+The product owner ran the Preview steps and every one passed (reported by the product owner, not run by the build session): the Done list with today's ticks and their logs; the Q3 case, a September task ticked today shown in October with its September log date; Escape, Back and a refresh keeping the Done view; the month arrows with next off on October; the calendar search across a line, a span and an entry with click-through, clearing the field and the empty message; and the Quick notes bullets kept after a reload. The Blob usage page step was dropped by the product owner because that page lags and lumps days together; `notes-tests/blob-budget.test.js` holds the cost. Approved to merge. The merge commit and the Production check are recorded in the handoff entry that follows the merge.
+
+## Production check list (for after the merge)
+
+1. Open `/journal`, tick a task in Today, click Done: it is there under today's date with its log. Reload on `#done/...` and it stays.
+2. Tick a task from an older log and confirm it appears in the month it was ticked.
+3. Search a word you know is in a calendar line, a span and an entry: results, click-through, clear.
+4. In Quick notes, type `- one`, Enter, `two`, Enter, Enter, reload: the "\u2022 " lines are kept.
+5. Sign out and sign in: no Done list or search result is left on the sign in screen.

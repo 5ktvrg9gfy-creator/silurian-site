@@ -275,9 +275,9 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
         return self.text.split('<script type="module">', 1)[1]
 
     SYMBOLS = sorted(["j-task", "j-event", "j-note", "j-done", "j-migrated", "j-scheduled", "j-more", "j-chevron-right",
-                      "i-bin", "i-chevron-left", "i-moon", "i-sun", "j-span-handle", "j-until"])
+                      "i-bin", "i-chevron-left", "i-moon", "i-sun", "j-span-handle", "j-until", "j-tick", "j-bullet"])
 
-    def test_exactly_fourteen_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
+    def test_exactly_sixteen_icon_shapes_all_stroked_in_the_current_colour(self) -> None:
         symbols = re.findall(r"<symbol\b([^>]*)>", self.text)
         ids = sorted(re.search(r'id="([^"]+)"', attributes).group(1) for attributes in symbols)
         self.assertEqual(ids, self.SYMBOLS)
@@ -303,6 +303,7 @@ class JournalPageFollowsTheNotesLook(unittest.TestCase):
             "j-migrated": 'd="M7 12h10M13 8l4 4-4 4"', "j-scheduled": 'd="M17 12H7M11 8l-4 4 4 4"',
             "j-more": 'd="M6 12h.01M12 12h.01M18 12h.01"', "j-chevron-right": 'd="M9 6l6 6-6 6"',
             "j-span-handle": 'd="M12 4v12M7 11l5 5 5-5M5 20h14"', "j-until": 'd="M5 6h14v14H5zM5 10h14M9 3v4M15 3v4"',
+            "j-tick": 'd="M5 12.5l4.5 4.5L19 7.5"', "j-bullet": 'd="M4 6h3v3H4zM4 15h3v3H4zM11 7.5h9M11 16.5h9"',
         }
         for name, shape in paths.items():
             symbol = re.search(rf'<symbol id="{name}".*?</symbol>', self.text, re.DOTALL).group(0)
@@ -1065,7 +1066,7 @@ class JournalPastDaysAndSpans(unittest.TestCase):
     def test_two_new_icons_only_the_handle_and_until(self) -> None:
         ids = set(re.findall(r'<symbol id="([^"]+)"', self.text))
         self.assertTrue({"j-span-handle", "j-until"} <= ids)
-        self.assertEqual(len(ids), 14, "twelve before, and two")
+        self.assertEqual(len(ids), 16, "twelve before, two for the spans and two for the Done list and the Quick notes bullets")
         self.assertIn('icon("j-span-handle")', self.script)
         self.assertIn('icon("j-until")', self.script)
 
@@ -1210,3 +1211,154 @@ class JournalPastDaysAndSpans(unittest.TestCase):
         self.assertIn("journal/", public)
         for dash in ("—", "–", "&mdash;", "&ndash;", "&#8212;", "&#8211;"):
             self.assertNotIn(dash, self.page)
+
+
+class JournalDoneListSearchAndBullets(unittest.TestCase):
+    """The Done list, the calendar search and the Quick notes bullets (28 October 2026).
+
+    The rules are held by notes-tests/journal-done-search.test.js and the page in a
+    browser by docs/evidence/journal/browser-check-journal-done-search.mjs. This holds
+    what the page promises in its own text: where the controls are, what they say, and
+    that nothing asks the server except a person's click or typing."""
+
+    page = JOURNAL_PAGE.read_text(encoding="utf-8")
+    text = without_comments(page)
+    script = text.split('<script type="module">', 1)[1]
+    style = text.split("<style>", 1)[1].split("</style>", 1)[0]
+
+    # ---- the Done list ----
+
+    def test_the_header_has_a_done_button_with_a_tick_and_the_view_is_a_whole_window_panel_of_its_own(self) -> None:
+        self.assertRegex(self.text, r'<div class="bar-right" id="bar-actions" hidden>\s*<button type="button" class="quiet" id="done-open"[^>]*><svg[^>]*><use href="#j-tick"></use></svg><span>Done</span></button>')
+        self.assertRegex(self.text, r'<section class="done-view" id="done" aria-labelledby="done-heading" hidden>')
+        self.assertNotRegex(self.text, r'<section class="panel" id="panel-done"', "Done is not a sixth panel")
+        self.assertIn('<h2 class="panel-title" id="done-heading" tabindex="-1">Done</h2>', self.text)
+        # The panels and the tab bar are hidden while it is open, and it is hidden signed out.
+        view = function_body(self.script, "applyView")
+        for part in ('$("app").hidden = !inApp || done.open;', '$("tabbar").hidden = !inApp || done.open;', '$("done").hidden = !inApp || !done.open;'):
+            self.assertIn(part, view)
+
+    def test_done_has_its_own_address_and_back_escape_and_the_browser_back_close_it(self) -> None:
+        opening = function_body(self.script, "openDone")
+        self.assertIn('history.pushState({ done: month }, "", "#done/" + month);', opening)
+        step = function_body(self.script, "stepDone")
+        self.assertIn('history.replaceState({ done: target }, "", "#done/" + target);', step, "a month step does not add to the history")
+        self.assertIn("if (target > thisMonth()) { return; }", step, "no month after this one")
+        self.assertIn('$("done-back").addEventListener("click", function () { closeDone(false); });', self.script)
+        self.assertIn('if (event.key === "Escape" && done.open) { event.preventDefault(); closeDone(false); }', self.script)
+        closing = function_body(self.script, "closeDone")
+        self.assertIn("if (done.pushed) { history.back(); }", closing)
+        pop = self.script.split('window.addEventListener("popstate", function () {', 1)[1].split("});", 1)[0]
+        self.assertIn("openDone(doneMonthFrom(kept[1]), false); return;", pop, "Forward and a reload open it without adding history")
+        self.assertIn("if (done.open) { closeDone(true); }", pop)
+        start = function_body(self.script, "start")
+        self.assertIn("openDone(doneMonthFrom(kept[1]), false);", start, "a refresh keeps it")
+        self.assertIn("month <= thisMonth()", function_body(self.script, "doneMonthFrom"), "an address cannot name a month to come")
+
+    def test_done_asks_for_one_month_after_saves_and_remembers_it_for_five_minutes(self) -> None:
+        load = function_body(self.script, "loadDone")
+        self.assertIn('"/api/journal?view=done&month=" + month', load)
+        self.assertLess(load.index("drained()"), load.index("view=done"), "what is waiting to be saved is saved first")
+        self.assertIn("Date.now() - held.at < REFRESH_MIN_MS", load)
+        self.assertEqual(self.script.count("view=done"), 1)
+        self.assertGreaterEqual(self.script.count("done.cache = {};"), 2, "a confirmed change and a load of home clear it")
+        self.assertIn('"Could not load the Done list. Check your connection and try again."', load)
+        # Only a click, a key or an address asks for it.
+        callers = {name for name in ("openDone", "stepDone") if f"loadDone()" in function_body(self.script, name)}
+        self.assertEqual(callers, {"openDone", "stepDone"})
+        self.assertNotIn("loadDone", "".join(timer_calls(self.script)))
+
+    def test_done_is_read_only_says_what_the_brief_says_and_draws_alone(self) -> None:
+        draw = function_body(self.script, "drawDone")
+        self.assertIn('"Nothing completed in " + monthYear(month) + "."', draw)
+        self.assertIn('"Date not recorded"', draw)
+        self.assertIn("core.doneGroups(done.items, month)", draw, "the grouping is the shared rule")
+        for forbidden in ("addEventListener", 'make("button"', "contenteditable", "submit(", "pump("):
+            self.assertNotIn(forbidden, draw, "the Done list only shows")
+        self.assertNotIn("panel-", draw, "it knows nothing of the panels")
+        self.assertNotIn("drawDone", function_body(self.script, "renderAll"), "it is not one of the four panels")
+        self.assertIn('"Log: Migrate, "', function_body(self.script, "logLabel"))
+        self.assertIn("var groups = done.state === \"ready\" ? core.doneGroups(done.items, month) : [];", draw)
+
+    def test_signing_out_and_leaving_the_page_empty_the_done_list(self) -> None:
+        clear = function_body(self.script, "clearContent")
+        self.assertIn('done = { open: false, month: null, state: "idle", items: [], cache: {}, pushed: false, ask: 0 };', clear)
+        self.assertIn('["search-results", "done-groups"].forEach(function (id) { $(id).textContent = ""; });', clear)
+        self.assertIn("done.open = false;", function_body(self.script, "showOnly"))
+
+    # ---- the calendar search ----
+
+    def test_the_search_field_is_at_the_top_of_month_and_results_replace_the_month_list(self) -> None:
+        self.assertRegex(self.text, r'<section class="panel" id="panel-month"[^>]*>\s*<div class="month-search" id="month-search-wrap">\s*<input type="search" class="search-field" id="month-search" placeholder="Search calendar" aria-label="Search calendar"')
+        self.assertNotIn('spellcheck="false"', self.text)
+        render = function_body(self.script, "renderMonth")
+        self.assertIn('var searching = !inDay && search.q.trim() !== "";', render)
+        self.assertIn('$("date-rows").hidden = inDay || pickerOpen || searching;', render)
+        self.assertIn('if (searching) { $("month-empty").hidden = true; drawSearch(); return; }', render)
+        self.assertIn('$("month-search-wrap").hidden = inDay;', render)
+
+    def test_the_search_says_what_the_brief_says_and_uses_the_shared_rule(self) -> None:
+        draw = function_body(self.script, "drawSearch")
+        self.assertIn('"Nothing in the calendar contains " + text + "."', draw)
+        self.assertIn("core.searchCalendar(shown, spansShown, text, today)", draw, "from what the page holds, edits included")
+        self.assertIn('"Span to "', draw)
+        self.assertNotIn("innerHTML", draw, "a result is built as text")
+
+    def test_the_first_search_reads_everything_once_and_the_rest_ask_nothing(self) -> None:
+        self.assertEqual(self.script.count("view=all"), 1)
+        everything = function_body(self.script, "loadEverything")
+        self.assertIn('"/api/journal?view=all" + skip', everything)
+        self.assertIn('var skip = held.length <= 36 ? "&skip=" + held.join(",") : "";', everything, "months the page holds are not read again")
+        self.assertNotIn("search.q", everything, "what is searched for never leaves the page")
+        find = function_body(self.script, "findInCalendar")
+        self.assertIn("if (search.loaded && Date.now() - search.at < REFRESH_MIN_MS) { renderAll(); return; }", find)
+        self.assertIn("if (search.loading) { return; }", find)
+        # Typing is the only thing that starts a read, and no timer does.
+        handler = self.script.split('searchBox.addEventListener("input", function () {', 1)[1].split("});", 1)[0]
+        self.assertIn("findInCalendar();", handler)
+        self.assertNotIn("search", "".join(timer_calls(self.script)))
+        self.assertIn("takeMonths(body.months);", everything)
+
+    def test_a_result_takes_month_to_its_date_and_opens_that_log_and_clearing_restores_the_month(self) -> None:
+        result = function_body(self.script, "openResult")
+        self.assertIn("viewMonth = r.month;", result)
+        self.assertIn("if (r.date) { openDay(r.date); return; }", result)
+        self.assertIn('showPanel("migrate")', result)
+        handler = self.script.split('searchBox.addEventListener("input", function () {', 1)[1].split("});", 1)[0]
+        self.assertIn('if (search.q.trim() === "") { renderAll(); return; }', handler)
+
+    # ---- Quick notes bullets ----
+
+    def test_the_bullet_button_sits_next_to_bold_and_strike_through_and_names_itself(self) -> None:
+        self.assertRegex(self.text, r'class="fmt-button fmt-strike"[^>]*>.*?</button>\s*<button type="button" class="fmt-button fmt-bullet" data-panel="quick" aria-pressed="false" aria-label="Bullet list"')
+        click = self.script.split('querySelectorAll("#panel-quick .fmt-button")', 1)[1].split("});", 2)[1]
+        self.assertIn('b.classList.contains("fmt-bullet")', self.script.split('querySelectorAll("#panel-quick .fmt-button")', 1)[1][:600])
+        self.assertIn("toggleBulletLine(quickEditor)", self.script)
+        self.assertIn("wireBullets(quickEditor);", self.script)
+        void = click
+        self.assertTrue(void is not None)
+
+    def test_the_bullet_rules_are_core_s_and_the_page_edits_through_commands_so_undo_works(self) -> None:
+        wire = function_body(self.script, "wireBullets")
+        for part in ("core.bulletFromTyping(", "core.afterEnter(", "core.BULLET", 'document.execCommand("insertParagraph")', 'document.execCommand("delete")', 'document.execCommand("insertText"'):
+            self.assertIn(part, wire)
+        self.assertIn('event.inputType !== "insertText"', wire, "only a typed space makes a bullet, not a paste")
+        self.assertIn("event.isComposing", wire)
+        toggle = function_body(self.script, "toggleBulletLine")
+        self.assertIn("core.isBulletLine(text)", toggle)
+        self.assertNotIn("•", self.script.replace("\\u2022", ""), "the bullet character is core's, written once")
+
+    # ---- touch targets and look ----
+
+    def test_the_new_controls_are_44px_for_a_finger(self) -> None:
+        coarse = media_blocks(self.style, "@media (pointer: coarse) {")
+        for rule in (".done-row { min-height: 44px; }", ".search-field { min-height: 44px; }", ".search-result { min-height: 44px; }"):
+            self.assertIn(rule, coarse)
+
+    def test_the_new_rules_add_no_colour_no_size_no_width_and_no_shadow(self) -> None:
+        new = self.style[self.style.index("\n  .done-view { margin: 12px;") :]
+        self.assertNotRegex(new, r"#[0-9a-fA-F]{3,8}\b|rgba?\(|px;?\s*\}?\s*$", "no raw colour")
+        self.assertEqual(sorted(set(re.findall(r"font-size:\s*([^;]+);", new))), ["var(--notes-size-12)", "var(--notes-size-14)", "var(--notes-size-18)"])
+        self.assertNotIn("box-shadow", new)
+        self.assertNotIn("@media (min-width", new)
+        self.assertEqual(sorted(set(re.findall(r"border-radius:\s*([^;]+);", new))), ["8px"])

@@ -481,7 +481,10 @@
     .mark { display: none; }
     .bar-inner { padding: 0 8px; }
     .bar-right { gap: 2px; }
-    #sign-out, #notes-link { padding: 0 8px; }
+    #sign-out, #notes-link, #done-open { padding: 0 8px; }
+    .done-view { margin: 8px; }
+    .done-row { flex-wrap: wrap; }
+    .done-log { flex: 1 0 100%; padding: 0 8px 6px 40px; }
   }
 
   /* ---------- the add bar ---------- */
@@ -793,6 +796,52 @@
   .quick-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
   .quick-editor { min-height: 100%; border: 0; background: var(--notes-field); white-space: pre-wrap; }
   @media (min-width: 761px) and (max-width: 999px) { .quick-editor { min-height: 160px; } }
+
+  /* ---------- the Done list: a full-window view, read only ---------- */
+
+  .done-view { margin: 12px; border: 1px solid var(--notes-line); border-radius: 8px; background: var(--notes-panel); min-height: calc(100dvh - var(--notes-header-height) - 24px); }
+  .done-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 8px 12px; border-bottom: 1px solid var(--notes-line-soft); }
+  .done-head .panel-title:focus-visible { outline: 2px solid var(--notes-accent); outline-offset: 2px; }
+  .done-nav { display: flex; align-items: center; gap: 2px; }
+  .done-month { min-width: 9em; text-align: center; font-size: var(--notes-size-18); font-weight: 700; color: var(--notes-strong); }
+  .done-body { max-width: 720px; padding: 8px 8px 24px; }
+  .done-day { margin: 16px 8px 4px; font-size: var(--notes-size-14); font-weight: 700; color: var(--notes-strong); }
+  .done-list { list-style: none; margin: 0; padding: 0 4px; }
+  .done-row { display: flex; align-items: flex-start; gap: 4px; min-height: 36px; }
+  .done-row .bullet { color: var(--notes-muted); }
+  .done-text { flex: 1; min-width: 0; padding: 6px 4px; color: var(--notes-ink); overflow-wrap: anywhere; }
+  .done-log { flex: none; padding: 8px 8px 0 0; font-size: var(--notes-size-12); color: var(--notes-muted); white-space: nowrap; }
+  @media (pointer: coarse) {
+    .done-row { min-height: 44px; }
+    .done-text { padding: 10px 4px; }
+  }
+
+  /* ---------- searching the calendar ---------- */
+
+  .month-search { padding: 8px 12px 0; }
+  .search-field {
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--notes-line);
+    border-radius: 8px;
+    background: var(--notes-field);
+    color: var(--notes-ink);
+    font: inherit;
+    font-size: var(--notes-size-14);
+  }
+  .search-field::placeholder { color: var(--notes-muted); opacity: 1; }
+  .search-results { list-style: none; margin: 0; padding: 0 4px; }
+  .search-result { display: block; width: 100%; min-height: 36px; padding: 6px 10px; border: 0; background: transparent; text-align: left; font-weight: 400; }
+  .search-result:hover { background: var(--notes-hover); }
+  .result-meta { display: flex; justify-content: space-between; gap: 8px; font-size: var(--notes-size-12); color: var(--notes-muted); }
+  .result-text { display: block; color: var(--notes-ink); overflow-wrap: anywhere; }
+  @media (pointer: coarse) {
+    .search-field { min-height: 44px; }
+    .search-result { min-height: 44px; }
+  }
 </style>
 </head>
 <body>
@@ -807,6 +856,8 @@
   <symbol id="j-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
   <symbol id="j-span-handle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></symbol>
   <symbol id="j-until" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14v14H5zM5 10h14M9 3v4M15 3v4"/></symbol>
+  <symbol id="j-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="j-bullet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h3v3H4zM4 15h3v3H4zM11 7.5h9M11 16.5h9"/></symbol>
   <symbol id="i-bin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
   <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
@@ -820,6 +871,7 @@
     </div>
     <div class="bar-right">
       <div class="bar-right" id="bar-actions" hidden>
+        <button type="button" class="quiet" id="done-open" aria-label="Done list"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#j-tick"></use></svg><span>Done</span></button>
         <a class="button-link quiet" id="notes-link" href="/notes">Notes</a>
       </div>
       <button type="button" class="icon-button theme-switch" id="theme-switch" aria-label="Switch to dark mode">
@@ -861,6 +913,9 @@
   <div class="panels" id="panels">
 
     <section class="panel" id="panel-month" data-panel="month" data-active="false" aria-labelledby="month-heading">
+      <div class="month-search" id="month-search-wrap">
+        <input type="search" class="search-field" id="month-search" placeholder="Search calendar" aria-label="Search calendar" autocomplete="off" enterkeyhint="search">
+      </div>
       <header class="panel-head" id="month-head">
         <h2 class="sr-only" id="month-heading">Month</h2>
         <div class="month-nav" id="month-nav">
@@ -884,6 +939,8 @@
           <div class="month-picker" id="month-picker"></div>
         </div>
         <p class="empty" id="month-empty" role="status" hidden></p>
+        <p class="empty" id="search-empty" role="status" hidden></p>
+        <ul class="search-results" id="search-results" hidden></ul>
         <ul class="date-rows" id="date-rows"></ul>
         <div id="day-view" hidden>
           <ul class="entries" id="list-day"></ul>
@@ -953,6 +1010,7 @@
           <span class="status" id="quick-status" role="status" aria-live="polite" data-state="saved">Saved</span>
           <button type="button" class="fmt-button fmt-bold" data-panel="quick" aria-pressed="false" aria-label="Bold" title="Bold (Ctrl+B)" aria-keyshortcuts="Control+B Meta+B"><b>B</b></button>
           <button type="button" class="fmt-button fmt-strike" data-panel="quick" aria-pressed="false" aria-label="Strike-through" title="Strike-through (Ctrl+Shift+X)" aria-keyshortcuts="Control+Shift+X Meta+Shift+X"><span class="struck">S</span></button>
+          <button type="button" class="fmt-button fmt-bullet" data-panel="quick" aria-pressed="false" aria-label="Bullet list" title="Bullet list (type - or * and a space)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#j-bullet"></use></svg></button>
         </div>
       </header>
       <div class="quick-body">
@@ -964,6 +1022,23 @@
 
   </div>
 </div>
+
+<section class="done-view" id="done" aria-labelledby="done-heading" hidden>
+  <header class="done-head">
+    <button type="button" id="done-back"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-chevron-left"></use></svg><span>Back</span></button>
+    <h2 class="panel-title" id="done-heading" tabindex="-1">Done</h2>
+    <div class="done-nav">
+      <button type="button" class="icon-button" id="done-prev" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#i-chevron-left"></use></svg></button>
+      <span class="done-month" id="done-month"></span>
+      <button type="button" class="icon-button" id="done-next" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><use href="#j-chevron-right"></use></svg></button>
+    </div>
+  </header>
+  <div class="done-body" id="done-body" aria-live="polite">
+    <p class="lead" id="done-loading" role="status" hidden>Loading.</p>
+    <p class="empty" id="done-empty" role="status" hidden></p>
+    <div id="done-groups"></div>
+  </div>
+</section>
 
 <nav class="tabbar" id="tabbar" aria-label="Panels" hidden>
   <button type="button" role="tab" data-panel="month" aria-selected="false">Month</button>
@@ -1235,6 +1310,8 @@ import * as core from "/journal/core.js";
   var quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
   var stripMonths = [];    // the months the last load sent: the strip looks only there
   var lastRefresh = 0;
+  var search = { q: "", loaded: false, loading: false, at: 0 };   // the calendar search
+  var done = { open: false, month: null, state: "idle", items: [], cache: {}, pushed: false, ask: 0 };   // the Done list
   var flashTimer = null;
   var flashRun = null;
   var flashAlso = null;   // the second button of the message bar, or null
@@ -1383,6 +1460,7 @@ import * as core from "/journal/core.js";
       if (answer.status === 200) {
         takeMonths(answer.body.months);
         takeSpans(answer.body.spans);
+        done.cache = {};
         pending.shift();
         recompute();
         renderAll();
@@ -1580,6 +1658,173 @@ import * as core from "/journal/core.js";
     });
     editor.addEventListener("input", function () { tidy(editor); });
   }
+
+  /* ---------- bullets in Quick notes ----------
+     The rules are core.js's (typing "- " or "* ", Enter, the button). This only
+     carries them out on what is on screen, through the editing commands so Undo
+     still works. A line is whatever sits between line breaks, so the first line,
+     which the browser keeps as bare text, and the lines after it, which it keeps
+     as divs, are read the same way. */
+
+  var NBSP = / /g;
+
+  function editorLines(editor) {
+    var lines = [];
+    var run = null;
+    Array.prototype.forEach.call(editor.childNodes, function (node) {
+      if (node.nodeName === "DIV") { run = null; lines.push([node]); }
+      else if (node.nodeName === "BR") { if (run) { run = null; } else { lines.push([node]); } }
+      else { if (!run) { run = []; lines.push(run); } run.push(node); }
+    });
+    return lines;
+  }
+
+  function lineText(line) {
+    return line.map(function (n) { return n.textContent; }).join("").replace(NBSP, " ");
+  }
+
+  function firstText(line) {
+    for (var i = 0; i < line.length; i += 1) {
+      if (line[i].nodeType === 3) { return line[i]; }
+      var node = document.createTreeWalker(line[i], NodeFilter.SHOW_TEXT).nextNode();
+      if (node) { return node; }
+    }
+    return null;
+  }
+
+  // The line the caret is in: { lines, index, line, sel } or null.
+  function caretLine(editor) {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editor.contains(sel.anchorNode)) { return null; }
+    var lines = editorLines(editor);
+    var node = sel.anchorNode;
+    if (node === editor) { node = editor.childNodes[Math.min(sel.anchorOffset, editor.childNodes.length - 1)] || null; }
+    for (var i = 0; i < lines.length && node; i += 1) {
+      for (var j = 0; j < lines[i].length; j += 1) {
+        if (lines[i][j] === node || lines[i][j].contains(node)) { return { lines: lines, index: i, line: lines[i], sel: sel }; }
+      }
+    }
+    return null;
+  }
+
+  // How many characters of the line are before the caret.
+  function caretOffset(at) {
+    var range = document.createRange();
+    range.setStartBefore(at.line[0]);
+    range.setEnd(at.sel.anchorNode, at.sel.anchorOffset);
+    return range.toString().replace(NBSP, " ").length;
+  }
+
+  // The caret put back at a character offset in a line.
+  function putCaret(editor, index, offset) {
+    var line = editorLines(editor)[index];
+    var sel = window.getSelection();
+    if (!line) { return; }
+    var left = offset;
+    var range = document.createRange();
+    var placed = false;
+    line.forEach(function (n) {
+      var texts = [];
+      if (n.nodeType === 3) { texts.push(n); }
+      else { var walker = document.createTreeWalker(n, NodeFilter.SHOW_TEXT); var t = walker.nextNode(); while (t) { texts.push(t); t = walker.nextNode(); } }
+      texts.forEach(function (t) {
+        if (placed) { return; }
+        if (left <= t.nodeValue.length) { range.setStart(t, left); placed = true; } else { left -= t.nodeValue.length; }
+      });
+    });
+    if (!placed) { range.selectNodeContents(line[line.length - 1]); range.collapse(false); }
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function selectText(node, from, to) {
+    var range = document.createRange();
+    range.setStart(node, from);
+    range.setEnd(node, to);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function wireBullets(editor) {
+    // "- " or "* " typed at the start of a line becomes a bullet.
+    editor.addEventListener("input", function (event) {
+      if (event.inputType !== "insertText" || (event.data !== " " && event.data !== " ")) { return; }
+      var at = caretLine(editor);
+      if (!at || core.bulletFromTyping(lineText(at.line)) === null || caretOffset(at) !== 2) { return; }
+      var first = firstText(at.line);
+      if (!first) { return; }
+      selectText(first, 0, 1);
+      document.execCommand("insertText", false, core.BULLET);
+      putCaret(editor, at.index, 2);
+    });
+    editor.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) { return; }
+      var at = caretLine(editor);
+      if (!at || !at.sel.isCollapsed) { return; }
+      var action = core.afterEnter(lineText(at.line));
+      if (action === "plain") { return; }
+      if (action === "continue" && caretOffset(at) < 2) { return; }
+      event.preventDefault();
+      if (action === "end") {
+        var first = firstText(at.line);
+        if (first) { selectText(first, 0, first.nodeValue.length); document.execCommand("delete"); }
+        return;
+      }
+      document.execCommand("insertParagraph");
+      document.execCommand("insertText", false, core.BULLET + " ");
+    });
+  }
+
+  // The button: the line the caret is in becomes a bullet, or goes back to plain text.
+  function toggleBulletLine(editor) {
+    if (document.activeElement !== editor) { editor.focus(); }
+    var at = caretLine(editor);
+    if (!at) {
+      var end = document.createRange();
+      end.selectNodeContents(editor);
+      end.collapse(false);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(end);
+      document.execCommand("insertText", false, core.BULLET + " ");
+      syncBulletButton();
+      return;
+    }
+    var text = lineText(at.line);
+    var offset = caretOffset(at);
+    var first = firstText(at.line);
+    if (core.isBulletLine(text)) {
+      var marker = first && first.nodeValue.length > 1 && first.nodeValue.charAt(1).trim() === "" ? 2 : 1;
+      if (first) { selectText(first, 0, marker); document.execCommand("delete"); }
+      putCaret(editor, at.index, Math.max(0, offset - marker));
+    } else {
+      if (first) { selectText(first, 0, 0); }
+      else {
+        // An empty line: the caret goes at the start of it.
+        var node = at.line[0];
+        var start = document.createRange();
+        if (node.nodeName === "BR") { start.setStartBefore(node); } else { start.setStart(node, 0); }
+        start.collapse(true);
+        at.sel.removeAllRanges();
+        at.sel.addRange(start);
+      }
+      document.execCommand("insertText", false, core.BULLET + " ");
+      putCaret(editor, at.index, offset + 2);
+    }
+    syncBulletButton();
+  }
+
+  function syncBulletButton() {
+    var pressed = false;
+    if (document.activeElement === quickEditor) {
+      var at = caretLine(quickEditor);
+      pressed = Boolean(at) && core.isBulletLine(lineText(at.line));
+    }
+    Array.prototype.forEach.call(document.querySelectorAll(".fmt-bullet"), function (b) { b.setAttribute("aria-pressed", pressed ? "true" : "false"); });
+  }
+  document.addEventListener("selectionchange", syncBulletButton);
 
   /* ---------- the add bar ---------- */
 
@@ -2860,19 +3105,25 @@ import * as core from "/journal/core.js";
     $("day-view").hidden = !inDay;
     $("addbar-day").hidden = !inDay;
     if (!inDay) { $("moved-day").hidden = true; }
-    $("month-picker-wrap").hidden = inDay || !pickerOpen;
-    $("date-rows").hidden = inDay || pickerOpen;
+    $("month-search-wrap").hidden = inDay;
+    var searching = !inDay && search.q.trim() !== "";
+    $("month-picker-wrap").hidden = inDay || !pickerOpen || searching;
+    $("date-rows").hidden = inDay || pickerOpen || searching;
+    if (!searching) { $("search-results").hidden = true; $("search-empty").hidden = true; }
     $("month-title").textContent = monthYear(viewMonth);
     $("month-title").setAttribute("aria-expanded", pickerOpen ? "true" : "false");
     $("month-prev").setAttribute("aria-label", "Previous month: " + monthYear(core.addMonths(viewMonth, -1)));
     $("month-next").setAttribute("aria-label", "Next month: " + monthYear(core.addMonths(viewMonth, 1)));
     if (inDay) {
       $("month-empty").hidden = true;
+      $("search-results").hidden = true;
+      $("search-empty").hidden = true;
       $("day-back-label").textContent = "Back to " + monthName(core.monthOf(dayView));
       $("day-date").textContent = longDate(dayView);
       renderList($("list-day"), $("empty-day"), core.dayList(dayView), EMPTY.day(dayView), "day");
       return;
     }
+    if (searching) { $("month-empty").hidden = true; drawSearch(); return; }
     if (pickerOpen) { drawPicker(); $("month-empty").hidden = true; return; }
     var list = $("date-rows");
     var active = document.activeElement;
@@ -2978,6 +3229,9 @@ import * as core from "/journal/core.js";
   }
 
   window.addEventListener("popstate", function () {
+    var kept = /^#done(?:\/(\d{4}-\d{2}))?$/.exec(location.hash);
+    if (kept && signedIn) { openDone(doneMonthFrom(kept[1]), false); return; }
+    if (done.open) { closeDone(true); }
     var match = /^#d\/(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
     if (match && core.isDate(match[1])) {
       loadMonths([core.monthOf(match[1])]).then(function (ok) { if (ok) { dayView = match[1]; renderAll(); } });
@@ -3012,10 +3266,249 @@ import * as core from "/journal/core.js";
   $("year-prev").addEventListener("click", function () { pickerYear -= 1; drawPicker(); });
   $("year-next").addEventListener("click", function () { pickerYear += 1; drawPicker(); });
 
+  /* ---------- searching the calendar ----------
+     The first search in a window reads everything once (every month the page does
+     not hold, every span), and the page keeps it, so the next search costs nothing.
+     After five minutes the next search reads again. Results are worked out by
+     core.searchCalendar from what the page holds, edits included. */
+
+  var searchBox = $("month-search");
+
+  searchBox.addEventListener("input", function () {
+    search.q = searchBox.value;
+    if (search.q.trim() === "") { renderAll(); return; }
+    findInCalendar();
+  });
+  searchBox.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && searchBox.value !== "") {
+      event.preventDefault();
+      event.stopPropagation();
+      searchBox.value = "";
+      search.q = "";
+      renderAll();
+    }
+  });
+
+  function loadEverything() {
+    var gen = generation;
+    var held = Object.keys(confirmed);
+    var skip = held.length <= 36 ? "&skip=" + held.join(",") : "";
+    search.loading = true;
+    return request("/api/journal?view=all" + skip).then(function (response) {
+      if (!response.ok) { throw new Error("search"); }
+      return readJson(response);
+    }).then(function (body) {
+      if (gen !== generation) { return false; }
+      takeMonths(body.months);
+      takeSpans(body.spans);
+      recompute();
+      search.loaded = true;
+      search.at = Date.now();
+      search.loading = false;
+      return true;
+    }).catch(function () {
+      if (gen === generation) { search.loading = false; }
+      showFlash("Could not search the calendar. Check your connection and try again.", null);
+      return false;
+    });
+  }
+
+  function findInCalendar() {
+    if (search.q.trim() === "") { return; }
+    if (search.loaded && Date.now() - search.at < REFRESH_MIN_MS) { renderAll(); return; }
+    if (search.loading) { return; }
+    search.loading = true;
+    renderAll();
+    loadEverything().then(function () { renderAll(); });
+  }
+
+  function resultDate(r) {
+    return r.date ? fmtWeekday.format(utc(r.date)) + " " + shortDate(r.date) + " " + r.date.slice(0, 4) : monthYear(r.month);
+  }
+
+  function drawSearch() {
+    var host = $("search-results");
+    var empty = $("search-empty");
+    host.textContent = "";
+    var text = search.q.trim();
+    if (!search.loaded) {
+      host.hidden = true;
+      empty.hidden = !search.loading;
+      empty.textContent = "Searching.";
+      return;
+    }
+    var found = core.searchCalendar(shown, spansShown, text, today);
+    host.hidden = found.length === 0;
+    empty.hidden = found.length !== 0;
+    empty.textContent = "Nothing in the calendar contains " + text + ".";
+    found.forEach(function (r) {
+      var li = make("li");
+      var b = make("button", "search-result");
+      b.type = "button";
+      b.setAttribute("aria-label", "Open " + resultDate(r) + ": " + core.plainText(r.text));
+      var meta = make("span", "result-meta");
+      meta.appendChild(make("span", "", resultDate(r)));
+      meta.appendChild(make("span", "", r.kind === "span" ? "Span to " + shortDate(r.end) : r.source));
+      var words = make("span", "result-text");
+      drawMarks(words, r.text, false);
+      b.appendChild(meta);
+      b.appendChild(words);
+      b.addEventListener("click", function () { openResult(r); });
+      li.appendChild(b);
+      host.appendChild(li);
+    });
+  }
+
+  // A result takes Month to its date and opens that date's log. The search stays
+  // as it was, so Back from the log shows the results again.
+  function openResult(r) {
+    viewMonth = r.month;
+    pickerOpen = false;
+    pickerYear = null;
+    if (r.date) { openDay(r.date); return; }
+    if (r.month === thisMonth()) { showPanel("migrate"); }
+    renderAll();
+  }
+
+  /* ---------- the Done list ----------
+     A full-window view of the tasks completed in one month, newest first and
+     grouped by the day they were ticked. Read only. It has its own address,
+     #done/YYYY-MM, so Back and a refresh keep it. */
+
+  function doneMonthFrom(month) {
+    return month && core.isMonth(month) && month <= thisMonth() ? month : thisMonth();
+  }
+
+  // The panels or the Done view, whichever the page is showing.
+  function applyView() {
+    var inApp = signedIn;
+    $("app").hidden = !inApp || done.open;
+    $("tabbar").hidden = !inApp || done.open;
+    $("done").hidden = !inApp || !done.open;
+    $("done-open").setAttribute("aria-current", inApp && done.open ? "page" : "false");
+  }
+
+  function openDone(month, push) {
+    if (!signedIn) { return; }
+    hideFlash();
+    done.month = month;
+    if (push) {
+      history.pushState({ done: month }, "", "#done/" + month);
+      done.pushed = true;
+    }
+    done.open = true;
+    applyView();
+    drawDone();
+    $("done-heading").focus();
+    loadDone();
+  }
+
+  function closeDone(fromHistory) {
+    if (!done.open) { return; }
+    done.open = false;
+    done.ask += 1;
+    applyView();
+    if (!fromHistory) {
+      if (done.pushed) { history.back(); } else if (/^#done/.test(location.hash)) { history.replaceState(null, "", location.pathname); }
+    }
+    done.pushed = false;
+    renderAll();
+    scrollToToday();
+    $("done-open").focus();
+  }
+
+  // What is waiting to be saved is saved first, so a task just ticked is in the list.
+  function loadDone() {
+    var month = done.month;
+    var held = done.cache[month];
+    if (held && Date.now() - held.at < REFRESH_MIN_MS) {
+      done.items = held.items;
+      done.state = "ready";
+      drawDone();
+      return;
+    }
+    done.state = "loading";
+    drawDone();
+    var ask = (done.ask += 1);
+    var gen = generation;
+    drained().then(function () {
+      return request("/api/journal?view=done&month=" + month);
+    }).then(function (response) {
+      if (!response.ok) { throw new Error("done"); }
+      return readJson(response);
+    }).then(function (body) {
+      if (gen !== generation || ask !== done.ask || !done.open) { return; }
+      done.items = Array.isArray(body.items) ? body.items : [];
+      done.cache[month] = { items: done.items, at: Date.now() };
+      done.state = "ready";
+      drawDone();
+    }).catch(function () {
+      if (gen !== generation || ask !== done.ask || !done.open) { return; }
+      done.state = "error";
+      drawDone();
+      showFlash("Could not load the Done list. Check your connection and try again.", { label: "Try again", run: function () { loadDone(); return true; } });
+    });
+  }
+
+  function logLabel(list) {
+    var parsed = core.parseList(list);
+    return parsed.kind === "day" ? "Log: " + fmtWeekday.format(utc(parsed.date)) + " " + shortDate(parsed.date) : "Log: Migrate, " + monthYear(parsed.month);
+  }
+
+  function drawDone() {
+    var month = done.month;
+    $("done-month").textContent = monthYear(month);
+    $("done-prev").setAttribute("aria-label", "Previous month: " + monthYear(core.addMonths(month, -1)));
+    $("done-next").setAttribute("aria-label", "Next month: " + monthYear(core.addMonths(month, 1)));
+    $("done-next").disabled = month >= thisMonth();
+    var host = $("done-groups");
+    host.textContent = "";
+    var groups = done.state === "ready" ? core.doneGroups(done.items, month) : [];
+    $("done-loading").hidden = done.state !== "loading";
+    $("done-empty").hidden = done.state !== "ready" || groups.length !== 0;
+    $("done-empty").textContent = "Nothing completed in " + monthYear(month) + ".";
+    groups.forEach(function (group) {
+      host.appendChild(make("h3", "done-day", group.date === null ? "Date not recorded" : longDate(group.date)));
+      var list = make("ul", "done-list");
+      group.items.forEach(function (item) {
+        var li = make("li", "done-row");
+        var mark = make("span", "bullet");
+        mark.appendChild(icon("j-done"));
+        var text = make("span", "done-text");
+        drawMarks(text, item.text, false);
+        li.appendChild(mark);
+        li.appendChild(text);
+        li.appendChild(make("span", "done-log", logLabel(item.list)));
+        list.appendChild(li);
+      });
+      host.appendChild(list);
+    });
+  }
+
+  function stepDone(delta) {
+    var target = core.addMonths(done.month, delta);
+    if (target > thisMonth()) { return; }
+    done.month = target;
+    history.replaceState({ done: target }, "", "#done/" + target);
+    loadDone();
+  }
+
+  $("done-open").addEventListener("click", function () {
+    if (done.open) { return; }
+    openDone(thisMonth(), true);
+  });
+  $("done-back").addEventListener("click", function () { closeDone(false); });
+  $("done-prev").addEventListener("click", function () { stepDone(-1); });
+  $("done-next").addEventListener("click", function () { stepDone(1); });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && done.open) { event.preventDefault(); closeDone(false); }
+  });
+
   /* ---------- Quick notes ---------- */
 
   var quickEditor = $("quick-editor");
   wireEditor(quickEditor);
+  wireBullets(quickEditor);
 
   function setQuickStatus(state, word) {
     var status = $("quick-status");
@@ -3110,7 +3603,10 @@ import * as core from "/journal/core.js";
 
   Array.prototype.forEach.call(document.querySelectorAll("#panel-quick .fmt-button"), function (b) {
     b.addEventListener("pointerdown", function (event) { event.preventDefault(); });
-    b.addEventListener("click", function () { format(b.classList.contains("fmt-bold") ? "bold" : "strikeThrough", quickEditor); });
+    b.addEventListener("click", function () {
+      if (b.classList.contains("fmt-bullet")) { toggleBulletLine(quickEditor); }
+      else { format(b.classList.contains("fmt-bold") ? "bold" : "strikeThrough", quickEditor); }
+    });
   });
 
   /* ---------- panels and tabs ---------- */
@@ -3155,6 +3651,7 @@ import * as core from "/journal/core.js";
   /* ---------- loading and keeping up to date ---------- */
 
   function applyHome(body, replaceQuick, light) {
+    done.cache = {};
     takeMonths(body.months);
     takeSpans(body.spans);
     // A light answer carries only this month's files, so the earlier months the
@@ -3236,21 +3733,20 @@ import * as core from "/journal/core.js";
     $("boot").hidden = true;
     $("login").hidden = name !== "login";
     $("boot-main").hidden = name === "app";
-    $("app").hidden = name !== "app";
     $("bar-actions").hidden = name !== "app";
     $("sign-out").hidden = name !== "app";
-    $("tabbar").hidden = name !== "app";
     signedIn = name === "app";
+    applyView();
   }
 
   // Nothing but the wordmark and one line of text.
   function showOnly(message) {
     signedIn = false;
     $("login").hidden = true;
-    $("app").hidden = true;
     $("bar-actions").hidden = true;
     $("sign-out").hidden = true;
-    $("tabbar").hidden = true;
+    done.open = false;
+    applyView();
     hideFlash();
     $("boot-main").hidden = false;
     $("boot").textContent = message;
@@ -3278,6 +3774,12 @@ import * as core from "/journal/core.js";
     monthPositioned = false;
     ui = { openMove: null, picking: null, movedOpen: {} };
     quick = { text: "", base: "none", dirty: false, saving: false, timer: null, failed: false, promise: null };
+    search = { q: "", loaded: false, loading: false, at: 0 };
+    done = { open: false, month: null, state: "idle", items: [], cache: {}, pushed: false, ask: 0 };
+    $("month-search").value = "";
+    ["search-results", "done-groups"].forEach(function (id) { $(id).textContent = ""; });
+    ["search-empty", "done-empty", "done-month"].forEach(function (id) { $(id).textContent = ""; });
+    applyView();
     activeEditor = null;
     ["list-today", "list-tomorrow", "list-migrate", "list-day", "date-rows", "month-picker", "strip"].forEach(function (id) { $(id).textContent = ""; });
     ["date-today", "date-tomorrow", "date-migrate", "day-date"].forEach(function (id) { $(id).textContent = ""; });
@@ -3372,6 +3874,8 @@ import * as core from "/journal/core.js";
       if (match && core.isDate(match[1]) && match[1] !== today && match[1] !== tomorrow()) {
         loadMonths([core.monthOf(match[1])]).then(function (loaded) { if (loaded) { dayView = match[1]; renderAll(); } });
       }
+      var kept = /^#done(?:\/(\d{4}-\d{2}))?$/.exec(location.hash);
+      if (kept) { openDone(doneMonthFrom(kept[1]), false); }
     }).catch(function () {
       showOnly(NOT_LOADED);
     });
