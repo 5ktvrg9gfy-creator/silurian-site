@@ -19,6 +19,8 @@ BREAKS = [
      'newest.entry.type !== "task" || newest.entry.state !== "done") return null;', 'newest.entry.type !== "task") return null;', NODE, "only tasks that are done"),
     ("a file written before the month is read", "api/_lib/journal-api.js",
      "e.times[e.rev] === null || e.times[e.rev] === undefined || e.times[e.rev] >= since", "true", NODE, "are not read"),
+    ("the Done list looks only at the log's own month", "api/_lib/journal-api.js",
+     "const index = await store.entryIndex();", "const index = (await store.entryIndex()).filter((e) => e.month === month);", NODE, "whatever month its log is in"),
     ("the day is the UTC date, not London's", "journal/core.js",
      'timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" });\nexport function londonDateOf', 'timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" });\nexport function londonDateOf', NODE, "London date decides"),
     ("a task with no known time is dropped", "journal/core.js",

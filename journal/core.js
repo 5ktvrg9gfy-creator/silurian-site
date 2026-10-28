@@ -857,11 +857,9 @@ export function stripFrom(files, today) {
 // ticked, unticked and ticked again counts from the second tick, and a text edit
 // of a done task does not move it.
 //
-// A task is stored in the month of its log, and may be ticked in a later month, so
-// the server looks in the completion month and the month before it. A task ticked
-// before its log's month, or more than a month after it, is not listed (Q3 in
-// docs/journal-done-search-open-questions.md).
-export const doneLogMonths = (month) => [addMonths(month, -1), month];
+// A task is stored in the month of its log and may be ticked in any month, before
+// it or long after, so the server looks at every entry file there is and reads only
+// those whose newest revision was written inside the month's window.
 
 // The instants, as ISO text, that a completion month can fall between with a day
 // either side for London's offset from UTC. The server uses them to leave out

@@ -124,12 +124,22 @@ test("a task whose log is in the month before is found in the month it was ticke
   assert.deepEqual(core.doneGroups(await w.done("2026-09"), "2026-09"), []);
 });
 
-test("the known limit: a task ticked more than a month after its log's month is not listed (Q3)", async () => {
-  const w = world("2026-08-10T09:00:00Z");
-  const a = await w.add(day("2026-08-10"), "Old log");
+test("a task is listed in the month it was ticked whatever month its log is in (Q3)", async () => {
+  const w = world("2026-01-10T09:00:00Z");
+  const early = await w.add(day("2026-01-10"), "Logged in January");
+  const ahead = await w.add(day("2026-11-03"), "Logged in November");
+  const migrate = await w.add("migrate:2026-08", "Migrate list in August");
   w.at("2026-10-03T09:00:00Z");
-  await w.change(a, "state", { state: "done" });
-  assert.deepEqual(await w.done("2026-10"), []);
+  await w.change(early, "state", { state: "done" });
+  w.at("2026-10-04T09:00:00Z");
+  await w.change(ahead, "state", { state: "done" });
+  w.at("2026-10-05T09:00:00Z");
+  await w.change(migrate, "state", { state: "done" });
+  const oct = await w.done("2026-10");
+  assert.deepEqual(oct.map((i) => i.text).sort(), ["Logged in January", "Logged in November", "Migrate list in August"]);
+  assert.deepEqual(core.doneGroups(oct, "2026-10").map((g) => g.date), ["2026-10-05", "2026-10-04", "2026-10-03"]);
+  assert.deepEqual(await w.done("2026-11"), [], "and in no other month");
+  assert.deepEqual(await w.done("2026-01"), []);
 });
 
 test("the London date decides the day and the month: a tick at 23:30 UTC on 30 September is 1 October in London", () => {
@@ -198,7 +208,7 @@ test("the Done list is read only, answers no-store and needs the cookie", async 
 });
 
 test("entries whose newest revision was written before the month are not read", async () => {
-  // Twelve tasks in September's log, written in June: the listing says so, and they cannot count in October.
+  // Twelve tasks in September's log, written in June: the listing says so, and they cannot count in October, so they are not read.
   const w = world("2026-06-01T09:00:00Z");
   for (let i = 0; i < 12; i += 1) await w.add(day("2026-09-02"), `Old ${i}`);
   w.at("2026-10-05T09:00:00Z");
@@ -208,7 +218,7 @@ test("entries whose newest revision was written before the month are not read", 
   const items = await w.done("2026-10");
   const spent = w.counter.since(before);
   assert.equal(items.length, 1);
-  assert.equal(spent.advanced, 2, "one listing for each of the two log months");
+  assert.equal(spent.advanced, 1, "one listing of every entry file");
   assert.equal(spent.simple, 2, "the newest revision, and the one before it to find the tick");
 });
 

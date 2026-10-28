@@ -64,18 +64,19 @@ export function journalMemoryStore() {
       }
       return [...latest.values()].map((x) => normaliseEntryFile(JSON.parse(x.json)));
     },
-    async entryIndexOfMonth(month) {
+    async entryIndex() {
       state.reads += 1;
-      const byId = new Map();
+      const byEntry = new Map();
       for (const [k, held] of entries) {
         const [list, id, rev] = k.split("|");
-        if (monthOfList(list) !== month || !listed(held.at)) continue;
-        const got = byId.get(id) || { id, rev: 0, times: {} };
+        if (!listed(held.at)) continue;
+        const month = monthOfList(list);
+        const got = byEntry.get(`${month}/${id}`) || { month, id, rev: 0, times: {} };
         got.times[Number(rev)] = new Date(held.at).toISOString();
         got.rev = Math.max(got.rev, Number(rev));
-        byId.set(id, got);
+        byEntry.set(`${month}/${id}`, got);
       }
-      return [...byId.values()];
+      return [...byEntry.values()];
     },
     async readEntryOfMonth(month, id, rev) {
       state.reads += 1;

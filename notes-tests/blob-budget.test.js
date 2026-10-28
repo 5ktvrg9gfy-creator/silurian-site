@@ -90,7 +90,7 @@ test("the journal: every common action stays inside its Blob budget", async () =
   const doneOpen = within("journal: open the Done list", await costOf(w, () => w.ask(w.journal().GET, "/api/journal?view=done&month=2026-10").then((r) => r.json())));
   const doneBody = await (await w.ask(w.journal().GET, "/api/journal?view=done&month=2026-10")).json();
   assert.equal(doneBody.items.length, 5, "the five ticked tasks, and only those");
-  assert.ok(doneOpen.advanced >= 2, "a listing for each of the two log months");
+  assert.ok(doneOpen.advanced >= 1, "one listing of every entry file, and a page more for every thousand files");
   within("journal: change the Done month", await costOf(w, () => w.ask(w.journal().GET, "/api/journal?view=done&month=2026-09").then((r) => r.json())));
   // The first search in a window: everything the page does not hold. The page holds this month.
   const search = within("journal: search the calendar (the first search in a window)", await costOf(w, () => w.ask(w.journal().GET, "/api/journal?view=all&skip=2026-10").then((r) => r.json())));

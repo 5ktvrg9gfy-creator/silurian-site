@@ -27,7 +27,6 @@ import {
   addDays,
   applyOp,
   applySpanOp,
-  doneLogMonths,
   doneWindow,
   isDate,
   isSpanOp,
@@ -157,35 +156,32 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
     return out;
   }
 
-  // The tasks completed in a month, as { id, list, text, rev, doneAt }. One listing
-  // of each log month it can be in (the month and the one before, core.doneLogMonths)
-  // says when every revision file was made; only entries whose newest revision was
+  // The tasks completed in a month, as { id, list, text, rev, doneAt }, whatever
+  // month their log is in. One listing of every entry file (a page for every thousand
+  // files) says when each revision was made; only entries whose newest revision was
   // written inside the window are read, and for a task that is done the revisions
   // before its newest are read back until one is not done, because the first of that
   // run is the tick. Nothing is written, and nothing is read that cannot count.
   async function doneItems(month) {
     const { since, until } = doneWindow(month);
-    const perMonth = await Promise.all(doneLogMonths(month).map(async (logMonth) => {
-      const index = await store.entryIndexOfMonth(logMonth);
-      // A revision written before the window cannot be a tick inside it, and the
-      // newest revision is the latest of them all.
-      const candidates = index.filter((e) => e.times[e.rev] === null || e.times[e.rev] === undefined || e.times[e.rev] >= since);
-      const found = await mapLimit(candidates, DONE_AT_ONCE, async (e) => {
-        const newest = await store.readEntryOfMonth(logMonth, e.id, e.rev);
-        if (!newest || newest.entry.type !== "task" || newest.entry.state !== "done") return null;
-        let rev = e.rev;
-        for (let looked = 0; rev > 1 && looked < MAX_PROBE; looked += 1) {
-          const before = await store.readEntryOfMonth(logMonth, e.id, rev - 1);
-          if (!before || before.entry.state !== "done") break;
-          rev -= 1;
-        }
-        const doneAt = e.times[rev] || null;
-        if (doneAt !== null && (doneAt < since || doneAt >= until)) return null;
-        return { id: e.id, list: newest.list, text: newest.entry.text, rev: e.rev, doneAt };
-      });
-      return found.filter(Boolean);
-    }));
-    return perMonth.flat();
+    const index = await store.entryIndex();
+    // A revision written before the window cannot be a tick inside it, and the
+    // newest revision is the latest of them all.
+    const candidates = index.filter((e) => e.times[e.rev] === null || e.times[e.rev] === undefined || e.times[e.rev] >= since);
+    const found = await mapLimit(candidates, DONE_AT_ONCE, async (e) => {
+      const newest = await store.readEntryOfMonth(e.month, e.id, e.rev);
+      if (!newest || newest.entry.type !== "task" || newest.entry.state !== "done") return null;
+      let rev = e.rev;
+      for (let looked = 0; rev > 1 && looked < MAX_PROBE; looked += 1) {
+        const before = await store.readEntryOfMonth(e.month, e.id, rev - 1);
+        if (!before || before.entry.state !== "done") break;
+        rev -= 1;
+      }
+      const doneAt = e.times[rev] || null;
+      if (doneAt !== null && (doneAt < since || doneAt >= until)) return null;
+      return { id: e.id, list: newest.list, text: newest.entry.text, rev: e.rev, doneAt };
+    });
+    return found.filter(Boolean);
   }
 
   // A span change. Like an entry change it reads only the span it starts from, at

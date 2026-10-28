@@ -2,6 +2,8 @@
 
 Branch `journal-done-search`, 28 October 2026. Each question says what it blocks, the default that was built, and the cost if the default is wrong. None blocks the Preview.
 
+**Answers, product owner, 28 October 2026:** Q1 accepted. Q2 and Q4 to Q8 defaults accepted. **Q3: fix it** (see below, built). **Q9: answered**, the usage result was supplied and recorded on `blob-usage-handoff`, which is merged (pull request 165). Nothing is waiting.
+
 ## Q1. Which month a completed task belongs to
 
 **Blocks:** what "one month at a time" means in the Done list.
@@ -16,9 +18,7 @@ Branch `journal-done-search`, 28 October 2026. Each question says what it blocks
 
 ## Q3. How far from its log a tick can be and still be listed
 
-**Blocks:** the cost of opening the Done list.
-**Default built:** a month shows tasks ticked in it whose log is in that month or the month before. That is two listings (2 advanced operations). A task ticked in a month before its log's month (ticking ahead into next month) or more than a month after its log's month (opening an old date in Month and ticking there) is not listed.
-**Cost if wrong:** a ticked task missing from every month. Adding the month after costs 1 more advanced operation for each open and each month change. Covering any distance means listing every month, which grows with the journal.
+**Answered by the product owner, 28 October 2026: fix it.** The Done list must include every task ticked in the month, whatever month its log is in. The first build listed only the log's month and the one before, which missed a task logged in September and ticked in October's later weeks or long after. **Built:** one listing of every entry file (the whole `journal/e/` prefix), and only entries whose newest revision was written inside the month's window are read. On the measured seed that is 1 advanced operation, down from 2, because one flat listing replaced two monthly ones. **The catch:** the listing grows by one advanced operation for every thousand entry files (a year of use is a few thousand, so 3 to 5 operations), where the first build was fixed at 2. Reads (simple operations) depend on how many entries were written or changed since the month began, not on how old the log is.
 
 ## Q4. What the search covers
 
@@ -50,7 +50,9 @@ Branch `journal-done-search`, 28 October 2026. Each question says what it blocks
 **Default built:** the browser's own clear mark, which is the browser's colour (blue in Chrome). Escape and deleting the text clear the field too. A drawn mark in the page's own colours would add a control and an icon.
 **Cost if wrong:** one more icon and one more button.
 
-## Q9. The Production usage result for blob-usage
+## Q9. The Production usage result for blob-usage (answered, 28 October 2026)
+
+**Answered:** the product owner supplied the Vercel Pro usage page figures. They are in `PROJECT_HANDOFF.md` and `docs/evidence/blob-usage/blob-usage-evidence.md`, and `blob-usage-handoff` was merged by pull request 165 (merge commit `7f58c74`). What follows is the question as it stood.
 
 **Blocks:** merging the `blob-usage-handoff` branch.
 **What happened:** the brief asked for the Production usage result sent earlier to be recorded and that branch merged. The result was not in this session or in the repository, so it was not recorded and the branch was not merged. Nothing was invented.

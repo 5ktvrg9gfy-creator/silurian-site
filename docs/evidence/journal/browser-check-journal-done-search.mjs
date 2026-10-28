@@ -86,10 +86,12 @@ await signInForSeeding();
   const m1 = await add('migrate:2026-10', 'Renew the licence');
   const ev = await add('day:2026-10-20', 'An event', 'event');
   const old = await add('day:2026-09-29', 'Tick in September log');
+  const aug = await add('day:2026-08-12', 'Tick in August log');
   when('2026-10-21T09:00:00Z'); await change(t1, 'state', { state: 'done' });
   when('2026-10-22T06:00:00Z'); await change(m1, 'state', { state: 'done' });
   when('2026-10-22T07:30:00Z'); await change(t2, 'state', { state: 'done' });
   when('2026-10-22T08:00:00Z'); await change(old, 'state', { state: 'done' });
+  when('2026-10-22T08:30:00Z'); await change(aug, 'state', { state: 'done' });
   when('2026-10-22T11:00:00Z'); await change(t2, 'edit', { text: 'Ring the carrier back' });
   void t3; void ev;
 
@@ -104,10 +106,10 @@ await signInForSeeding();
   eq('the month is the current one first', await page.textContent('#done-month'), 'October 2026');
   eq('days newest first, each by the day the tick was written', await page.locator('.done-day').allInnerTexts(), ['Thursday 22 October', 'Wednesday 21 October']);
   eq('within a day, newest tick first, with the newest text of an edited task',
-    await page.locator('.done-row .done-text').allInnerTexts(), ['Tick in September log', 'Ring the carrier back', 'Renew the licence', 'Send the quote']);
+    await page.locator('.done-row .done-text').allInnerTexts(), ['Tick in August log', 'Tick in September log', 'Ring the carrier back', 'Renew the licence', 'Send the quote']);
   eq('each row says which log it sits in',
-    await page.locator('.done-row .done-log').allInnerTexts(), ['Log: Tue 29 Sept', 'Log: Tue 20 Oct', 'Log: Migrate, October 2026', 'Log: Tue 20 Oct']);
-  eq('open tasks, events and nothing else are left out', (await page.locator('.done-row').count()), 4);
+    await page.locator('.done-row .done-log').allInnerTexts(), ['Log: Wed 12 Aug', 'Log: Tue 29 Sept', 'Log: Tue 20 Oct', 'Log: Migrate, October 2026', 'Log: Tue 20 Oct']);
+  eq('open tasks, events and nothing else are left out; a task logged in August and ticked in October is in October', (await page.locator('.done-row').count()), 5);
   check('read only: no button, field or checkbox inside the list', await page.evaluate(() => !document.querySelector('#done-groups button, #done-groups input, #done-groups [contenteditable], #done-groups a')));
   eq('opening it asked the server for the Done list once', asks('view=done') - before, 1);
   await page.screenshot({ path: SHOTS + '/done-list.png' });

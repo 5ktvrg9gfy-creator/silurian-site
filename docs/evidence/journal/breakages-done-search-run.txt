@@ -1,6 +1,7 @@
 CAUGHT   the tick time is the newest revision's, not the tick's   (notes-tests/journal-done-search.test.js; wanted: text edits after it do not move it)
 CAUGHT   open tasks are listed as done   (notes-tests/journal-done-search.test.js; wanted: only tasks that are done)
 CAUGHT   a file written before the month is read   (notes-tests/journal-done-search.test.js; wanted: are not read)
+CAUGHT   the Done list looks only at the log's own month   (notes-tests/journal-done-search.test.js; wanted: whatever month its log is in)
 CAUGHT   the day is the UTC date, not London's   (notes-tests/journal-done-search.test.js; wanted: London date decides)
 CAUGHT   a task with no known time is dropped   (notes-tests/journal-done-search.test.js; wanted: no time last)
 CAUGHT   search is case sensitive   (notes-tests/journal-done-search.test.js; wanted: ignoring case)
@@ -16,4 +17,4 @@ CAUGHT   the Done list gets an edit control   (read_only; wanted: only shows)
 CAUGHT   Back does not return from the Done view   (docs/evidence/journal/browser-check-journal-done-search.mjs; wanted: Back puts the panels back)
 CAUGHT   a bullet is made by a paste too   (bullet_rules; wanted: typed space)
 
-17 of 17 caught; the controls pass again with every file restored: True
+18 of 18 caught; the controls pass again with every file restored: True

@@ -1,5 +1,5 @@
 {
-  "about": "Blob operations each common action may cost, set at exactly the figures measured on 25 October 2026 after the cuts in the blob-usage branch, on instances that remember nothing (the most an action can cost). Advanced is put plus copy plus list; simple is get plus head, every get counted as a cache miss. Nothing here has slack: a figure goes up only by a decision recorded in docs/evidence/blob-usage/blob-usage-evidence.md and docs/blob-usage-open-questions.md. The typical day is 73 advanced operations, accepted by the product owner on 25 October 2026 on the Pro plan. Three rows were added on 28 October 2026 for the Done list and the calendar search (journal-done-search branch), measured on the same seed with no slack: opening the Done list, changing its month, and the first search in a window. The next search in a window asks nothing. They are not part of the typical day below, which is a browser measurement of the mix stated in docs/evidence/blob-usage/blob-usage-evidence.md.",
+  "about": "Blob operations each common action may cost, set at exactly the figures measured on 25 October 2026 after the cuts in the blob-usage branch, on instances that remember nothing (the most an action can cost). Advanced is put plus copy plus list; simple is get plus head, every get counted as a cache miss. Nothing here has slack: a figure goes up only by a decision recorded in docs/evidence/blob-usage/blob-usage-evidence.md and docs/blob-usage-open-questions.md. The typical day is 73 advanced operations, accepted by the product owner on 25 October 2026 on the Pro plan. Three rows were added on 28 October 2026 and the two Done rows were re-set the same day when the Done list was changed to list every entry file so a task ticked in a month is found whatever month its log is in (one listing, and a page more for every thousand files; the seed's entries are all recent, so every one is read, the most it can cost) for the Done list and the calendar search (journal-done-search branch), measured on the same seed with no slack: opening the Done list, changing its month, and the first search in a window. The next search in a window asks nothing. They are not part of the typical day below, which is a browser measurement of the mix stated in docs/evidence/blob-usage/blob-usage-evidence.md.",
   "api": {
     "journal: open (home)": {
       "advanced": 4,
@@ -58,12 +58,12 @@
       "simple": 32
     },
     "journal: open the Done list": {
-      "advanced": 2,
+      "advanced": 1,
       "simple": 84
     },
     "journal: change the Done month": {
-      "advanced": 2,
-      "simple": 10
+      "advanced": 1,
+      "simple": 84
     },
     "journal: search the calendar (the first search in a window)": {
       "advanced": 3,

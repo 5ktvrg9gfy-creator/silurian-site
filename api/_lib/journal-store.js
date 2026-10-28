@@ -178,20 +178,23 @@ export function createJournalStore(sdk) {
       return read;
     },
 
-    // One listing of a month's entry files, for the Done list: each entry as
-    // { id, rev, times }, rev its highest revision and times { rev: ISO text or
-    // null } for every revision the listing shows. Reads no file.
-    async entryIndexOfMonth(month) {
-      const byId = new Map();
-      for (const { name, at } of await listTimed(`${ENTRY_PREFIX}${month}/`)) {
-        const match = /^([0-9a-f]{32})\.(\d+)\.json$/.exec(name);
+    // One listing of every entry file there is (a page for every thousand files),
+    // for the Done list: each entry as { month, id, rev, times }, month the month of
+    // its log, rev its highest revision and times { rev: ISO text or null } for every
+    // revision the listing shows. Reads no file. A task can be ticked in any month
+    // after or before its log's, so the whole prefix is listed.
+    async entryIndex() {
+      const byEntry = new Map();
+      for (const { name, at } of await listTimed(ENTRY_PREFIX)) {
+        const match = /^(\d{4}-\d{2})\/([0-9a-f]{32})\.(\d+)\.json$/.exec(name);
         if (!match) continue;
-        const held = byId.get(match[1]) || { id: match[1], rev: 0, times: {} };
-        held.times[Number(match[2])] = at;
-        held.rev = Math.max(held.rev, Number(match[2]));
-        byId.set(match[1], held);
+        const key = `${match[1]}/${match[2]}`;
+        const held = byEntry.get(key) || { month: match[1], id: match[2], rev: 0, times: {} };
+        held.times[Number(match[3])] = at;
+        held.rev = Math.max(held.rev, Number(match[3]));
+        byEntry.set(key, held);
       }
-      return [...byId.values()];
+      return [...byEntry.values()];
     },
 
     // The entry of a month at exactly this revision as { list, entry }, or null:
