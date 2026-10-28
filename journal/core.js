@@ -847,3 +847,142 @@ export function stripFrom(files, today) {
   }
   return { daily, monthly };
 }
+
+/* ---------- the Done list ---------- */
+
+// Completed tasks for one month, read-only. The completion date of a task is the
+// time its tick revision was written: the storage listing says when each revision
+// file was made, and no stored file changes. A task's tick revision is the first
+// revision of the run of "done" revisions that ends at its newest one, so a task
+// ticked, unticked and ticked again counts from the second tick, and a text edit
+// of a done task does not move it.
+//
+// A task is stored in the month of its log, and may be ticked in a later month, so
+// the server looks in the completion month and the month before it. A task ticked
+// before its log's month, or more than a month after it, is not listed (Q3 in
+// docs/journal-done-search-open-questions.md).
+export const doneLogMonths = (month) => [addMonths(month, -1), month];
+
+// The instants, as ISO text, that a completion month can fall between with a day
+// either side for London's offset from UTC. The server uses them to leave out
+// files that cannot count; the page then decides the exact London date.
+export function doneWindow(month) {
+  return {
+    since: `${addDays(`${month}-01`, -1)}T00:00:00.000Z`,
+    until: `${addDays(`${addMonths(month, 1)}-01`, 1)}T00:00:00.000Z`,
+  };
+}
+
+// The London date of an instant given as ISO text, or null when it is not one.
+const LONDON_DATE = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" });
+export function londonDateOf(iso) {
+  const at = typeof iso === "string" ? Date.parse(iso) : NaN;
+  if (!Number.isFinite(at)) return null;
+  const got = {};
+  for (const part of LONDON_DATE.formatToParts(at)) got[part.type] = part.value;
+  return `${got.year}-${got.month}-${got.day}`;
+}
+
+// A done task as the server sends it: { id, list, text, rev, doneAt }, doneAt ISO
+// text or null when the time is not known.
+export function soundDoneItem(item) {
+  return Boolean(item) && typeof item === "object" && isId(item.id) && parseList(item.list) !== null &&
+    typeof item.text === "string" && Number.isInteger(item.rev) && item.rev >= 1 &&
+    (item.doneAt === null || (typeof item.doneAt === "string" && londonDateOf(item.doneAt) !== null));
+}
+
+// Done tasks for the month, grouped by the London date they were ticked on, newest
+// first, newest first within a day. A task with no known time is in the group
+// { date: null } at the end, in the month of its log.
+export function doneGroups(items, month) {
+  const groups = new Map();
+  for (const item of items.filter(soundDoneItem)) {
+    const date = item.doneAt === null ? null : londonDateOf(item.doneAt);
+    const inMonth = date === null ? parseList(item.list).month === month : monthOf(date) === month;
+    if (!inMonth) continue;
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date).push(item);
+  }
+  const newest = (a, b) => {
+    const x = a.doneAt || "";
+    const y = b.doneAt || "";
+    return x !== y ? (x < y ? 1 : -1) : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  };
+  const dated = [...groups.keys()].filter((d) => d !== null).sort().reverse();
+  const out = dated.map((date) => ({ date, items: groups.get(date).sort(newest) }));
+  if (groups.has(null)) out.push({ date: null, items: groups.get(null).sort(newest) });
+  return out;
+}
+
+/* ---------- searching the calendar ---------- */
+
+// Every calendar line, span and entry (in any month) whose words contain the text,
+// ignoring case. Moved entries (their copy is where they went) and removed ones are
+// not searched, and a removed span is not. months is { "YYYY-MM": view } and spans
+// { id: span }, as the page holds them. A result is { kind, date, month, list, id,
+// text, source }, newest date first: kind "line", "span" or "entry"; date is the
+// day, or null for an entry in a Migrate list; source is what the result is shown
+// as coming from: Calendar, Span, Today, Tomorrow, Month or Migrate.
+export function searchCalendar(months, spans, text, today) {
+  const needle = cleanText(text || "").toLowerCase();
+  if (needle === "") return [];
+  const has = (value) => plainText(value).toLowerCase().includes(needle);
+  const tomorrow = addDays(today, 1);
+  const found = [];
+  for (const [month, file] of Object.entries(months || {})) {
+    for (const [date, day] of Object.entries(file.days)) {
+      if (day.line !== "" && has(day.line)) found.push({ kind: "line", date, month, list: dayList(date), id: null, text: day.line, source: "Calendar" });
+      for (const e of day.entries) {
+        if (["removed", "migrated", "scheduled"].includes(e.state) || !has(e.text)) continue;
+        found.push({ kind: "entry", date, month, list: dayList(date), id: e.id, text: e.text, source: date === today ? "Today" : date === tomorrow ? "Tomorrow" : "Month", order: e.order });
+      }
+    }
+    for (const e of file.migrate) {
+      if (["removed", "migrated", "scheduled"].includes(e.state) || !has(e.text)) continue;
+      found.push({ kind: "entry", date: null, month, list: migrateList(month), id: e.id, text: e.text, source: "Migrate", order: e.order });
+    }
+  }
+  for (const s of Object.values(spans || {})) {
+    if (s.state === "removed" || !has(s.text)) continue;
+    found.push({ kind: "span", date: s.start, month: monthOf(s.start), list: null, id: s.id, text: s.text, source: "Span", end: s.end });
+  }
+  const rank = { line: 0, span: 1, entry: 2 };
+  // A Migrate entry has no day, so it sorts as the 0th of its month: after the month's days.
+  const key = (r) => r.date || `${r.month}-00`;
+  found.sort((a, b) => (key(a) !== key(b) ? (key(a) < key(b) ? 1 : -1) : rank[a.kind] !== rank[b.kind] ? rank[a.kind] - rank[b.kind] : (a.order || 0) - (b.order || 0) || (a.id || "").localeCompare(b.id || "")));
+  return found.map(({ order, ...rest }) => rest);
+}
+
+/* ---------- bullets in Quick notes ---------- */
+
+// A bullet line in Quick notes is stored as plain text that starts "• ". Typing
+// "- " or "* " at the start of a line gives one, Enter on a bullet line starts the
+// next, Enter on an empty bullet ends the list, and the button turns a line into a
+// bullet and back. All of that is decided here, on the text of one line; the page
+// only carries it out on what is on screen. A space may arrive as a no-break space.
+export const BULLET = "•";
+const SPACE = "[ \\u00a0]";
+const BULLET_LINE = new RegExp(`^${BULLET}(?:${SPACE}|$)`);
+
+export const isBulletLine = (line) => BULLET_LINE.test(String(line));
+
+// What a bullet line holds after its marker.
+export const bulletBody = (line) => String(line).replace(new RegExp(`^${BULLET}${SPACE}?`), "");
+
+// A line just typed as "- " or "* " (and nothing but a possible rest) becomes a
+// bullet. Returns the new line, or null when the line is not one that starts so.
+export function bulletFromTyping(line) {
+  const text = String(line);
+  return new RegExp(`^[-*]${SPACE}`).test(text) ? `${BULLET} ${text.slice(2)}` : null;
+}
+
+// What Enter does at the end of a line: "continue" a bullet (the next line starts
+// with a bullet), "end" the list (the empty bullet is taken away), or "plain" for
+// any other line.
+export function afterEnter(line) {
+  if (!isBulletLine(line)) return "plain";
+  return bulletBody(line).trim() === "" ? "end" : "continue";
+}
+
+// The line turned into a bullet, or, if it is one, back into plain text.
+export const toggleBullet = (line) => (isBulletLine(line) ? bulletBody(line) : `${BULLET} ${line}`);

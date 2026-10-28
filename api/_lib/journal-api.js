@@ -27,6 +27,8 @@ import {
   addDays,
   applyOp,
   applySpanOp,
+  doneLogMonths,
+  doneWindow,
   isDate,
   isSpanOp,
   isMonth,
@@ -68,6 +70,10 @@ const QUICK_WAITS_MS = [100, 200, 400, 800, 1600, 3200];
 // up to three earlier months that have a file, for the morning strip.
 const EARLIER_MONTHS = 3;
 const MAX_MONTHS_PER_READ = 6;
+// How many months the page may say it already holds when it asks for the rest, and
+// how many files are read at once for the Done list.
+const MAX_SKIP = 36;
+const DONE_AT_ONCE = 16;
 
 const BASE_HEADERS = {
   "Cache-Control": "no-store",
@@ -136,6 +142,50 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
   async function loadSpans(months) {
     const all = await store.spans();
     return spansTouching(Object.fromEntries(all.map((s) => [s.id, s])), months);
+  }
+
+  async function mapLimit(items, limit, work) {
+    const out = new Array(items.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next;
+        next += 1;
+        out[index] = await work(items[index]);
+      }
+    }));
+    return out;
+  }
+
+  // The tasks completed in a month, as { id, list, text, rev, doneAt }. One listing
+  // of each log month it can be in (the month and the one before, core.doneLogMonths)
+  // says when every revision file was made; only entries whose newest revision was
+  // written inside the window are read, and for a task that is done the revisions
+  // before its newest are read back until one is not done, because the first of that
+  // run is the tick. Nothing is written, and nothing is read that cannot count.
+  async function doneItems(month) {
+    const { since, until } = doneWindow(month);
+    const perMonth = await Promise.all(doneLogMonths(month).map(async (logMonth) => {
+      const index = await store.entryIndexOfMonth(logMonth);
+      // A revision written before the window cannot be a tick inside it, and the
+      // newest revision is the latest of them all.
+      const candidates = index.filter((e) => e.times[e.rev] === null || e.times[e.rev] === undefined || e.times[e.rev] >= since);
+      const found = await mapLimit(candidates, DONE_AT_ONCE, async (e) => {
+        const newest = await store.readEntryOfMonth(logMonth, e.id, e.rev);
+        if (!newest || newest.entry.type !== "task" || newest.entry.state !== "done") return null;
+        let rev = e.rev;
+        for (let looked = 0; rev > 1 && looked < MAX_PROBE; looked += 1) {
+          const before = await store.readEntryOfMonth(logMonth, e.id, rev - 1);
+          if (!before || before.entry.state !== "done") break;
+          rev -= 1;
+        }
+        const doneAt = e.times[rev] || null;
+        if (doneAt !== null && (doneAt < since || doneAt >= until)) return null;
+        return { id: e.id, list: newest.list, text: newest.entry.text, rev: e.rev, doneAt };
+      });
+      return found.filter(Boolean);
+    }));
+    return perMonth.flat();
   }
 
   // A span change. Like an entry change it reads only the span it starts from, at
@@ -312,6 +362,24 @@ export function createJournalApi({ store, env, now = () => Date.now(), sleep = (
         const months = [...wanted, ...earlier];
         const [files, spans] = await Promise.all([loadMonths(months), loadSpans(months)]);
         return reply(200, { today, months: view(files, months), spans, quick: { text: quick.text, updatedAt: quick.updatedAt } });
+      }
+
+      // The tasks completed in one month, for the Done list. Read only.
+      if (kind === "done") {
+        const month = params.get("month");
+        if (!isMonth(month)) return fail(400, MESSAGES.badRequest);
+        return reply(200, { month, items: await doneItems(month) });
+      }
+
+      // Every month there is, for the calendar search, except the months the page
+      // says it already holds: one listing of each kind and a read of each newest
+      // file. Read only. The spans are all of them, removed ones included.
+      if (kind === "all") {
+        const skip = (params.get("skip") || "").split(",").filter(Boolean);
+        if (skip.length > MAX_SKIP || !skip.every(isMonth)) return fail(400, MESSAGES.badRequest);
+        const [entries, lines, spans] = await Promise.all([store.entriesAcross(skip), store.linesAcross(skip), store.spans()]);
+        const months = [...new Set([...entries.map((e) => parseList(e.list).month), ...lines.map((l) => monthOf(l.date))])].sort();
+        return reply(200, { months: view(viewFrom(months, entries, lines), months), spans });
       }
 
       return fail(400, MESSAGES.badRequest);

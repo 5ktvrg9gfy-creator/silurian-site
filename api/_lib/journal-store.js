@@ -128,6 +128,23 @@ export function createJournalStore(sdk) {
     return names;
   }
 
+  // The same listing with the time each file was made, as ISO text, or null when the
+  // listing does not say. Files here are only ever created, so the time is the
+  // time of that revision.
+  async function listTimed(prefix) {
+    const found = [];
+    let cursor;
+    do {
+      const page = await sdk.list({ prefix, limit: 1000, cursor });
+      for (const blob of page.blobs) {
+        const at = blob.uploadedAt ? Date.parse(blob.uploadedAt) : NaN;
+        found.push({ name: blob.pathname.slice(prefix.length), at: Number.isFinite(at) ? new Date(at).toISOString() : null });
+      }
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+    return found;
+  }
+
   return {
     // The entry at exactly this revision as { list, entry }, or null if there is none.
     async readEntry(list, id, rev) {
@@ -159,6 +176,64 @@ export function createJournalStore(sdk) {
         return normaliseEntryFile(raw);
       });
       return read;
+    },
+
+    // One listing of a month's entry files, for the Done list: each entry as
+    // { id, rev, times }, rev its highest revision and times { rev: ISO text or
+    // null } for every revision the listing shows. Reads no file.
+    async entryIndexOfMonth(month) {
+      const byId = new Map();
+      for (const { name, at } of await listTimed(`${ENTRY_PREFIX}${month}/`)) {
+        const match = /^([0-9a-f]{32})\.(\d+)\.json$/.exec(name);
+        if (!match) continue;
+        const held = byId.get(match[1]) || { id: match[1], rev: 0, times: {} };
+        held.times[Number(match[2])] = at;
+        held.rev = Math.max(held.rev, Number(match[2]));
+        byId.set(match[1], held);
+      }
+      return [...byId.values()];
+    },
+
+    // The entry of a month at exactly this revision as { list, entry }, or null:
+    // the month is known and the list it is in is not.
+    async readEntryOfMonth(month, id, rev) {
+      const raw = await readKept(`${ENTRY_PREFIX}${month}/${id}.${rev}.json`, normaliseEntryFile);
+      return raw ? normaliseEntryFile(raw) : null;
+    },
+
+    // Every entry of every month but the ones named, at its highest revision, as
+    // { list, entry }: one listing of the whole prefix (a page for every thousand
+    // files), and a read of each entry's newest file. For the calendar search.
+    async entriesAcross(skip = []) {
+      const latest = new Map();
+      for (const name of await listNames(ENTRY_PREFIX)) {
+        const match = /^(\d{4}-\d{2})\/([0-9a-f]{32})\.(\d+)\.json$/.exec(name);
+        if (!match || skip.includes(match[1])) continue;
+        const key = `${match[1]}/${match[2]}`;
+        const rev = Number(match[3]);
+        if (!latest.has(key) || rev > latest.get(key)) latest.set(key, rev);
+      }
+      return inBatches([...latest.entries()], async ([key, rev]) => {
+        const raw = await readKept(`${ENTRY_PREFIX}${key}.${rev}.json`, normaliseEntryFile);
+        if (!raw) throw new Error("journal file listed and not readable");
+        return normaliseEntryFile(raw);
+      });
+    },
+
+    // Every calendar line of every month but the ones named, at its highest revision.
+    async linesAcross(skip = []) {
+      const latest = new Map();
+      for (const name of await listNames(LINE_PREFIX)) {
+        const match = /^(\d{4}-\d{2})\/(\d{4}-\d{2}-\d{2})\.(\d+)\.json$/.exec(name);
+        if (!match || skip.includes(match[1])) continue;
+        const rev = Number(match[3]);
+        if (!latest.has(match[2]) || rev > latest.get(match[2])) latest.set(match[2], rev);
+      }
+      return inBatches([...latest.entries()], async ([date, rev]) => {
+        const raw = await readKept(linePath(date, rev), normaliseLineFile);
+        if (!raw) throw new Error("journal file listed and not readable");
+        return normaliseLineFile(raw);
+      });
     },
 
     async readLine(date, rev) {
